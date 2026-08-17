@@ -3,7 +3,7 @@ import request from 'supertest';
 import { app } from '../../server/index.js';
 
 describe('Integration: Clearance Binder Export & Studio Counsel Review Workflow', () => {
-  it('should execute full counsel review workflow: override status, log rationale, emit timeline event, and export signed binder with override history', async () => {
+  it('should execute full counsel review workflow: override status, log rationale, protect against re-eval overwrite, and export signed binder with override history', async () => {
     // 1. Create Project
     const projRes = await request(app)
       .post('/api/projects')
@@ -44,7 +44,7 @@ Alex wears a Rolex Submariner.
       .send({
         overrideStatus: 'NO_ISSUE_SURFACED',
         rationale: 'Executed global product placement integration agreement #PP-2026-PARAMOUNT with brand owner.',
-        counselName: 'Morgan Vance, Esq.',
+        counselName: 'Jane Doe, Esq.',
         counselRole: 'Executive Vice President, Production Legal',
       });
 
@@ -53,18 +53,31 @@ Alex wears a Rolex Submariner.
     expect(overrideRes.body.entity.overallClearanceStatus).toBe('NO_ISSUE_SURFACED');
     expect(overrideRes.body.entity.isOverridden).toBe(true);
 
-    // 5. Verify Overrides Query API
+    // 5. Invariant Test: Batch re-evaluation must NOT overwrite active counsel override
+    const reEvalRes = await request(app)
+      .post(`/api/projects/${projectId}/clearance/evaluate`)
+      .send({ canonicalEntityIds: [cokeEntity.id] });
+    expect(reEvalRes.status).toBe(200);
+
+    const entitiesRes = await request(app).get(`/api/projects/${projectId}/entities`);
+    expect(entitiesRes.status).toBe(200);
+    const refreshedCoke = entitiesRes.body.find((e: any) => e.id === cokeEntity.id);
+    expect(refreshedCoke.overallClearanceStatus).toBe('NO_ISSUE_SURFACED');
+    expect(refreshedCoke.isOverridden).toBe(true);
+
+    // 6. Verify Overrides Query API
     const historyRes = await request(app).get(`/api/projects/${projectId}/entities/${cokeEntity.id}/overrides`);
     expect(historyRes.status).toBe(200);
     expect(historyRes.body.overrides.length).toBe(1);
     expect(historyRes.body.overrides[0].overrideStatus).toBe('NO_ISSUE_SURFACED');
+    expect(historyRes.body.overrides[0].counselName).toBe('Jane Doe, Esq.');
 
-    // 6. Export Signed Clearance Binder & Verify Overrides History
+    // 7. Export Signed Clearance Binder & Verify Overrides History
     const binderRes = await request(app).get(`/api/projects/${projectId}/binder/export`);
     expect(binderRes.status).toBe(200);
     expect(binderRes.body.projectSummary.overridesCount).toBe(1);
     expect(binderRes.body.overridesHistory.length).toBe(1);
-    expect(binderRes.body.overridesHistory[0].counselName).toBe('Morgan Vance, Esq.');
+    expect(binderRes.body.overridesHistory[0].counselName).toBe('Jane Doe, Esq.');
     expect(binderRes.body.auditSignature).toBeDefined();
     expect(binderRes.body.auditSignature.length).toBe(64);
   });

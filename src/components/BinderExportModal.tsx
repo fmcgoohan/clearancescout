@@ -28,10 +28,18 @@ interface BinderExportModalProps {
   binder: ClearanceBinder | null;
   isOpen: boolean;
   onClose: () => void;
+  executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
 }
 
-export const BinderExportModal: React.FC<BinderExportModalProps> = ({ binder, isOpen, onClose }) => {
+export const BinderExportModal: React.FC<BinderExportModalProps> = ({
+  binder,
+  isOpen,
+  onClose,
+  executionMode = 'DEMO_MODE',
+}) => {
   if (!isOpen || !binder) return null;
+
+  const isLive = executionMode === 'CLOUD_MODE';
 
   const handleDownloadJson = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(binder, null, 2));
@@ -106,10 +114,25 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({ binder, is
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>
-              STUDIO E&O LEGAL CLEARANCE BINDER
-            </span>
-            <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+              <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>
+                STUDIO E&O LEGAL CLEARANCE BINDER
+              </span>
+              <span
+                style={{
+                  fontSize: '0.65rem',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontWeight: 600,
+                  background: isLive ? 'rgba(6, 182, 212, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+                  color: isLive ? 'var(--accent-cyan)' : '#fbbf24',
+                  border: `1px solid ${isLive ? 'rgba(6, 182, 212, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
+                }}
+              >
+                {isLive ? 'CLOUD LIVE' : 'DEMO FIXTURE'}
+              </span>
+            </div>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>
               {binder.projectSummary.title}
             </h3>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -207,7 +230,9 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({ binder, is
           <ul style={{ fontSize: '0.8rem', color: 'var(--text-main)', paddingLeft: '20px', lineHeight: '1.6' }}>
             <li>Complete Scene Breakdown & Character Dialogue Mapping ({binder.scenes.length} scenes)</li>
             <li>5-Category Canonical Entity Registry & Risk Assessments ({binder.canonicalEntities.length} entities)</li>
-            <li>Live Parallel-Web Search Citations Index ({binder.citationsIndex.length} citations)</li>
+            <li>
+              {isLive ? 'Live Parallel-Web Search Citations Index' : 'Demo Fixture Research Citations Index'} ({binder.citationsIndex.length} citations)
+            </li>
             <li>Approved Fictional Replacement Props & Imagen 3 Visual Cards ({binder.replacementCatalog.length} replacement assets)</li>
           </ul>
         </div>

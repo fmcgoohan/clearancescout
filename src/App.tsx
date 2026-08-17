@@ -270,12 +270,13 @@ export default function App() {
         currentStatus={citationStatus}
         isOverridden={isOverridden}
         latestOverride={latestOverride}
+        executionMode={executionMode}
         onOverrideSaved={() => setRefreshTrigger((prev) => prev + 1)}
       />
 
       <ReplacementCardModal card={replacementCard} isOpen={isReplacementOpen} onClose={() => setIsReplacementOpen(false)} />
 
-      <BinderExportModal binder={binderData} isOpen={isBinderOpen} onClose={() => setIsBinderOpen(false)} />
+      <BinderExportModal binder={binderData} isOpen={isBinderOpen} onClose={() => setIsBinderOpen(false)} executionMode={executionMode} />
 
       <TimelineDrawer events={events} isOpen={isTimelineOpen} onClose={() => setIsTimelineOpen(false)} />
     </div>

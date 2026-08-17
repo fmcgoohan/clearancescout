@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../server/index.js';
 
-describe('Contract: Studio Legal Counsel Override API', () => {
-  it('should record an authoritative legal counsel override with mandatory rationale', async () => {
+describe('Contract: Studio Legal Counsel Override API & Anti-Overwrite Invariant', () => {
+  it('should record an authoritative legal counsel override and strictly protect it against automated re-evaluation overwrite', async () => {
     // 1. Create Project
     const projRes = await request(app)
       .post('/api/projects')
@@ -27,23 +27,33 @@ describe('Contract: Studio Legal Counsel Override API', () => {
     const entity = scriptRes.body.entities[0];
     expect(entity).toBeDefined();
 
-    // 3. Reject override without rationale
+    // 3. Reject override without counsel name
+    const noNameRes = await request(app)
+      .post(`/api/projects/${projectId}/entities/${entity.id}/override`)
+      .send({
+        overrideStatus: 'NO_ISSUE_SURFACED',
+        rationale: 'Valid rationale here',
+        counselName: '   ',
+      });
+    expect(noNameRes.status).toBe(400);
+
+    // 4. Reject override without rationale
     const invalidRes = await request(app)
       .post(`/api/projects/${projectId}/entities/${entity.id}/override`)
       .send({
         overrideStatus: 'NO_ISSUE_SURFACED',
         rationale: '   ',
-        counselName: 'Morgan Vance, Esq.',
+        counselName: 'Jane Doe, Esq.',
       });
     expect(invalidRes.status).toBe(400);
 
-    // 4. Submit valid counsel override
+    // 5. Submit valid counsel override
     const overrideRes = await request(app)
       .post(`/api/projects/${projectId}/entities/${entity.id}/override`)
       .send({
         overrideStatus: 'NO_ISSUE_SURFACED',
         rationale: 'Direct paid product placement contract executed under #PP-2026-WB.',
-        counselName: 'Morgan Vance, Esq.',
+        counselName: 'Jane Doe, Esq.',
         counselRole: 'Senior Vice President, Production Legal',
       });
     expect(overrideRes.status).toBe(200);
@@ -53,10 +63,22 @@ describe('Contract: Studio Legal Counsel Override API', () => {
     expect(overrideRes.body.entity.isOverridden).toBe(true);
     expect(overrideRes.body.entity.overallClearanceStatus).toBe('NO_ISSUE_SURFACED');
 
-    // 5. Get override audit history
+    // 6. Invariant check: Automated batch re-evaluation MUST NOT overwrite active counsel override
+    const reEvalRes = await request(app)
+      .post(`/api/projects/${projectId}/clearance/evaluate`)
+      .send({ canonicalEntityIds: [entity.id] });
+    expect(reEvalRes.status).toBe(200);
+
+    const entitiesRes = await request(app).get(`/api/projects/${projectId}/entities`);
+    expect(entitiesRes.status).toBe(200);
+    const updatedEntity = entitiesRes.body.find((e: any) => e.id === entity.id);
+    expect(updatedEntity.isOverridden).toBe(true);
+    expect(updatedEntity.overallClearanceStatus).toBe('NO_ISSUE_SURFACED');
+
+    // 7. Get override audit history
     const historyRes = await request(app).get(`/api/projects/${projectId}/entities/${entity.id}/overrides`);
     expect(historyRes.status).toBe(200);
     expect(historyRes.body.overrides.length).toBe(1);
-    expect(historyRes.body.overrides[0].counselName).toBe('Morgan Vance, Esq.');
+    expect(historyRes.body.overrides[0].counselName).toBe('Jane Doe, Esq.');
   });
 });

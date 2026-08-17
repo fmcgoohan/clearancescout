@@ -15,8 +15,11 @@ export class ClearanceEvaluator {
   }
 
   async evaluateEntityClearance(projectId: string, canonicalEntityId: string): Promise<ClearanceRiskAssessmentData> {
-    timelineEmitter.emit(projectId, 'TOOL_CALL', 'Initiating Parallel-Web Trademark Grounding', {
+    const isLive = config.executionMode === 'CLOUD_MODE';
+    const toolLabel = isLive ? 'Initiating Live Parallel-Web Trademark Grounding' : 'Initiating Demo Fixture Trademark Grounding';
+    timelineEmitter.emit(projectId, 'TOOL_CALL', toolLabel, {
       canonicalEntityId,
+      executionMode: config.executionMode,
     });
 
     const entities = await entityRepo.getEntitiesByProject(projectId);
@@ -26,13 +29,17 @@ export class ClearanceEvaluator {
       throw new Error(`Canonical entity ${canonicalEntityId} not found`);
     }
 
-    // Step 1: Live Grounding Search via parallel-web SDK tool
+    // Step 1: Live or Demo Fixture Grounding Search
     const searchResult = await parallelSearchTool.searchTrademarkGrounding(entity.canonicalName);
+    const citationLabel = isLive
+      ? `Live Parallel-Web Citations Retained (${searchResult.citations.length})`
+      : `Demo Fixture Citations Retained (${searchResult.citations.length})`;
 
-    timelineEmitter.emit(projectId, 'CITATION_ADDED', `Parallel-Web Citations Retained (${searchResult.citations.length})`, {
+    timelineEmitter.emit(projectId, 'CITATION_ADDED', citationLabel, {
       citationsCount: searchResult.citations.length,
       sampleUrl: searchResult.citations[0]?.sourceUrl,
       corporateOwner: searchResult.citations[0]?.corporateOwner,
+      isDemoFixture: !isLive,
     });
 
     // Step 2: Deterministic Metric Computation

@@ -72,7 +72,10 @@ export class EntityRepo {
     const snap = await docRef.get();
     if (snap.exists) {
       const data = snap.data();
-      data.overallClearanceStatus = status;
+      // Invariant: Automated re-evaluation MUST NEVER overwrite an active counsel override
+      if (!data.isOverridden) {
+        data.overallClearanceStatus = status;
+      }
       data.updatedAt = new Date().toISOString();
       await docRef.set(data);
     }

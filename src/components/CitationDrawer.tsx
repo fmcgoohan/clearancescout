@@ -27,6 +27,7 @@ interface CitationDrawerProps {
     counselName: string;
     timestamp: string;
   };
+  executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
   onOverrideSaved?: () => void;
 }
 
@@ -41,21 +42,29 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
   currentStatus = 'ACTION_REQUIRED',
   isOverridden = false,
   latestOverride,
+  executionMode = 'DEMO_MODE',
   onOverrideSaved,
 }) => {
   const [activeTab, setActiveTab] = useState<'PROVENANCE' | 'OVERRIDE'>('PROVENANCE');
   const [overrideStatus, setOverrideStatus] = useState<string>('NO_ISSUE_SURFACED');
-  const [counselName, setCounselName] = useState<string>('Morgan Vance, Esq.');
-  const [counselRole, setCounselRole] = useState<string>('Senior Production Counsel');
+  const [counselName, setCounselName] = useState<string>('');
+  const [counselRole, setCounselRole] = useState<string>('');
   const [overrideRationale, setOverrideRationale] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
+  const isLive = executionMode === 'CLOUD_MODE';
+
   const handleApplyOverride = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canonicalEntityId || !projectId) return;
+
+    if (!counselName.trim()) {
+      setSubmitError('Counsel name is required for legal audit authentication.');
+      return;
+    }
 
     if (!overrideRationale.trim()) {
       setSubmitError('A non-empty legal counsel rationale is mandatory for audit logging.');
@@ -73,7 +82,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
           overrideStatus,
           rationale: overrideRationale.trim(),
           counselName: counselName.trim(),
-          counselRole: counselRole.trim(),
+          counselRole: counselRole.trim() || 'Studio Production Counsel',
         }),
       });
 
@@ -127,7 +136,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
           style={{ padding: '6px 12px', fontSize: '0.78rem' }}
           onClick={() => setActiveTab('PROVENANCE')}
         >
-          🔍 Grounded Provenance ({citations.length})
+          🔍 Research Evidence ({citations.length})
         </button>
         <button
           className={activeTab === 'OVERRIDE' ? 'btn-primary' : 'btn-secondary'}
@@ -161,13 +170,28 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
             </div>
           )}
 
-          <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginTop: '4px' }}>
-            Live Parallel-Web Citations ({citations.length})
-          </h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
+              {isLive ? 'Live Parallel-Web Grounded Research Citations' : 'Demo Fixture Research Evidence (Synthetic Dataset)'} ({citations.length})
+            </h4>
+            <span
+              style={{
+                fontSize: '0.65rem',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontWeight: 600,
+                background: isLive ? 'rgba(6, 182, 212, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+                color: isLive ? 'var(--accent-cyan)' : '#fbbf24',
+                border: `1px solid ${isLive ? 'rgba(6, 182, 212, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
+              }}
+            >
+              {isLive ? '● CLOUD LIVE' : '● DEMO FIXTURE'}
+            </span>
+          </div>
 
           {citations.length === 0 && (
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
-              No live research citations retrieved yet.
+              No research citations retrieved yet.
             </p>
           )}
 
@@ -182,7 +206,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span className="mono" style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)' }}>
+                <span className="mono" style={{ fontSize: '0.7rem', color: isLive ? 'var(--accent-cyan)' : '#fbbf24' }}>
                   {c.registrationStatus}
                 </span>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
@@ -280,12 +304,13 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
 
             <div>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                Counsel Name:
+                Counsel Name (Required):
               </label>
               <input
                 type="text"
                 value={counselName}
                 onChange={(e) => setCounselName(e.target.value)}
+                placeholder="e.g. Jane Doe, Esq."
                 required
                 style={{
                   width: '100%',
@@ -307,6 +332,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 type="text"
                 value={counselRole}
                 onChange={(e) => setCounselRole(e.target.value)}
+                placeholder="e.g. Senior Production Counsel"
                 style={{
                   width: '100%',
                   padding: '8px',
@@ -345,7 +371,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
             <button
               type="submit"
               className="btn-primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !counselName.trim() || !overrideRationale.trim()}
               style={{ marginTop: '8px' }}
             >
               {isSubmitting ? 'Saving Override...' : '⚖️ Apply Authoritative Legal Override'}
