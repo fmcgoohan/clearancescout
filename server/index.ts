@@ -64,8 +64,18 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(config.port, () => {
+  const server = app.listen(config.port, () => {
     console.log(`[ClearanceScout Server] Listening on http://localhost:${config.port} (${config.executionMode})`);
+  });
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[ClearanceScout Server Error] Port ${config.port} is already in use by another process.`);
+      console.error(`Tip: Set PORT=<custom_port> (e.g. PORT=8089 npm run start:demo) or terminate the conflicting process.`);
+    } else {
+      console.error('[ClearanceScout Server Error]:', err);
+    }
+    process.exit(1);
   });
 }
 

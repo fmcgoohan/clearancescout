@@ -11,7 +11,7 @@ export function loadConfig(): AppConfig {
   const modeEnv = process.env.EXECUTION_MODE?.toUpperCase() as ExecutionMode | undefined;
   const executionMode: ExecutionMode = modeEnv || 'DEMO_MODE';
 
-  const port = parseInt(process.env.PORT || '8080', 10);
+  const port = parseInt(process.env.PORT || '8088', 10);
   const geminiApiKey = process.env.GEMINI_API_KEY;
   const parallelWebApiKey = process.env.PARALLEL_WEB_API_KEY;
 
