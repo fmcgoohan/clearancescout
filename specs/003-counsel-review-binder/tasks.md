@@ -96,6 +96,17 @@
 
 ---
 
+## Phase 7: Convergence
+
+**Purpose**: Close remaining audit history hierarchy gaps and drawer scene-override surfacing.
+
+- [x] T021 Compute `previousStatus` in `server/api/clearanceRoutes.ts` using `resolveEffectiveClearanceStatus` immediately before recording a new override per FR-005, FR-016 (partial)
+- [x] T022 [P] Add regression test with two consecutive overrides on the same scene proving the second record's `previousStatus` equals the first override's status in `tests/contract/test_counsel_override.test.ts` per FR-005, SC-002 (missing)
+- [x] T023 [P] Surface latest applicable scene-specific override in `src/App.tsx` and `src/components/CitationDrawer.tsx` when opened with `sceneId` per FR-011, FR-016 (partial)
+- [x] T024 Run full Vitest test suite and production build verification (`npm test && npm run build`) per SC-001 (partial)
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
@@ -107,4 +118,5 @@ graph TD
     US1 --> Polish[Phase 6: Polish & Integration]
     US2 --> Polish
     US3 --> Polish
+    Polish --> Convergence[Phase 7: Convergence]
 ```

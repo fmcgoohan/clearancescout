@@ -3,6 +3,7 @@ import { clearanceEvaluator } from '../workflows/clearanceEvaluator.js';
 import { overrideRepo } from '../repositories/OverrideRepo.js';
 import { entityRepo, ClearanceStatus } from '../repositories/EntityRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
+import { resolveEffectiveClearanceStatus } from '../workflows/effectiveStatusResolver.js';
 
 export const clearanceRouter = Router();
 
@@ -59,7 +60,9 @@ clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Re
       return res.status(404).json({ error: `Entity ${entityId} not found.` });
     }
 
-    const previousStatus = existingEntity.overallClearanceStatus;
+    // Compute previousStatus as the effective status immediately before this override
+    const existingOverrides = await overrideRepo.getOverridesByEntity(projectId, entityId);
+    const previousStatus = resolveEffectiveClearanceStatus(existingEntity, existingOverrides, sceneId || undefined);
 
     // Record override audit log in OverrideRepo
     const override = await overrideRepo.recordOverride(projectId, {

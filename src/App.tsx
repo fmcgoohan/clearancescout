@@ -65,17 +65,49 @@ export default function App() {
     if (!projectId) return;
     try {
       setSelectedSceneId(sceneId);
-      const entitiesRes = await fetch(`/api/projects/${projectId}/entities`);
+      const [entitiesRes, overridesRes] = await Promise.all([
+        fetch(`/api/projects/${projectId}/entities`),
+        fetch(`/api/projects/${projectId}/entities/${entityId}/overrides`),
+      ]);
+
+      let ent: any = null;
       if (entitiesRes.ok) {
         const entitiesData = await entitiesRes.json();
-        const ent = entitiesData.find((e: any) => e.id === entityId);
-        if (ent) {
-          setSelectedEntityId(ent.id);
-          setCitationEntityName(ent.canonicalName);
+        ent = entitiesData.find((e: any) => e.id === entityId);
+      }
+
+      let entityOverrides: any[] = [];
+      if (overridesRes.ok) {
+        const ovrData = await overridesRes.json();
+        entityOverrides = ovrData.overrides || [];
+      }
+
+      if (ent) {
+        setSelectedEntityId(ent.id);
+        setCitationEntityName(ent.canonicalName);
+        setCitationRationale(ent.description || 'Reviewing clearance context.');
+
+        // Find applicable override: scene-specific first, then canonical override
+        const sceneOverride = sceneId
+          ? entityOverrides
+              .filter((o: any) => o.sceneId === sceneId)
+              .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
+          : null;
+
+        const canonicalOverride = entityOverrides
+          .filter((o: any) => !o.sceneId)
+          .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+
+        const applicableOverride = sceneOverride || canonicalOverride || ent.latestOverride || null;
+
+        if (applicableOverride) {
+          setIsOverridden(true);
+          setLatestOverride(applicableOverride);
+          setCitationStatus(applicableOverride.overrideStatus);
+        } else {
+          setIsOverridden(false);
+          setLatestOverride(null);
           setCitationStatus(ent.overallClearanceStatus);
-          setIsOverridden(Boolean(ent.isOverridden));
-          setLatestOverride(ent.latestOverride || null);
-          setCitationRationale(ent.description || 'Reviewing clearance context.');
         }
       }
 

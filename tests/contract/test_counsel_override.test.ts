@@ -48,6 +48,7 @@ describe('Contract: Studio Legal Counsel Override API & Scene Isolation Invarian
       });
     expect(sceneOverrideRes.status).toBe(200);
     expect(sceneOverrideRes.body.override.sceneId).toBe('scene-1');
+    expect(sceneOverrideRes.body.override.previousStatus).toBe('ACTION_REQUIRED');
     expect(sceneOverrideRes.body.override.overrideStatus).toBe('NO_ISSUE_SURFACED');
     
     // Invariant: Canonical entity state must NOT be mutated by scene-specific override
@@ -74,6 +75,57 @@ describe('Contract: Studio Legal Counsel Override API & Scene Isolation Invarian
 
     const projectWideEffective = resolveEffectiveClearanceStatus(dbEntity, allOverrides);
     expect(projectWideEffective).toBe('ACTION_REQUIRED');
+  });
+
+  it('should accurately calculate previousStatus across two consecutive overrides on the same scene', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Consecutive Overrides Test',
+        productionCompany: 'Sony Pictures',
+        scriptVersion: 'v1.0',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    const scriptRes = await request(app)
+      .post(`/api/projects/${projectId}/script`)
+      .send({
+        scriptText: 'INT. LOUNGE - NIGHT\nAlex places a Rolex on the glass table.',
+        format: 'PLAINTEXT',
+      });
+    const entity = scriptRes.body.entities[0];
+
+    // Evaluate automated risk baseline (baseline: ACTION_REQUIRED / REVIEW_RECOMMENDED)
+    await request(app)
+      .post(`/api/projects/${projectId}/clearance/evaluate`)
+      .send({ canonicalEntityIds: [entity.id] });
+
+    // First scene-specific override: set to REVIEW_RECOMMENDED
+    const firstOverrideRes = await request(app)
+      .post(`/api/projects/${projectId}/entities/${entity.id}/override`)
+      .send({
+        overrideStatus: 'REVIEW_RECOMMENDED',
+        sceneId: 'scene-1',
+        rationale: 'Initial coordinator review requested for scene 1.',
+        counselName: 'Jane Doe, Esq.',
+      });
+    expect(firstOverrideRes.status).toBe(200);
+    expect(firstOverrideRes.body.override.overrideStatus).toBe('REVIEW_RECOMMENDED');
+
+    // Second consecutive scene-specific override on the same scene: change to NO_ISSUE_SURFACED
+    const secondOverrideRes = await request(app)
+      .post(`/api/projects/${projectId}/entities/${entity.id}/override`)
+      .send({
+        overrideStatus: 'NO_ISSUE_SURFACED',
+        sceneId: 'scene-1',
+        rationale: 'Subsequent written clearance release received from brand.',
+        counselName: 'Jane Doe, Esq.',
+      });
+    expect(secondOverrideRes.status).toBe(200);
+    expect(secondOverrideRes.body.override.overrideStatus).toBe('NO_ISSUE_SURFACED');
+    // Regression proof: previousStatus MUST equal the first override's overrideStatus (REVIEW_RECOMMENDED)
+    expect(secondOverrideRes.body.override.previousStatus).toBe('REVIEW_RECOMMENDED');
   });
 
   it('should record a canonical override, protect it from automated re-evaluation, and allow scene-specific overrides on top', async () => {
@@ -130,5 +182,6 @@ describe('Contract: Studio Legal Counsel Override API & Scene Isolation Invarian
       });
     expect(sceneExceptionRes.status).toBe(200);
     expect(sceneExceptionRes.body.override.sceneId).toBe('scene-1');
+    expect(sceneExceptionRes.body.override.previousStatus).toBe('NO_ISSUE_SURFACED');
   });
 });
