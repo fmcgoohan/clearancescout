@@ -52,7 +52,15 @@ projectRouter.post('/:id/script', upload.single('script'), async (req: Request, 
     }
 
     let scriptText = '';
+    let format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = req.body.format || 'PLAINTEXT';
+
     if (req.file) {
+      const origName = req.file.originalname.toLowerCase();
+      if (origName.endsWith('.fountain')) {
+        format = 'FOUNTAIN';
+      } else if (origName.endsWith('.pdf')) {
+        format = 'PDF';
+      }
       scriptText = req.file.buffer.toString('utf-8');
     } else if (req.body.scriptText) {
       scriptText = req.body.scriptText;
@@ -60,7 +68,7 @@ projectRouter.post('/:id/script', upload.single('script'), async (req: Request, 
       return res.status(400).json({ error: 'Script file or scriptText payload is required.' });
     }
 
-    const result = await canonicalRegistryWorkflow.processScriptUpload(projectId, scriptText);
+    const result = await canonicalRegistryWorkflow.processScriptUpload(projectId, scriptText, format);
     return res.json(result);
   } catch (err) {
     next(err);

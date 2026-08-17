@@ -21,19 +21,23 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [entities, setEntities] = useState<CanonicalEntity[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [scriptText, setScriptText] = useState('');
+  const [scriptFormat, setScriptFormat] = useState<'PLAINTEXT' | 'FOUNTAIN' | 'PDF'>('FOUNTAIN');
 
-  const sampleScript = `INT. COFFEE SHOP - DAY
-ALEX sits at a corner table holding a bottle of Coca-Cola. ALEX looks at JORDAN wearing a Rolex watch.
+  const multiCategoryFountainScript = `
+.INT. COFFEE SHOP - DAY
+ALEX sits at a corner table holding a chilled bottle of Coca-Cola, typing on an Apple MacBook. Through the speakers, Bohemian Rhapsody plays quietly.
 
 ALEX
-This new deal is dangerous.
+(whispering)
+Did you see Taylor Swift at Madison Square Garden last night?
 
 JORDAN
-Just don't drop the Porsche keys.
+(checking Rolex)
+Focus. The shipment near Empire State Building has an Acme Explosives warning label on the crate.
 
-EXT. CITY STREET - NIGHT
-JORDAN drives a Porsche 911 at high speed. ALEX drinks Coca-Cola while reviewing blueprints on an Apple MacBook.`;
+.EXT. CITY STREET - NIGHT
+JORDAN accelerates in a Porsche 911 past the Empire State Building. ALEX finishes the can of Coca-Cola.
+`;
 
   const fetchWorkspaceData = async () => {
     if (!projectId) return;
@@ -59,14 +63,14 @@ JORDAN drives a Porsche 911 at high speed. ALEX drinks Coca-Cola while reviewing
     fetchWorkspaceData();
   }, [projectId, refreshTrigger]);
 
-  const handleParseScript = async (textToParse: string) => {
+  const handleParseScript = async (textToParse: string, format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF') => {
     if (!projectId) return;
     setIsUploading(true);
     try {
       const res = await fetch(`/api/projects/${projectId}/script`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scriptText: textToParse }),
+        body: JSON.stringify({ scriptText: textToParse, format }),
       });
       if (res.ok) {
         await fetchWorkspaceData();
@@ -83,21 +87,37 @@ JORDAN drives a Porsche 911 at high speed. ALEX drinks Coca-Cola while reviewing
       {/* Upload & Controls Panel */}
       <div className="glass-panel" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>Script Ingestion & Canonical Matching</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
+            Multi-Format Script Ingestion & 5-Category Resolution
+          </h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Parse screenplay text to build the project-wide canonical entity registry.
+            Extract scenes and deduplicate entities across Brands, Art/Music, Public Figures, Locations, and Graphic Props.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            className="btn-secondary"
-            onClick={() => {
-              setScriptText(sampleScript);
-              handleParseScript(sampleScript);
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <select
+            value={scriptFormat}
+            onChange={(e) => setScriptFormat(e.target.value as any)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '6px',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--border-color)',
+              fontSize: '0.8rem',
             }}
+          >
+            <option value="FOUNTAIN">Fountain (.fountain)</option>
+            <option value="PLAINTEXT">Plaintext (.txt)</option>
+            <option value="PDF">Screenplay PDF (.pdf)</option>
+          </select>
+
+          <button
+            className="btn-primary"
+            onClick={() => handleParseScript(multiCategoryFountainScript, scriptFormat)}
             disabled={isUploading}
           >
-            {isUploading ? 'Parsing...' : 'Load Sample Screenplay'}
+            {isUploading ? 'Parsing...' : 'Ingest Screenplay'}
           </button>
         </div>
       </div>

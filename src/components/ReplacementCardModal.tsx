@@ -5,6 +5,7 @@ export interface ReplacementCard {
   canonicalEntityId: string;
   fictionalBrandName: string;
   designBrief: string;
+  eraAesthetic?: string;
   artworkImageUrl: string;
   nonInfringementRationale: string;
   status: string;
@@ -49,9 +50,25 @@ export const ReplacementCardModal: React.FC<ReplacementCardModalProps> = ({ card
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>
-              REPLACEMENT BRAND CARD
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>
+                REPLACEMENT BRAND CARD
+              </span>
+              {card.eraAesthetic && (
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: 'rgba(6, 182, 212, 0.15)',
+                    color: 'var(--accent-cyan)',
+                    border: '1px solid rgba(6, 182, 212, 0.3)',
+                  }}
+                >
+                  {card.eraAesthetic}
+                </span>
+              )}
+            </div>
             <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-main)' }}>
               {card.fictionalBrandName}
             </h3>

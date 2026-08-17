@@ -5,8 +5,9 @@ import { projectRouter } from './api/projectRoutes.js';
 import { clearanceRouter } from './api/clearanceRoutes.js';
 import { replacementRouter } from './api/replacementRoutes.js';
 import { timelineRouter } from './api/timelineRoutes.js';
+import { binderRouter } from './api/binderRoutes.js';
 
-const app = express();
+export const app = express();
 
 app.use(cors());
 app.use(express.json());
@@ -16,6 +17,7 @@ app.use('/api/projects', projectRouter);
 app.use('/api', clearanceRouter);
 app.use('/api', replacementRouter);
 app.use('/api', timelineRouter);
+app.use('/api', binderRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -1,10 +1,20 @@
 import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
+export type TimelineEventType =
+  | 'TOOL_CALL'
+  | 'DOCUMENT_QUERY'
+  | 'DETERMINISTIC_CALC'
+  | 'RISK_EVAL'
+  | 'CITATION_ADDED'
+  | 'STATE_TRANSITION'
+  | 'REPLACEMENT_GEN'
+  | 'BINDER_EXPORT';
+
 export interface ExecutionEvent {
   id: string;
   projectId: string;
-  eventType: 'TOOL_CALL' | 'DOCUMENT_QUERY' | 'DETERMINISTIC_CALC' | 'RISK_EVAL' | 'CITATION_ADDED' | 'STATE_TRANSITION' | 'REPLACEMENT_GEN';
+  eventType: TimelineEventType;
   label: string;
   payload: Record<string, any>;
   timestamp: string;
@@ -49,7 +59,7 @@ class TimelineBroadcaster {
     return sanitized;
   }
 
-  emit(projectId: string, eventType: ExecutionEvent['eventType'], label: string, payload: Record<string, any>): ExecutionEvent {
+  emit(projectId: string, eventType: TimelineEventType, label: string, payload: Record<string, any>): ExecutionEvent {
     const sanitizedPayload = this.sanitizePayload(payload);
     const event: ExecutionEvent = {
       id: `evt-${uuidv4().slice(0, 8)}`,

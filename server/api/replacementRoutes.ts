@@ -11,7 +11,7 @@ export const replacementRouter = Router();
 replacementRouter.post('/projects/:id/replacements/generate', async (req: Request, res: Response, next) => {
   try {
     const projectId = req.params.id;
-    const { canonicalEntityId } = req.body;
+    const { canonicalEntityId, eraAesthetic } = req.body;
 
     if (!canonicalEntityId) {
       return res.status(400).json({ error: 'canonicalEntityId is required.' });
@@ -26,10 +26,15 @@ replacementRouter.post('/projects/:id/replacements/generate', async (req: Reques
 
     timelineEmitter.emit(projectId, 'REPLACEMENT_GEN', `Generating Fictional Replacement Brand for ${entity.canonicalName}`, {
       canonicalEntityId,
+      eraAesthetic: eraAesthetic || 'Modern Cinematic',
     });
 
     // Step 1: Generate fictional brand name & design brief via Gemini 3.6 Flash agent
-    const brandData = await replacementAgent.generateFictionalBrand(entity.canonicalName, entity.entityCategory);
+    const brandData = await replacementAgent.generateFictionalBrand(
+      entity.canonicalName,
+      entity.entityCategory,
+      eraAesthetic || 'Modern Cinematic'
+    );
 
     // Step 2: Generate visual concept artwork card via Imagen 3 tool
     const artworkImageUrl = await artworkTool.generateArtworkCard(brandData.fictionalBrandName, brandData.designBrief);
@@ -39,6 +44,7 @@ replacementRouter.post('/projects/:id/replacements/generate', async (req: Reques
       canonicalEntityId,
       fictionalBrandName: brandData.fictionalBrandName,
       designBrief: brandData.designBrief,
+      eraAesthetic: brandData.eraAesthetic,
       artworkImageUrl,
       nonInfringementRationale: brandData.nonInfringementRationale,
       status: 'PROPOSED',
@@ -47,6 +53,7 @@ replacementRouter.post('/projects/:id/replacements/generate', async (req: Reques
     timelineEmitter.emit(projectId, 'REPLACEMENT_GEN', `Replacement Concept Created: ${card.fictionalBrandName}`, {
       replacementId: card.id,
       fictionalBrandName: card.fictionalBrandName,
+      eraAesthetic: card.eraAesthetic,
     });
 
     return res.json(card);

@@ -6,6 +6,7 @@ export interface ReplacementConceptCardData {
   canonicalEntityId: string;
   fictionalBrandName: string;
   designBrief: string;
+  eraAesthetic?: string;
   artworkImageUrl: string;
   nonInfringementRationale: string;
   status: 'DRAFT' | 'PROPOSED' | 'APPROVED' | 'REJECTED';

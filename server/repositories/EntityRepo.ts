@@ -1,8 +1,23 @@
 import { getDb } from './firestoreClient.js';
 import { v4 as uuidv4 } from 'uuid';
 
-export type EntityCategory = 'BRAND' | 'TRADEMARK' | 'PRODUCT' | 'LOGO' | 'LOCATION' | 'CHARACTER_NAME';
-export type ClearanceStatus = 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
+export type EntityCategory =
+  | 'BRAND'
+  | 'ART_MUSIC'
+  | 'PUBLIC_FIGURE'
+  | 'PROPRIETARY_LOCATION'
+  | 'GRAPHIC_PROP'
+  | 'TRADEMARK'
+  | 'PRODUCT'
+  | 'LOGO'
+  | 'LOCATION'
+  | 'CHARACTER_NAME';
+
+export type ClearanceStatus =
+  | 'NO_ISSUE_SURFACED'
+  | 'REVIEW_RECOMMENDED'
+  | 'ACTION_REQUIRED'
+  | 'INSUFFICIENT_EVIDENCE';
 
 export interface CanonicalEntityData {
   id: string;
@@ -22,6 +37,8 @@ export interface SceneEntityOccurrenceData {
   scriptLineNumber: number;
   excerptText: string;
   usageContext: string;
+  sentimentScore?: number;
+  exposureDurationSeconds?: number;
 }
 
 export class EntityRepo {

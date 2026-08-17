@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export interface CanonicalEntity {
   id: string;
@@ -21,6 +21,8 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   onGenerateReplacement,
   isEvaluating,
 }) => {
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+
   if (!entities || entities.length === 0) {
     return (
       <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -28,6 +30,10 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
       </div>
     );
   }
+
+  const filteredEntities = selectedCategory === 'ALL'
+    ? entities
+    : entities.filter(e => e.entityCategory === selectedCategory);
 
   const getBadgeClass = (status: string) => {
     return `badge badge-${status}`;
@@ -37,13 +43,57 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
     return status.replace(/_/g, ' ');
   };
 
+  const getCategoryColor = (cat: string) => {
+    switch (cat) {
+      case 'BRAND':
+        return '#38bdf8';
+      case 'ART_MUSIC':
+        return '#c084fc';
+      case 'PUBLIC_FIGURE':
+        return '#fbbf24';
+      case 'PROPRIETARY_LOCATION':
+        return '#34d399';
+      case 'GRAPHIC_PROP':
+        return '#f87171';
+      default:
+        return 'var(--text-muted)';
+    }
+  };
+
+  const categories = ['ALL', 'BRAND', 'ART_MUSIC', 'PUBLIC_FIGURE', 'PROPRIETARY_LOCATION', 'GRAPHIC_PROP'];
+
   return (
     <div className="glass-panel" style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h3 style={{ fontSize: '1rem', color: 'var(--accent-cyan)' }}>
-          Canonical Entity Registry ("Clear Once, Recognize Everywhere")
-        </h3>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{entities.length} Unique Entities</span>
+        <div>
+          <h3 style={{ fontSize: '1rem', color: 'var(--accent-cyan)', marginBottom: '4px' }}>
+            Canonical Entity Registry ("Clear Once, Recognize Everywhere")
+          </h3>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            {filteredEntities.length} of {entities.length} Entities Displayed
+          </span>
+        </div>
+
+        {/* Category Filters */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              style={{
+                fontSize: '0.7rem',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                border: '1px solid var(--border-color)',
+                background: selectedCategory === cat ? 'var(--accent-blue)' : 'rgba(255,255,255,0.03)',
+                color: selectedCategory === cat ? '#ffffff' : 'var(--text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              {cat.replace(/_/g, ' ')}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div style={{ overflowX: 'auto' }}>
@@ -57,12 +107,21 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
             </tr>
           </thead>
           <tbody>
-            {entities.map((e) => (
+            {filteredEntities.map((e) => (
               <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-main)' }}>{e.canonicalName}</td>
-                <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
-                  <span className="mono" style={{ fontSize: '0.75rem' }}>
-                    {e.entityCategory}
+                <td style={{ padding: '12px' }}>
+                  <span
+                    className="mono"
+                    style={{
+                      fontSize: '0.75rem',
+                      color: getCategoryColor(e.entityCategory),
+                      background: 'rgba(255,255,255,0.04)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    {e.entityCategory.replace(/_/g, ' ')}
                   </span>
                 </td>
                 <td style={{ padding: '12px' }}>

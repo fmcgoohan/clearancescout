@@ -7,6 +7,8 @@ export interface Citation {
   retrievedAt: string;
   excerptSnippet: string;
   registrationStatus: string;
+  corporateOwner?: string;
+  disputePrecedents?: string;
 }
 
 interface CitationDrawerProps {
@@ -32,7 +34,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
         position: 'fixed',
         top: 0,
         right: 0,
-        width: '450px',
+        width: '460px',
         height: '100vh',
         background: 'var(--bg-secondary)',
         borderLeft: '1px solid var(--border-color)',
@@ -97,9 +99,23 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 {new Date(c.retrievedAt).toLocaleTimeString()}
               </span>
             </div>
+
+            {c.corporateOwner && (
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', marginBottom: '6px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Owner:</span> <strong>{c.corporateOwner}</strong>
+              </div>
+            )}
+
             <p style={{ fontSize: '0.8rem', color: 'var(--text-main)', marginBottom: '8px' }}>
               "{c.excerptSnippet}"
             </p>
+
+            {c.disputePrecedents && (
+              <div style={{ fontSize: '0.72rem', color: '#94a3b8', background: 'rgba(0,0,0,0.2)', padding: '6px 8px', borderRadius: '4px', marginBottom: '8px' }}>
+                <strong>Enforcement / Precedents:</strong> {c.disputePrecedents}
+              </div>
+            )}
+
             <a
               href={c.sourceUrl}
               target="_blank"

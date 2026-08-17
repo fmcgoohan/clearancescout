@@ -12,13 +12,18 @@ export interface WorkflowResult {
 }
 
 export class CanonicalRegistryWorkflow {
-  async processScriptUpload(projectId: string, scriptText: string): Promise<WorkflowResult> {
-    timelineEmitter.emit(projectId, 'DOCUMENT_QUERY', 'Parsing Script Content', {
+  async processScriptUpload(
+    projectId: string,
+    scriptText: string,
+    format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = 'PLAINTEXT'
+  ): Promise<WorkflowResult> {
+    timelineEmitter.emit(projectId, 'DOCUMENT_QUERY', `Parsing Script Content (${format})`, {
       scriptLength: scriptText.length,
+      format,
       status: 'PARSING_SCENES',
     });
 
-    const parsedScenes: ParsedScene[] = await scriptParserAgent.parseScriptText(scriptText);
+    const parsedScenes: ParsedScene[] = await scriptParserAgent.parseScriptText(scriptText, format);
 
     timelineEmitter.emit(projectId, 'DOCUMENT_QUERY', 'Scenes Extracted', {
       count: parsedScenes.length,
@@ -27,7 +32,7 @@ export class CanonicalRegistryWorkflow {
     // Fetch existing canonical entities for deduplication ("Clear once, recognize everywhere")
     const existingEntities = await entityRepo.getEntitiesByProject(projectId);
     const entityMap = new Map<string, CanonicalEntityData>();
-    
+
     for (const ent of existingEntities) {
       entityMap.set(ent.canonicalName.toLowerCase(), ent);
     }
@@ -56,13 +61,14 @@ export class CanonicalRegistryWorkflow {
             entityId: canonicalEnt.id,
             sceneNumber: scene.sceneNumber,
             canonicalName: canonicalEnt.canonicalName,
+            category: canonicalEnt.entityCategory,
           });
         } else {
           canonicalEnt = await entityRepo.createCanonicalEntity({
             projectId,
             canonicalName: entMention.name,
             entityCategory: entMention.category,
-            description: `Auto-extracted entity ${entMention.name}`,
+            description: `Auto-extracted ${entMention.category} item: ${entMention.name}`,
             overallClearanceStatus: 'INSUFFICIENT_EVIDENCE',
           });
           entityMap.set(normKey, canonicalEnt);
@@ -71,6 +77,7 @@ export class CanonicalRegistryWorkflow {
             entityId: canonicalEnt.id,
             sceneNumber: scene.sceneNumber,
             canonicalName: canonicalEnt.canonicalName,
+            category: canonicalEnt.entityCategory,
           });
         }
 
@@ -89,6 +96,7 @@ export class CanonicalRegistryWorkflow {
     timelineEmitter.emit(projectId, 'STATE_TRANSITION', 'Script Parsing & Entity Registry Complete', {
       scenesParsed: createdScenes.length,
       canonicalEntitiesTotal: finalEntities.length,
+      format,
     });
 
     return {

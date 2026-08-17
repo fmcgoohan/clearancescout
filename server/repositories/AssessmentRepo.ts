@@ -9,6 +9,8 @@ export interface ClearanceCitation {
   retrievedAt: string;
   excerptSnippet: string;
   registrationStatus: 'REGISTERED_ACTIVE' | 'PENDING' | 'EXPIRED' | 'UNKNOWN';
+  corporateOwner?: string;
+  disputePrecedents?: string;
 }
 
 export interface ClearanceRiskAssessmentData {

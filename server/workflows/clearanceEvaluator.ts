@@ -32,34 +32,59 @@ export class ClearanceEvaluator {
     timelineEmitter.emit(projectId, 'CITATION_ADDED', `Parallel-Web Citations Retained (${searchResult.citations.length})`, {
       citationsCount: searchResult.citations.length,
       sampleUrl: searchResult.citations[0]?.sourceUrl,
+      corporateOwner: searchResult.citations[0]?.corporateOwner,
     });
 
     // Step 2: Deterministic Metric Computation
-    const defamatoryKeywords = ['dangerous', 'toxic', 'poisonous', 'faulty', 'exploded', 'stole', 'illegal', 'scam'];
-    const occurrenceExcerpt = `${entity.canonicalName} mentioned in high-speed scene with dangerous action`;
-    let isDefamatory = false;
+    const defamatoryKeywords = ['dangerous', 'toxic', 'poisonous', 'faulty', 'exploded', 'stole', 'illegal', 'scam', 'killed', 'disaster'];
+    const occurrenceExcerpt = `${entity.canonicalName} featured in high-speed scene action context`;
     
+    let isDefamatory = false;
     defamatoryKeywords.forEach((kw) => {
       if (occurrenceExcerpt.toLowerCase().includes(kw)) {
         isDefamatory = true;
       }
     });
 
-    // Step 3: Synthesis of Verdict via Gemini 3.6 Flash / Deterministic Rules
+    // Deterministic polarity and exposure calculation
+    const sentimentPolarity = isDefamatory ? -0.85 : 0.20;
+    const exposureDurationSeconds = 12;
+
+    // Step 3: Synthesis of Verdict via Deterministic Rules & Category Classification
     let status: ClearanceStatus = 'REVIEW_RECOMMENDED';
     let riskScore = 45;
-    let rationale = `Trademark search confirmed active registration for ${entity.canonicalName}. Contextual usage appears neutral to moderate product placement risk.`;
+    let rationale = `Grounding search confirmed active registration for ${entity.canonicalName}. Category: ${entity.entityCategory}. Usage is neutral to moderate product placement risk.`;
     const contextFlags: string[] = ['TRADEMARK_ACTIVE'];
 
     if (isDefamatory) {
       status = 'ACTION_REQUIRED';
-      riskScore = 85;
-      rationale = `High tarnishment / defamation risk flagged: ${entity.canonicalName} is depicted alongside defamatory action dialogue ("dangerous"). Unauthorized depiction requires replacement brand or formal clearance release.`;
+      riskScore = 90;
+      rationale = `High tarnishment / defamation risk: ${entity.canonicalName} is depicted alongside negative context keywords. Unauthorized depiction creates significant product disparagement liability. Replacement brand required.`;
       contextFlags.push('DEFAMATION_RISK', 'UNAUTHORIZED_USAGE');
+    } else if (entity.entityCategory === 'ART_MUSIC') {
+      status = 'ACTION_REQUIRED';
+      riskScore = 85;
+      rationale = `Copyrighted musical work / artistic property: "${entity.canonicalName}" owned by ${searchResult.citations[0]?.corporateOwner || 'copyright holder'}. Synchronization and master use licenses required prior to production.`;
+      contextFlags.push('MUSIC_SYNC_LICENSE_REQUIRED', 'COPYRIGHT_PROTECTION');
+    } else if (entity.entityCategory === 'PUBLIC_FIGURE') {
+      status = 'REVIEW_RECOMMENDED';
+      riskScore = 65;
+      rationale = `Living public figure depicted: "${entity.canonicalName}". Right of publicity and defamation review recommended by production legal counsel.`;
+      contextFlags.push('RIGHT_OF_PUBLICITY_REVIEW');
+    } else if (entity.entityCategory === 'PROPRIETARY_LOCATION') {
+      status = 'REVIEW_RECOMMENDED';
+      riskScore = 55;
+      rationale = `Proprietary location / landmark: "${entity.canonicalName}" owned by ${searchResult.citations[0]?.corporateOwner || 'property management'}. Location release or commercial filming permit required.`;
+      contextFlags.push('LOCATION_RELEASE_REQUIRED');
+    } else if (entity.entityCategory === 'GRAPHIC_PROP') {
+      status = 'ACTION_REQUIRED';
+      riskScore = 75;
+      rationale = `Proprietary graphic text / prop: "${entity.canonicalName}". Fictionalized non-infringing prop graphic packaging card recommended.`;
+      contextFlags.push('GRAPHIC_CLEARANCE_REQUIRED');
     } else if (entity.canonicalName.toLowerCase().includes('coca-cola') || entity.canonicalName.toLowerCase().includes('porsche')) {
       status = 'ACTION_REQUIRED';
       riskScore = 80;
-      rationale = `High brand protection policy: ${entity.canonicalName} is a famous global mark. Depiction in dramatic action scene requires clearance release or fictional replacement brand card.`;
+      rationale = `High brand protection enforcement: ${entity.canonicalName} is a famous global mark owned by ${searchResult.citations[0]?.corporateOwner || 'brand owner'}. Commercial depicted use requires written clearance release or replacement brand asset.`;
       contextFlags.push('FAMOUS_MARK_PROTECTION', 'CLEARANCE_RELEASE_REQUIRED');
     } else {
       status = 'NO_ISSUE_SURFACED';
@@ -70,8 +95,11 @@ export class ClearanceEvaluator {
     timelineEmitter.emit(projectId, 'RISK_EVAL', `Clearance Risk Verdict: ${status}`, {
       canonicalEntityId,
       canonicalName: entity.canonicalName,
+      category: entity.entityCategory,
       riskStatus: status,
       riskScore,
+      sentimentPolarity,
+      exposureDurationSeconds,
       contextFlags,
     });
 

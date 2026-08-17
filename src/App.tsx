@@ -3,6 +3,7 @@ import { WorkspacePage } from './pages/WorkspacePage';
 import { CitationDrawer, Citation } from './components/CitationDrawer';
 import { ReplacementCardModal, ReplacementCard } from './components/ReplacementCardModal';
 import { TimelineDrawer } from './components/TimelineDrawer';
+import { BinderExportModal, ClearanceBinder } from './components/BinderExportModal';
 import { useTimelineSSE } from './hooks/useTimelineSSE';
 
 export default function App() {
@@ -19,6 +20,10 @@ export default function App() {
   const [isReplacementOpen, setIsReplacementOpen] = useState(false);
   const [replacementCard, setReplacementCard] = useState<ReplacementCard | null>(null);
 
+  const [isBinderOpen, setIsBinderOpen] = useState(false);
+  const [binderData, setBinderData] = useState<ClearanceBinder | null>(null);
+  const [isExportingBinder, setIsExportingBinder] = useState(false);
+
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -33,7 +38,7 @@ export default function App() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: 'ClearanceScout Workspace',
+            title: 'ClearanceScout MVP Workspace',
             productionCompany: 'Apex Entertainment',
             scriptVersion: 'v1.0-ShootingDraft',
             executionMode,
@@ -49,7 +54,7 @@ export default function App() {
       }
     };
     initProject();
-  }, []);
+  }, [executionMode]);
 
   const handleEvaluateClearance = async (entityId: string) => {
     if (!projectId) return;
@@ -84,7 +89,7 @@ export default function App() {
       const res = await fetch(`/api/projects/${projectId}/replacements/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ canonicalEntityId: entityId }),
+        body: JSON.stringify({ canonicalEntityId: entityId, eraAesthetic: 'Modern Cinematic' }),
       });
       if (res.ok) {
         const cardData = await res.json();
@@ -93,6 +98,23 @@ export default function App() {
       }
     } catch (err) {
       console.error('Error generating replacement brand:', err);
+    }
+  };
+
+  const handleExportBinder = async () => {
+    if (!projectId) return;
+    setIsExportingBinder(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/binder/export`);
+      if (res.ok) {
+        const data = await res.json();
+        setBinderData(data);
+        setIsBinderOpen(true);
+      }
+    } catch (err) {
+      console.error('Error exporting clearance binder:', err);
+    } finally {
+      setIsExportingBinder(false);
     }
   };
 
@@ -142,10 +164,35 @@ export default function App() {
           {/* Execution Mode Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mode:</span>
-            <span className="mono" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-cyan)' }}>
-              {executionMode}
-            </span>
+            <select
+              value={executionMode}
+              onChange={(e) => setExecutionMode(e.target.value as any)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--accent-cyan)',
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              <option value="DEMO_MODE" style={{ background: '#1e293b' }}>DEMO_MODE</option>
+              <option value="TEST_MODE" style={{ background: '#1e293b' }}>TEST_MODE</option>
+              <option value="CLOUD_MODE" style={{ background: '#1e293b' }}>CLOUD_MODE</option>
+            </select>
           </div>
+
+          {/* Export Clearance Binder Trigger */}
+          <button
+            className="btn-secondary"
+            style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+            onClick={handleExportBinder}
+            disabled={isExportingBinder}
+          >
+            📋 {isExportingBinder ? 'Compiling...' : 'Export Clearance Binder'}
+          </button>
 
           {/* Timeline Action Trigger */}
           <button className="btn-secondary" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => setIsTimelineOpen(true)}>
@@ -179,6 +226,8 @@ export default function App() {
       />
 
       <ReplacementCardModal card={replacementCard} isOpen={isReplacementOpen} onClose={() => setIsReplacementOpen(false)} />
+
+      <BinderExportModal binder={binderData} isOpen={isBinderOpen} onClose={() => setIsBinderOpen(false)} />
 
       <TimelineDrawer events={events} isOpen={isTimelineOpen} onClose={() => setIsTimelineOpen(false)} />
     </div>
