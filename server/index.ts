@@ -1,11 +1,16 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { config } from './config.js';
 import { projectRouter } from './api/projectRoutes.js';
 import { clearanceRouter } from './api/clearanceRoutes.js';
 import { replacementRouter } from './api/replacementRoutes.js';
 import { timelineRouter } from './api/timelineRoutes.js';
 import { binderRouter } from './api/binderRoutes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const app = express();
 
@@ -19,6 +24,9 @@ app.use('/api', replacementRouter);
 app.use('/api', timelineRouter);
 app.use('/api', binderRouter);
 
+// Global Observable Action Timeline Stream alias
+app.use('/api/events', timelineRouter);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -26,6 +34,21 @@ app.get('/api/health', (req, res) => {
     service: 'ClearanceScout API',
     executionMode: config.executionMode,
     timestamp: new Date().toISOString(),
+  });
+});
+
+// Serve frontend build in production / Cloud Run
+const distPath = path.join(__dirname, '../dist');
+app.use(express.static(distPath));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(distPath, 'index.html'), (err) => {
+    if (err) {
+      next();
+    }
   });
 });
 
