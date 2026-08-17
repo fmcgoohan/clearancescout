@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+coverage/
+.git/
+.gitignore
+.env*
+*.log
+README.md
+specs/
+.specify/
