@@ -14,6 +14,7 @@ export default function App() {
   // UI Drawers & Modals State
   const [isCitationOpen, setIsCitationOpen] = useState(false);
   const [selectedEntityId, setSelectedEntityId] = useState<string>('');
+  const [selectedSceneId, setSelectedSceneId] = useState<string | undefined>(undefined);
   const [citationEntityName, setCitationEntityName] = useState('');
   const [citationRationale, setCitationRationale] = useState('');
   const [citationStatus, setCitationStatus] = useState<string>('ACTION_REQUIRED');
@@ -60,9 +61,10 @@ export default function App() {
     initProject();
   }, [executionMode]);
 
-  const handleOpenCounselReview = async (entityId: string) => {
+  const handleOpenCounselReview = async (entityId: string, sceneId?: string) => {
     if (!projectId) return;
     try {
+      setSelectedSceneId(sceneId);
       const entitiesRes = await fetch(`/api/projects/${projectId}/entities`);
       if (entitiesRes.ok) {
         const entitiesData = await entitiesRes.json();
@@ -262,6 +264,7 @@ export default function App() {
       <CitationDrawer
         projectId={projectId || ''}
         canonicalEntityId={selectedEntityId}
+        sceneId={selectedSceneId}
         citations={citations}
         isOpen={isCitationOpen}
         onClose={() => setIsCitationOpen(false)}

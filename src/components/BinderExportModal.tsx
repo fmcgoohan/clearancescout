@@ -1,5 +1,12 @@
 import React from 'react';
 
+export interface ProvenanceSummary {
+  liveCount: number;
+  demoCount: number;
+  fallbackCount: number;
+  dominantProvenance: 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE' | 'MIXED';
+}
+
 export interface ClearanceBinder {
   id: string;
   projectId: string;
@@ -14,6 +21,7 @@ export interface ClearanceBinder {
     reviewRecommendedCount: number;
     overridesCount: number;
   };
+  provenanceSummary?: ProvenanceSummary;
   scenes: any[];
   canonicalEntities: any[];
   citationsIndex: any[];
@@ -39,13 +47,14 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
 }) => {
   if (!isOpen || !binder) return null;
 
-  const firstCitation = binder.citationsIndex[0];
-  const dominantProvenance =
-    firstCitation?.provenance ||
+  const dominant =
+    binder.provenanceSummary?.dominantProvenance ||
+    binder.citationsIndex[0]?.provenance ||
     (executionMode === 'CLOUD_MODE' ? 'FALLBACK_FIXTURE' : 'DEMO_FIXTURE');
 
-  const isLive = dominantProvenance === 'PARALLEL_LIVE';
-  const isFallback = dominantProvenance === 'FALLBACK_FIXTURE';
+  const isLive = dominant === 'PARALLEL_LIVE';
+  const isFallback = dominant === 'FALLBACK_FIXTURE';
+  const isMixed = dominant === 'MIXED';
 
   const handleDownloadJson = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(binder, null, 2));
@@ -134,14 +143,22 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                     ? 'rgba(6, 182, 212, 0.15)'
                     : isFallback
                     ? 'rgba(248, 113, 113, 0.15)'
+                    : isMixed
+                    ? 'rgba(59, 130, 246, 0.15)'
                     : 'rgba(251, 191, 36, 0.15)',
-                  color: isLive ? 'var(--accent-cyan)' : isFallback ? '#f87171' : '#fbbf24',
+                  color: isLive ? 'var(--accent-cyan)' : isFallback ? '#f87171' : isMixed ? '#60a5fa' : '#fbbf24',
                   border: `1px solid ${
-                    isLive ? 'rgba(6, 182, 212, 0.3)' : isFallback ? 'rgba(248, 113, 113, 0.3)' : 'rgba(251, 191, 36, 0.3)'
+                    isLive
+                      ? 'rgba(6, 182, 212, 0.3)'
+                      : isFallback
+                      ? 'rgba(248, 113, 113, 0.3)'
+                      : isMixed
+                      ? 'rgba(59, 130, 246, 0.3)'
+                      : 'rgba(251, 191, 36, 0.3)'
                   }`,
                 }}
               >
-                {isLive ? 'PARALLEL LIVE' : isFallback ? 'FALLBACK FIXTURE' : 'DEMO FIXTURE'}
+                {isLive ? 'PARALLEL LIVE' : isFallback ? 'FALLBACK FIXTURE' : isMixed ? 'MIXED EVIDENCE' : 'DEMO FIXTURE'}
               </span>
             </div>
             <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>
@@ -164,8 +181,13 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
           <div className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', wordBreak: 'break-all' }}>
             {binder.integrityDigest}
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Exported & Hashed At: {new Date(binder.exportedAt).toLocaleString()}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+            <span>Exported & Hashed At: {new Date(binder.exportedAt).toLocaleString()}</span>
+            {binder.provenanceSummary && (
+              <span className="mono">
+                Evidence: {binder.provenanceSummary.liveCount} Live | {binder.provenanceSummary.demoCount} Demo | {binder.provenanceSummary.fallbackCount} Fallback
+              </span>
+            )}
           </div>
         </div>
 
@@ -245,12 +267,8 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
             <li>Complete Scene Breakdown & Character Dialogue Mapping ({binder.scenes.length} scenes)</li>
             <li>5-Category Canonical Entity Registry & Risk Assessments ({binder.canonicalEntities.length} entities)</li>
             <li>
-              {isLive
-                ? 'Live Parallel-Web Search Citations Index'
-                : isFallback
-                ? 'Cloud Fallback Fixture Citations Index'
-                : 'Demo Fixture Research Citations Index'}{' '}
-              ({binder.citationsIndex.length} citations)
+              Research Citations Index ({binder.citationsIndex.length} citations
+              {binder.provenanceSummary && ` — ${binder.provenanceSummary.liveCount} Live, ${binder.provenanceSummary.demoCount} Demo, ${binder.provenanceSummary.fallbackCount} Fallback`})
             </li>
             <li>Approved Fictional Replacement Props & Imagen 3 Visual Cards ({binder.replacementCatalog.length} replacement assets)</li>
           </ul>

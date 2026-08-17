@@ -1,6 +1,6 @@
 # API Contract: Clearance Binder Export & Studio Counsel Review Module
 
-**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-18
+**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-18 (Updated)
 
 ---
 
@@ -9,6 +9,8 @@
 ### `POST /api/projects/:id/entities/:entityId/override`
 
 Records an authoritative legal decision override from studio production counsel.
+- **Canonical Override** (`sceneId` omitted or undefined): Updates canonical entity baseline status (`isOverridden: true`).
+- **Scene-Specific Override** (`sceneId` provided): Applies strictly to that scene. **Does NOT mutate canonical entity state** (`isOverridden` remains unchanged).
 
 #### Request Body
 ```json
@@ -22,12 +24,12 @@ Records an authoritative legal decision override from studio production counsel.
 ```
 
 - `overrideStatus` (string, required): `'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED'`
-- `sceneId` (string, optional): Specific scene scope. If omitted, applies to the canonical entity project-wide.
+- `sceneId` (string, optional): Specific scene scope.
 - `rationale` (string, required): Non-empty justification text.
 - `counselName` (string, required): Non-empty attorney name.
 - `counselRole` (string, optional): Defaults to `'Studio Production Counsel'`.
 
-#### Response `200 OK`
+#### Response `200 OK` (Scene-Specific Override Example)
 ```json
 {
   "success": true,
@@ -45,8 +47,8 @@ Records an authoritative legal decision override from studio production counsel.
   },
   "entity": {
     "id": "ent-abc",
-    "isOverridden": true,
-    "overallClearanceStatus": "NO_ISSUE_SURFACED"
+    "isOverridden": false,
+    "overallClearanceStatus": "ACTION_REQUIRED"
   }
 }
 ```
@@ -84,7 +86,7 @@ Returns chronological list of all overrides recorded for an entity.
 
 ### `GET /api/projects/:id/binder/export`
 
-Compiles and signs the complete project clearance binder.
+Compiles and hashes the complete project clearance binder with mixed provenance aggregation.
 
 #### Response `200 OK`
 ```json
@@ -101,6 +103,12 @@ Compiles and signs the complete project clearance binder.
     "actionRequiredCount": 1,
     "reviewRecommendedCount": 1,
     "overridesCount": 1
+  },
+  "provenanceSummary": {
+    "liveCount": 1,
+    "demoCount": 2,
+    "fallbackCount": 0,
+    "dominantProvenance": "MIXED"
   },
   "scenes": [],
   "canonicalEntities": [],

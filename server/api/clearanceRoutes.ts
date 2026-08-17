@@ -61,9 +61,10 @@ clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Re
 
     const previousStatus = existingEntity.overallClearanceStatus;
 
+    // Record override audit log in OverrideRepo
     const override = await overrideRepo.recordOverride(projectId, {
       canonicalEntityId: entityId,
-      sceneId,
+      sceneId: sceneId || undefined,
       previousStatus,
       overrideStatus,
       rationale: rationale.trim(),
@@ -71,22 +72,28 @@ clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Re
       counselRole: counselRole?.trim() || 'Studio Production Counsel',
     });
 
-    const updatedEntity = await entityRepo.updateCanonicalEntityOverride(
-      projectId,
-      entityId,
-      overrideStatus,
-      {
-        overrideId: override.id,
-        rationale: override.rationale,
-        counselName: override.counselName,
-        timestamp: override.timestamp,
-      }
-    );
+    // Invariant: Scene-specific overrides MUST NEVER mutate canonical entity state
+    let resultingEntity = existingEntity;
+    if (!sceneId) {
+      const updated = await entityRepo.updateCanonicalEntityOverride(
+        projectId,
+        entityId,
+        overrideStatus,
+        {
+          overrideId: override.id,
+          rationale: override.rationale,
+          counselName: override.counselName,
+          timestamp: override.timestamp,
+        }
+      );
+      if (updated) resultingEntity = updated;
+    }
 
     timelineEmitter.emit(projectId, 'OVERRIDE_RECORDED', `Legal Counsel Override: ${existingEntity.canonicalName}`, {
       overrideId: override.id,
       canonicalEntityId: entityId,
       canonicalName: existingEntity.canonicalName,
+      sceneId: sceneId || undefined,
       previousStatus,
       overrideStatus,
       counselName: override.counselName,
@@ -96,7 +103,7 @@ clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Re
     return res.json({
       success: true,
       override,
-      entity: updatedEntity,
+      entity: resultingEntity,
     });
   } catch (err) {
     next(err);

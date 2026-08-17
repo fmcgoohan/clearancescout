@@ -4,7 +4,7 @@ import { entityRepo } from '../repositories/EntityRepo.js';
 import { assessmentRepo } from '../repositories/AssessmentRepo.js';
 import { replacementRepo } from '../repositories/ReplacementRepo.js';
 import { overrideRepo } from '../repositories/OverrideRepo.js';
-import { binderRepo, ClearanceBinderData } from '../repositories/BinderRepo.js';
+import { binderRepo, ClearanceBinderData, ProvenanceSummary } from '../repositories/BinderRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { resolveEffectiveClearanceStatus } from './effectiveStatusResolver.js';
 
@@ -46,6 +46,36 @@ export class BinderExportWorkflow {
       replacementCatalog.push(...replacements);
     }
 
+    // Calculate aggregated mixed evidence provenance summary
+    let liveCount = 0;
+    let demoCount = 0;
+    let fallbackCount = 0;
+
+    for (const cit of citationsIndex) {
+      if (cit.provenance === 'PARALLEL_LIVE') liveCount++;
+      else if (cit.provenance === 'FALLBACK_FIXTURE') fallbackCount++;
+      else demoCount++;
+    }
+
+    let dominantProvenance: 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE' | 'MIXED' = 'DEMO_FIXTURE';
+    const distinctTypes = [liveCount > 0, demoCount > 0, fallbackCount > 0].filter(Boolean).length;
+    if (distinctTypes > 1) {
+      dominantProvenance = 'MIXED';
+    } else if (liveCount > 0) {
+      dominantProvenance = 'PARALLEL_LIVE';
+    } else if (fallbackCount > 0) {
+      dominantProvenance = 'FALLBACK_FIXTURE';
+    } else {
+      dominantProvenance = 'DEMO_FIXTURE';
+    }
+
+    const provenanceSummary: ProvenanceSummary = {
+      liveCount,
+      demoCount,
+      fallbackCount,
+      dominantProvenance,
+    };
+
     // Enhance scenes with hierarchical effective status resolution for occurrences
     const scenes = await Promise.all(
       rawScenes.map(async (scene) => {
@@ -82,6 +112,7 @@ export class BinderExportWorkflow {
     const binder = await binderRepo.saveBinderExport({
       projectId,
       projectSummary,
+      provenanceSummary,
       scenes,
       canonicalEntities: entities,
       citationsIndex,
@@ -93,6 +124,7 @@ export class BinderExportWorkflow {
     timelineEmitter.emit(projectId, 'BINDER_EXPORT', 'Project Clearance Binder Export Compiled', {
       exportId: binder.id,
       integrityDigest: binder.integrityDigest,
+      dominantProvenance: provenanceSummary.dominantProvenance,
       totalEntities: entities.length,
     });
 

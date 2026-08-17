@@ -11,17 +11,59 @@ export interface Scene {
   characterActionSummary: string;
 }
 
+export interface CounselOverrideItem {
+  id: string;
+  canonicalEntityId: string;
+  sceneId?: string;
+  overrideStatus: string;
+  rationale: string;
+  counselName: string;
+  timestamp: string;
+}
+
 interface ScriptViewerProps {
   scenes: Scene[];
   entities?: CanonicalEntity[];
+  overrides?: CounselOverrideItem[];
   selectedSceneId: string | null;
   onSelectScene: (sceneId: string) => void;
-  onEntityClick?: (entityId: string) => void;
+  onEntityClick?: (entityId: string, sceneId?: string) => void;
+}
+
+export function resolveEffectiveStatus(
+  entity: CanonicalEntity,
+  overrides: CounselOverrideItem[] = [],
+  sceneId?: string
+): string {
+  if (sceneId) {
+    const sceneOverrides = overrides
+      .filter((o) => o.canonicalEntityId === entity.id && o.sceneId === sceneId)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    if (sceneOverrides.length > 0) {
+      return sceneOverrides[0].overrideStatus;
+    }
+  }
+
+  const canonicalOverrides = overrides
+    .filter((o) => o.canonicalEntityId === entity.id && !o.sceneId)
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  if (canonicalOverrides.length > 0) {
+    return canonicalOverrides[0].overrideStatus;
+  }
+
+  if (entity.isOverridden && entity.latestOverride) {
+    return entity.latestOverride.overrideStatus;
+  }
+
+  return entity.overallClearanceStatus;
 }
 
 export const ScriptViewer: React.FC<ScriptViewerProps> = ({
   scenes,
   entities = [],
+  overrides = [],
   selectedSceneId,
   onSelectScene,
   onEntityClick,
@@ -47,7 +89,7 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
     }
   };
 
-  const renderHighlightedScriptText = (text: string) => {
+  const renderHighlightedScriptText = (text: string, sceneId: string) => {
     if (!entities || entities.length === 0 || !text) {
       return text;
     }
@@ -80,15 +122,20 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
       );
 
       if (matchedEntity) {
-        const colors = getStatusColor(matchedEntity.overallClearanceStatus);
+        const effectiveStatus = resolveEffectiveStatus(matchedEntity, overrides, sceneId);
+        const hasSceneOverride = overrides.some(
+          o => o.canonicalEntityId === matchedEntity.id && o.sceneId === sceneId
+        );
+        const colors = getStatusColor(effectiveStatus);
+
         parts.push(
           <span
             key={`badge-${matchIndex}`}
             onClick={(e) => {
               e.stopPropagation();
-              if (onEntityClick) onEntityClick(matchedEntity.id);
+              if (onEntityClick) onEntityClick(matchedEntity.id, sceneId);
             }}
-            title={`${matchedEntity.canonicalName} (${matchedEntity.overallClearanceStatus}) - Click to review`}
+            title={`${matchedEntity.canonicalName} (${effectiveStatus}) - Click to review`}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -106,7 +153,9 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
             }}
           >
             <span>{matchText}</span>
-            {matchedEntity.isOverridden && <span style={{ fontSize: '0.65rem' }}>⚖️</span>}
+            {(matchedEntity.isOverridden || hasSceneOverride) && (
+              <span style={{ fontSize: '0.65rem' }}>⚖️</span>
+            )}
           </span>
         );
       } else {
@@ -172,7 +221,7 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
                   borderRadius: '6px',
                 }}
               >
-                {renderHighlightedScriptText(s.rawText)}
+                {renderHighlightedScriptText(s.rawText, s.id)}
               </div>
             </div>
           );

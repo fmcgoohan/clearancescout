@@ -1,6 +1,6 @@
 # Data Model: Clearance Binder Export & Studio Counsel Review Module
 
-**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-18
+**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-18 (Updated)
 
 ---
 
@@ -9,6 +9,16 @@
 ### `ProvenanceType`
 ```typescript
 export type ProvenanceType = 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE';
+```
+
+### `ProvenanceSummary`
+```typescript
+export interface ProvenanceSummary {
+  liveCount: number;
+  demoCount: number;
+  fallbackCount: number;
+  dominantProvenance: 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE' | 'MIXED';
+}
 ```
 
 ### `CounselOverride`
@@ -40,14 +50,13 @@ export interface CanonicalEntityData {
   entityCategory: EntityCategory;
   description: string;
   overallClearanceStatus: ClearanceStatus;
-  isOverridden?: boolean;
+  isOverridden?: boolean; // Set to true ONLY for project-wide canonical overrides
   latestOverride?: {
     overrideId: string;
     overrideStatus: ClearanceStatus;
     rationale: string;
     counselName: string;
     timestamp: string;
-    sceneId?: string;
   };
   createdAt: string;
   updatedAt: string;
@@ -55,7 +64,7 @@ export interface CanonicalEntityData {
 ```
 
 ### `ClearanceBinderExport`
-Exported bundle and persisted in `projects/{projectId}/binder/latest`:
+Exported bundle and persisted in `projects/{projectId}/binder_exports/{exportId}`:
 
 ```typescript
 export interface ClearanceBinderExport {
@@ -72,9 +81,10 @@ export interface ClearanceBinderExport {
     reviewRecommendedCount: number;
     overridesCount: number;
   };
+  provenanceSummary: ProvenanceSummary;
   scenes: SceneBreakdownItem[];
   canonicalEntities: CanonicalEntityData[];
-  citationsIndex: Array<CitationItem & { provenance: ProvenanceType }>;
+  citationsIndex: Array<CitationItem & { provenance?: ProvenanceType }>;
   replacementCatalog: ReplacementCardData[];
   overridesHistory: CounselOverrideData[];
   exportedAt: string;

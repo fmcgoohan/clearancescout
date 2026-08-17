@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ScriptViewer, Scene } from '../components/ScriptViewer';
+import { ScriptViewer, Scene, CounselOverrideItem } from '../components/ScriptViewer';
 import { EntityRegistryTable, CanonicalEntity } from '../components/EntityRegistryTable';
 
 interface WorkspacePageProps {
   projectId: string;
   onEvaluateClearance: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
-  onOpenCounselReview: (entityId: string) => void;
+  onOpenCounselReview: (entityId: string, sceneId?: string) => void;
   isEvaluating: boolean;
   refreshTrigger: number;
 }
@@ -21,6 +21,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 }) => {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [entities, setEntities] = useState<CanonicalEntity[]>([]);
+  const [overrides, setOverrides] = useState<CounselOverrideItem[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [scriptFormat, setScriptFormat] = useState<'PLAINTEXT' | 'FOUNTAIN' | 'PDF'>('FOUNTAIN');
@@ -55,6 +56,23 @@ JORDAN accelerates in a Porsche 911 past the Empire State Building. ALEX finishe
       if (entitiesRes.ok) {
         const entitiesData = await entitiesRes.json();
         setEntities(entitiesData);
+
+        // Fetch all entity overrides
+        const allOverrides: CounselOverrideItem[] = [];
+        for (const ent of entitiesData) {
+          try {
+            const ovrRes = await fetch(`/api/projects/${projectId}/entities/${ent.id}/overrides`);
+            if (ovrRes.ok) {
+              const ovrData = await ovrRes.json();
+              if (ovrData.overrides) {
+                allOverrides.push(...ovrData.overrides);
+              }
+            }
+          } catch (e) {
+            // continue
+          }
+        }
+        setOverrides(allOverrides);
       }
     } catch (err) {
       console.error('Error fetching workspace data:', err);
@@ -129,15 +147,16 @@ JORDAN accelerates in a Porsche 911 past the Empire State Building. ALEX finishe
         <ScriptViewer
           scenes={scenes}
           entities={entities}
+          overrides={overrides}
           selectedSceneId={selectedSceneId}
           onSelectScene={setSelectedSceneId}
-          onEntityClick={onOpenCounselReview}
+          onEntityClick={(entityId, sceneId) => onOpenCounselReview(entityId, sceneId)}
         />
         <EntityRegistryTable
           entities={entities}
           onEvaluateClearance={onEvaluateClearance}
           onGenerateReplacement={onGenerateReplacement}
-          onOpenCounselReview={onOpenCounselReview}
+          onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
           isEvaluating={isEvaluating}
         />
       </div>

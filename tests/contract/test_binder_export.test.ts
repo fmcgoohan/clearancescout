@@ -4,6 +4,7 @@ import { app } from '../../server/index.js';
 
 describe('Contract: Clearance Binder Compilation & Export', () => {
   let projectId: string;
+  let entityId: string;
 
   beforeEach(async () => {
     const projRes = await request(app)
@@ -16,15 +17,20 @@ describe('Contract: Clearance Binder Compilation & Export', () => {
       });
     projectId = projRes.body.id;
 
-    await request(app)
+    const scriptRes = await request(app)
       .post(`/api/projects/${projectId}/script`)
       .send({
         scriptText: 'INT. OFFICE - DAY\nCharacter holds an Apple iPad and a can of Coca-Cola.',
         format: 'PLAINTEXT',
       });
+    entityId = scriptRes.body.entities[0].id;
+
+    await request(app)
+      .post(`/api/projects/${projectId}/clearance/evaluate`)
+      .send({ canonicalEntityIds: [entityId] });
   });
 
-  it('should compile, hash, and export a complete project clearance binder with SHA-256 integrity digest', async () => {
+  it('should compile, hash, and export a complete project clearance binder with SHA-256 integrity digest and mixed provenance summary', async () => {
     const res = await request(app).get(`/api/projects/${projectId}/binder/export`);
 
     expect(res.status).toBe(200);
@@ -33,6 +39,9 @@ describe('Contract: Clearance Binder Compilation & Export', () => {
     expect(res.body.projectSummary.title).toBe('Binder Export Feature Film');
     expect(res.body.integrityDigest).toBeDefined();
     expect(res.body.integrityDigest.length).toBe(64); // SHA-256 hex string
+    expect(res.body.provenanceSummary).toBeDefined();
+    expect(res.body.provenanceSummary.demoCount).toBeGreaterThanOrEqual(1);
+    expect(res.body.provenanceSummary.dominantProvenance).toBeDefined();
     expect(res.body.scenes.length).toBe(1);
     expect(res.body.canonicalEntities.length).toBeGreaterThanOrEqual(1);
     expect(res.body.disclaimer).toContain('does NOT render formal legal advice');

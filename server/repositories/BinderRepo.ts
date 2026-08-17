@@ -4,6 +4,13 @@ import crypto from 'crypto';
 import { CanonicalEntityData } from './EntityRepo.js';
 import { CounselOverride } from './OverrideRepo.js';
 
+export interface ProvenanceSummary {
+  liveCount: number;
+  demoCount: number;
+  fallbackCount: number;
+  dominantProvenance: 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE' | 'MIXED';
+}
+
 export interface ClearanceBinderData {
   id: string;
   projectId: string;
@@ -18,6 +25,7 @@ export interface ClearanceBinderData {
     reviewRecommendedCount: number;
     overridesCount: number;
   };
+  provenanceSummary: ProvenanceSummary;
   scenes: any[];
   canonicalEntities: CanonicalEntityData[];
   citationsIndex: any[];
