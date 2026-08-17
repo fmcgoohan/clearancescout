@@ -1,127 +1,107 @@
 # Data Model: Clearance Binder Export & Studio Counsel Review Module
 
-**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-17
+**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-18
 
 ---
 
-## 1. Firestore Schema & Entities
+## 1. Entity Definitions
 
-### A. `CounselOverride` Entity
-Path: `projects/{projectId}/overrides/{overrideId}`
+### `ProvenanceType`
+```typescript
+export type ProvenanceType = 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE';
+```
+
+### `CounselOverride`
+Persisted in Firestore under `projects/{projectId}/overrides/{overrideId}`:
 
 ```typescript
-export interface CounselOverride {
+export interface CounselOverrideData {
   id: string;
   projectId: string;
   canonicalEntityId: string;
-  sceneId?: string; // Optional: If undefined, applies globally to canonical entity
-  previousStatus: 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
-  overrideStatus: 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
+  sceneId?: string; // Optional scene scope (undefined = project-wide canonical override)
+  previousStatus: ClearanceStatus;
+  overrideStatus: ClearanceStatus;
   rationale: string;
   counselName: string;
-  counselRole?: string; // e.g. "Senior Production Counsel", "Clearance Coordinator"
-  timestamp: string; // ISO 8601
+  counselRole: string;
+  timestamp: string;
 }
 ```
 
-### B. Updated `CanonicalEntity` Entity
-Path: `projects/{projectId}/entities/{canonicalEntityId}`
+### `CanonicalEntityData` (Enhanced)
+Persisted in Firestore under `projects/{projectId}/entities/{entityId}`:
 
 ```typescript
-export interface CanonicalEntity {
+export interface CanonicalEntityData {
   id: string;
   projectId: string;
   canonicalName: string;
-  entityCategory: 'BRAND' | 'ART_MUSIC' | 'PUBLIC_FIGURE' | 'PROPRIETARY_LOCATION' | 'GRAPHIC_PROP';
-  baselineRiskStatus: 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
-  effectiveClearanceStatus: 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
-  isOverridden: boolean;
+  entityCategory: EntityCategory;
+  description: string;
+  overallClearanceStatus: ClearanceStatus;
+  isOverridden?: boolean;
   latestOverride?: {
     overrideId: string;
-    overrideStatus: string;
+    overrideStatus: ClearanceStatus;
     rationale: string;
     counselName: string;
     timestamp: string;
+    sceneId?: string;
   };
-  totalOccurrences: number;
-  occurrences: string[]; // occurrence IDs
   createdAt: string;
   updatedAt: string;
 }
 ```
 
-### C. Updated `ClearanceBinderExport` Entity
-Path: `projects/{projectId}/binder_exports/{exportId}`
+### `ClearanceBinderExport`
+Exported bundle and persisted in `projects/{projectId}/binder/latest`:
 
 ```typescript
 export interface ClearanceBinderExport {
   id: string;
   projectId: string;
-  title: string;
-  productionCompany: string;
-  scriptVersion: string;
-  exportedAt: string;
-  auditSignature: string; // SHA-256 hash over normalized export payload
-  disclaimer: string;
-  summaryMetrics: {
+  projectSummary: {
+    title: string;
+    productionCompany: string;
+    scriptVersion: string;
     totalScenes: number;
     totalEntities: number;
     clearedCount: number;
-    reviewCount: number;
     actionRequiredCount: number;
+    reviewRecommendedCount: number;
     overridesCount: number;
-    replacementsCount: number;
   };
-  scenes: Array<{
-    sceneNumber: number;
-    heading: string;
-    locationType: string;
-    locationName: string;
-    timeOfDay: string;
-    dialogueExcerpt: string;
-  }>;
-  canonicalEntities: Array<{
-    id: string;
-    canonicalName: string;
-    category: string;
-    baselineStatus: string;
-    effectiveStatus: string;
-    isOverridden: boolean;
-    overrideRationale?: string;
-    counselName?: string;
-    citations: Array<{
-      sourceUrl: string;
-      query: string;
-      excerptSnippet: string;
-      corporateOwner?: string;
-      trademarkStatus?: string;
-    }>;
-  }>;
-  replacementCatalog: Array<{
-    id: string;
-    canonicalEntityId: string;
-    originalEntityName: string;
-    fictionalBrandName: string;
-    eraAesthetic: string;
-    designBrief: string;
-    artworkImageUrl: string;
-    nonInfringementRationale: string;
-  }>;
-  overridesHistory: CounselOverride[];
+  scenes: SceneBreakdownItem[];
+  canonicalEntities: CanonicalEntityData[];
+  citationsIndex: Array<CitationItem & { provenance: ProvenanceType }>;
+  replacementCatalog: ReplacementCardData[];
+  overridesHistory: CounselOverrideData[];
+  exportedAt: string;
+  integrityDigest: string; // SHA-256 integrity digest of canonical payload
+  disclaimer: string;
 }
 ```
 
 ---
 
-## 2. State Lifecycle & Transitions
+## 2. Hierarchical Resolution Model
 
-```mermaid
-stateDiagram-v2
-    [*] --> Unanalyzed
-    Unanalyzed --> Evaluated: Automatic Grounded Evaluation
-    Evaluated --> Overridden: Counsel Submits Override with Rationale
-    Overridden --> ReEvaluated: Script Text / Context Re-Evaluated
-    ReEvaluated --> Overridden: Retains Authoritative Human Decision
-    Evaluated --> Exported: Clearance Binder Export Triggered
-    Overridden --> Exported: Clearance Binder Export Triggered
+```
+                    ┌─────────────────────────┐
+                    │  Scene-Specific Override│
+                    │      (if sceneId match) │
+                    └───────────┬─────────────┘
+                                │ (not found)
+                                ▼
+                    ┌─────────────────────────┐
+                    │ Canonical Entity Override│
+                    │  (isOverridden === true)│
+                    └───────────┬─────────────┘
+                                │ (not overridden)
+                                ▼
+                    ┌─────────────────────────┐
+                    │ Automated Assessment    │
+                    │ Baseline Verdict        │
+                    └─────────────────────────┘
 ```

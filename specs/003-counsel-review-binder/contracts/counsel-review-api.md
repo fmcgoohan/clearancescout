@@ -1,68 +1,78 @@
-# API Contracts: Clearance Binder Export & Studio Counsel Review Module
+# API Contract: Clearance Binder Export & Studio Counsel Review Module
 
-**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-18 (Updated)
+**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-18
 
 ---
 
 ## 1. Counsel Override Endpoint
 
 ### `POST /api/projects/:id/entities/:entityId/override`
-Applies an authoritative manual legal counsel override to an entity's clearance status with mandatory rationale.
+
+Records an authoritative legal decision override from studio production counsel.
 
 #### Request Body
 ```json
 {
   "overrideStatus": "NO_ISSUE_SURFACED",
-  "rationale": "Product placement license executed under contract #PP-2026-881 with studio.",
+  "sceneId": "scene-1",
+  "rationale": "Direct paid product placement contract executed under #PP-2026-WB.",
   "counselName": "Jane Doe, Esq.",
-  "counselRole": "Senior Production Counsel",
-  "sceneId": "optional-scene-id"
+  "counselRole": "Senior Vice President, Production Legal"
 }
 ```
 
-#### Response (200 OK)
+- `overrideStatus` (string, required): `'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED'`
+- `sceneId` (string, optional): Specific scene scope. If omitted, applies to the canonical entity project-wide.
+- `rationale` (string, required): Non-empty justification text.
+- `counselName` (string, required): Non-empty attorney name.
+- `counselRole` (string, optional): Defaults to `'Studio Production Counsel'`.
+
+#### Response `200 OK`
 ```json
 {
   "success": true,
   "override": {
-    "id": "ovr-982341",
+    "id": "ovr-8a7f12bc",
     "projectId": "proj-123",
-    "canonicalEntityId": "ent-coca-cola",
+    "canonicalEntityId": "ent-abc",
+    "sceneId": "scene-1",
     "previousStatus": "ACTION_REQUIRED",
     "overrideStatus": "NO_ISSUE_SURFACED",
-    "rationale": "Product placement license executed under contract #PP-2026-881 with studio.",
+    "rationale": "Direct paid product placement contract executed under #PP-2026-WB.",
     "counselName": "Jane Doe, Esq.",
-    "counselRole": "Senior Production Counsel",
-    "timestamp": "2026-08-18T18:00:00.000Z"
+    "counselRole": "Senior Vice President, Production Legal",
+    "timestamp": "2026-08-18T10:15:30.000Z"
   },
   "entity": {
-    "id": "ent-coca-cola",
-    "canonicalName": "Coca-Cola",
-    "effectiveClearanceStatus": "NO_ISSUE_SURFACED",
-    "isOverridden": true
+    "id": "ent-abc",
+    "isOverridden": true,
+    "overallClearanceStatus": "NO_ISSUE_SURFACED"
   }
 }
 ```
 
 ---
 
-## 2. Override History Endpoint
+## 2. Override Audit Trail Endpoint
 
 ### `GET /api/projects/:id/entities/:entityId/overrides`
-Retrieves chronological audit history of legal overrides for an entity.
 
-#### Response (200 OK)
+Returns chronological list of all overrides recorded for an entity.
+
+#### Response `200 OK`
 ```json
 {
-  "canonicalEntityId": "ent-coca-cola",
+  "projectId": "proj-123",
+  "canonicalEntityId": "ent-abc",
   "overrides": [
     {
-      "id": "ovr-982341",
-      "previousStatus": "ACTION_REQUIRED",
+      "id": "ovr-8a7f12bc",
       "overrideStatus": "NO_ISSUE_SURFACED",
-      "rationale": "Product placement license executed under contract #PP-2026-881 with studio.",
+      "sceneId": "scene-1",
+      "rationale": "Direct paid product placement contract executed under #PP-2026-WB.",
       "counselName": "Jane Doe, Esq.",
-      "timestamp": "2026-08-18T18:00:00.000Z"
+      "counselRole": "Senior Vice President, Production Legal",
+      "timestamp": "2026-08-18T10:15:30.000Z"
     }
   ]
 }
@@ -73,31 +83,40 @@ Retrieves chronological audit history of legal overrides for an entity.
 ## 3. Clearance Binder Export Endpoint
 
 ### `GET /api/projects/:id/binder/export`
-Compiles, signs (SHA-256), and delivers the consolidated Legal Clearance Binder.
 
-#### Response (200 OK)
+Compiles and signs the complete project clearance binder.
+
+#### Response `200 OK`
 ```json
 {
-  "id": "binder-exp-7712",
+  "id": "bnd-f12a34b5",
   "projectId": "proj-123",
-  "title": "Cyberpunk Odyssey",
-  "productionCompany": "Spectacle Pictures",
-  "scriptVersion": "v1.0-ShootingDraft",
-  "exportedAt": "2026-08-18T18:15:00.000Z",
-  "auditSignature": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "disclaimer": "ClearanceScout provides entertainment research issue-spotting and workflow tracking. It does not render formal legal advice or guarantees.",
-  "summaryMetrics": {
-    "totalScenes": 5,
-    "totalEntities": 12,
-    "clearedCount": 9,
-    "reviewCount": 2,
+  "projectSummary": {
+    "title": "Neon Horizon",
+    "productionCompany": "Warner Bros. Discovery",
+    "scriptVersion": "v2.0",
+    "totalScenes": 3,
+    "totalEntities": 6,
+    "clearedCount": 4,
     "actionRequiredCount": 1,
-    "overridesCount": 2,
-    "replacementsCount": 1
+    "reviewRecommendedCount": 1,
+    "overridesCount": 1
   },
   "scenes": [],
   "canonicalEntities": [],
+  "citationsIndex": [
+    {
+      "id": "cit-1",
+      "provenance": "PARALLEL_LIVE",
+      "sourceUrl": "https://tsdr.uspto.gov/case/882341",
+      "corporateOwner": "The Coca-Cola Company",
+      "registrationStatus": "ACTIVE_REGISTERED"
+    }
+  ],
   "replacementCatalog": [],
-  "overridesHistory": []
+  "overridesHistory": [],
+  "exportedAt": "2026-08-18T10:20:00.000Z",
+  "integrityDigest": "a3f5b7890123456789abcdef0123456789abcdef0123456789abcdef01234567",
+  "disclaimer": "ClearanceScout provides research issue-spotting and clearance workflow management. It does NOT render formal legal advice."
 }
 ```

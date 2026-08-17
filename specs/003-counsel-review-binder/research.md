@@ -1,69 +1,67 @@
-# Research & Decisions: Clearance Binder Export & Studio Counsel Review Module
+# Technical Research & Decisions: Clearance Binder Export & Studio Counsel Review Module
 
-**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-18 (Updated)
-
----
-
-## 1. In-Script Visual Tokenization & Highlighting
-
-### Problem Statement
-Screenplays have structured dialogue headers, character cues, and action blocks. Highlighting entities in real-time must preserve exact word boundaries, avoid corrupting punctuation or capitalization, handle multiple entities in a single line, and remain high-performance on large multi-scene scripts.
-
-### Decisions
-- **Decision**: Tokenize screenplay scene text using regex boundary matching (`\b`) mapped to canonical entities and scene occurrences. Replace matches with accessible `<mark>` or `<span>` badge components styled with CSS design tokens.
-- **Rationale**: Pure regex tokenization in React maintains sub-10ms rendering per scene without requiring heavyweight AST re-parsing of the entire screenplay text.
-- **Alternatives Considered**:
-  - Full Draft.js / Slate.js rich-text editor AST (rejected: adds unnecessary complex editor state when the viewer is read-only).
-  - Dangerous `dangerouslySetInnerHTML` string manipulation (rejected: prone to XSS and breaks React click handlers).
+**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-18
 
 ---
 
-## 2. Counsel Decision Override Persistence, Invariant & Auditing
+## 1. Actual Result Evidence Provenance & Fail-Visible Fallbacks
 
-### Problem Statement
-Automated risk scoring spots issues, but human studio attorneys make final risk determinations. How should overrides be stored, versioned, and protected against subsequent automated re-evaluations?
+### Decision
+Track and return an explicit `ProvenanceType` on every search result:
+- `PARALLEL_LIVE`: Live Parallel Search API executed successfully in `CLOUD_MODE` and returned grounded citations.
+- `DEMO_FIXTURE`: Synthetically generated deterministic benchmark fixtures in `DEMO_MODE` or `TEST_MODE`.
+- `FALLBACK_FIXTURE`: `CLOUD_MODE` was active but Parallel Search API was unavailable, missing keys, or failed, falling back to local fixtures with a prominent fail-visible warning.
 
-### Decisions
-- **Decision**: Store overrides in an immutable `overrides` subcollection under `projects/{projectId}/overrides` and maintain `effectiveClearanceStatus` + `latestOverride` reference directly on `CanonicalEntity` and `Occurrence`.
-- **Authoritative Invariant**: **Automated re-evaluation MUST NEVER overwrite an active counsel override.** When an entity is marked `isOverridden === true`, subsequent calls to `clearanceEvaluator.evaluateEntityClearance` update the background risk assessment records and citations, but preserve the counsel's override as the `overallClearanceStatus`.
-- **Alternatives Considered**:
-  - Overwriting the automated risk assessment in-place (rejected: destroys original AI baseline and compromises audit trail).
-  - Ephemeral client-side state (rejected: overrides must persist in Firestore across production sessions and binder exports).
-
----
-
-## 3. Evidence Provenance & Demonstration Transparency
-
-### Problem Statement
-Clearance research evidence must be unambiguously grounded. When running in synthetic demo or test modes, displaying "Live Parallel-Web Citations" violates grounding truth and misleads legal counsel.
-
-### Decisions
-- **Decision**: Research citations must be visibly differentiated based on runtime execution mode:
-  - In `DEMO_MODE` and `TEST_MODE`: Labeled as **"Demo Fixture Research Evidence (Synthetic Dataset)"**.
-  - In `CLOUD_MODE` (with active `PARALLEL_WEB_API_KEY`): Labeled as **"Live Parallel-Web Grounded Research Citations"**.
-- **Rationale**: Enforces Principle II (Live Grounding Rule) and Principle V (Multi-Tier Execution Control) without deceptive claims.
+### Rationale
+Labels in the UI, timeline SSE events, citations, and export binders must derive directly from the actual search result provenance rather than merely inferring from the client's execution mode flag. Synthetic or fallback evidence must never be represented as "Live Parallel-Web Grounded Research".
 
 ---
 
-## 4. Counsel Authentication & Identity Input
+## 2. Hierarchical Effective Status Resolver
 
-### Problem Statement
-Pre-populating fictional lawyer names (e.g. "Morgan Vance, Esq.") in form fields risks creating spurious audit records without conscious user input.
+### Decision
+Implement a pure deterministic resolver function `resolveEffectiveClearanceStatus`:
 
-### Decisions
-- **Decision**: Remove all hardcoded pre-populated lawyer names and roles from form state. Input fields must initialize empty with helpful placeholder prompts (e.g., `placeholder="e.g. Jane Doe, Esq."`), requiring active counsel input before enabling submission.
-- **Rationale**: Ensures legal audit logs reflect intentional, authenticated attorney identity entries.
+$$\text{Effective Status} = \text{Scene Override} \;\;??\;\; \text{Canonical Entity Override} \;\;??\;\; \text{Automated Risk Evaluation}$$
+
+```typescript
+export function resolveEffectiveClearanceStatus(
+  entity: CanonicalEntityData,
+  overrides: CounselOverrideData[],
+  sceneId?: string
+): ClearanceStatus {
+  if (sceneId) {
+    const sceneOverride = overrides.find(
+      (o) => o.canonicalEntityId === entity.id && o.sceneId === sceneId
+    );
+    if (sceneOverride) return sceneOverride.overrideStatus;
+  }
+
+  if (entity.isOverridden && entity.latestOverride) {
+    return entity.latestOverride.overrideStatus;
+  }
+
+  return entity.overallClearanceStatus;
+}
+```
+
+### Rationale
+Screenplays often feature an entity that is broadly acceptable but flagged in a specific scene (e.g. defamation in a fight scene), or vice versa. Supporting both canonical project baseline overrides and scene-specific overrides provides production legal teams with granular control without introducing state incoherence.
 
 ---
 
-## 5. Printable Legal Clearance Binder & Cryptographic Verification
+## 3. SHA-256 Integrity Digest Terminology
 
-### Problem Statement
-Distribution contracts and insurance underwriters need printable binder PDFs and machine-readable JSON exports. How should PDF generation be implemented efficiently on Cloud Run?
+### Decision
+Rename all API fields, UI labels, spec language, tests, and contracts from `auditSignature` / *"Cryptographic SHA-256 Audit Signature"* to `integrityDigest` / *"SHA-256 Integrity Digest"*.
 
-### Decisions
-- **Decision**: Provide structured `.json` export and an interactive printable HTML modal with dedicated `@media print` CSS rules (page breaks, clean cover sheets, high-contrast tables, E&O disclaimers) allowing direct browser "Print to PDF".
-- **Rationale**: Zero backend Chromium/Puppeteer overhead, instant sub-second rendering, fully responsive, and supports standard studio browser printing workflows.
-- **Alternatives Considered**:
-  - Headless Puppeteer server-side generation (rejected: high memory footprint, cold starts, and container bloat on Cloud Run).
-  - Client-side Canvas rendering via jsPDF (rejected: fuzzy text rendering and poor pagination control for complex multi-page tables).
+### Rationale
+An unkeyed SHA-256 hash verifies data integrity against accidental modification or transport corruption, but does not provide non-repudiation or asymmetric cryptographic signing (PKI). Using accurate terminology avoids misleading legal counsel and insurers about the nature of the verification.
+
+---
+
+## 4. Preserved Anti-Overwrite & Unpopulated Counsel Input Invariants
+
+### Invariants
+1. **Anti-Overwrite Protection**: When `clearanceEvaluator.evaluateEntityClearance` or `entityRepo.updateCanonicalEntityStatus` runs, any entity with `isOverridden === true` preserves its manual legal status as authoritative while refreshing background citations and diagnostic scores.
+2. **Unpopulated Counsel Inputs**: Counsel override form fields initialize empty with descriptive placeholders (`placeholder="e.g. Jane Doe, Esq."`), requiring authentic human entry before submission is enabled.
