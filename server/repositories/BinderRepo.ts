@@ -14,11 +14,13 @@ export interface ClearanceBinderData {
     clearedCount: number;
     actionRequiredCount: number;
     reviewRecommendedCount: number;
+    overridesCount?: number;
   };
   scenes: any[];
   canonicalEntities: any[];
   citationsIndex: any[];
   replacementCatalog: any[];
+  overridesHistory?: any[];
   exportedAt: string;
   auditSignature: string;
   disclaimer: string;

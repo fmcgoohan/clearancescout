@@ -3,6 +3,7 @@ import { sceneRepo } from '../repositories/SceneRepo.js';
 import { entityRepo } from '../repositories/EntityRepo.js';
 import { assessmentRepo } from '../repositories/AssessmentRepo.js';
 import { replacementRepo } from '../repositories/ReplacementRepo.js';
+import { overrideRepo } from '../repositories/OverrideRepo.js';
 import { binderRepo, ClearanceBinderData } from '../repositories/BinderRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 
@@ -42,6 +43,8 @@ export class BinderExportWorkflow {
       replacementCatalog.push(...replacements);
     }
 
+    const overridesHistory = await overrideRepo.getAllOverrides(projectId);
+
     const projectSummary = {
       title: project.title,
       productionCompany: project.productionCompany,
@@ -51,6 +54,7 @@ export class BinderExportWorkflow {
       clearedCount,
       actionRequiredCount,
       reviewRecommendedCount,
+      overridesCount: overridesHistory.length,
     };
 
     const binder = await binderRepo.saveBinderExport({
@@ -60,6 +64,7 @@ export class BinderExportWorkflow {
       canonicalEntities: entities,
       citationsIndex,
       replacementCatalog,
+      overridesHistory,
       disclaimer: 'ClearanceScout provides workflow issue-spotting and clearance risk categorization. It does NOT render formal legal advice.',
     });
 

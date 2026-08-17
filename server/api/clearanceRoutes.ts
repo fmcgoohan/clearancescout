@@ -1,5 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { clearanceEvaluator } from '../workflows/clearanceEvaluator.js';
+import { overrideRepo } from '../repositories/OverrideRepo.js';
+import { entityRepo, ClearanceStatus } from '../repositories/EntityRepo.js';
+import { timelineEmitter } from '../events/timelineEmitter.js';
 
 export const clearanceRouter = Router();
 
@@ -20,6 +23,95 @@ clearanceRouter.post('/projects/:id/clearance/evaluate', async (req: Request, re
     }
 
     return res.json({ assessments });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Record Legal Counsel Decision Override
+clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Request, res: Response, next) => {
+  try {
+    const { id: projectId, entityId } = req.params;
+    const { overrideStatus, rationale, counselName, counselRole, sceneId } = req.body;
+
+    const validStatuses: ClearanceStatus[] = [
+      'NO_ISSUE_SURFACED',
+      'REVIEW_RECOMMENDED',
+      'ACTION_REQUIRED',
+      'INSUFFICIENT_EVIDENCE',
+    ];
+
+    if (!overrideStatus || !validStatuses.includes(overrideStatus)) {
+      return res.status(400).json({ error: 'A valid overrideStatus is required.' });
+    }
+
+    if (!rationale || typeof rationale !== 'string' || rationale.trim().length === 0) {
+      return res.status(400).json({ error: 'A non-empty legal counsel rationale is mandatory for audit logging.' });
+    }
+
+    if (!counselName || typeof counselName !== 'string' || counselName.trim().length === 0) {
+      return res.status(400).json({ error: 'counselName is required.' });
+    }
+
+    const entities = await entityRepo.getEntitiesByProject(projectId);
+    const existingEntity = entities.find((e) => e.id === entityId);
+    if (!existingEntity) {
+      return res.status(404).json({ error: `Entity ${entityId} not found.` });
+    }
+
+    const previousStatus = existingEntity.overallClearanceStatus;
+
+    const override = await overrideRepo.recordOverride(projectId, {
+      canonicalEntityId: entityId,
+      sceneId,
+      previousStatus,
+      overrideStatus,
+      rationale: rationale.trim(),
+      counselName: counselName.trim(),
+      counselRole: counselRole?.trim() || 'Studio Production Counsel',
+    });
+
+    const updatedEntity = await entityRepo.updateCanonicalEntityOverride(
+      projectId,
+      entityId,
+      overrideStatus,
+      {
+        overrideId: override.id,
+        rationale: override.rationale,
+        counselName: override.counselName,
+        timestamp: override.timestamp,
+      }
+    );
+
+    timelineEmitter.emit(projectId, 'OVERRIDE_RECORDED', `Legal Counsel Override: ${existingEntity.canonicalName}`, {
+      overrideId: override.id,
+      canonicalEntityId: entityId,
+      canonicalName: existingEntity.canonicalName,
+      previousStatus,
+      overrideStatus,
+      counselName: override.counselName,
+      rationale: override.rationale,
+    });
+
+    return res.json({
+      success: true,
+      override,
+      entity: updatedEntity,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get Override History for Entity
+clearanceRouter.get('/projects/:id/entities/:entityId/overrides', async (req: Request, res: Response, next) => {
+  try {
+    const { id: projectId, entityId } = req.params;
+    const overrides = await overrideRepo.getOverridesByEntity(projectId, entityId);
+    return res.json({
+      canonicalEntityId: entityId,
+      overrides,
+    });
   } catch (err) {
     next(err);
   }

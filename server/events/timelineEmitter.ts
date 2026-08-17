@@ -9,7 +9,8 @@ export type TimelineEventType =
   | 'CITATION_ADDED'
   | 'STATE_TRANSITION'
   | 'REPLACEMENT_GEN'
-  | 'BINDER_EXPORT';
+  | 'BINDER_EXPORT'
+  | 'OVERRIDE_RECORDED';
 
 export interface ExecutionEvent {
   id: string;

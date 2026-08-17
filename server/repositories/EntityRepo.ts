@@ -26,6 +26,14 @@ export interface CanonicalEntityData {
   entityCategory: EntityCategory;
   description: string;
   overallClearanceStatus: ClearanceStatus;
+  isOverridden?: boolean;
+  latestOverride?: {
+    overrideId: string;
+    overrideStatus: ClearanceStatus;
+    rationale: string;
+    counselName: string;
+    timestamp: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -49,6 +57,7 @@ export class EntityRepo {
     const now = new Date().toISOString();
     const entity: CanonicalEntityData = {
       id,
+      isOverridden: false,
       ...input,
       createdAt: now,
       updatedAt: now,
@@ -67,6 +76,32 @@ export class EntityRepo {
       data.updatedAt = new Date().toISOString();
       await docRef.set(data);
     }
+  }
+
+  async updateCanonicalEntityOverride(
+    projectId: string,
+    entityId: string,
+    overrideStatus: ClearanceStatus,
+    overrideDetails: { overrideId: string; rationale: string; counselName: string; timestamp: string }
+  ): Promise<CanonicalEntityData | null> {
+    const docRef = await this.db.doc(`projects/${projectId}/entities/${entityId}`);
+    const snap = await docRef.get();
+    if (snap.exists) {
+      const data = snap.data() as CanonicalEntityData;
+      data.overallClearanceStatus = overrideStatus;
+      data.isOverridden = true;
+      data.latestOverride = {
+        overrideId: overrideDetails.overrideId,
+        overrideStatus,
+        rationale: overrideDetails.rationale,
+        counselName: overrideDetails.counselName,
+        timestamp: overrideDetails.timestamp,
+      };
+      data.updatedAt = new Date().toISOString();
+      await docRef.set(data);
+      return data;
+    }
+    return null;
   }
 
   async getEntitiesByProject(projectId: string): Promise<CanonicalEntityData[]> {

@@ -6,12 +6,20 @@ export interface CanonicalEntity {
   entityCategory: string;
   description: string;
   overallClearanceStatus: 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
+  isOverridden?: boolean;
+  latestOverride?: {
+    overrideStatus: string;
+    rationale: string;
+    counselName: string;
+    timestamp: string;
+  };
 }
 
 interface EntityRegistryTableProps {
   entities: CanonicalEntity[];
   onEvaluateClearance: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
+  onOpenCounselReview?: (entityId: string) => void;
   isEvaluating: boolean;
 }
 
@@ -19,6 +27,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   entities,
   onEvaluateClearance,
   onGenerateReplacement,
+  onOpenCounselReview,
   isEvaluating,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -109,7 +118,28 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
           <tbody>
             {filteredEntities.map((e) => (
               <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-main)' }}>{e.canonicalName}</td>
+                <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-main)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>{e.canonicalName}</span>
+                    {e.isOverridden && (
+                      <span
+                        title={e.latestOverride ? `Overridden by ${e.latestOverride.counselName}: ${e.latestOverride.rationale}` : 'Overridden by Legal Counsel'}
+                        style={{
+                          fontSize: '0.65rem',
+                          background: 'rgba(52, 211, 153, 0.15)',
+                          color: '#34d399',
+                          border: '1px solid rgba(52, 211, 153, 0.4)',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          fontWeight: 500,
+                          cursor: 'help',
+                        }}
+                      >
+                        ⚖️ Counsel Override
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td style={{ padding: '12px' }}>
                   <span
                     className="mono"
@@ -128,19 +158,28 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                   <span className={getBadgeClass(e.overallClearanceStatus)}>{formatStatus(e.overallClearanceStatus)}</span>
                 </td>
                 <td style={{ padding: '12px', textAlign: 'right' }}>
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                     <button
                       className="btn-secondary"
-                      style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                      style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                       onClick={() => onEvaluateClearance(e.id)}
                       disabled={isEvaluating}
                     >
-                      {isEvaluating ? 'Researching...' : 'Ground Clearance'}
+                      {isEvaluating ? 'Researching...' : '🔍 Ground'}
                     </button>
+                    {onOpenCounselReview && (
+                      <button
+                        className="btn-secondary"
+                        style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                        onClick={() => onOpenCounselReview(e.id)}
+                      >
+                        ⚖️ Counsel Review
+                      </button>
+                    )}
                     {(e.overallClearanceStatus === 'ACTION_REQUIRED' || e.overallClearanceStatus === 'REVIEW_RECOMMENDED') && (
                       <button
                         className="btn-primary"
-                        style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                        style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                         onClick={() => onGenerateReplacement(e.id)}
                       >
                         Generate Replacement

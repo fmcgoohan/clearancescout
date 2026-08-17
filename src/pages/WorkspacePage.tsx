@@ -6,6 +6,7 @@ interface WorkspacePageProps {
   projectId: string;
   onEvaluateClearance: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
+  onOpenCounselReview: (entityId: string) => void;
   isEvaluating: boolean;
   refreshTrigger: number;
 }
@@ -14,6 +15,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   projectId,
   onEvaluateClearance,
   onGenerateReplacement,
+  onOpenCounselReview,
   isEvaluating,
   refreshTrigger,
 }) => {
@@ -91,7 +93,7 @@ JORDAN accelerates in a Porsche 911 past the Empire State Building. ALEX finishe
             Multi-Format Script Ingestion & 5-Category Resolution
           </h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Extract scenes and deduplicate entities across Brands, Art/Music, Public Figures, Locations, and Graphic Props.
+            Extract scenes, highlight in-line occurrences, and review legal counsel overrides.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -124,11 +126,18 @@ JORDAN accelerates in a Porsche 911 past the Empire State Building. ALEX finishe
 
       {/* Main Grid Workspace */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px' }}>
-        <ScriptViewer scenes={scenes} selectedSceneId={selectedSceneId} onSelectScene={setSelectedSceneId} />
+        <ScriptViewer
+          scenes={scenes}
+          entities={entities}
+          selectedSceneId={selectedSceneId}
+          onSelectScene={setSelectedSceneId}
+          onEntityClick={onOpenCounselReview}
+        />
         <EntityRegistryTable
           entities={entities}
           onEvaluateClearance={onEvaluateClearance}
           onGenerateReplacement={onGenerateReplacement}
+          onOpenCounselReview={onOpenCounselReview}
           isEvaluating={isEvaluating}
         />
       </div>

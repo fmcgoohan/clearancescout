@@ -13,8 +13,12 @@ export default function App() {
   
   // UI Drawers & Modals State
   const [isCitationOpen, setIsCitationOpen] = useState(false);
+  const [selectedEntityId, setSelectedEntityId] = useState<string>('');
   const [citationEntityName, setCitationEntityName] = useState('');
   const [citationRationale, setCitationRationale] = useState('');
+  const [citationStatus, setCitationStatus] = useState<string>('ACTION_REQUIRED');
+  const [isOverridden, setIsOverridden] = useState<boolean>(false);
+  const [latestOverride, setLatestOverride] = useState<any>(null);
   const [citations, setCitations] = useState<Citation[]>([]);
 
   const [isReplacementOpen, setIsReplacementOpen] = useState(false);
@@ -56,6 +60,42 @@ export default function App() {
     initProject();
   }, [executionMode]);
 
+  const handleOpenCounselReview = async (entityId: string) => {
+    if (!projectId) return;
+    try {
+      const entitiesRes = await fetch(`/api/projects/${projectId}/entities`);
+      if (entitiesRes.ok) {
+        const entitiesData = await entitiesRes.json();
+        const ent = entitiesData.find((e: any) => e.id === entityId);
+        if (ent) {
+          setSelectedEntityId(ent.id);
+          setCitationEntityName(ent.canonicalName);
+          setCitationStatus(ent.overallClearanceStatus);
+          setIsOverridden(Boolean(ent.isOverridden));
+          setLatestOverride(ent.latestOverride || null);
+          setCitationRationale(ent.description || 'Reviewing clearance context.');
+        }
+      }
+
+      const evalRes = await fetch(`/api/projects/${projectId}/clearance/evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ canonicalEntityIds: [entityId] }),
+      });
+      if (evalRes.ok) {
+        const data = await evalRes.json();
+        const asm = data.assessments?.[0];
+        if (asm) {
+          setCitations(asm.citations || []);
+          if (asm.legalRationale) setCitationRationale(asm.legalRationale);
+        }
+      }
+      setIsCitationOpen(true);
+    } catch (err) {
+      console.error('Error opening counsel review:', err);
+    }
+  };
+
   const handleEvaluateClearance = async (entityId: string) => {
     if (!projectId) return;
     setIsEvaluating(true);
@@ -69,6 +109,7 @@ export default function App() {
         const data = await res.json();
         const asm = data.assessments?.[0];
         if (asm) {
+          setSelectedEntityId(entityId);
           setCitations(asm.citations || []);
           setCitationEntityName(asm.canonicalEntityId);
           setCitationRationale(asm.legalRationale);
@@ -208,6 +249,7 @@ export default function App() {
             projectId={projectId}
             onEvaluateClearance={handleEvaluateClearance}
             onGenerateReplacement={handleGenerateReplacement}
+            onOpenCounselReview={handleOpenCounselReview}
             isEvaluating={isEvaluating}
             refreshTrigger={refreshTrigger}
           />
@@ -218,11 +260,17 @@ export default function App() {
 
       {/* Slide-over Drawers & Modals */}
       <CitationDrawer
+        projectId={projectId || ''}
+        canonicalEntityId={selectedEntityId}
         citations={citations}
         isOpen={isCitationOpen}
         onClose={() => setIsCitationOpen(false)}
         entityName={citationEntityName}
         rationale={citationRationale}
+        currentStatus={citationStatus}
+        isOverridden={isOverridden}
+        latestOverride={latestOverride}
+        onOverrideSaved={() => setRefreshTrigger((prev) => prev + 1)}
       />
 
       <ReplacementCardModal card={replacementCard} isOpen={isReplacementOpen} onClose={() => setIsReplacementOpen(false)} />

@@ -45,7 +45,18 @@ class InMemoryStore {
           col.delete(id);
         },
       }),
+      where: (field: string, op: string, val: any) => ({
+        get: async () => ({
+          docs: Array.from(col.entries())
+            .filter(([_, data]) => data && data[field] === val)
+            .map(([id, data]) => ({
+              id,
+              data: () => data,
+            })),
+        }),
+      }),
       get: async () => ({
+        empty: col.size === 0,
         docs: Array.from(col.entries()).map(([id, data]) => ({
           id,
           data: () => data,
@@ -73,3 +84,5 @@ export function getDb(): any {
   }
   return dbInstance;
 }
+
+export const getFirestoreClient = getDb;
