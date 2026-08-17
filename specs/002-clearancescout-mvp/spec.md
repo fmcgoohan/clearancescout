@@ -5,6 +5,14 @@
 **Status**: Draft  
 **Input**: User description: "Create the functional and technical requirement specification for ClearanceScout MVP in alignment with Constitution v1.0.0."
 
+## Clarifications
+
+### Session 2026-08-17
+- Q: How should the clearance extraction and entity resolution engine handle generic commodity terms versus proprietary brand mentions and multi-brand dialogue lines? → A: Strict entity boundary matching: extract only capitalized or trademark-qualified mentions, parse multiple entities in a single line as separate occurrences, and ignore bare generic nouns.
+- Q: What exact mathematical formula and threshold equations should the deterministic calculation step use to compute the composite Risk Score before passing to Gemini 3.6 Flash? → A: Linear weighted composite score: Base risk (30) + Sentiment penalty (0-40) + Exposure weight (0-20) + Defamation flag (+30), with thresholds: ACTION REQUIRED (>=75), REVIEW RECOMMENDED (40-74), and NO ISSUE SURFACED (<40).
+- Q: How should the clearance system handle edge cases where the parallel-web SDK returns 0 search results, times out, or encounters HTTP 429 rate limit errors? → A: Graceful degradation: Mark clearance status as INSUFFICIENT EVIDENCE, record error diagnostics in the SSE timeline, and offer a one-click "Retry Research" action without inventing citations.
+- Q: What exact mock fixture structure and data isolation strategy should TEST_MODE and DEMO_MODE adhere to? → A: Embedded 5-category dictionary cache: In-memory store providing canned USPTO/BrandDirectory citations, instant SVG concept artwork cards, and deterministic risk outputs with zero network calls.
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*
