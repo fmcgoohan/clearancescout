@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+export type ProvenanceType = 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE';
+
 export interface Citation {
   id: string;
   sourceUrl: string;
@@ -9,11 +11,13 @@ export interface Citation {
   registrationStatus: string;
   corporateOwner?: string;
   disputePrecedents?: string;
+  provenance?: ProvenanceType;
 }
 
 interface CitationDrawerProps {
   projectId: string;
   canonicalEntityId?: string;
+  sceneId?: string;
   citations: Citation[];
   isOpen: boolean;
   onClose: () => void;
@@ -26,6 +30,7 @@ interface CitationDrawerProps {
     rationale: string;
     counselName: string;
     timestamp: string;
+    sceneId?: string;
   };
   executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
   onOverrideSaved?: () => void;
@@ -34,6 +39,7 @@ interface CitationDrawerProps {
 export const CitationDrawer: React.FC<CitationDrawerProps> = ({
   projectId,
   canonicalEntityId,
+  sceneId,
   citations,
   isOpen,
   onClose,
@@ -47,6 +53,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'PROVENANCE' | 'OVERRIDE'>('PROVENANCE');
   const [overrideStatus, setOverrideStatus] = useState<string>('NO_ISSUE_SURFACED');
+  const [applySceneSpecific, setApplySceneSpecific] = useState<boolean>(false);
   const [counselName, setCounselName] = useState<string>('');
   const [counselRole, setCounselRole] = useState<string>('');
   const [overrideRationale, setOverrideRationale] = useState<string>('');
@@ -55,7 +62,13 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
 
   if (!isOpen) return null;
 
-  const isLive = executionMode === 'CLOUD_MODE';
+  // Determine actual provenance from citations
+  const dominantProvenance: ProvenanceType =
+    citations[0]?.provenance ||
+    (executionMode === 'CLOUD_MODE' ? 'FALLBACK_FIXTURE' : 'DEMO_FIXTURE');
+
+  const isLive = dominantProvenance === 'PARALLEL_LIVE';
+  const isFallback = dominantProvenance === 'FALLBACK_FIXTURE';
 
   const handleApplyOverride = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +93,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           overrideStatus,
+          sceneId: applySceneSpecific ? sceneId : undefined,
           rationale: overrideRationale.trim(),
           counselName: counselName.trim(),
           counselRole: counselRole.trim() || 'Studio Production Counsel',
@@ -163,6 +177,21 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
 
       {activeTab === 'PROVENANCE' ? (
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {isFallback && (
+            <div
+              style={{
+                padding: '10px 12px',
+                borderRadius: '6px',
+                background: 'rgba(248, 113, 113, 0.1)',
+                border: '1px solid rgba(248, 113, 113, 0.3)',
+                fontSize: '0.72rem',
+                color: '#f87171',
+              }}
+            >
+              <strong>⚠️ Cloud Fallback Active:</strong> Live Parallel search API was unavailable. Displaying deterministic benchmark fallback fixture.
+            </div>
+          )}
+
           {rationale && (
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
               <h4 style={{ fontSize: '0.85rem', marginBottom: '6px', color: 'var(--text-main)' }}>Clearance Rationale</h4>
@@ -172,7 +201,12 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
             <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
-              {isLive ? 'Live Parallel-Web Grounded Research Citations' : 'Demo Fixture Research Evidence (Synthetic Dataset)'} ({citations.length})
+              {isLive
+                ? 'Live Parallel-Web Grounded Research Citations'
+                : isFallback
+                ? 'Cloud Fallback Fixture Evidence'
+                : 'Demo Fixture Research Evidence (Synthetic Dataset)'}{' '}
+              ({citations.length})
             </h4>
             <span
               style={{
@@ -180,12 +214,18 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 padding: '2px 6px',
                 borderRadius: '4px',
                 fontWeight: 600,
-                background: isLive ? 'rgba(6, 182, 212, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-                color: isLive ? 'var(--accent-cyan)' : '#fbbf24',
-                border: `1px solid ${isLive ? 'rgba(6, 182, 212, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
+                background: isLive
+                  ? 'rgba(6, 182, 212, 0.15)'
+                  : isFallback
+                  ? 'rgba(248, 113, 113, 0.15)'
+                  : 'rgba(251, 191, 36, 0.15)',
+                color: isLive ? 'var(--accent-cyan)' : isFallback ? '#f87171' : '#fbbf24',
+                border: `1px solid ${
+                  isLive ? 'rgba(6, 182, 212, 0.3)' : isFallback ? 'rgba(248, 113, 113, 0.3)' : 'rgba(251, 191, 36, 0.3)'
+                }`,
               }}
             >
-              {isLive ? '● CLOUD LIVE' : '● DEMO FIXTURE'}
+              {isLive ? '● PARALLEL LIVE' : isFallback ? '⚠️ FALLBACK FIXTURE' : '● DEMO FIXTURE'}
             </span>
           </div>
 
@@ -259,6 +299,10 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 </span>
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', marginBottom: '4px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Scope:</span>{' '}
+                <strong>{latestOverride.sceneId ? `Scene Specific (${latestOverride.sceneId})` : 'Project-Wide Baseline'}</strong>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', marginBottom: '4px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Counsel:</span> {latestOverride.counselName}
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', marginBottom: '4px' }}>
@@ -301,6 +345,20 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 <option value="ACTION_REQUIRED">ACTION REQUIRED (High Risk / Replace)</option>
               </select>
             </div>
+
+            {sceneId && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  id="sceneSpecificOverride"
+                  checked={applySceneSpecific}
+                  onChange={(e) => setApplySceneSpecific(e.target.checked)}
+                />
+                <label htmlFor="sceneSpecificOverride" style={{ fontSize: '0.75rem', color: 'var(--text-main)' }}>
+                  Apply as Scene-Specific Override only for current scene ({sceneId})
+                </label>
+              </div>
+            )}
 
             <div>
               <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>

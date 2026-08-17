@@ -87,8 +87,8 @@ JORDAN escapes past the Empire State Building in a Porsche 911.
 
     expect(binderRes.status).toBe(200);
     expect(binderRes.body.projectId).toBe(projectId);
-    expect(binderRes.body.auditSignature).toBeDefined();
-    expect(binderRes.body.auditSignature.length).toBe(64);
+    expect(binderRes.body.integrityDigest).toBeDefined();
+    expect(binderRes.body.integrityDigest.length).toBe(64);
     expect(binderRes.body.scenes.length).toBe(2);
     expect(binderRes.body.canonicalEntities.length).toBeGreaterThanOrEqual(5);
     expect(binderRes.body.replacementCatalog.length).toBeGreaterThanOrEqual(1);

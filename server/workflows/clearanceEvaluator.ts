@@ -15,13 +15,6 @@ export class ClearanceEvaluator {
   }
 
   async evaluateEntityClearance(projectId: string, canonicalEntityId: string): Promise<ClearanceRiskAssessmentData> {
-    const isLive = config.executionMode === 'CLOUD_MODE';
-    const toolLabel = isLive ? 'Initiating Live Parallel-Web Trademark Grounding' : 'Initiating Demo Fixture Trademark Grounding';
-    timelineEmitter.emit(projectId, 'TOOL_CALL', toolLabel, {
-      canonicalEntityId,
-      executionMode: config.executionMode,
-    });
-
     const entities = await entityRepo.getEntitiesByProject(projectId);
     const entity = entities.find((e) => e.id === canonicalEntityId);
 
@@ -29,17 +22,30 @@ export class ClearanceEvaluator {
       throw new Error(`Canonical entity ${canonicalEntityId} not found`);
     }
 
-    // Step 1: Live or Demo Fixture Grounding Search
+    // Step 1: Execute Grounding Search (returns actual ProvenanceType)
     const searchResult = await parallelSearchTool.searchTrademarkGrounding(entity.canonicalName);
-    const citationLabel = isLive
-      ? `Live Parallel-Web Citations Retained (${searchResult.citations.length})`
-      : `Demo Fixture Citations Retained (${searchResult.citations.length})`;
+
+    let toolLabel = 'Initiating Demo Fixture Trademark Grounding';
+    let citationLabel = `Demo Fixture Citations Retained (${searchResult.citations.length})`;
+
+    if (searchResult.provenance === 'PARALLEL_LIVE') {
+      toolLabel = 'Initiating Live Parallel-Web Trademark Grounding';
+      citationLabel = `Live Parallel-Web Citations Retained (${searchResult.citations.length})`;
+    } else if (searchResult.provenance === 'FALLBACK_FIXTURE') {
+      toolLabel = 'Parallel Search Fallback Triggered (Synthetic Grounding)';
+      citationLabel = `⚠️ Cloud Fallback Fixtures Retained (${searchResult.citations.length})`;
+    }
+
+    timelineEmitter.emit(projectId, 'TOOL_CALL', toolLabel, {
+      canonicalEntityId,
+      provenance: searchResult.provenance,
+    });
 
     timelineEmitter.emit(projectId, 'CITATION_ADDED', citationLabel, {
       citationsCount: searchResult.citations.length,
       sampleUrl: searchResult.citations[0]?.sourceUrl,
       corporateOwner: searchResult.citations[0]?.corporateOwner,
-      isDemoFixture: !isLive,
+      provenance: searchResult.provenance,
     });
 
     // Step 2: Deterministic Metric Computation
@@ -108,9 +114,10 @@ export class ClearanceEvaluator {
       sentimentPolarity,
       exposureDurationSeconds,
       contextFlags,
+      isOverridden: !!entity.isOverridden,
     });
 
-    // Persist assessment
+    // Persist assessment with actual result provenance
     const assessment = await assessmentRepo.createAssessment({
       occurrenceId: `occ-${canonicalEntityId}`,
       canonicalEntityId,
@@ -120,9 +127,10 @@ export class ClearanceEvaluator {
       legalRationale: rationale,
       contextFlags,
       citations: searchResult.citations,
+      provenance: searchResult.provenance,
     });
 
-    // Update Canonical Entity overall clearance status
+    // Update Canonical Entity overall clearance status (EntityRepo preserves active overrides)
     await entityRepo.updateCanonicalEntityStatus(projectId, canonicalEntityId, status);
 
     return assessment;

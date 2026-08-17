@@ -1,6 +1,8 @@
 import { getDb } from './firestoreClient.js';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { CanonicalEntityData } from './EntityRepo.js';
+import { CounselOverride } from './OverrideRepo.js';
 
 export interface ClearanceBinderData {
   id: string;
@@ -14,36 +16,36 @@ export interface ClearanceBinderData {
     clearedCount: number;
     actionRequiredCount: number;
     reviewRecommendedCount: number;
-    overridesCount?: number;
+    overridesCount: number;
   };
   scenes: any[];
-  canonicalEntities: any[];
+  canonicalEntities: CanonicalEntityData[];
   citationsIndex: any[];
   replacementCatalog: any[];
-  overridesHistory?: any[];
+  overridesHistory: CounselOverride[];
   exportedAt: string;
-  auditSignature: string;
+  integrityDigest: string; // SHA-256 integrity digest of canonical payload
   disclaimer: string;
 }
 
 export class BinderRepo {
   private db = getDb();
 
-  generateAuditSignature(data: Omit<ClearanceBinderData, 'id' | 'auditSignature'>): string {
+  generateIntegrityDigest(data: Omit<ClearanceBinderData, 'id' | 'integrityDigest'>): string {
     const payload = JSON.stringify(data);
     return crypto.createHash('sha256').update(payload).digest('hex');
   }
 
-  async saveBinderExport(input: Omit<ClearanceBinderData, 'id' | 'auditSignature' | 'exportedAt'>): Promise<ClearanceBinderData> {
+  async saveBinderExport(input: Omit<ClearanceBinderData, 'id' | 'integrityDigest' | 'exportedAt'>): Promise<ClearanceBinderData> {
     const id = `bnd-${uuidv4().slice(0, 8)}`;
     const exportedAt = new Date().toISOString();
-    const signaturePayload = { ...input, exportedAt };
-    const auditSignature = this.generateAuditSignature(signaturePayload);
+    const digestPayload = { ...input, exportedAt };
+    const integrityDigest = this.generateIntegrityDigest(digestPayload);
 
     const binderData: ClearanceBinderData = {
       id,
-      ...signaturePayload,
-      auditSignature,
+      ...digestPayload,
+      integrityDigest,
     };
 
     const docRef = await this.db.doc(`projects/${input.projectId}/binder_exports/${id}`);

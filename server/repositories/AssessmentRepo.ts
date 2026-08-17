@@ -2,6 +2,8 @@ import { getDb } from './firestoreClient.js';
 import { v4 as uuidv4 } from 'uuid';
 import { ClearanceStatus } from './EntityRepo.js';
 
+export type ProvenanceType = 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE';
+
 export interface ClearanceCitation {
   id: string;
   sourceUrl: string;
@@ -11,6 +13,7 @@ export interface ClearanceCitation {
   registrationStatus: 'REGISTERED_ACTIVE' | 'PENDING' | 'EXPIRED' | 'UNKNOWN';
   corporateOwner?: string;
   disputePrecedents?: string;
+  provenance?: ProvenanceType;
 }
 
 export interface ClearanceRiskAssessmentData {
@@ -23,6 +26,7 @@ export interface ClearanceRiskAssessmentData {
   legalRationale: string;
   contextFlags: string[];
   citations: ClearanceCitation[];
+  provenance?: ProvenanceType;
   evaluatedAt: string;
   disclaimer: string;
 }

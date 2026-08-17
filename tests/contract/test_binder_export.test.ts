@@ -24,15 +24,15 @@ describe('Contract: Clearance Binder Compilation & Export', () => {
       });
   });
 
-  it('should compile, sign, and export a complete project clearance binder', async () => {
+  it('should compile, hash, and export a complete project clearance binder with SHA-256 integrity digest', async () => {
     const res = await request(app).get(`/api/projects/${projectId}/binder/export`);
 
     expect(res.status).toBe(200);
     expect(res.body.id).toMatch(/^bnd-/);
     expect(res.body.projectId).toBe(projectId);
     expect(res.body.projectSummary.title).toBe('Binder Export Feature Film');
-    expect(res.body.auditSignature).toBeDefined();
-    expect(res.body.auditSignature.length).toBe(64); // SHA-256 hex string
+    expect(res.body.integrityDigest).toBeDefined();
+    expect(res.body.integrityDigest.length).toBe(64); // SHA-256 hex string
     expect(res.body.scenes.length).toBe(1);
     expect(res.body.canonicalEntities.length).toBeGreaterThanOrEqual(1);
     expect(res.body.disclaimer).toContain('does NOT render formal legal advice');

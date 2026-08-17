@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../server/index.js';
 
-describe('Contract: Studio Legal Counsel Override API & Anti-Overwrite Invariant', () => {
+describe('Contract: Studio Legal Counsel Override API & Hierarchical Invariant', () => {
   it('should record an authoritative legal counsel override and strictly protect it against automated re-evaluation overwrite', async () => {
     // 1. Create Project
     const projRes = await request(app)
@@ -47,7 +47,7 @@ describe('Contract: Studio Legal Counsel Override API & Anti-Overwrite Invariant
       });
     expect(invalidRes.status).toBe(400);
 
-    // 5. Submit valid counsel override
+    // 5. Submit valid canonical counsel override
     const overrideRes = await request(app)
       .post(`/api/projects/${projectId}/entities/${entity.id}/override`)
       .send({
@@ -75,10 +75,23 @@ describe('Contract: Studio Legal Counsel Override API & Anti-Overwrite Invariant
     expect(updatedEntity.isOverridden).toBe(true);
     expect(updatedEntity.overallClearanceStatus).toBe('NO_ISSUE_SURFACED');
 
-    // 7. Get override audit history
+    // 7. Submit a scene-specific override exception
+    const sceneOverrideRes = await request(app)
+      .post(`/api/projects/${projectId}/entities/${entity.id}/override`)
+      .send({
+        overrideStatus: 'REVIEW_RECOMMENDED',
+        sceneId: 'scene-1',
+        rationale: 'Special review needed for scene 1 brand placement lighting.',
+        counselName: 'Jane Doe, Esq.',
+        counselRole: 'Senior Vice President, Production Legal',
+      });
+    expect(sceneOverrideRes.status).toBe(200);
+    expect(sceneOverrideRes.body.override.sceneId).toBe('scene-1');
+    expect(sceneOverrideRes.body.override.overrideStatus).toBe('REVIEW_RECOMMENDED');
+
+    // 8. Get override audit history
     const historyRes = await request(app).get(`/api/projects/${projectId}/entities/${entity.id}/overrides`);
     expect(historyRes.status).toBe(200);
-    expect(historyRes.body.overrides.length).toBe(1);
-    expect(historyRes.body.overrides[0].counselName).toBe('Jane Doe, Esq.');
+    expect(historyRes.body.overrides.length).toBe(2);
   });
 });

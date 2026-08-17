@@ -3,7 +3,7 @@ import request from 'supertest';
 import { app } from '../../server/index.js';
 
 describe('Integration: Clearance Binder Export & Studio Counsel Review Workflow', () => {
-  it('should execute full counsel review workflow: override status, log rationale, protect against re-eval overwrite, and export signed binder with override history', async () => {
+  it('should execute full counsel review workflow: override status, hierarchical scene resolution, anti-overwrite protection, and export binder with integrity digest', async () => {
     // 1. Create Project
     const projRes = await request(app)
       .post('/api/projects')
@@ -37,8 +37,9 @@ Alex wears a Rolex Submariner.
 
     expect(evalRes.status).toBe(200);
     expect(evalRes.body.assessments[0].riskStatus).toBe('ACTION_REQUIRED');
+    expect(evalRes.body.assessments[0].provenance).toBe('DEMO_FIXTURE');
 
-    // 4. Counsel Overrides Status to NO_ISSUE_SURFACED
+    // 4. Counsel Overrides Status to NO_ISSUE_SURFACED (Canonical baseline)
     const overrideRes = await request(app)
       .post(`/api/projects/${projectId}/entities/${cokeEntity.id}/override`)
       .send({
@@ -72,13 +73,13 @@ Alex wears a Rolex Submariner.
     expect(historyRes.body.overrides[0].overrideStatus).toBe('NO_ISSUE_SURFACED');
     expect(historyRes.body.overrides[0].counselName).toBe('Jane Doe, Esq.');
 
-    // 7. Export Signed Clearance Binder & Verify Overrides History
+    // 7. Export Signed Clearance Binder & Verify Integrity Digest
     const binderRes = await request(app).get(`/api/projects/${projectId}/binder/export`);
     expect(binderRes.status).toBe(200);
     expect(binderRes.body.projectSummary.overridesCount).toBe(1);
     expect(binderRes.body.overridesHistory.length).toBe(1);
     expect(binderRes.body.overridesHistory[0].counselName).toBe('Jane Doe, Esq.');
-    expect(binderRes.body.auditSignature).toBeDefined();
-    expect(binderRes.body.auditSignature.length).toBe(64);
+    expect(binderRes.body.integrityDigest).toBeDefined();
+    expect(binderRes.body.integrityDigest.length).toBe(64);
   });
 });

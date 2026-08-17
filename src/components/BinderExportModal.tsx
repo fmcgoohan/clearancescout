@@ -12,15 +12,15 @@ export interface ClearanceBinder {
     clearedCount: number;
     actionRequiredCount: number;
     reviewRecommendedCount: number;
-    overridesCount?: number;
+    overridesCount: number;
   };
   scenes: any[];
   canonicalEntities: any[];
   citationsIndex: any[];
   replacementCatalog: any[];
-  overridesHistory?: any[];
+  overridesHistory: any[];
   exportedAt: string;
-  auditSignature: string;
+  integrityDigest: string;
   disclaimer: string;
 }
 
@@ -39,7 +39,13 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
 }) => {
   if (!isOpen || !binder) return null;
 
-  const isLive = executionMode === 'CLOUD_MODE';
+  const firstCitation = binder.citationsIndex[0];
+  const dominantProvenance =
+    firstCitation?.provenance ||
+    (executionMode === 'CLOUD_MODE' ? 'FALLBACK_FIXTURE' : 'DEMO_FIXTURE');
+
+  const isLive = dominantProvenance === 'PARALLEL_LIVE';
+  const isFallback = dominantProvenance === 'FALLBACK_FIXTURE';
 
   const handleDownloadJson = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(binder, null, 2));
@@ -124,12 +130,18 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                   padding: '2px 6px',
                   borderRadius: '4px',
                   fontWeight: 600,
-                  background: isLive ? 'rgba(6, 182, 212, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-                  color: isLive ? 'var(--accent-cyan)' : '#fbbf24',
-                  border: `1px solid ${isLive ? 'rgba(6, 182, 212, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
+                  background: isLive
+                    ? 'rgba(6, 182, 212, 0.15)'
+                    : isFallback
+                    ? 'rgba(248, 113, 113, 0.15)'
+                    : 'rgba(251, 191, 36, 0.15)',
+                  color: isLive ? 'var(--accent-cyan)' : isFallback ? '#f87171' : '#fbbf24',
+                  border: `1px solid ${
+                    isLive ? 'rgba(6, 182, 212, 0.3)' : isFallback ? 'rgba(248, 113, 113, 0.3)' : 'rgba(251, 191, 36, 0.3)'
+                  }`,
                 }}
               >
-                {isLive ? 'CLOUD LIVE' : 'DEMO FIXTURE'}
+                {isLive ? 'PARALLEL LIVE' : isFallback ? 'FALLBACK FIXTURE' : 'DEMO FIXTURE'}
               </span>
             </div>
             <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>
@@ -144,16 +156,16 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
           </button>
         </div>
 
-        {/* Audit Signature Header */}
+        {/* SHA-256 Integrity Digest Header */}
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '14px' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-            Cryptographic SHA-256 Audit Signature:
+            SHA-256 Integrity Digest:
           </div>
           <div className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', wordBreak: 'break-all' }}>
-            {binder.auditSignature}
+            {binder.integrityDigest}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Exported & Audited At: {new Date(binder.exportedAt).toLocaleString()}
+            Exported & Hashed At: {new Date(binder.exportedAt).toLocaleString()}
           </div>
         </div>
 
@@ -215,7 +227,9 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
                     <strong>{ovr.counselName} ({ovr.counselRole || 'Counsel'})</strong>
-                    <span className="mono" style={{ color: '#34d399' }}>{ovr.previousStatus} → {ovr.overrideStatus}</span>
+                    <span className="mono" style={{ color: '#34d399' }}>
+                      {ovr.sceneId ? `[${ovr.sceneId}] ` : ''}{ovr.previousStatus} → {ovr.overrideStatus}
+                    </span>
                   </div>
                   <p style={{ color: 'var(--text-muted)', margin: '2px 0' }}>"{ovr.rationale}"</p>
                 </div>
@@ -231,7 +245,12 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
             <li>Complete Scene Breakdown & Character Dialogue Mapping ({binder.scenes.length} scenes)</li>
             <li>5-Category Canonical Entity Registry & Risk Assessments ({binder.canonicalEntities.length} entities)</li>
             <li>
-              {isLive ? 'Live Parallel-Web Search Citations Index' : 'Demo Fixture Research Citations Index'} ({binder.citationsIndex.length} citations)
+              {isLive
+                ? 'Live Parallel-Web Search Citations Index'
+                : isFallback
+                ? 'Cloud Fallback Fixture Citations Index'
+                : 'Demo Fixture Research Citations Index'}{' '}
+              ({binder.citationsIndex.length} citations)
             </li>
             <li>Approved Fictional Replacement Props & Imagen 3 Visual Cards ({binder.replacementCatalog.length} replacement assets)</li>
           </ul>
