@@ -1,0 +1,14 @@
+{
+  "name": "clearancescout-server",
+  "version": "1.0.0",
+  "description": "ClearanceScout ADK Agents and Backend Runtime",
+  "type": "module",
+  "scripts": {
+    "start": "tsx server/index.ts",
+    "dev": "tsx watch server/index.ts",
+    "start:demo": "EXECUTION_MODE=DEMO_MODE tsx watch server/index.ts",
+    "start:cloud": "EXECUTION_MODE=CLOUD_MODE tsx watch server/index.ts",
+    "start:test": "EXECUTION_MODE=TEST_MODE tsx server/index.ts",
+    "test": "vitest run"
+  }
+}

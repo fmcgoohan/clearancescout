@@ -4,8 +4,14 @@
   "description": "Agentic Entertainment Clearance Workspace",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n \"SERVER,VITE\" -c \"cyan,magenta\" \"npm run server:demo\" \"vite\"",
     "server": "tsx watch server/index.ts",
+    "server:demo": "EXECUTION_MODE=DEMO_MODE tsx watch server/index.ts",
+    "server:cloud": "EXECUTION_MODE=CLOUD_MODE tsx watch server/index.ts",
+    "server:test": "EXECUTION_MODE=TEST_MODE tsx server/index.ts",
+    "start:demo": "concurrently -n \"SERVER,VITE\" -c \"cyan,magenta\" \"npm run server:demo\" \"vite\"",
+    "start:cloud": "concurrently -n \"SERVER,VITE\" -c \"cyan,magenta\" \"npm run server:cloud\" \"vite\"",
+    "start:test": "EXECUTION_MODE=TEST_MODE vitest run",
     "build": "tsc && vite build",
     "test": "vitest run"
   },
@@ -29,6 +35,7 @@
     "@types/supertest": "^6.0.2",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.1.2",
     "supertest": "^7.0.0",
     "tsx": "^4.16.2",
     "typescript": "^5.5.2",
