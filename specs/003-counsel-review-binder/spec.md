@@ -5,6 +5,13 @@
 **Status**: Draft  
 **Input**: User description: "Add the Clearance Binder Export & Studio Counsel Review module: 1. Clearance Binder Export (Downloadable, timestamped PDF/JSON Legal Clearance Binder with all scene occurrences, risk flags, and live parallel-web citations), 2. Counsel Decision Override (UI controls for legal counsel to manually override automated risk tiers with audit-logged rationale), 3. Multi-Scene Visual Highlighter (Interactive script viewer that highlights cleared vs. flagged terms with color-coded badges directly on the screenplay text)."
 
+## Clarifications
+
+### Session 2026-08-17
+- Q: Should a studio counsel status override apply globally to the Canonical Entity across all scenes, or can counsel apply scene-specific overrides? → A: Hierarchical override: Canonical entity override sets the baseline clearance status project-wide, while allowing scene-specific overrides for unique scene contexts.
+- Q: When a user clicks an in-script highlighted badge directly on the screenplay text, how should the UI display clearance details? → A: Synchronized drawer: Focuses the entity in the registry table and immediately opens the slide-over Citation & Counsel Review Drawer containing live parallel-web citations and override controls.
+- Q: How should the system generate the printable Legal Clearance Binder PDF document? → A: Interactive printable modal: Formatted studio binder view with clean @media print styling, page break rules, and immediate browser "Print to PDF" triggering + structured JSON export.
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*
