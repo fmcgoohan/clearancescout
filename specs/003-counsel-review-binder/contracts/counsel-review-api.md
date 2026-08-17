@@ -1,20 +1,20 @@
 # API Contracts: Clearance Binder Export & Studio Counsel Review Module
 
-**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-17
+**Feature**: `specs/003-counsel-review-binder` | **Date**: 2026-08-18 (Updated)
 
 ---
 
 ## 1. Counsel Override Endpoint
 
 ### `POST /api/projects/:id/entities/:entityId/override`
-Applies a manual legal counsel override to an entity's clearance status with mandatory rationale.
+Applies an authoritative manual legal counsel override to an entity's clearance status with mandatory rationale.
 
 #### Request Body
 ```json
 {
   "overrideStatus": "NO_ISSUE_SURFACED",
   "rationale": "Product placement license executed under contract #PP-2026-881 with studio.",
-  "counselName": "Morgan Vance, Esq.",
+  "counselName": "Jane Doe, Esq.",
   "counselRole": "Senior Production Counsel",
   "sceneId": "optional-scene-id"
 }
@@ -31,9 +31,9 @@ Applies a manual legal counsel override to an entity's clearance status with man
     "previousStatus": "ACTION_REQUIRED",
     "overrideStatus": "NO_ISSUE_SURFACED",
     "rationale": "Product placement license executed under contract #PP-2026-881 with studio.",
-    "counselName": "Morgan Vance, Esq.",
+    "counselName": "Jane Doe, Esq.",
     "counselRole": "Senior Production Counsel",
-    "timestamp": "2026-08-17T18:00:00.000Z"
+    "timestamp": "2026-08-18T18:00:00.000Z"
   },
   "entity": {
     "id": "ent-coca-cola",
@@ -61,8 +61,8 @@ Retrieves chronological audit history of legal overrides for an entity.
       "previousStatus": "ACTION_REQUIRED",
       "overrideStatus": "NO_ISSUE_SURFACED",
       "rationale": "Product placement license executed under contract #PP-2026-881 with studio.",
-      "counselName": "Morgan Vance, Esq.",
-      "timestamp": "2026-08-17T18:00:00.000Z"
+      "counselName": "Jane Doe, Esq.",
+      "timestamp": "2026-08-18T18:00:00.000Z"
     }
   ]
 }
@@ -83,7 +83,7 @@ Compiles, signs (SHA-256), and delivers the consolidated Legal Clearance Binder.
   "title": "Cyberpunk Odyssey",
   "productionCompany": "Spectacle Pictures",
   "scriptVersion": "v1.0-ShootingDraft",
-  "exportedAt": "2026-08-17T18:15:00.000Z",
+  "exportedAt": "2026-08-18T18:15:00.000Z",
   "auditSignature": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "disclaimer": "ClearanceScout provides entertainment research issue-spotting and workflow tracking. It does not render formal legal advice or guarantees.",
   "summaryMetrics": {
