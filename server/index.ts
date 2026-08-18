@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from './config.js';
 import { projectRouter } from './api/projectRoutes.js';
+import { entityMutationRouter } from './api/entityMutationRoutes.js';
 import { clearanceRouter } from './api/clearanceRoutes.js';
 import { replacementRouter } from './api/replacementRoutes.js';
 import { timelineRouter } from './api/timelineRoutes.js';
@@ -22,6 +23,7 @@ app.use(express.json());
 // API Route mounts
 app.use('/api', healthRouter);
 app.use('/api', fixtureRouter);
+app.use('/api', entityMutationRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api', clearanceRouter);
 app.use('/api', replacementRouter);

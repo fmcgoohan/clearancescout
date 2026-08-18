@@ -28,6 +28,12 @@ export const TimelineDrawer: React.FC<TimelineDrawerProps> = ({ events, isOpen, 
         return { label: 'REJECTED', color: '#f87171' };
       case 'REPLACEMENT_ACCEPTED':
         return { label: 'ACCEPTED', color: '#34d399' };
+      case 'ITEM_ADDED':
+        return { label: 'ITEM ADDED', color: '#c084fc' };
+      case 'ITEM_EDITED':
+        return { label: 'ITEM EDITED', color: '#38bdf8' };
+      case 'ITEM_REMOVED':
+        return { label: 'ITEM REMOVED', color: '#f87171' };
       case 'OVERRIDE_RECORDED':
         return { label: 'COUNSEL', color: '#34d399' };
       case 'BINDER_EXPORT':

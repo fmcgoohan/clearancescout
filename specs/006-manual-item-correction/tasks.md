@@ -9,8 +9,8 @@
 
 **Purpose**: Route configuration and timeline event infrastructure for item mutations.
 
-- [ ] T001 Configure entity mutation routes in `server/api/entityMutationRoutes.ts` and mount in `server/index.ts`
-- [ ] T002 [P] Update timeline event types in `server/events/timelineEmitter.ts` to support `ITEM_ADDED`, `ITEM_EDITED`, and `ITEM_REMOVED`
+- [X] T001 Configure entity mutation routes in `server/api/entityMutationRoutes.ts` and mount in `server/index.ts`
+- [X] T002 [P] Update timeline event types in `server/events/timelineEmitter.ts` to support `ITEM_ADDED`, `ITEM_EDITED`, and `ITEM_REMOVED`
 
 ---
 
@@ -18,8 +18,8 @@
 
 **Purpose**: Repository methods for entity updates, deletions, and assessment invalidation with counsel override preservation.
 
-- [ ] T003 [P] Extend `EntityRepo` in `server/repositories/EntityRepo.ts` with `updateCanonicalEntity`, `deleteCanonicalEntity`, `getEntityById`, and `deleteOccurrencesByEntity`
-- [ ] T004 [P] Implement assessment invalidation on name/category update while preserving signed counsel overrides in `server/repositories/EntityRepo.ts`
+- [X] T003 [P] Extend `EntityRepo` in `server/repositories/EntityRepo.ts` with `updateCanonicalEntity`, `deleteCanonicalEntity`, `getEntityById`, and `deleteOccurrencesByEntity`
+- [X] T004 [P] Implement assessment invalidation on name/category update while preserving signed counsel overrides in `server/repositories/EntityRepo.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -33,13 +33,13 @@
 
 ### Tests for User Story 1
 
-- [ ] T005 [P] [US1] Contract test for `PATCH /api/projects/:id/entities/:entityId` and assessment invalidation in `tests/contract/test_item_mutation_api.test.ts`
+- [X] T005 [P] [US1] Contract test for `PATCH /api/projects/:id/entities/:entityId` and assessment invalidation in `tests/contract/test_item_mutation_api.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Implement `PATCH /api/projects/:id/entities/:entityId` endpoint in `server/api/entityMutationRoutes.ts` emitting `ITEM_EDITED` timeline event
-- [ ] T007 [P] [US1] Create `ItemEditModal.tsx` in `src/components/ItemEditModal.tsx` supporting name, category (5 choices), context editing, and validation
-- [ ] T008 [US1] Wire edit button and modal into `src/components/EntityRegistryTable.tsx` and `src/pages/WorkspacePage.tsx`
+- [X] T006 [US1] Implement `PATCH /api/projects/:id/entities/:entityId` endpoint in `server/api/entityMutationRoutes.ts` emitting `ITEM_EDITED` timeline event
+- [X] T007 [P] [US1] Create `ItemEditModal.tsx` in `src/components/ItemEditModal.tsx` supporting name, category (5 choices), context editing, and validation
+- [X] T008 [US1] Wire edit button and modal into `src/components/EntityRegistryTable.tsx` and `src/pages/WorkspacePage.tsx`
 
 **Checkpoint**: User Story 1 complete. In-place entity editing and invalidation operational.
 
@@ -53,12 +53,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T009 [P] [US2] Contract test for `POST /api/projects/:id/entities` manual item creation in `tests/contract/test_item_mutation_api.test.ts`
+- [X] T009 [P] [US2] Contract test for `POST /api/projects/:id/entities` manual item creation in `tests/contract/test_item_mutation_api.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Implement `POST /api/projects/:id/entities` endpoint in `server/api/entityMutationRoutes.ts` emitting `ITEM_ADDED` timeline event
-- [ ] T011 [US2] Add "Add Clearance Item" button and creation modal wiring to `src/components/EntityRegistryTable.tsx` and `src/pages/WorkspacePage.tsx`
+- [X] T010 [US2] Implement `POST /api/projects/:id/entities` endpoint in `server/api/entityMutationRoutes.ts` emitting `ITEM_ADDED` timeline event
+- [X] T011 [US2] Add "Add Clearance Item" button and creation modal wiring to `src/components/EntityRegistryTable.tsx` and `src/pages/WorkspacePage.tsx`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Manual entity addition operational.
 
@@ -72,12 +72,12 @@
 
 ### Tests for User Story 3
 
-- [ ] T012 [P] [US3] Contract test for `DELETE /api/projects/:id/entities/:entityId` in `tests/contract/test_item_mutation_api.test.ts`
+- [X] T012 [P] [US3] Contract test for `DELETE /api/projects/:id/entities/:entityId` in `tests/contract/test_item_mutation_api.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Implement `DELETE /api/projects/:id/entities/:entityId` endpoint in `server/api/entityMutationRoutes.ts` emitting `ITEM_REMOVED` timeline event
-- [ ] T014 [US3] Add delete confirmation action in `src/components/EntityRegistryTable.tsx` and verify exclusion from `server/workflows/binderExportWorkflow.ts`
+- [X] T013 [US3] Implement `DELETE /api/projects/:id/entities/:entityId` endpoint in `server/api/entityMutationRoutes.ts` emitting `ITEM_REMOVED` timeline event
+- [X] T014 [US3] Add delete confirmation action in `src/components/EntityRegistryTable.tsx` and verify exclusion from `server/workflows/binderExportWorkflow.ts`
 
 **Checkpoint**: All user stories complete. Full item correction, addition, and removal pipeline operational.
 
@@ -87,10 +87,10 @@
 
 **Purpose**: Timeline UI styling, end-to-end integration testing, quickstart validation, and full build verification.
 
-- [ ] T015 [P] Update `src/components/TimelineDrawer.tsx` to render `ITEM_ADDED`, `ITEM_EDITED`, and `ITEM_REMOVED` events with appropriate badges
-- [ ] T016 [P] Implement end-to-end integration test for item add, edit with invalidation, delete, research, and binder export in `tests/integration/item_correction_workflow.test.ts`
-- [ ] T017 Run quickstart validation scenarios defined in `specs/006-manual-item-correction/quickstart.md`
-- [ ] T018 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [X] T015 [P] Update `src/components/TimelineDrawer.tsx` to render `ITEM_ADDED`, `ITEM_EDITED`, and `ITEM_REMOVED` events with appropriate badges
+- [X] T016 [P] Implement end-to-end integration test for item add, edit with invalidation, delete, research, and binder export in `tests/integration/item_correction_workflow.test.ts`
+- [X] T017 Run quickstart validation scenarios defined in `specs/006-manual-item-correction/quickstart.md`
+- [X] T018 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

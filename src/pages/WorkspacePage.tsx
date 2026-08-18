@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ScriptViewer, Scene, CounselOverrideItem } from '../components/ScriptViewer';
 import { EntityRegistryTable, CanonicalEntity } from '../components/EntityRegistryTable';
+import { ItemEditModal, EntityCategory } from '../components/ItemEditModal';
 
 interface WorkspacePageProps {
   projectId: string;
@@ -25,6 +26,10 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [scriptFormat, setScriptFormat] = useState<'PLAINTEXT' | 'FOUNTAIN' | 'PDF'>('PLAINTEXT');
+
+  // Edit / Add modal state
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+  const [entityToEdit, setEntityToEdit] = useState<CanonicalEntity | null>(null);
 
   const defaultFictionalDemoScript = `TITLE: THE NEON HORIZON
 AUTHOR: Entrant Studio Team
@@ -134,6 +139,64 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     }
   };
 
+  const handleOpenAddModal = () => {
+    setEntityToEdit(null);
+    setIsItemModalOpen(true);
+  };
+
+  const handleOpenEditModal = (entity: CanonicalEntity) => {
+    setEntityToEdit(entity);
+    setIsItemModalOpen(true);
+  };
+
+  const handleSaveItem = async (data: {
+    canonicalName: string;
+    entityCategory: EntityCategory;
+    description: string;
+    sceneId?: string;
+  }) => {
+    if (!projectId) return;
+
+    if (entityToEdit) {
+      // Edit existing entity
+      const res = await fetch(`/api/projects/${projectId}/entities/${entityToEdit.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson.error || 'Failed to update item.');
+      }
+    } else {
+      // Add new entity
+      const res = await fetch(`/api/projects/${projectId}/entities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson.error || 'Failed to create item.');
+      }
+    }
+    await fetchWorkspaceData();
+  };
+
+  const handleDeleteItem = async (entityId: string) => {
+    if (!projectId) return;
+    try {
+      const res = await fetch(`/api/projects/${projectId}/entities/${entityId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        await fetchWorkspaceData();
+      }
+    } catch (err) {
+      console.error('Failed to delete entity:', err);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Upload & Controls Panel */}
@@ -204,9 +267,21 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           onEvaluateClearance={onEvaluateClearance}
           onGenerateReplacement={onGenerateReplacement}
           onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
+          onEditItem={handleOpenEditModal}
+          onDeleteItem={handleDeleteItem}
+          onAddItem={handleOpenAddModal}
           isEvaluating={isEvaluating}
         />
       </div>
+
+      {/* Item Add / Edit Modal */}
+      <ItemEditModal
+        isOpen={isItemModalOpen}
+        onClose={() => setIsItemModalOpen(false)}
+        onSave={handleSaveItem}
+        entityToEdit={entityToEdit}
+        scenes={scenes.map((s) => ({ id: s.id, sceneNumber: s.sceneNumber, heading: s.heading }))}
+      />
     </div>
   );
 };
