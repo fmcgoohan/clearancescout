@@ -5,10 +5,31 @@ interface TimelineDrawerProps {
   events: TimelineEvent[];
   isOpen: boolean;
   onClose: () => void;
+  targetEntityName?: string | null;
+  targetEntityId?: string | null;
+  onClearTargetEntity?: () => void;
 }
 
-export const TimelineDrawer: React.FC<TimelineDrawerProps> = ({ events, isOpen, onClose }) => {
+export const TimelineDrawer: React.FC<TimelineDrawerProps> = ({
+  events,
+  isOpen,
+  onClose,
+  targetEntityName,
+  targetEntityId,
+  onClearTargetEntity,
+}) => {
   if (!isOpen) return null;
+
+  const activeFocus = targetEntityName || targetEntityId || null;
+
+  const filteredEvents = activeFocus
+    ? events.filter((evt) => {
+        const query = activeFocus.toLowerCase();
+        const labelMatch = evt.label.toLowerCase().includes(query);
+        const payloadMatch = JSON.stringify(evt.payload || {}).toLowerCase().includes(query);
+        return labelMatch || payloadMatch;
+      })
+    : events;
 
   const getEventBadge = (type: string) => {
     switch (type) {
@@ -55,7 +76,7 @@ export const TimelineDrawer: React.FC<TimelineDrawerProps> = ({ events, isOpen, 
         height: '100vh',
         background: 'var(--bg-secondary)',
         borderLeft: '1px solid var(--border-color)',
-        zIndex: 1000,
+        zIndex: 1300,
         padding: '24px',
         display: 'flex',
         flexDirection: 'column',
@@ -77,13 +98,49 @@ export const TimelineDrawer: React.FC<TimelineDrawerProps> = ({ events, isOpen, 
         </button>
       </div>
 
+      {activeFocus && (
+        <div
+          style={{
+            background: 'rgba(6, 182, 212, 0.1)',
+            border: '1px solid rgba(6, 182, 212, 0.3)',
+            borderRadius: '6px',
+            padding: '8px 12px',
+            fontSize: '0.78rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span style={{ color: 'var(--accent-cyan)' }}>
+            🎯 Focused on: <strong>{activeFocus}</strong> ({filteredEvents.length} events)
+          </span>
+          {onClearTargetEntity && (
+            <button
+              onClick={onClearTargetEntity}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                textDecoration: 'underline',
+              }}
+            >
+              Show All
+            </button>
+          )}
+        </div>
+      )}
+
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {events.length === 0 ? (
+        {filteredEvents.length === 0 ? (
           <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: '40px', fontSize: '0.85rem' }}>
-            No timeline events recorded yet. Perform an action to see real-time workflow events.
+            {activeFocus
+              ? `No timeline events found matching "${activeFocus}".`
+              : 'No timeline events recorded yet. Perform an action to see real-time workflow events.'}
           </div>
         ) : (
-          events.map((evt) => {
+          filteredEvents.map((evt) => {
             const badge = getEventBadge(evt.eventType);
             return (
               <div

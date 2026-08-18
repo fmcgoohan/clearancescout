@@ -30,10 +30,42 @@ export default function App() {
   const [isExportingBinder, setIsExportingBinder] = useState(false);
 
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+  const [timelineTargetEntity, setTimelineTargetEntity] = useState<string | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const { events } = useTimelineSSE(projectId);
+
+  const handleBinderJumpToEvidence = (
+    entityId: string,
+    entityName: string,
+    passedCitations?: Citation[],
+    passedRationale?: string,
+    passedStatus?: string
+  ) => {
+    setSelectedEntityId(entityId);
+    setCitationEntityName(entityName);
+    if (passedCitations && passedCitations.length > 0) {
+      setCitations(passedCitations);
+      setCitationRationale(passedRationale || 'Grounded research evidence.');
+      setCitationStatus(passedStatus || 'ACTION_REQUIRED');
+    } else {
+      const matching = binderData?.citationsIndex?.filter((c: any) =>
+        c.query?.toLowerCase().includes(entityName.toLowerCase())
+      );
+      setCitations(matching || []);
+      setCitationRationale(passedRationale || 'Clearance evidentiary assessment.');
+      setCitationStatus(passedStatus || 'ACTION_REQUIRED');
+    }
+    setIsOverridden(false);
+    setLatestOverride(null);
+    setIsCitationOpen(true);
+  };
+
+  const handleBinderJumpToTimeline = (_entityId: string, entityName: string) => {
+    setTimelineTargetEntity(entityName || null);
+    setIsTimelineOpen(true);
+  };
 
   // Initialize or fetch project
   useEffect(() => {
@@ -311,9 +343,22 @@ export default function App() {
 
       <ReplacementCardModal card={replacementCard} isOpen={isReplacementOpen} onClose={() => setIsReplacementOpen(false)} />
 
-      <BinderExportModal binder={binderData} isOpen={isBinderOpen} onClose={() => setIsBinderOpen(false)} executionMode={executionMode} />
+      <BinderExportModal
+        binder={binderData}
+        isOpen={isBinderOpen}
+        onClose={() => setIsBinderOpen(false)}
+        executionMode={executionMode}
+        onJumpToEvidence={handleBinderJumpToEvidence}
+        onJumpToTimeline={handleBinderJumpToTimeline}
+      />
 
-      <TimelineDrawer events={events} isOpen={isTimelineOpen} onClose={() => setIsTimelineOpen(false)} />
+      <TimelineDrawer
+        events={events}
+        isOpen={isTimelineOpen}
+        onClose={() => setIsTimelineOpen(false)}
+        targetEntityName={timelineTargetEntity}
+        onClearTargetEntity={() => setTimelineTargetEntity(null)}
+      />
     </div>
   );
 }

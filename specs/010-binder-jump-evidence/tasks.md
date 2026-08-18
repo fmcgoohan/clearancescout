@@ -9,7 +9,7 @@
 
 **Purpose**: Type definitions and interface extensions for binder jump actions.
 
-- [ ] T001 [P] Define `BinderJumpTarget` and extend props in `src/components/BinderExportModal.tsx`, `src/components/CitationDrawer.tsx`, and `src/components/TimelineDrawer.tsx`
+- [x] T001 [P] Define `BinderJumpTarget` and extend props in `src/components/BinderExportModal.tsx`, `src/components/CitationDrawer.tsx`, and `src/components/TimelineDrawer.tsx`
 
 ---
 
@@ -17,7 +17,7 @@
 
 **Purpose**: Empty evidence fallback state in `CitationDrawer.tsx` and entity-focused timeline filtering in `TimelineDrawer.tsx` without chain-of-thought.
 
-- [ ] T002 [P] Implement empty evidence fallback state in `src/components/CitationDrawer.tsx` and entity timeline filtering/focus in `src/components/TimelineDrawer.tsx`
+- [x] T002 [P] Implement empty evidence fallback state in `src/components/CitationDrawer.tsx` and entity timeline filtering/focus in `src/components/TimelineDrawer.tsx`
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -31,12 +31,12 @@
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Component/contract test for "🔍 View Evidence" triggers on binder canonical entities and replacement cards in `tests/contract/test_binder_jump.test.ts`
+- [x] T003 [P] [US1] Component/contract test for "🔍 View Evidence" triggers on binder canonical entities and replacement cards in `tests/contract/test_binder_jump.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Add "🔍 View Evidence" action triggers on canonical entity rows and replacement catalog cards in `src/components/BinderExportModal.tsx`
-- [ ] T005 [P] [US1] Wire `onJumpToEvidence` callback in `src/pages/WorkspacePage.tsx` to populate and open the `CitationDrawer`
+- [x] T004 [US1] Add "🔍 View Evidence" action triggers on canonical entity rows and replacement catalog cards in `src/components/BinderExportModal.tsx`
+- [x] T005 [P] [US1] Wire `onJumpToEvidence` callback in `src/pages/WorkspacePage.tsx` to populate and open the `CitationDrawer`
 
 **Checkpoint**: User Story 1 complete. Binder evidence jump operational and testable independently.
 
@@ -50,12 +50,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T006 [P] [US2] Contract test for "📜 View Timeline" triggers and entity timeline focus without chain-of-thought in `tests/contract/test_binder_jump.test.ts`
+- [x] T006 [P] [US2] Contract test for "📜 View Timeline" triggers and entity timeline focus without chain-of-thought in `tests/contract/test_binder_jump.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Add "📜 View Timeline" action triggers on canonical entity rows and replacement catalog cards in `src/components/BinderExportModal.tsx`
-- [ ] T008 [P] [US2] Wire `onJumpToTimeline` callback in `src/pages/WorkspacePage.tsx` to focus and open `TimelineDrawer`
+- [x] T007 [US2] Add "📜 View Timeline" action triggers on canonical entity rows and replacement catalog cards in `src/components/BinderExportModal.tsx`
+- [x] T008 [P] [US2] Wire `onJumpToTimeline` callback in `src/pages/WorkspacePage.tsx` to focus and open `TimelineDrawer`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Both evidence and timeline jump flows operational.
 
@@ -69,7 +69,7 @@
 
 ### Tests for User Story 3
 
-- [ ] T009 [P] [US3] Contract test in `tests/contract/test_binder_jump.test.ts` verifying jump navigation causes zero HTTP mutations and leaves the binder SHA-256 digest unchanged
+- [x] T009 [P] [US3] Contract test in `tests/contract/test_binder_jump.test.ts` verifying jump navigation causes zero HTTP mutations and leaves the binder SHA-256 digest unchanged
 
 **Checkpoint**: All user stories complete. Jump actions, citation drawers, timeline focus, and read-only non-destructive invariant verified.
 
@@ -79,9 +79,9 @@
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full build verification.
 
-- [ ] T010 [P] Implement end-to-end integration test in `tests/integration/binder_jump_workflow.test.ts` verifying binder generation, jump to evidence, jump to timeline, and constant SHA-256 digest
-- [ ] T011 Run quickstart validation scenarios defined in `specs/010-binder-jump-evidence/quickstart.md`
-- [ ] T012 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [x] T010 [P] Implement end-to-end integration test in `tests/integration/binder_jump_workflow.test.ts` verifying binder generation, jump to evidence, jump to timeline, and constant SHA-256 digest
+- [x] T011 Run quickstart validation scenarios defined in `specs/010-binder-jump-evidence/quickstart.md`
+- [x] T012 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

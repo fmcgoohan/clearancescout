@@ -37,6 +37,8 @@ interface BinderExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
+  onJumpToEvidence?: (entityId: string, entityName: string, citations?: any[], rationale?: string, status?: string) => void;
+  onJumpToTimeline?: (entityId: string, entityName: string) => void;
 }
 
 export const BinderExportModal: React.FC<BinderExportModalProps> = ({
@@ -44,6 +46,8 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
   isOpen,
   onClose,
   executionMode = 'DEMO_MODE',
+  onJumpToEvidence,
+  onJumpToTimeline,
 }) => {
   if (!isOpen || !binder) return null;
 
@@ -138,63 +142,99 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
               {binder.projectSummary.title}
             </h2>
             <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              {binder.projectSummary.productionCompany} • Script Version: {binder.projectSummary.scriptVersion}
+              Production Company: {binder.projectSummary.productionCompany} • Script: {binder.projectSummary.scriptVersion}
             </p>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <span
-              style={{
-                display: 'inline-block',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                background: isLive
-                  ? 'rgba(56, 189, 248, 0.15)'
-                  : isFallback
-                  ? 'rgba(251, 191, 36, 0.15)'
-                  : isMixed
-                  ? 'rgba(192, 132, 252, 0.15)'
-                  : 'rgba(52, 211, 153, 0.15)',
-                color: isLive
-                  ? '#38bdf8'
-                  : isFallback
-                  ? '#fbbf24'
-                  : isMixed
-                  ? '#c084fc'
-                  : '#34d399',
-                border: `1px solid ${
-                  isLive
-                    ? 'rgba(56, 189, 248, 0.4)'
-                    : isFallback
-                    ? 'rgba(251, 191, 36, 0.4)'
-                    : isMixed
-                    ? 'rgba(192, 132, 252, 0.4)'
-                    : 'rgba(52, 211, 153, 0.4)'
-                }`,
-              }}
-            >
-              {isLive
-                ? '🌐 Parallel-Grounded Evidence'
+          <button className="btn-secondary no-print" style={{ padding: '6px 12px' }} onClick={onClose}>
+            ✕ Close
+          </button>
+        </div>
+
+        {/* Provenance Watermark Badge Banner */}
+        <div
+          style={{
+            background: isLive
+              ? 'rgba(6, 182, 212, 0.08)'
+              : isFallback
+              ? 'rgba(248, 113, 113, 0.08)'
+              : isMixed
+              ? 'rgba(168, 85, 247, 0.08)'
+              : 'rgba(251, 191, 36, 0.08)',
+            border: `1px solid ${
+              isLive
+                ? 'rgba(6, 182, 212, 0.3)'
                 : isFallback
-                ? '⚠️ Cloud Fallback Mode'
+                ? 'rgba(248, 113, 113, 0.3)'
                 : isMixed
-                ? '🔀 Mixed Provenance Evidence'
-                : '🧪 Demo Mode Fixtures'}
+                ? 'rgba(168, 85, 247, 0.3)'
+                : 'rgba(251, 191, 36, 0.3)'
+            }`,
+            borderRadius: '8px',
+            padding: '12px 16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '1.2rem' }}>
+              {isLive ? '🌐' : isFallback ? '⚠️' : isMixed ? '🔀' : '🧪'}
             </span>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Exported: {new Date(binder.exportedAt).toLocaleString()}
+            <div>
+              <div
+                style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  color: isLive ? 'var(--accent-cyan)' : isFallback ? '#f87171' : isMixed ? '#c084fc' : '#fbbf24',
+                }}
+              >
+                {isLive
+                  ? 'LIVE RESEARCH GROUNDING PROVENANCE'
+                  : isFallback
+                  ? 'CLOUD BENCHMARK FALLBACK PROVENANCE'
+                  : isMixed
+                  ? 'MIXED PROVENANCE CLEARANCE DOSSIER'
+                  : 'SYNTHETIC BENCHMARK DEMO PROVENANCE'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                {isLive
+                  ? 'All research citations verified via live Google Search / Parallel API grounding.'
+                  : isFallback
+                  ? 'Parallel API unavailable. Evidence verified via deterministic cloud benchmark fallback fixture.'
+                  : isMixed
+                  ? `Dossier compiled from mixed evidence sources (${binder.provenanceSummary?.liveCount || 0} Live, ${binder.provenanceSummary?.demoCount || 0} Demo, ${binder.provenanceSummary?.fallbackCount || 0} Fallback).`
+                  : 'Screenplay and entity research derived from competition synthetic fixture.'}
+              </div>
             </div>
           </div>
+          <span
+            className="mono"
+            style={{
+              fontSize: '0.75rem',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontWeight: 700,
+              background: isLive
+                ? 'rgba(6, 182, 212, 0.2)'
+                : isFallback
+                ? 'rgba(248, 113, 113, 0.2)'
+                : isMixed
+                ? 'rgba(168, 85, 247, 0.2)'
+                : 'rgba(251, 191, 36, 0.2)',
+              color: isLive ? 'var(--accent-cyan)' : isFallback ? '#f87171' : isMixed ? '#c084fc' : '#fbbf24',
+            }}
+          >
+            {dominant}
+          </span>
         </div>
 
         {/* SHA-256 Digest Box */}
         <div
           style={{
-            background: 'rgba(56, 189, 248, 0.05)',
-            border: '1px solid rgba(56, 189, 248, 0.2)',
-            borderRadius: '8px',
+            background: 'rgba(255,255,255,0.02)',
             padding: '12px 16px',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -249,6 +289,70 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
           </div>
         </div>
 
+        {/* Canonical Entity Clearance Registry */}
+        {binder.canonicalEntities && binder.canonicalEntities.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-cyan)', margin: 0 }}>
+              Canonical Entity Clearance Registry ({binder.canonicalEntities.length})
+            </h4>
+            <div style={{ maxHeight: '220px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {binder.canonicalEntities.map((ent: any) => (
+                <div
+                  key={ent.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{ent.canonicalName}</span>
+                    <span className="badge" style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.06)' }}>
+                      {ent.entityCategory}
+                    </span>
+                    <span className={`badge badge-${ent.overallClearanceStatus}`} style={{ fontSize: '0.65rem' }}>
+                      {ent.overallClearanceStatus?.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <div className="no-print" style={{ display: 'flex', gap: '6px' }}>
+                    {onJumpToEvidence && (
+                      <button
+                        className="btn-secondary"
+                        style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                        onClick={() =>
+                          onJumpToEvidence(
+                            ent.id,
+                            ent.canonicalName,
+                            binder.citationsIndex?.filter((c: any) => c.query?.toLowerCase().includes(ent.canonicalName.toLowerCase())),
+                            ent.description,
+                            ent.overallClearanceStatus
+                          )
+                        }
+                      >
+                        🔍 View Evidence
+                      </button>
+                    )}
+                    {onJumpToTimeline && (
+                      <button
+                        className="btn-secondary"
+                        style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                        onClick={() => onJumpToTimeline(ent.id, ent.canonicalName)}
+                      >
+                        📜 View Timeline
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Side-by-Side Original & Fictional Replacement Catalog */}
         {binder.replacementCatalog && binder.replacementCatalog.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -280,6 +384,34 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                       Status: <span className="badge badge-ACTION_REQUIRED">ACTION REQUIRED</span>
                     </div>
+                    <div className="no-print" style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
+                      {onJumpToEvidence && (
+                        <button
+                          className="btn-secondary"
+                          style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                          onClick={() =>
+                            onJumpToEvidence(
+                              rep.canonicalEntityId || rep.id,
+                              rep.targetEntityName || 'Original Entity',
+                              rep.citations,
+                              rep.rationale,
+                              'ACTION_REQUIRED'
+                            )
+                          }
+                        >
+                          🔍 View Evidence
+                        </button>
+                      )}
+                      {onJumpToTimeline && (
+                        <button
+                          className="btn-secondary"
+                          style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                          onClick={() => onJumpToTimeline(rep.canonicalEntityId || rep.id, rep.targetEntityName || 'Original Entity')}
+                        >
+                          📜 View Timeline
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Right: Replacement Asset */}
@@ -298,6 +430,34 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                         ⚖️ Escalated to Legal Counsel
                       </div>
                     )}
+                    <div className="no-print" style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
+                      {onJumpToEvidence && (
+                        <button
+                          className="btn-secondary"
+                          style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                          onClick={() =>
+                            onJumpToEvidence(
+                              rep.canonicalEntityId || rep.id,
+                              rep.fictionalBrandName,
+                              rep.citations,
+                              rep.rationale,
+                              'NO_ISSUE_SURFACED'
+                            )
+                          }
+                        >
+                          🔍 View Evidence
+                        </button>
+                      )}
+                      {onJumpToTimeline && (
+                        <button
+                          className="btn-secondary"
+                          style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                          onClick={() => onJumpToTimeline(rep.canonicalEntityId || rep.id, rep.fictionalBrandName)}
+                        >
+                          📜 View Timeline
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

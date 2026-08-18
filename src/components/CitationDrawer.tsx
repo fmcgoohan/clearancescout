@@ -125,7 +125,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
         height: '100vh',
         background: 'var(--bg-secondary)',
         borderLeft: '1px solid var(--border-color)',
-        zIndex: 1000,
+        zIndex: 1300,
         padding: '24px',
         display: 'flex',
         flexDirection: 'column',
@@ -133,18 +133,61 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
         boxShadow: '-8px 0 32px rgba(0,0,0,0.5)',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Entity Dossier</span>
-          <h3 style={{ fontSize: '1.1rem', color: 'var(--accent-cyan)' }}>{entityName}</h3>
+          <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Entity Evidence & Research Dossier
+          </span>
+          <h3 style={{ fontSize: '1.2rem', color: 'var(--text-main)', margin: '4px 0 0' }}>
+            {entityName}
+          </h3>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
+            <span className={`badge badge-${currentStatus}`}>
+              {currentStatus.replace(/_/g, ' ')}
+            </span>
+            {isOverridden && (
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  background: 'rgba(52, 211, 153, 0.15)',
+                  color: '#34d399',
+                  border: '1px solid rgba(52, 211, 153, 0.3)',
+                  fontWeight: 600,
+                }}
+              >
+                ⚖️ Legal Counsel Override
+              </span>
+            )}
+          </div>
         </div>
         <button className="btn-secondary" style={{ padding: '4px 8px' }} onClick={onClose}>
           ✕ Close
         </button>
       </div>
 
+      {/* Rationale and Summary */}
+      {rationale && (
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.03)',
+            padding: '12px',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
+            fontSize: '0.8rem',
+            color: 'var(--text-muted)',
+            lineHeight: 1.5,
+          }}
+        >
+          <strong style={{ color: 'var(--text-main)', display: 'block', marginBottom: '4px' }}>Clearance Assessment Rationale:</strong>
+          {rationale}
+        </div>
+      )}
+
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
         <button
           className={activeTab === 'PROVENANCE' ? 'btn-primary' : 'btn-secondary'}
           style={{ padding: '6px 12px', fontSize: '0.78rem' }}
@@ -192,13 +235,6 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
             </div>
           )}
 
-          {rationale && (
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-              <h4 style={{ fontSize: '0.85rem', marginBottom: '6px', color: 'var(--text-main)' }}>Clearance Rationale</h4>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>{rationale}</p>
-            </div>
-          )}
-
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
             <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
               {isLive
@@ -230,9 +266,26 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
           </div>
 
           {citations.length === 0 && (
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
-              No research citations retrieved yet.
-            </p>
+            <div
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                textAlign: 'center',
+                padding: '24px 16px',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px dashed var(--border-color)',
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              <div style={{ fontSize: '1.2rem' }}>🔍</div>
+              <div style={{ color: 'var(--text-main)', fontWeight: 600 }}>No Grounded Citations Recorded</div>
+              <div style={{ fontSize: '0.75rem' }}>
+                No grounded research citations surfaced for this entity. Click '🔍 Ground' in the workspace registry to evaluate research.
+              </div>
+            </div>
           )}
 
           {citations.map((c) => (
