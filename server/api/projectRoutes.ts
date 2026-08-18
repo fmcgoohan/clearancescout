@@ -89,7 +89,13 @@ projectRouter.get('/:id/entities', async (req: Request, res: Response, next) => 
 projectRouter.get('/:id/scenes', async (req: Request, res: Response, next) => {
   try {
     const scenes = await sceneRepo.getScenesByProject(req.params.id);
-    return res.json(scenes);
+    const scenesWithOccurrences = await Promise.all(
+      scenes.map(async (s) => ({
+        ...s,
+        occurrences: await entityRepo.getOccurrencesByScene(req.params.id, s.id),
+      }))
+    );
+    return res.json(scenesWithOccurrences);
   } catch (err) {
     next(err);
   }

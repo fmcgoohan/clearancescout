@@ -9,7 +9,7 @@
 
 **Purpose**: Filter state types and interfaces for the entity registry workspace.
 
-- [ ] T001 [P] Define `RegistryFilterState` and `SceneFilterOption` interfaces in `src/components/EntityRegistryTable.tsx`
+- [X] T001 [P] Define `RegistryFilterState` and `SceneFilterOption` interfaces in `src/components/EntityRegistryTable.tsx`
 
 ---
 
@@ -17,7 +17,7 @@
 
 **Purpose**: Pure filtering predicate combining Status, Category, and Scene dimensions with logical AND intersection.
 
-- [ ] T002 [P] Implement pure multi-dimension filtering predicate helper function supporting Status, Category, and Scene logical AND intersection in `src/components/EntityRegistryTable.tsx`
+- [X] T002 [P] Implement pure multi-dimension filtering predicate helper function supporting Status, Category, and Scene logical AND intersection in `src/components/EntityRegistryTable.tsx`
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -31,12 +31,12 @@
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Component/contract test for multi-dimension filtering predicate, default `ALL` values, and dynamic count calculation in `tests/contract/test_registry_filters.test.ts`
+- [X] T003 [P] [US1] Component/contract test for multi-dimension filtering predicate, default `ALL` values, and dynamic count calculation in `tests/contract/test_registry_filters.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Add Status, Category, and Scene filter select controls with `ALL` defaults and dynamic counter badge (`X of Y Entities Displayed`) in `src/components/EntityRegistryTable.tsx`
-- [ ] T005 [P] [US1] Update `WorkspacePage.tsx` in `src/pages/WorkspacePage.tsx` to pass scenes and scene occurrences to `EntityRegistryTable`
+- [X] T004 [US1] Add Status, Category, and Scene filter select controls with `ALL` defaults and dynamic counter badge (`X of Y Entities Displayed`) in `src/components/EntityRegistryTable.tsx`
+- [X] T005 [P] [US1] Update `WorkspacePage.tsx` in `src/pages/WorkspacePage.tsx` to pass scenes and scene occurrences to `EntityRegistryTable`
 
 **Checkpoint**: User Story 1 complete. Multi-dimension filtering operational and testable independently.
 
@@ -50,11 +50,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T006 [P] [US2] Contract test for zero-match empty state rendering and "Clear Filters" reset in `tests/contract/test_registry_filters.test.ts`
+- [X] T006 [P] [US2] Contract test for zero-match empty state rendering and "Clear Filters" reset in `tests/contract/test_registry_filters.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Render descriptive zero-match empty state with active filter tags and "🔄 Clear Filters" action in `src/components/EntityRegistryTable.tsx`
+- [X] T007 [US2] Render descriptive zero-match empty state with active filter tags and "🔄 Clear Filters" action in `src/components/EntityRegistryTable.tsx`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Empty state and quick reset operational.
 
@@ -68,11 +68,11 @@
 
 ### Tests for User Story 3
 
-- [ ] T008 [P] [US3] Contract test in `tests/contract/test_registry_filters.test.ts` verifying filtering is 100% read-only and leaves entity collections and binder exports unchanged
+- [X] T008 [P] [US3] Contract test in `tests/contract/test_registry_filters.test.ts` verifying filtering is 100% read-only and leaves entity collections and binder exports unchanged
 
 ### Implementation for User Story 3
 
-- [ ] T009 [US3] Verify full binder export retention and zero side effects under active UI filters in `src/pages/WorkspacePage.tsx`
+- [X] T009 [US3] Verify full binder export retention and zero side effects under active UI filters in `src/pages/WorkspacePage.tsx`
 
 **Checkpoint**: All user stories complete. Multi-dimension filtering, empty state recovery, and read-only non-destructive invariant operational.
 
@@ -82,9 +82,9 @@
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full build verification.
 
-- [ ] T010 [P] Implement end-to-end integration test in `tests/integration/registry_filter_workflow.test.ts` verifying multi-scene filtering, quick reset, and binder export
-- [ ] T011 Run quickstart validation scenarios defined in `specs/009-workspace-registry-filters/quickstart.md`
-- [ ] T012 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [X] T010 [P] Implement end-to-end integration test in `tests/integration/registry_filter_workflow.test.ts` verifying multi-scene filtering, quick reset, and binder export
+- [X] T011 Run quickstart validation scenarios defined in `specs/009-workspace-registry-filters/quickstart.md`
+- [X] T012 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

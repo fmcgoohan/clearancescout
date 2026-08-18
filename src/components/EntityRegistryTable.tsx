@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+export type ClearanceStatusType = 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
 
 export interface CanonicalEntity {
   id: string;
   canonicalName: string;
   entityCategory: string;
   description: string;
-  overallClearanceStatus: 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
+  overallClearanceStatus: ClearanceStatusType;
   origin?: 'AUTO_EXTRACTED' | 'USER_EDITED' | 'MANUALLY_ADDED';
   isOverridden?: boolean;
   latestOverride?: {
@@ -17,8 +19,63 @@ export interface CanonicalEntity {
   replacementCard?: any;
 }
 
+export interface SceneFilterOption {
+  id: string;
+  sceneNumber: number;
+  heading: string;
+  occurrences?: { canonicalEntityId: string }[];
+}
+
+export interface RegistryFilterState {
+  status: 'ALL' | ClearanceStatusType;
+  category: 'ALL' | string;
+  sceneId: 'ALL' | string;
+}
+
+/**
+ * Pure predicate helper combining Status, Category, and Scene filters with logical AND
+ */
+export function filterEntities(
+  entities: CanonicalEntity[],
+  filter: RegistryFilterState,
+  scenes?: SceneFilterOption[]
+): CanonicalEntity[] {
+  if (!entities || entities.length === 0) return [];
+
+  // Build set of entity IDs in selected scene
+  let sceneEntityIds: Set<string> | null = null;
+  if (filter.sceneId !== 'ALL' && scenes) {
+    const matchedScene = scenes.find((s) => s.id === filter.sceneId);
+    if (matchedScene && matchedScene.occurrences) {
+      sceneEntityIds = new Set(matchedScene.occurrences.map((o) => o.canonicalEntityId));
+    } else {
+      sceneEntityIds = new Set();
+    }
+  }
+
+  return entities.filter((e) => {
+    // 1. Status Filter
+    if (filter.status !== 'ALL' && e.overallClearanceStatus !== filter.status) {
+      return false;
+    }
+    // 2. Category Filter
+    if (filter.category !== 'ALL' && e.entityCategory !== filter.category) {
+      return false;
+    }
+    // 3. Scene Filter
+    if (filter.sceneId !== 'ALL' && sceneEntityIds !== null) {
+      if (!sceneEntityIds.has(e.id)) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
 interface EntityRegistryTableProps {
   entities: CanonicalEntity[];
+  scenes?: SceneFilterOption[];
+  selectedSceneId?: string | null;
   onEvaluateClearance: (entityId: string) => void;
   onRetryResearch?: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
@@ -32,6 +89,8 @@ interface EntityRegistryTableProps {
 
 export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   entities,
+  scenes = [],
+  selectedSceneId,
   onEvaluateClearance,
   onRetryResearch,
   onGenerateReplacement,
@@ -42,11 +101,20 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   onAddItem,
   isEvaluating,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [filter, setFilter] = useState<RegistryFilterState>({
+    status: 'ALL',
+    category: 'ALL',
+    sceneId: 'ALL',
+  });
 
-  const filteredEntities = selectedCategory === 'ALL'
-    ? entities
-    : entities.filter(e => e.entityCategory === selectedCategory);
+  // Sync sceneId when selectedSceneId changes from external ScriptViewer
+  useEffect(() => {
+    if (selectedSceneId) {
+      setFilter((prev) => ({ ...prev, sceneId: selectedSceneId }));
+    }
+  }, [selectedSceneId]);
+
+  const filteredEntities = filterEntities(entities, filter, scenes);
 
   const getBadgeClass = (status: string) => {
     return `badge badge-${status}`;
@@ -74,10 +142,34 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   };
 
   const categories = ['ALL', 'BRAND', 'ART_MUSIC', 'PUBLIC_FIGURE', 'PROPRIETARY_LOCATION', 'GRAPHIC_PROP'];
+  const statuses: ('ALL' | ClearanceStatusType)[] = [
+    'ALL',
+    'NO_ISSUE_SURFACED',
+    'REVIEW_RECOMMENDED',
+    'ACTION_REQUIRED',
+    'INSUFFICIENT_EVIDENCE',
+  ];
+
+  const handleClearFilters = () => {
+    setFilter({
+      status: 'ALL',
+      category: 'ALL',
+      sceneId: 'ALL',
+    });
+  };
+
+  const isAnyFilterActive = filter.status !== 'ALL' || filter.category !== 'ALL' || filter.sceneId !== 'ALL';
+
+  const getSceneLabel = (sceneId: string) => {
+    if (sceneId === 'ALL') return 'All Scenes';
+    const sc = scenes.find((s) => s.id === sceneId);
+    return sc ? `Scene ${sc.sceneNumber}: ${sc.heading}` : sceneId;
+  };
 
   return (
     <div className="glass-panel" style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      {/* Header & Item Add */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
             <h3 style={{ fontSize: '1rem', color: 'var(--accent-cyan)', margin: 0 }}>
@@ -103,31 +195,142 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
           </span>
         </div>
 
-        {/* Category Filters */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              style={{
-                fontSize: '0.7rem',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                border: '1px solid var(--border-color)',
-                background: selectedCategory === cat ? 'var(--accent-blue)' : 'rgba(255,255,255,0.03)',
-                color: selectedCategory === cat ? '#ffffff' : 'var(--text-muted)',
-                cursor: 'pointer',
-              }}
-            >
-              {cat.replace(/_/g, ' ')}
-            </button>
-          ))}
+        {/* Clear Filters Reset Button */}
+        {isAnyFilterActive && (
+          <button
+            className="btn-secondary"
+            onClick={handleClearFilters}
+            style={{
+              fontSize: '0.75rem',
+              padding: '4px 10px',
+              borderColor: 'rgba(255,255,255,0.2)',
+              color: 'var(--text-muted)',
+            }}
+          >
+            🔄 Clear Filters
+          </button>
+        )}
+      </div>
+
+      {/* Multi-Dimension Filter Controls Toolbar */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '10px',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '8px',
+          padding: '10px 12px',
+          marginBottom: '16px',
+        }}
+      >
+        {/* Category Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Category:</span>
+          <select
+            value={filter.category}
+            onChange={(e) => setFilter({ ...filter, category: e.target.value })}
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--border-color)',
+              fontSize: '0.75rem',
+            }}
+          >
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat.replace(/_/g, ' ')}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Status Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Status:</span>
+          <select
+            value={filter.status}
+            onChange={(e) => setFilter({ ...filter, status: e.target.value as any })}
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--border-color)',
+              fontSize: '0.75rem',
+            }}
+          >
+            {statuses.map((st) => (
+              <option key={st} value={st}>
+                {st.replace(/_/g, ' ')}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Scene Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Scene:</span>
+          <select
+            value={filter.sceneId}
+            onChange={(e) => setFilter({ ...filter, sceneId: e.target.value })}
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--border-color)',
+              fontSize: '0.75rem',
+              maxWidth: '220px',
+            }}
+          >
+            <option value="ALL">All Scenes</option>
+            {scenes.map((s) => (
+              <option key={s.id} value={s.id}>
+                Scene {s.sceneNumber}: {s.heading}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
+      {/* Main Table or Empty State */}
       {(!entities || entities.length === 0) ? (
         <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
           No canonical entities registered. Parse a script or click "➕ Add Item" to populate the registry.
+        </div>
+      ) : filteredEntities.length === 0 ? (
+        <div
+          style={{
+            padding: '32px',
+            textAlign: 'center',
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px dashed var(--border-color)',
+            borderRadius: '8px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px',
+          }}
+        >
+          <div style={{ fontSize: '1.5rem' }}>🔍</div>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: 500 }}>
+            No entities match the active filters
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: '400px' }}>
+            Active criteria: Category: <strong>{filter.category.replace(/_/g, ' ')}</strong> • Status: <strong>{filter.status.replace(/_/g, ' ')}</strong> • Scene: <strong>{getSceneLabel(filter.sceneId)}</strong>
+          </div>
+          <button
+            className="btn-secondary"
+            onClick={handleClearFilters}
+            style={{ fontSize: '0.75rem', padding: '6px 14px', borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' }}
+          >
+            🔄 Reset All Filters
+          </button>
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>

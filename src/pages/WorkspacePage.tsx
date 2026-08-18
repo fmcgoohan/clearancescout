@@ -304,6 +304,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         />
         <EntityRegistryTable
           entities={entities}
+          scenes={scenes}
+          selectedSceneId={selectedSceneId}
           onEvaluateClearance={onEvaluateClearance}
           onRetryResearch={handleRetryResearch}
           onGenerateReplacement={onGenerateReplacement}
