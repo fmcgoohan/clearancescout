@@ -31,4 +31,4 @@
 
 ## Notes
 
-- All 16 quality criteria are satisfied. The specification is ready for clarification or implementation planning.
+- All 16 quality criteria are satisfied. The clarified specification encodes all 5 user decisions and is ready for implementation planning.
