@@ -9,7 +9,7 @@
 
 **Purpose**: Define newly captured repository record-replay fixtures for Parallel Search and Gemini responses.
 
-- [ ] T001 [P] Create typed record-replay fixtures in `server/fixtures/recordReplayFixtures.ts` for Parallel Search trademark records and Gemini risk/replacement payloads
+- [x] T001 [P] Create typed record-replay fixtures in `server/fixtures/recordReplayFixtures.ts` for Parallel Search trademark records and Gemini risk/replacement payloads
 
 ---
 
@@ -17,7 +17,7 @@
 
 **Purpose**: Core engine wiring for deterministic fixture resolution in `TEST_MODE` and `DEMO_MODE`.
 
-- [ ] T002 [P] Integrate `recordReplayFixtures.ts` into `server/tools/parallelSearchTool.ts` with explicit `DEMO_FIXTURE` and `FALLBACK_FIXTURE` tagging
+- [x] T002 [P] Integrate `recordReplayFixtures.ts` into `server/tools/parallelSearchTool.ts` with explicit `DEMO_FIXTURE` and `FALLBACK_FIXTURE` tagging
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -31,11 +31,11 @@
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Contract test for fixture schema completeness, trademark entity matching, and deterministic offline resolution in `tests/contract/test_offline_fixtures.test.ts`
+- [x] T003 [P] [US1] Contract test for fixture schema completeness, trademark entity matching, and deterministic offline resolution in `tests/contract/test_offline_fixtures.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Connect offline fixture resolution for script parsing and brand replacement in `server/agents/ScriptParserAgent.ts` and `server/agents/ReplacementAgent.ts`
+- [x] T004 [US1] Connect offline fixture resolution for script parsing and brand replacement in `server/agents/ScriptParserAgent.ts` and `server/agents/ReplacementAgent.ts`
 
 **Checkpoint**: User Story 1 complete. Deterministic offline fixture execution operational and testable independently.
 
@@ -49,11 +49,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T005 [P] [US2] Contract test verifying `CLOUD_MODE` startup credential enforcement, live API routing, and anti-replay guard in `tests/contract/test_offline_fixtures.test.ts`
+- [x] T005 [P] [US2] Contract test verifying `CLOUD_MODE` startup credential enforcement, live API routing, and anti-replay guard in `tests/contract/test_offline_fixtures.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] Enforce fatal startup checks and live-only routing in `server/config.ts` and `server/tools/parallelSearchTool.ts`
+- [x] T006 [US2] Enforce fatal startup checks and live-only routing in `server/config.ts` and `server/tools/parallelSearchTool.ts`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Offline testing deterministic, production cloud mode strictly live.
 
@@ -67,11 +67,11 @@
 
 ### Tests for User Story 3
 
-- [ ] T007 [P] [US3] Contract test verifying `PARALLEL_LIVE`, `DEMO_FIXTURE`, and `FALLBACK_FIXTURE` provenance metadata propagation in `tests/contract/test_offline_fixtures.test.ts`
+- [x] T007 [P] [US3] Contract test verifying `PARALLEL_LIVE`, `DEMO_FIXTURE`, and `FALLBACK_FIXTURE` provenance metadata propagation in `tests/contract/test_offline_fixtures.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T008 [US3] Ensure consistent provenance metadata propagation across `server/workflows/clearanceWorkflow.ts` and `src/components/CitationDrawer.tsx`
+- [x] T008 [US3] Ensure consistent provenance metadata propagation across `server/workflows/clearanceWorkflow.ts` and `src/components/CitationDrawer.tsx`
 
 **Checkpoint**: All user stories complete. Offline fixtures, cloud isolation, and visible provenance verified.
 
@@ -81,9 +81,9 @@
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full build verification.
 
-- [ ] T009 [P] Implement end-to-end integration test in `tests/integration/offline_replay_workflow.test.ts` verifying zero-network screenplay ingestion, clearance research, replacement generation, and binder compilation
-- [ ] T010 Run quickstart validation scenarios defined in `specs/013-offline-record-replay-fixtures/quickstart.md`
-- [ ] T011 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [x] T009 [P] Implement end-to-end integration test in `tests/integration/offline_replay_workflow.test.ts` verifying zero-network screenplay ingestion, clearance research, replacement generation, and binder compilation
+- [x] T010 Run quickstart validation scenarios defined in `specs/013-offline-record-replay-fixtures/quickstart.md`
+- [x] T011 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

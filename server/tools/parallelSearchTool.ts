@@ -1,5 +1,6 @@
 import { config } from '../config.js';
 import { ClearanceCitation, ProvenanceType } from '../repositories/AssessmentRepo.js';
+import { PARALLEL_SEARCH_FIXTURES } from '../fixtures/recordReplayFixtures.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface SearchResult {
@@ -13,35 +14,15 @@ export class ParallelSearchTool {
     const query = `${entityName} registered trademark status ownership classification dispute precedents`;
     const now = new Date().toISOString();
 
-    // Map known owners for common test entities
-    const knownOwners: Record<string, { owner: string; precedents: string }> = {
-      'coca-cola': {
-        owner: 'The Coca-Cola Company (Atlanta, GA)',
-        precedents: 'Enforces strict trademark protection across beverage, merchandise, and media depictions.'
-      },
-      'apple': {
-        owner: 'Apple Inc. (Cupertino, CA)',
-        precedents: 'Known trademark policies regarding depiction of hardware, logos, and UI in entertainment productions.'
-      },
-      'porsche': {
-        owner: 'Dr. Ing. h.c. F. Porsche AG (Stuttgart, Germany)',
-        precedents: 'Enforces vehicle trade dress and badge trademark protection in video games and cinema.'
-      },
-      'bohemian rhapsody': {
-        owner: 'Queen Music Ltd. / Sony Music Publishing',
-        precedents: 'Requires synchronized music master & publishing license for any commercial film usage.'
-      },
-      'empire state building': {
-        owner: 'Empire State Realty Trust',
-        precedents: 'Building design trademark requires commercial photography & depiction clearance.'
-      }
-    };
-
     const normKey = entityName.toLowerCase();
-    const ownerInfo = Object.entries(knownOwners).find(([k]) => normKey.includes(k))?.[1] || {
-      owner: `${entityName} Holdings / Corporate Registrant`,
-      precedents: 'Standard trademark protections apply under Nice Classification.'
-    };
+    const fixtureEntry = Object.entries(PARALLEL_SEARCH_FIXTURES).find(([k]) => normKey.includes(k))?.[1];
+
+    const ownerInfo = fixtureEntry
+      ? { owner: fixtureEntry.corporateOwner, precedents: fixtureEntry.disputePrecedents }
+      : {
+          owner: `${entityName} Holdings / Corporate Registrant`,
+          precedents: 'Standard trademark protections apply under Nice Classification.',
+        };
 
     // If in CLOUD_MODE, attempt live parallel-web SDK search
     if (config.executionMode === 'CLOUD_MODE') {
@@ -79,11 +60,11 @@ export class ParallelSearchTool {
         citations: [
           {
             id: `cit-${uuidv4().slice(0, 8)}`,
-            sourceUrl: `https://uspto.gov/trademarks/search?q=${encodeURIComponent(entityName)}`,
+            sourceUrl: fixtureEntry?.sourceUrl || `https://uspto.gov/trademarks/search?q=${encodeURIComponent(entityName)}`,
             query,
             retrievedAt: now,
-            excerptSnippet: `[FALLBACK FIXTURE] USPTO Registry simulated benchmark entry for ${entityName}.`,
-            registrationStatus: 'REGISTERED_ACTIVE',
+            excerptSnippet: `[FALLBACK FIXTURE] ${fixtureEntry?.excerptSnippet || `USPTO Registry benchmark entry for ${entityName}.`}`,
+            registrationStatus: fixtureEntry?.registrationStatus || 'REGISTERED_ACTIVE',
             corporateOwner: ownerInfo.owner,
             disputePrecedents: ownerInfo.precedents,
             provenance: 'FALLBACK_FIXTURE',
@@ -92,7 +73,38 @@ export class ParallelSearchTool {
       };
     }
 
-    // DEMO_MODE / TEST_MODE Synthetic Benchmark Dataset
+    // DEMO_MODE / TEST_MODE Synthetic Benchmark Dataset from recordReplayFixtures
+    if (fixtureEntry) {
+      return {
+        query,
+        provenance: 'DEMO_FIXTURE',
+        citations: [
+          {
+            id: `cit-${uuidv4().slice(0, 8)}`,
+            sourceUrl: fixtureEntry.sourceUrl,
+            query,
+            retrievedAt: now,
+            excerptSnippet: fixtureEntry.excerptSnippet,
+            registrationStatus: fixtureEntry.registrationStatus,
+            corporateOwner: fixtureEntry.corporateOwner,
+            disputePrecedents: fixtureEntry.disputePrecedents,
+            provenance: 'DEMO_FIXTURE',
+          },
+          {
+            id: `cit-${uuidv4().slice(0, 8)}`,
+            sourceUrl: `https://branddirectory.com/brands/${encodeURIComponent(fixtureEntry.queryKey)}`,
+            query,
+            retrievedAt: now,
+            excerptSnippet: `${fixtureEntry.corporateOwner} portfolio details and public trademark licensing guidelines for ${entityName}.`,
+            registrationStatus: fixtureEntry.registrationStatus,
+            corporateOwner: fixtureEntry.corporateOwner,
+            disputePrecedents: fixtureEntry.disputePrecedents,
+            provenance: 'DEMO_FIXTURE',
+          },
+        ],
+      };
+    }
+
     return {
       query,
       provenance: 'DEMO_FIXTURE',
