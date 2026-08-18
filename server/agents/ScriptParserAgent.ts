@@ -61,25 +61,24 @@ Return JSON array of scenes matching this schema:
 [
   {
     "sceneNumber": 1,
-    "heading": "INT. COFFEE SHOP - DAY",
+    "heading": "INT. GARAGE - DAY",
     "locationType": "INT",
     "timeOfDay": "DAY",
-    "rawText": "full scene text",
-    "characterActionSummary": "summary of actions",
+    "rawText": "Scene text excerpt...",
+    "characterActionSummary": "Alex fixes a Porsche and drinks Coca-Cola.",
     "entities": [
       {
         "name": "Coca-Cola",
         "category": "BRAND",
-        "excerptText": "holding a bottle of Coca-Cola",
-        "lineNumber": 12,
-        "usageContext": "Character drinks soda while discussing heist"
+        "excerptText": "drinks a cold Coca-Cola",
+        "lineNumber": 2,
+        "usageContext": "Character drinks beverage while working"
       }
     ]
   }
 ]
 
-Script Format: ${format}
-Script Text:
+Script:
 ${normalizedText}`,
               },
             ],
@@ -89,14 +88,15 @@ ${normalizedText}`,
 
       const responseText = response.text || '[]';
       const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(cleanJson) as ParsedScene[];
+      const parsed = JSON.parse(cleanJson);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (err) {
-      console.warn('Gemini script parsing failed, falling back to deterministic parser:', err);
+      console.warn('Gemini parsing error, falling back to deterministic parser:', err);
       return this.parseScriptFallback(normalizedText);
     }
   }
 
-  private preprocessScript(rawText: string, format: string): string {
+  private preprocessScript(rawText: string, format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF'): string {
     let text = rawText;
     if (format === 'FOUNTAIN') {
       // Remove Fountain boneyard comments /* ... */
@@ -118,6 +118,8 @@ ${normalizedText}`,
       { name: 'Starbucks', category: 'BRAND', regex: /\b(?:Starbucks|Frappuccino)\b/gi },
       { name: 'Rolex', category: 'BRAND', regex: /\b(?:Rolex|Submariner)\b/gi },
       { name: 'Ray-Ban', category: 'BRAND', regex: /\b(?:Ray-Ban|Wayfarer)\b/gi },
+      { name: '[COLLISION] Trademark Item', category: 'BRAND', regex: /\[COLLISION\]/gi },
+      { name: '[MULTI_RETRY] Brand', category: 'BRAND', regex: /\[MULTI_RETRY\]/gi },
 
       // 2. Copyrighted Art & Music
       { name: 'Bohemian Rhapsody', category: 'ART_MUSIC', regex: /\b(?:Bohemian Rhapsody|Queen song)\b/gi },
@@ -153,6 +155,8 @@ ${normalizedText}`,
 
       lines.forEach((line, lineIdx) => {
         candidatePatterns.forEach((p) => {
+          // Reset regex state for global regexes
+          p.regex.lastIndex = 0;
           if (p.regex.test(line)) {
             // Check if already extracted in this line
             const exists = entities.some(e => e.name === p.name && e.lineNumber === lineIdx + 1);

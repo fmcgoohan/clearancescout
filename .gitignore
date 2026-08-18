@@ -25,8 +25,9 @@ logs/
 # Testing
 coverage/
 
-# IDE / OS
+# IDE / OS / Tooling
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+.continue-orchestration

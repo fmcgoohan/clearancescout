@@ -34,6 +34,7 @@ export interface CanonicalEntityData {
     counselName: string;
     timestamp: string;
   };
+  replacementCard?: any;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,23 +63,27 @@ export class EntityRepo {
       createdAt: now,
       updatedAt: now,
     };
+
     const docRef = await this.db.doc(`projects/${input.projectId}/entities/${id}`);
     await docRef.set(entity);
     return entity;
   }
 
-  async updateCanonicalEntityStatus(projectId: string, entityId: string, status: ClearanceStatus): Promise<void> {
+  async updateCanonicalEntityStatus(projectId: string, entityId: string, status: ClearanceStatus): Promise<CanonicalEntityData | null> {
     const docRef = await this.db.doc(`projects/${projectId}/entities/${entityId}`);
     const snap = await docRef.get();
     if (snap.exists) {
-      const data = snap.data();
-      // Invariant: Automated re-evaluation MUST NEVER overwrite an active counsel override
-      if (!data.isOverridden) {
-        data.overallClearanceStatus = status;
+      const data = snap.data() as CanonicalEntityData;
+      // Invariant: Automated batch re-evaluations MUST NOT overwrite an active counsel override
+      if (data.isOverridden) {
+        return data;
       }
+      data.overallClearanceStatus = status;
       data.updatedAt = new Date().toISOString();
       await docRef.set(data);
+      return data;
     }
+    return null;
   }
 
   async updateCanonicalEntityOverride(
@@ -100,6 +105,19 @@ export class EntityRepo {
         counselName: overrideDetails.counselName,
         timestamp: overrideDetails.timestamp,
       };
+      data.updatedAt = new Date().toISOString();
+      await docRef.set(data);
+      return data;
+    }
+    return null;
+  }
+
+  async attachReplacementCard(projectId: string, entityId: string, card: any): Promise<CanonicalEntityData | null> {
+    const docRef = await this.db.doc(`projects/${projectId}/entities/${entityId}`);
+    const snap = await docRef.get();
+    if (snap.exists) {
+      const data = snap.data() as CanonicalEntityData;
+      data.replacementCard = card;
       data.updatedAt = new Date().toISOString();
       await docRef.set(data);
       return data;

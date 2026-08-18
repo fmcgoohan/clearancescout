@@ -9,8 +9,8 @@
 
 **Purpose**: Project configuration and event broadcasting setup.
 
-- [ ] T001 Verify test setup and endpoint routing for replacement loop in `vite.config.ts` and `server/api/replacementRoutes.ts`
-- [ ] T002 Ensure event emitter supports strictly the 4 authorized replacement event types (`REPLACEMENT_ATTEMPT`, `REPLACEMENT_RESEARCH_STARTED`, `REPLACEMENT_REJECTED`, `REPLACEMENT_ACCEPTED`) in `server/events/timelineEmitter.ts`
+- [X] T001 Verify test setup and endpoint routing for replacement loop in `vite.config.ts` and `server/api/replacementRoutes.ts`
+- [X] T002 Ensure event emitter supports strictly the 4 authorized replacement event types (`REPLACEMENT_ATTEMPT`, `REPLACEMENT_RESEARCH_STARTED`, `REPLACEMENT_REJECTED`, `REPLACEMENT_ACCEPTED`) in `server/events/timelineEmitter.ts`
 
 ---
 
@@ -18,8 +18,8 @@
 
 **Purpose**: Core data models and repository schemas required before user story implementation.
 
-- [ ] T003 [P] Define `ReplacementAttemptRecord` and update `ReplacementCardData` schema in `server/repositories/ReplacementRepo.ts`
-- [ ] T004 [P] Update `CanonicalEntityData` schema to support enhanced `ReplacementCardData` with `attemptHistory` in `server/repositories/EntityRepo.ts`
+- [X] T003 [P] Define `ReplacementAttemptRecord` and update `ReplacementCardData` schema in `server/repositories/ReplacementRepo.ts`
+- [X] T004 [P] Update `CanonicalEntityData` schema to support enhanced `ReplacementCardData` with `attemptHistory` in `server/repositories/EntityRepo.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -33,14 +33,14 @@
 
 ### Tests for User Story 1
 
-- [ ] T005 [P] [US1] Contract test for single-attempt clearance acceptance and multi-attempt loop rejection in `tests/contract/test_replacement_gen.test.ts`
+- [X] T005 [P] [US1] Contract test for single-attempt clearance acceptance and multi-attempt loop rejection in `tests/contract/test_replacement_gen.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Implement candidate research evaluation invocation and acceptance/rejection policy in `server/workflows/replacementGenerator.ts`
-- [ ] T007 [US1] Implement negative constraint accumulation and candidate retry loop in `server/workflows/replacementGenerator.ts`
-- [ ] T008 [US1] Wire self-clearance workflow into `server/api/replacementRoutes.ts`
-- [ ] T009 [P] [US1] Update `ReplacementCardModal.tsx` to render self-clearance verification badge, attempt count, and attached research citations in `src/components/ReplacementCardModal.tsx`
+- [X] T006 [US1] Implement candidate research evaluation invocation and acceptance/rejection policy in `server/workflows/replacementGenerator.ts`
+- [X] T007 [US1] Implement negative constraint accumulation and candidate retry loop in `server/workflows/replacementGenerator.ts`
+- [X] T008 [US1] Wire self-clearance workflow into `server/api/replacementRoutes.ts`
+- [X] T009 [P] [US1] Update `ReplacementCardModal.tsx` to render self-clearance verification badge, attempt count, and attached research citations in `src/components/ReplacementCardModal.tsx`
 
 **Checkpoint**: User Story 1 complete. Autonomous candidate generation, trademark search evaluation, collision rejection, and clean candidate acceptance operational.
 
@@ -54,12 +54,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T010 [P] [US2] Contract test for 4 discrete replacement timeline SSE events in `tests/contract/test_timeline_sse.test.ts`
+- [X] T010 [P] [US2] Contract test for 4 discrete replacement timeline SSE events in `tests/contract/test_timeline_sse.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Emit `REPLACEMENT_ATTEMPT`, `REPLACEMENT_RESEARCH_STARTED`, `REPLACEMENT_REJECTED`, and `REPLACEMENT_ACCEPTED` events in `server/workflows/replacementGenerator.ts`
-- [ ] T012 [P] [US2] Update `TimelineDrawer.tsx` to render icons, status colors, and diagnostic details for the 4 replacement lifecycle events in `src/components/TimelineDrawer.tsx`
+- [X] T011 [US2] Emit `REPLACEMENT_ATTEMPT`, `REPLACEMENT_RESEARCH_STARTED`, `REPLACEMENT_REJECTED`, and `REPLACEMENT_ACCEPTED` events in `server/workflows/replacementGenerator.ts`
+- [X] T012 [P] [US2] Update `TimelineDrawer.tsx` to render icons, status colors, and diagnostic details for the 4 replacement lifecycle events in `src/components/TimelineDrawer.tsx`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Closed-loop replacement clearance and SSE timeline observability operational.
 
@@ -73,13 +73,13 @@
 
 ### Tests for User Story 3
 
-- [ ] T013 [P] [US3] Contract test for 3-attempt ceiling and `CLOUD_MODE` fail-visible outage handling in `tests/contract/test_replacement_gen.test.ts`
+- [X] T013 [P] [US3] Contract test for 3-attempt ceiling and `CLOUD_MODE` fail-visible outage handling in `tests/contract/test_replacement_gen.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T014 [US3] Enforce 3-attempt loop termination, 3rd candidate selection, and counsel escalation formatting in `server/workflows/replacementGenerator.ts`
-- [ ] T015 [US3] Enforce fail-visible `INSUFFICIENT_EVIDENCE` on search API errors without silent fallback in `server/workflows/replacementGenerator.ts` and `server/tools/ParallelSearchTool.ts`
-- [ ] T016 [P] [US3] Update `ReplacementCardModal.tsx` to render amber counsel escalation banner and full collision history across attempts in `src/components/ReplacementCardModal.tsx`
+- [X] T014 [US3] Enforce 3-attempt loop termination, 3rd candidate selection, and counsel escalation formatting in `server/workflows/replacementGenerator.ts`
+- [X] T015 [US3] Enforce fail-visible `INSUFFICIENT_EVIDENCE` on search API errors without silent fallback in `server/workflows/replacementGenerator.ts` and `server/tools/ParallelSearchTool.ts`
+- [X] T016 [P] [US3] Update `ReplacementCardModal.tsx` to render amber counsel escalation banner and full collision history across attempts in `src/components/ReplacementCardModal.tsx`
 
 **Checkpoint**: All user stories complete. Candidate self-clearance verification, 3-attempt bounding, counsel escalation, and fail-visible outage handling unified.
 
@@ -89,10 +89,10 @@
 
 **Purpose**: End-to-end integration testing, clearance binder integration, quickstart scenario validation, and production build verification.
 
-- [ ] T017 [P] Implement end-to-end integration test for full self-clearance loop and counsel escalation in `tests/integration/replacement_clearance_workflow.test.ts`
-- [ ] T018 [P] Update Clearance Binder export to incorporate replacement attempt history in `server/workflows/binderExportWorkflow.ts` and `src/components/BinderExportModal.tsx`
-- [ ] T019 Run quickstart validation scenarios defined in `specs/004-replacement-clearance-loop/quickstart.md`
-- [ ] T020 Verify production build (`tsc && vite build`) and Vitest test suite (`npm test`)
+- [X] T017 [P] Implement end-to-end integration test for full self-clearance loop and counsel escalation in `tests/integration/replacement_clearance_workflow.test.ts`
+- [X] T018 [P] Update Clearance Binder export to incorporate replacement attempt history in `server/workflows/binderExportWorkflow.ts` and `src/components/BinderExportModal.tsx`
+- [X] T019 Run quickstart validation scenarios defined in `specs/004-replacement-clearance-loop/quickstart.md`
+- [X] T020 Verify production build (`tsc && vite build`) and Vitest test suite (`npm test`)
 
 ---
 

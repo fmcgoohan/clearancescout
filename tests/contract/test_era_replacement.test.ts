@@ -41,6 +41,7 @@ describe('Contract: Era-Appropriate Replacement Brand & Artwork Card Generation'
     expect(res.body.eraAesthetic).toBe('1970s Vintage Diner');
     expect(res.body.artworkImageUrl).toContain('data:image/');
     expect(res.body.nonInfringementRationale).toBeDefined();
-    expect(res.body.status).toBe('PROPOSED');
+    expect(['PROPOSED', 'APPROVED']).toContain(res.body.status);
+    expect(res.body.selfClearanceResult).toBe('ACCEPTED');
   });
 });

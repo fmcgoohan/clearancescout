@@ -20,8 +20,18 @@ export const TimelineDrawer: React.FC<TimelineDrawerProps> = ({ events, isOpen, 
         return { label: 'RISK VERDICT', color: 'var(--status-review)' };
       case 'CITATION_ADDED':
         return { label: 'GROUNDING', color: 'var(--status-no-issue)' };
-      case 'REPLACEMENT_GEN':
-        return { label: 'ARTWORK', color: 'var(--status-insufficient)' };
+      case 'REPLACEMENT_ATTEMPT':
+        return { label: 'CANDIDATE', color: 'var(--accent-blue)' };
+      case 'REPLACEMENT_RESEARCH_STARTED':
+        return { label: 'SEARCH', color: 'var(--accent-cyan)' };
+      case 'REPLACEMENT_REJECTED':
+        return { label: 'REJECTED', color: '#f87171' };
+      case 'REPLACEMENT_ACCEPTED':
+        return { label: 'ACCEPTED', color: '#34d399' };
+      case 'OVERRIDE_RECORDED':
+        return { label: 'COUNSEL', color: '#34d399' };
+      case 'BINDER_EXPORT':
+        return { label: 'BINDER', color: 'var(--accent-blue)' };
       default:
         return { label: 'EVENT', color: 'var(--text-muted)' };
     }
