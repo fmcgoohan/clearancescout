@@ -197,6 +197,20 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     }
   };
 
+  const handleRetryResearch = async (entityId: string) => {
+    if (!projectId) return;
+    try {
+      const res = await fetch(`/api/projects/${projectId}/entities/${entityId}/retry-research`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        await fetchWorkspaceData();
+      }
+    } catch (err) {
+      console.error('Failed to retry research on entity:', err);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Upload & Controls Panel */}
@@ -265,6 +279,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         <EntityRegistryTable
           entities={entities}
           onEvaluateClearance={onEvaluateClearance}
+          onRetryResearch={handleRetryResearch}
           onGenerateReplacement={onGenerateReplacement}
           onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
           onEditItem={handleOpenEditModal}

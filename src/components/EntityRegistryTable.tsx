@@ -19,6 +19,7 @@ export interface CanonicalEntity {
 interface EntityRegistryTableProps {
   entities: CanonicalEntity[];
   onEvaluateClearance: (entityId: string) => void;
+  onRetryResearch?: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
   onOpenCounselReview?: (entityId: string) => void;
   onEditItem?: (entity: CanonicalEntity) => void;
@@ -30,6 +31,7 @@ interface EntityRegistryTableProps {
 export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   entities,
   onEvaluateClearance,
+  onRetryResearch,
   onGenerateReplacement,
   onOpenCounselReview,
   onEditItem,
@@ -231,14 +233,32 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                           🗑️
                         </button>
                       )}
-                      <button
-                        className="btn-secondary"
-                        style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                        onClick={() => onEvaluateClearance(e.id)}
-                        disabled={isEvaluating}
-                      >
-                        {isEvaluating ? 'Researching...' : '🔍 Ground'}
-                      </button>
+                      {e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE' ? (
+                        <button
+                          className="btn-secondary"
+                          style={{ fontSize: '0.75rem', padding: '4px 8px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
+                          onClick={() => {
+                            if (onRetryResearch) {
+                              onRetryResearch(e.id);
+                            } else {
+                              onEvaluateClearance(e.id);
+                            }
+                          }}
+                          disabled={isEvaluating}
+                          title="Retry clearance research for this item"
+                        >
+                          {isEvaluating ? 'Retrying...' : '🔁 Retry Research'}
+                        </button>
+                      ) : (
+                        <button
+                          className="btn-secondary"
+                          style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                          onClick={() => onEvaluateClearance(e.id)}
+                          disabled={isEvaluating}
+                        >
+                          {isEvaluating ? 'Researching...' : '🔍 Ground'}
+                        </button>
+                      )}
                       {onOpenCounselReview && (
                         <button
                           className="btn-secondary"

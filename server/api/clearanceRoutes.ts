@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { clearanceEvaluator } from '../workflows/clearanceEvaluator.js';
 import { overrideRepo } from '../repositories/OverrideRepo.js';
 import { entityRepo, ClearanceStatus } from '../repositories/EntityRepo.js';
@@ -8,7 +8,7 @@ import { resolveEffectiveClearanceStatus } from '../workflows/effectiveStatusRes
 export const clearanceRouter = Router();
 
 // Evaluate Clearance Risk for Canonical Entities
-clearanceRouter.post('/projects/:id/clearance/evaluate', async (req: Request, res: Response, next) => {
+clearanceRouter.post('/projects/:id/clearance/evaluate', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = req.params.id;
     const { canonicalEntityIds } = req.body;
@@ -29,8 +29,22 @@ clearanceRouter.post('/projects/:id/clearance/evaluate', async (req: Request, re
   }
 });
 
+// Retry Research for Single Failed or INSUFFICIENT_EVIDENCE Entity
+clearanceRouter.post('/projects/:id/entities/:entityId/retry-research', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: projectId, entityId } = req.params;
+    const result = await clearanceEvaluator.retryEntityResearch(projectId, entityId);
+    return res.json(result);
+  } catch (err: any) {
+    if (err.status) {
+      return res.status(err.status).json({ error: err.message });
+    }
+    next(err);
+  }
+});
+
 // Record Legal Counsel Decision Override
-clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Request, res: Response, next) => {
+clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id: projectId, entityId } = req.params;
     const { overrideStatus, rationale, counselName, counselRole, sceneId } = req.body;
@@ -72,10 +86,10 @@ clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Re
       overrideStatus,
       rationale: rationale.trim(),
       counselName: counselName.trim(),
-      counselRole: counselRole?.trim() || 'Studio Production Counsel',
+      counselRole: counselRole?.trim() || 'Production Legal Counsel',
     });
 
-    // Invariant: Scene-specific overrides MUST NEVER mutate canonical entity state
+    // If global entity override, update the CanonicalEntity record
     let resultingEntity = existingEntity;
     if (!sceneId) {
       const updated = await entityRepo.updateCanonicalEntityOverride(
@@ -114,7 +128,7 @@ clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Re
 });
 
 // Get Override History for Entity
-clearanceRouter.get('/projects/:id/entities/:entityId/overrides', async (req: Request, res: Response, next) => {
+clearanceRouter.get('/projects/:id/entities/:entityId/overrides', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id: projectId, entityId } = req.params;
     const overrides = await overrideRepo.getOverridesByEntity(projectId, entityId);

@@ -5,6 +5,12 @@ import { timelineEmitter } from '../events/timelineEmitter.js';
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
 
+export interface ResearchRetryResult {
+  entity: CanonicalEntityData;
+  assessment: ClearanceRiskAssessmentData;
+  retriedAt: string;
+}
+
 export class ClearanceEvaluator {
   private ai: GoogleGenAI | null = null;
 
@@ -12,6 +18,40 @@ export class ClearanceEvaluator {
     if (config.geminiApiKey) {
       this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
     }
+  }
+
+  async retryEntityResearch(projectId: string, canonicalEntityId: string): Promise<ResearchRetryResult> {
+    const entity = await entityRepo.getEntityById(projectId, canonicalEntityId);
+    if (!entity) {
+      throw new Error(`Canonical entity ${canonicalEntityId} not found in project ${projectId}`);
+    }
+
+    // Eligibility Gating: Retry is permitted only for INSUFFICIENT_EVIDENCE, un-evaluated items, or overridden entities needing evidence refresh
+    if (!entity.isOverridden && entity.overallClearanceStatus !== 'INSUFFICIENT_EVIDENCE') {
+      const err: any = new Error(
+        `Entity is already evaluated with status ${entity.overallClearanceStatus}. Retry is permitted only for INSUFFICIENT_EVIDENCE or failed research.`
+      );
+      err.status = 400;
+      throw err;
+    }
+
+    // Emit RESEARCH_RETRY_STARTED observable timeline event
+    timelineEmitter.emit(projectId, 'RESEARCH_RETRY_STARTED', `Research Retry Initiated: ${entity.canonicalName}`, {
+      entityId: entity.id,
+      canonicalName: entity.canonicalName,
+      previousStatus: entity.overallClearanceStatus,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Execute targeted single-item research evaluation
+    const assessment = await this.evaluateEntityClearance(projectId, canonicalEntityId);
+    const updatedEntity = (await entityRepo.getEntityById(projectId, canonicalEntityId)) || entity;
+
+    return {
+      entity: updatedEntity,
+      assessment,
+      retriedAt: new Date().toISOString(),
+    };
   }
 
   async evaluateEntityClearance(projectId: string, canonicalEntityId: string): Promise<ClearanceRiskAssessmentData> {

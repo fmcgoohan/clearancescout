@@ -16,6 +16,7 @@ export type TimelineEventType =
   | 'ITEM_ADDED'
   | 'ITEM_EDITED'
   | 'ITEM_REMOVED'
+  | 'RESEARCH_RETRY_STARTED'
   | 'BINDER_EXPORT'
   | 'OVERRIDE_RECORDED';
 
