@@ -2,8 +2,19 @@
 
 **Feature Branch**: `012-demo-access-token`  
 **Created**: 2026-08-18  
-**Status**: Draft  
+**Status**: Clarified  
 **Input**: User description: "Demo Access Token: protect public write and research endpoints with an optional shared demo token from server config. Missing or invalid tokens fail visibly. Health and static assets remain public. Preserve 003 through 011 invariants. Do not add a full multi-tenant auth system."
+
+---
+
+## Clarifications
+
+### Session 2026-08-18
+- Q: What happens when DEMO_ACCESS_TOKEN is not configured on the server? → A: If DEMO_ACCESS_TOKEN is unset, mutations stay open.
+- Q: Which endpoints are guarded when the token is configured? → A: If set, write and research endpoints require a matching token.
+- Q: Which endpoints remain exempt from authentication? → A: GET /api/health, fixture load, and static assets stay public.
+- Q: What response and error disclosure is returned for unauthorized requests? → A: Invalid tokens return 401 with a visible message and never leak the expected token.
+- Q: What is the architectural boundary of this access control mechanism? → A: This is a shared demo token, not multi-user auth.
 
 ---
 
@@ -18,23 +29,24 @@ As a project administrator or judge running ClearanceScout on a public cloud dep
 **Independent Test**: Configure `DEMO_ACCESS_TOKEN=judge-pass-2026` on the server. Attempt a POST to `/api/projects` or `/api/projects/:id/clearance/evaluate` without the token; verify it fails visibly with HTTP 401. Then provide the valid token header/parameter; verify the request succeeds.
 
 **Acceptance Scenarios**:
-1. **Given** `DEMO_ACCESS_TOKEN` is configured on the server, **When** a client sends a write or research request without a valid token, **Then** the server responds with HTTP 401 and an explicit error payload: `{"error": "Unauthorized: Invalid or missing demo access token."}`.
+1. **Given** `DEMO_ACCESS_TOKEN` is configured on the server, **When** a client sends a write or research request without a valid token, **Then** the server responds with HTTP 401 and an explicit error payload: `{"error": "Unauthorized: Invalid or missing demo access token."}` without disclosing the expected token.
 2. **Given** `DEMO_ACCESS_TOKEN` is configured, **When** a client provides the matching token via `x-demo-token` header, `Authorization: Bearer <token>`, or `?token=<token>` query param, **Then** the request is authorized and proceeds normally.
 3. **Given** `DEMO_ACCESS_TOKEN` is unset or empty, **When** any client sends a request, **Then** all endpoints execute without requiring a token (seamless local development default).
 
 ---
 
-### User Story 2 - Public Health & Static Asset Access (Priority: P2)
+### User Story 2 - Public Health, Fixture Load & Static Asset Access (Priority: P2)
 
-As a cloud platform health monitor, contest judge, or web visitor, I want static web assets (`/`, CSS, JS, favicon) and `GET /api/health` to remain publicly accessible without requiring a demo token so that health probes and UI bootstrapping never fail.
+As a cloud platform health monitor, contest judge, or web visitor, I want static web assets (`/`, CSS, JS, favicon), `GET /api/health`, and demo screenplay fixtures (`GET /api/fixtures/*`) to remain publicly accessible without requiring a demo token so that health probes, initial UI bootstrapping, and bundled demo loading never fail.
 
-**Why this priority**: Cloud Run health checks and initial webpage loading must function without credentials.
+**Why this priority**: Cloud Run health checks, static asset delivery, and 1-click fictional demo screenplay fixtures must function without credentials.
 
-**Independent Test**: With `DEMO_ACCESS_TOKEN` enabled, send `GET /api/health` and `GET /`; verify both respond with HTTP 200 without any authentication headers.
+**Independent Test**: With `DEMO_ACCESS_TOKEN` enabled, send `GET /api/health`, `GET /api/fixtures/demo-screenplay`, and `GET /`; verify all respond with HTTP 200 without any authentication headers.
 
 **Acceptance Scenarios**:
 1. **Given** `DEMO_ACCESS_TOKEN` is active, **When** a request is made to `GET /api/health`, **Then** the health payload is returned with HTTP 200 without token requirement.
-2. **Given** `DEMO_ACCESS_TOKEN` is active, **When** a browser loads static assets (`index.html`, bundle scripts, stylesheets), **Then** assets are served with HTTP 200.
+2. **Given** `DEMO_ACCESS_TOKEN` is active, **When** a request is made to `GET /api/fixtures/demo-screenplay`, **Then** the fixture is returned with HTTP 200 without token requirement.
+3. **Given** `DEMO_ACCESS_TOKEN` is active, **When** a browser loads static assets (`index.html`, bundle scripts, stylesheets), **Then** assets are served with HTTP 200.
 
 ---
 
@@ -57,6 +69,7 @@ As an evaluator or clearance coordinator accessing a token-protected ClearanceSc
 - **Unset / Empty Server Token**: When `DEMO_ACCESS_TOKEN` is undefined, `""`, or whitespace-only, authentication checks are completely bypassed (open access).
 - **Read-Only Inspection Endpoints**: Read-only queries (fetching scenes, entities, binder preview, SSE timeline events) remain accessible to coordinators.
 - **Timing-Safe Comparison**: Server-side token comparison uses constant-time string comparison or length-safe comparison to prevent timing attacks.
+- **No Secret Leakage**: Error messages and health checks must never leak the configured `DEMO_ACCESS_TOKEN` value.
 
 ---
 
@@ -65,7 +78,7 @@ As an evaluator or clearance coordinator accessing a token-protected ClearanceSc
 ### Functional Requirements
 
 - **FR-001**: The server MUST support an optional `DEMO_ACCESS_TOKEN` configuration loaded from environment variables.
-- **FR-002**: If `DEMO_ACCESS_TOKEN` is not configured (or empty), all API endpoints MUST remain accessible without token verification.
+- **FR-002**: If `DEMO_ACCESS_TOKEN` is unset or empty, all API endpoints MUST remain accessible without token verification (open access for local development).
 - **FR-003**: When `DEMO_ACCESS_TOKEN` is configured, the server MUST protect write, mutation, and research endpoints:
   - `POST /api/projects`
   - `POST /api/projects/:id/script`
@@ -80,18 +93,19 @@ As an evaluator or clearance coordinator accessing a token-protected ClearanceSc
   - `x-demo-token` HTTP header
   - `Authorization: Bearer <token>` HTTP header
   - `?token=<token>` or `?demoToken=<token>` query string parameter
-- **FR-005**: Missing or invalid tokens MUST fail visibly with HTTP 401 Unauthorized and JSON payload `{"error": "Unauthorized: Invalid or missing demo access token."}`.
+- **FR-005**: Missing or invalid tokens MUST fail visibly with HTTP 401 Unauthorized and JSON payload `{"error": "Unauthorized: Invalid or missing demo access token."}` without disclosing the expected token.
 - **FR-006**: `GET /api/health`, `GET /api/fixtures/*`, and all static frontend assets MUST remain public and exempt from token enforcement.
-- **FR-007**: The frontend UI MUST provide an access token settings control (persisted in browser `localStorage`/`sessionStorage`) and attach the token header to outgoing API requests.
-- **FR-008**: The system MUST preserve all 003 invariants (scene-specific counsel override isolation, hierarchical status resolution, and SHA-256 binder integrity digests).
-- **FR-009**: The system MUST preserve all 004 invariants (autonomous candidate self-clearance loop ceiling $\le 3$, negative constraints, and 4-event SSE timeline).
-- **FR-010**: The system MUST preserve all 005 invariants (bundled fictional demo screenplay, secret-masked health API, fail-visible `CLOUD_MODE`).
-- **FR-011**: The system MUST preserve all 006 invariants (manual clearance item addition, editing with assessment invalidation, and clean deletion).
-- **FR-012**: The system MUST preserve all 007 invariants (single-item failed research retry with eligibility gating and sibling isolation).
-- **FR-013**: The system MUST preserve all 008 invariants (side-by-side original and replacement comparison modal and binder print view).
-- **FR-014**: The system MUST preserve all 009 invariants (multi-dimension workspace registry filters across Status, Category, and Scene with empty recovery).
-- **FR-015**: The system MUST preserve all 010 invariants (read-only binder jump to evidence citation drawer and observable action timeline context).
-- **FR-016**: The system MUST preserve all 011 invariants (bounded concurrency batch research with live per-item progress and fail-visible isolation).
+- **FR-007**: The frontend UI MUST provide an access token settings control (persisted in browser storage) and attach the token header to outgoing API requests.
+- **FR-008**: This mechanism MUST operate as a lightweight shared demo token without adding multi-tenant user accounts, password databases, or session state.
+- **FR-009**: The system MUST preserve all 003 invariants (scene-specific counsel override isolation, hierarchical status resolution, and SHA-256 binder integrity digests).
+- **FR-010**: The system MUST preserve all 004 invariants (autonomous candidate self-clearance loop ceiling $\le 3$, negative constraints, and 4-event SSE timeline).
+- **FR-011**: The system MUST preserve all 005 invariants (bundled fictional demo screenplay, secret-masked health API, fail-visible `CLOUD_MODE`).
+- **FR-012**: The system MUST preserve all 006 invariants (manual clearance item addition, editing with assessment invalidation, and clean deletion).
+- **FR-013**: The system MUST preserve all 007 invariants (single-item failed research retry with eligibility gating and sibling isolation).
+- **FR-014**: The system MUST preserve all 008 invariants (side-by-side original and replacement comparison modal and binder print view).
+- **FR-015**: The system MUST preserve all 009 invariants (multi-dimension workspace registry filters across Status, Category, and Scene with empty recovery).
+- **FR-016**: The system MUST preserve all 010 invariants (read-only binder jump to evidence citation drawer and observable action timeline context).
+- **FR-017**: The system MUST preserve all 011 invariants (bounded concurrency batch research with live per-item progress and fail-visible isolation).
 
 ---
 
@@ -99,9 +113,9 @@ As an evaluator or clearance coordinator accessing a token-protected ClearanceSc
 
 ### Measurable Outcomes
 
-- **SC-001**: 100% of mutation requests without a valid token on protected servers are rejected with HTTP 401.
+- **SC-001**: 100% of mutation requests without a valid token on protected servers are rejected with HTTP 401 and zero secret disclosure.
 - **SC-002**: 100% of mutation requests with a valid token succeed without degradation.
-- **SC-003**: `GET /api/health` returns 200 OK without requiring authentication under all configurations.
+- **SC-003**: `GET /api/health` and demo screenplay fixtures return 200 OK without requiring authentication under all configurations.
 - **SC-004**: Automated regression test suite maintains 100% pass rate across all test suites with 0 token regression.
 
 ---
