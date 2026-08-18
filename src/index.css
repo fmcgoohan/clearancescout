@@ -1,24 +1,24 @@
 :root {
   --bg-primary: #0a0d14;
   --bg-secondary: #121824;
-  --bg-glass: rgba(18, 24, 36, 0.75);
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-bright: rgba(255, 255, 255, 0.2);
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
+  --bg-glass: rgba(18, 24, 36, 0.85);
+  --border-color: rgba(255, 255, 255, 0.12);
+  --border-bright: rgba(255, 255, 255, 0.25);
+  --text-main: #f8fafc;
+  --text-muted: #cbd5e1;
   --accent-cyan: #06b6d4;
-  --accent-cyan-glow: rgba(6, 182, 212, 0.25);
+  --accent-cyan-glow: rgba(6, 182, 212, 0.35);
   --accent-blue: #3b82f6;
 
-  /* Clearance Status Colors */
-  --status-no-issue: #10b981;
-  --status-no-issue-bg: rgba(16, 185, 129, 0.15);
-  --status-review: #f59e0b;
-  --status-review-bg: rgba(245, 158, 11, 0.15);
-  --status-action: #ef4444;
-  --status-action-bg: rgba(239, 68, 68, 0.15);
-  --status-insufficient: #8b5cf6;
-  --status-insufficient-bg: rgba(139, 92, 246, 0.15);
+  /* Clearance Status Colors - High-Contrast WCAG AA Compliant */
+  --status-no-issue: #34d399;
+  --status-no-issue-bg: rgba(16, 185, 129, 0.2);
+  --status-review: #fbbf24;
+  --status-review-bg: rgba(245, 158, 11, 0.2);
+  --status-action: #f87171;
+  --status-action-bg: rgba(239, 68, 68, 0.2);
+  --status-insufficient: #a78bfa;
+  --status-insufficient-bg: rgba(139, 92, 246, 0.2);
 }
 
 * {
@@ -42,10 +42,16 @@ code, pre, .mono {
   font-family: 'JetBrains Mono', monospace;
 }
 
+/* Accessible Keyboard Focus Ring */
+:focus-visible {
+  outline: 2px solid var(--accent-cyan) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px var(--accent-cyan-glow) !important;
+}
+
 button {
   cursor: pointer;
   border: none;
-  outline: none;
   font-family: inherit;
 }
 
@@ -65,6 +71,10 @@ button {
   border-radius: 8px;
   transition: all 0.2s ease;
   box-shadow: 0 4px 14px var(--accent-cyan-glow);
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-primary:hover {
@@ -73,18 +83,42 @@ button {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-main);
   border: 1px solid var(--border-color);
   font-weight: 500;
   padding: 8px 16px;
   border-radius: 8px;
   transition: all 0.2s ease;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.16);
   border-color: var(--border-bright);
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .badge {
@@ -94,7 +128,7 @@ button {
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
@@ -102,23 +136,48 @@ button {
 .badge-NO_ISSUE_SURFACED {
   background: var(--status-no-issue-bg);
   color: var(--status-no-issue);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(52, 211, 153, 0.4);
 }
 
 .badge-REVIEW_RECOMMENDED {
   background: var(--status-review-bg);
   color: var(--status-review);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(251, 191, 36, 0.4);
 }
 
 .badge-ACTION_REQUIRED {
   background: var(--status-action-bg);
   color: var(--status-action);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(248, 113, 113, 0.4);
 }
 
 .badge-INSUFFICIENT_EVIDENCE {
   background: var(--status-insufficient-bg);
   color: var(--status-insufficient);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  border: 1px solid rgba(167, 139, 250, 0.4);
+}
+
+/* Responsive Breakpoint Adaptations (< 768px) */
+@media (max-width: 768px) {
+  .responsive-stack {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+  
+  .responsive-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .drawer-responsive {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  .modal-responsive {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    padding: 16px !important;
+  }
 }

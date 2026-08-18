@@ -111,6 +111,9 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Side-by-Side Asset Comparison"
       style={{
         position: 'fixed',
         top: 0,
@@ -128,7 +131,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="glass-panel"
+        className="glass-panel modal-responsive"
         style={{
           width: '1000px',
           maxWidth: '95vw',
@@ -138,7 +141,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: '20px',
-          background: 'var(--bg-card)',
+          background: 'var(--bg-secondary)',
           border: '1px solid var(--border-color)',
           borderRadius: '12px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
@@ -159,6 +162,8 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
             </p>
           </div>
           <button
+            aria-label="Close comparison modal"
+            className="touch-target"
             onClick={onClose}
             style={{
               background: 'transparent',

@@ -281,11 +281,11 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
         </div>
       )}
 
-      {/* Multi-Dimension Filter Controls Toolbar */}
+      {/* Filter Control Bar */}
       <div
         style={{
           display: 'flex',
-          gap: '10px',
+          gap: '12px',
           flexWrap: 'wrap',
           alignItems: 'center',
           background: 'rgba(255,255,255,0.02)',
@@ -297,8 +297,10 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
       >
         {/* Category Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Category:</span>
+          <label htmlFor="filter-category" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Category:</label>
           <select
+            id="filter-category"
+            aria-label="Filter entities by category"
             value={filter.category}
             onChange={(e) => setFilter({ ...filter, category: e.target.value })}
             style={{
@@ -320,8 +322,10 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
 
         {/* Status Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Status:</span>
+          <label htmlFor="filter-status" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Status:</label>
           <select
+            id="filter-status"
+            aria-label="Filter entities by clearance status"
             value={filter.status}
             onChange={(e) => setFilter({ ...filter, status: e.target.value as any })}
             style={{
@@ -343,8 +347,10 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
 
         {/* Scene Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Scene:</span>
+          <label htmlFor="filter-scene" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Scene:</label>
           <select
+            id="filter-scene"
+            aria-label="Filter entities by screenplay scene"
             value={filter.sceneId}
             onChange={(e) => setFilter({ ...filter, sceneId: e.target.value })}
             style={{
@@ -394,7 +400,8 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
             Active criteria: Category: <strong>{filter.category.replace(/_/g, ' ')}</strong> • Status: <strong>{filter.status.replace(/_/g, ' ')}</strong> • Scene: <strong>{getSceneLabel(filter.sceneId)}</strong>
           </div>
           <button
-            className="btn-secondary"
+            className="btn-secondary touch-target"
+            aria-label="Reset all active filters"
             onClick={handleClearFilters}
             style={{ fontSize: '0.75rem', padding: '6px 14px', borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' }}
           >
@@ -402,8 +409,11 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
           </button>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+        <div className="responsive-table-container">
+          <table
+            aria-label="Canonical Entity Clearance Registry"
+            style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}
+          >
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                 <th style={{ padding: '10px 12px' }}>Canonical Entity</th>

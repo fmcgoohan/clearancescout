@@ -250,7 +250,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Upload & Controls Panel */}
-      <div className="glass-panel" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="glass-panel responsive-stack" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
             Multi-Format Script Ingestion & 5-Category Resolution
@@ -259,9 +259,10 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             Extract scenes, highlight in-line occurrences, and review legal counsel overrides.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
-            className="btn-secondary"
+            className="btn-secondary touch-target"
+            aria-label="Load Bundled Fictional Demo Screenplay"
             onClick={handleLoadSampleScreenplay}
             disabled={isUploading}
             style={{
@@ -276,15 +277,17 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           </button>
 
           <select
+            aria-label="Select screenplay format"
             value={scriptFormat}
             onChange={(e) => setScriptFormat(e.target.value as any)}
             style={{
-              padding: '6px 12px',
+              padding: '8px 12px',
               borderRadius: '6px',
               background: 'var(--bg-secondary)',
               color: 'var(--text-main)',
               border: '1px solid var(--border-color)',
               fontSize: '0.8rem',
+              minHeight: '38px',
             }}
           >
             <option value="PLAINTEXT">Plaintext (.txt)</option>
@@ -293,7 +296,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           </select>
 
           <button
-            className="btn-primary"
+            className="btn-primary touch-target"
+            aria-label="Ingest screenplay text into workspace"
             onClick={() => handleParseScript(defaultFictionalDemoScript, scriptFormat)}
             disabled={isUploading}
           >
@@ -302,8 +306,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         </div>
       </div>
 
-      {/* Main Grid Workspace */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px' }}>
+      {/* Main Grid Workspace - Responsive Stacking */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
         <ScriptViewer
           scenes={scenes}
           entities={entities}

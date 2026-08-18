@@ -117,16 +117,24 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
   };
 
   return (
-    <div
+    <aside
+      className="glass-panel drawer-responsive"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Research Dossier for ${entityName}`}
       style={{
         position: 'fixed',
         top: 0,
         right: 0,
-        width: '480px',
-        height: '100vh',
-        background: 'var(--bg-secondary)',
-        borderLeft: '1px solid var(--border-color)',
+        bottom: 0,
+        width: '560px',
+        maxWidth: '90vw',
         zIndex: 1300,
+        borderTop: 'none',
+        borderBottom: 'none',
+        borderRight: 'none',
+        borderRadius: 0,
+        overflowY: 'auto',
         padding: '24px',
         display: 'flex',
         flexDirection: 'column',
@@ -164,7 +172,12 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
             )}
           </div>
         </div>
-        <button className="btn-secondary" style={{ padding: '4px 8px' }} onClick={onClose}>
+        <button
+          className="btn-secondary touch-target"
+          aria-label="Close research evidence drawer"
+          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+          onClick={onClose}
+        >
           ✕ Close
         </button>
       </div>
@@ -188,8 +201,10 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+      <div role="tablist" style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
         <button
+          role="tab"
+          aria-selected={activeTab === 'PROVENANCE'}
           className={activeTab === 'PROVENANCE' ? 'btn-primary' : 'btn-secondary'}
           style={{ padding: '6px 12px', fontSize: '0.78rem' }}
           onClick={() => setActiveTab('PROVENANCE')}
@@ -197,6 +212,8 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
           🔍 Research Evidence ({citations.length})
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'OVERRIDE'}
           className={activeTab === 'OVERRIDE' ? 'btn-primary' : 'btn-secondary'}
           style={{ padding: '6px 12px', fontSize: '0.78rem' }}
           onClick={() => setActiveTab('OVERRIDE')}
@@ -491,6 +508,6 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
           </form>
         </div>
       )}
-    </div>
+    </aside>
   );
 };

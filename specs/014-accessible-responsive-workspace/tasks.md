@@ -9,7 +9,7 @@
 
 **Purpose**: Define accessible styling tokens, visible focus utilities, and responsive breakpoints.
 
-- [ ] T001 [P] Extend CSS variables and utility classes in `src/index.css` for high-contrast visible focus rings (`:focus-visible`), WCAG AA colors, and responsive layout breakpoints
+- [x] T001 [P] Extend CSS variables and utility classes in `src/index.css` for high-contrast visible focus rings (`:focus-visible`), WCAG AA colors, and responsive layout breakpoints
 
 ---
 
@@ -17,7 +17,7 @@
 
 **Purpose**: Core overlay stack management and keyboard `Escape` dismissal infrastructure.
 
-- [ ] T002 [P] Implement global overlay stack management and `Escape` key event handling in `src/App.tsx`
+- [x] T002 [P] Implement global overlay stack management and `Escape` key event handling in `src/App.tsx`
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -31,11 +31,11 @@
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Contract test for keyboard operability, ARIA attributes, and `Escape` overlay dismissal in `tests/contract/test_workspace_accessibility.test.ts`
+- [x] T003 [P] [US1] Contract test for keyboard operability, ARIA attributes, and `Escape` overlay dismissal in `tests/contract/test_workspace_accessibility.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Add accessible keyboard controls, ARIA labels, and focus rings to `src/components/EntityRegistryTable.tsx`, `src/components/CitationDrawer.tsx`, and `src/components/ReplacementComparisonModal.tsx`
+- [x] T004 [US1] Add accessible keyboard controls, ARIA labels, and focus rings to `src/components/EntityRegistryTable.tsx`, `src/components/CitationDrawer.tsx`, and `src/components/ReplacementComparisonModal.tsx`
 
 **Checkpoint**: User Story 1 complete. Keyboard navigation and modal dismissal functional and testable independently.
 
@@ -49,11 +49,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T005 [P] [US2] Contract test verifying WCAG AA contrast ratios and explicit visible labels in `tests/contract/test_workspace_accessibility.test.ts`
+- [x] T005 [P] [US2] Contract test verifying WCAG AA contrast ratios and explicit visible labels in `tests/contract/test_workspace_accessibility.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] Refine typography, status chip colors, and form control labels across `src/pages/WorkspacePage.tsx` and `src/components/CitationDrawer.tsx`
+- [x] T006 [US2] Refine typography, status chip colors, and form control labels across `src/pages/WorkspacePage.tsx` and `src/components/CitationDrawer.tsx`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Fully keyboard accessible with high-contrast legibility.
 
@@ -67,8 +67,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T007 [P] [US3] Add responsive mobile stacking and horizontal table overflow handling in `src/pages/WorkspacePage.tsx` and `src/components/EntityRegistryTable.tsx`
-- [ ] T008 [US3] Make slide-over drawers and modals adapt to 100% width on mobile screens with touch-friendly close targets in `src/components/CitationDrawer.tsx` and `src/components/ReplacementComparisonModal.tsx`
+- [x] T007 [P] [US3] Add responsive mobile stacking and horizontal table overflow handling in `src/pages/WorkspacePage.tsx` and `src/components/EntityRegistryTable.tsx`
+- [x] T008 [US3] Make slide-over drawers and modals adapt to 100% width on mobile screens with touch-friendly close targets in `src/components/CitationDrawer.tsx` and `src/components/ReplacementComparisonModal.tsx`
 
 **Checkpoint**: User Stories 1, 2, AND 3 complete. Desktop, tablet, and mobile layouts verified.
 
@@ -82,7 +82,7 @@
 
 ### Implementation for User Story 4
 
-- [ ] T009 [P] [US4] Verify explicit empty states with `"🔄 Reset All Filters"` action, loading skeletons, and fail-visible error banners in `src/components/EntityRegistryTable.tsx` and `src/App.tsx`
+- [x] T009 [P] [US4] Verify explicit empty states with `"🔄 Reset All Filters"` action, loading skeletons, and fail-visible error banners in `src/components/EntityRegistryTable.tsx` and `src/App.tsx`
 
 **Checkpoint**: All user stories complete. Accessible, responsive, and resilient system feedback verified.
 
@@ -92,9 +92,9 @@
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full build verification.
 
-- [ ] T010 [P] Implement end-to-end integration test in `tests/integration/accessible_workspace_workflow.test.ts` verifying complete keyboard navigation, drawer open/dismiss, and responsive layout state transitions
-- [ ] T011 Run quickstart validation scenarios defined in `specs/014-accessible-responsive-workspace/quickstart.md`
-- [ ] T012 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [x] T010 [P] Implement end-to-end integration test in `tests/integration/accessible_workspace_workflow.test.ts` verifying complete keyboard navigation, drawer open/dismiss, and responsive layout state transitions
+- [x] T011 Run quickstart validation scenarios defined in `specs/014-accessible-responsive-workspace/quickstart.md`
+- [x] T012 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

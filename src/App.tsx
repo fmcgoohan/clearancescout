@@ -87,6 +87,28 @@ export default function App() {
     setIsTokenModalOpen(false);
   };
 
+  // Global Escape key handler to close topmost modal/drawer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isReplacementOpen) {
+          setIsReplacementOpen(false);
+        } else if (isBinderOpen) {
+          setIsBinderOpen(false);
+        } else if (isCitationOpen) {
+          setIsCitationOpen(false);
+        } else if (isTimelineOpen) {
+          setIsTimelineOpen(false);
+        } else if (isTokenModalOpen) {
+          setIsTokenModalOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isReplacementOpen, isBinderOpen, isCitationOpen, isTimelineOpen, isTokenModalOpen]);
+
   // Initialize or fetch project
   useEffect(() => {
     const initProject = async () => {
@@ -259,7 +281,7 @@ export default function App() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header Bar */}
       <header
-        className="glass-panel"
+        className="glass-panel responsive-stack"
         style={{
           borderRadius: 0,
           borderLeft: 'none',
@@ -272,6 +294,8 @@ export default function App() {
           position: 'sticky',
           top: 0,
           zIndex: 100,
+          flexWrap: 'wrap',
+          gap: '12px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -297,10 +321,11 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           {/* Demo Token Header Trigger */}
           <button
-            className="btn-secondary"
+            className="btn-secondary touch-target"
+            aria-label="Configure Demo Access Token"
             style={{
               fontSize: '0.75rem',
               display: 'flex',
@@ -318,8 +343,10 @@ export default function App() {
 
           {/* Execution Mode Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mode:</span>
+            <label htmlFor="mode-select" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mode:</label>
             <select
+              id="mode-select"
+              aria-label="Select System Execution Mode"
               value={executionMode}
               onChange={(e) => setExecutionMode(e.target.value as any)}
               style={{
@@ -341,7 +368,8 @@ export default function App() {
 
           {/* Export Clearance Binder Trigger */}
           <button
-            className="btn-secondary"
+            className="btn-secondary touch-target"
+            aria-label="Export Legal Clearance Binder with SHA-256 Digest"
             style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
             onClick={handleExportBinder}
             disabled={isExportingBinder}
@@ -350,7 +378,12 @@ export default function App() {
           </button>
 
           {/* Timeline Action Trigger */}
-          <button className="btn-secondary" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => setIsTimelineOpen(true)}>
+          <button
+            className="btn-secondary touch-target"
+            aria-label="Open Observable Action Timeline"
+            style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+            onClick={() => setIsTimelineOpen(true)}
+          >
             ⚡ Observable Timeline ({events.length})
           </button>
         </div>
@@ -408,6 +441,9 @@ export default function App() {
       {/* Demo Access Token Settings Modal */}
       {isTokenModalOpen && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="token-modal-title"
           style={{
             position: 'fixed',
             inset: 0,
@@ -420,7 +456,7 @@ export default function App() {
           }}
         >
           <div
-            className="glass-panel"
+            className="glass-panel modal-responsive"
             style={{
               width: '460px',
               padding: '24px',
@@ -429,8 +465,9 @@ export default function App() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>🔑 Demo Access Token</h3>
+              <h3 id="token-modal-title" style={{ fontSize: '1.1rem', fontWeight: 700 }}>🔑 Demo Access Token</h3>
               <button
+                aria-label="Close Demo Access Token dialog"
                 onClick={() => setIsTokenModalOpen(false)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
               >
