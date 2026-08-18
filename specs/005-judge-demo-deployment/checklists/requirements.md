@@ -13,23 +13,23 @@
 
 ## Requirement Completeness
 
-- [X] No [NEEDS CLARIFICATION] markers remain
+- [X] No [NEEDS CLARIFICATION] markers remain (all 5 decisions encoded into Clarifications session)
 - [X] Requirements are testable and unambiguous (FR-001 through FR-010)
 - [X] Success criteria are measurable (SC-001 through SC-005)
 - [X] Success criteria are technology-agnostic (focuses on observable latency, pass rates, fail-visible behavior)
 - [X] All acceptance scenarios are defined (3 user stories with 10 total scenarios)
-- [X] Edge cases are identified (fail-visible missing credentials in CLOUD_MODE, multi-tier execution modes)
+- [X] Edge cases are identified (fail-visible missing credentials in CLOUD_MODE, multi-tier execution modes, secret masking)
 - [X] Scope is clearly bounded (excludes multi-tenant billing, OAuth, video rendering)
 - [X] Dependencies and assumptions identified (Cloud Run environment variables, port binding)
 
 ## Feature Readiness
 
 - [X] All functional requirements have clear acceptance criteria
-- [X] User scenarios cover primary flows (1-click sample script loading, health endpoint diagnostics, documentation inspection, container deployment)
+- [X] User scenarios cover primary flows (1-click sample script loading, health endpoint diagnostics, documentation inspection, single Cloud Run service)
 - [X] Feature meets measurable outcomes defined in Success Criteria
 - [X] Preserves all existing 003 and 004 invariants without regressions
 
 ## Notes
 
-- Feature specification is complete and 100% compliant with the ClearanceScout Constitution (Principle I through V).
-- Ready for `/speckit-clarify` or `/speckit-plan`.
+- Feature specification is fully clarified and 100% compliant with the ClearanceScout Constitution (Principle I through V).
+- Ready for `/speckit-plan`.
