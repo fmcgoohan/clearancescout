@@ -1,5 +1,6 @@
 import { entityRepo, ClearanceStatus } from '../repositories/EntityRepo.js';
 import { replacementRepo, ReplacementCardData, ReplacementAttemptRecord } from '../repositories/ReplacementRepo.js';
+import { projectRepo } from '../repositories/ProjectRepo.js';
 import { replacementAgent } from '../agents/ReplacementAgent.js';
 import { parallelSearchTool, SearchResult } from '../tools/parallelSearchTool.js';
 import { artworkTool } from '../tools/artworkTool.js';
@@ -12,6 +13,19 @@ export class ReplacementGenerator {
     canonicalEntityId: string,
     eraAesthetic: string = 'Modern Cinematic'
   ): Promise<ReplacementCardData> {
+    const project = await projectRepo.getProject(projectId);
+    if (project?.executionMode === 'CLOUD_MODE') {
+      const quotaResult = await projectRepo.consumeLiveQuota(projectId, 1);
+      if (!quotaResult.success) {
+        const err: any = new Error(
+          `Live research quota exceeded for this project (${quotaResult.quota.remaining}/${quotaResult.quota.limit} remaining).`
+        );
+        err.status = 429;
+        err.quota = quotaResult.quota;
+        throw err;
+      }
+    }
+
     const entities = await entityRepo.getEntitiesByProject(projectId);
     const entity = entities.find((e) => e.id === canonicalEntityId);
 

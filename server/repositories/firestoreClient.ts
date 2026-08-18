@@ -24,6 +24,10 @@ class InMemoryStore {
       set: async (data: any) => {
         col.set(docId, data);
       },
+      update: async (data: any) => {
+        const existing = col.get(docId) || {};
+        col.set(docId, { ...existing, ...data });
+      },
       delete: async () => {
         col.delete(docId);
       },
@@ -40,6 +44,10 @@ class InMemoryStore {
         }),
         set: async (data: any) => {
           col.set(id, data);
+        },
+        update: async (data: any) => {
+          const existing = col.get(id) || {};
+          col.set(id, { ...existing, ...data });
         },
         delete: async () => {
           col.delete(id);

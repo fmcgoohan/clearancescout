@@ -23,7 +23,14 @@ projectRouter.post('/', async (req: Request, res: Response, next) => {
       executionMode: executionMode || 'DEMO_MODE',
     });
 
-    return res.status(201).json(project);
+    const quota = await projectRepo.getLiveQuota(project.id);
+
+    return res.status(201).json({
+      ...project,
+      liveQuotaLimit: quota.limit,
+      liveQuotaUsed: quota.used,
+      liveQuotaRemaining: quota.remaining,
+    });
   } catch (err) {
     next(err);
   }
@@ -36,7 +43,13 @@ projectRouter.get('/:id', async (req: Request, res: Response, next) => {
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    return res.json(project);
+    const quota = await projectRepo.getLiveQuota(project.id);
+    return res.json({
+      ...project,
+      liveQuotaLimit: quota.limit,
+      liveQuotaUsed: quota.used,
+      liveQuotaRemaining: quota.remaining,
+    });
   } catch (err) {
     next(err);
   }

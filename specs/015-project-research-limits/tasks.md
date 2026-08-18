@@ -9,7 +9,7 @@
 
 **Purpose**: Extend Project repository data structures and quota persistence methods.
 
-- [ ] T001 [P] Extend `ProjectData` schema and methods in `server/repositories/ProjectRepo.ts` with `liveQuotaLimit` (default 25), `liveQuotaUsed` (default 0), and `consumeLiveQuota(projectId, count)`
+- [x] T001 [P] Extend `ProjectData` schema and methods in `server/repositories/ProjectRepo.ts` with `liveQuotaLimit` (default 25), `liveQuotaUsed` (default 0), and `consumeLiveQuota(projectId, count)`
 
 ---
 
@@ -17,7 +17,7 @@
 
 **Purpose**: Expose quota metadata through project API endpoints.
 
-- [ ] T002 [P] Update `server/api/projectRoutes.ts` to return quota metadata (`liveQuotaLimit`, `liveQuotaUsed`, `liveQuotaRemaining`) in `POST /api/projects` and `GET /api/projects/:id`
+- [x] T002 [P] Update `server/api/projectRoutes.ts` to return quota metadata (`liveQuotaLimit`, `liveQuotaUsed`, `liveQuotaRemaining`) in `POST /api/projects` and `GET /api/projects/:id`
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -31,11 +31,11 @@
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Contract test for quota initialization, consumption, and metadata retrieval in `tests/contract/test_project_research_limits.test.ts`
+- [x] T003 [P] [US1] Contract test for quota initialization, consumption, and metadata retrieval in `tests/contract/test_project_research_limits.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Update `src/App.tsx` to fetch, track, and render the remaining-of-total quota indicator in the header (`⚡ Live Quota: X / 25`)
+- [x] T004 [US1] Update `src/App.tsx` to fetch, track, and render the remaining-of-total quota indicator in the header (`⚡ Live Quota: X / 25`)
 
 **Checkpoint**: User Story 1 complete. Quota tracking and header badge functional and testable independently.
 
@@ -49,12 +49,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T005 [P] [US2] Contract test for 429 quota exhaustion rejection in `tests/contract/test_project_research_limits.test.ts`
+- [x] T005 [P] [US2] Contract test for 429 quota exhaustion rejection in `tests/contract/test_project_research_limits.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] Implement quota checking and 429 rejection in `server/workflows/clearanceEvaluator.ts` and `server/workflows/replacementGenerator.ts` for `CLOUD_MODE`
-- [ ] T007 [US2] Add fail-visible quota exhaustion error banner handling in `src/App.tsx`
+- [x] T006 [US2] Implement quota checking and 429 rejection in `server/workflows/clearanceEvaluator.ts` and `server/workflows/replacementGenerator.ts` for `CLOUD_MODE`
+- [x] T007 [US2] Add fail-visible quota exhaustion error banner handling in `src/App.tsx`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Quota tracking and exhaustion enforcement operational.
 
@@ -68,7 +68,7 @@
 
 ### Tests for User Story 3
 
-- [ ] T008 [P] [US3] Contract test verifying `TEST_MODE` and `DEMO_MODE` fixture evaluations never consume live quota in `tests/contract/test_project_research_limits.test.ts`
+- [x] T008 [P] [US3] Contract test verifying `TEST_MODE` and `DEMO_MODE` fixture evaluations never consume live quota in `tests/contract/test_project_research_limits.test.ts`
 
 **Checkpoint**: All user stories complete. Mode-isolated quota accounting verified.
 
@@ -78,9 +78,9 @@
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full build verification.
 
-- [ ] T009 [P] Implement end-to-end integration test in `tests/integration/project_quota_workflow.test.ts` verifying complete quota lifecycle, 429 rejection, and UI banner
-- [ ] T010 Run quickstart validation scenarios defined in `specs/015-project-research-limits/quickstart.md`
-- [ ] T011 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [x] T009 [P] Implement end-to-end integration test in `tests/integration/project_quota_workflow.test.ts` verifying complete quota lifecycle, 429 rejection, and UI banner
+- [x] T010 Run quickstart validation scenarios defined in `specs/015-project-research-limits/quickstart.md`
+- [x] T011 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

@@ -29,7 +29,10 @@ replacementRouter.post('/projects/:id/replacements/generate', async (req: Reques
     );
 
     return res.json(card);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.status) {
+      return res.status(err.status).json({ error: err.message, quota: err.quota });
+    }
     next(err);
   }
 });

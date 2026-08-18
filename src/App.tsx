@@ -17,6 +17,14 @@ export default function App() {
   const [demoTokenInput, setDemoTokenInput] = useState(getDemoToken() || '');
   const [hasTokenConfigured, setHasTokenConfigured] = useState(Boolean(getDemoToken()));
   const [authError, setAuthError] = useState<string | null>(null);
+
+  // Live Quota State
+  const [liveQuota, setLiveQuota] = useState<{ limit: number; used: number; remaining: number }>({
+    limit: 25,
+    used: 0,
+    remaining: 25,
+  });
+  const [quotaError, setQuotaError] = useState<string | null>(null);
   
   // UI Drawers & Modals State
   const [isCitationOpen, setIsCitationOpen] = useState(false);
@@ -128,6 +136,14 @@ export default function App() {
           setProjectId(data.id);
           setProjectTitle(data.title);
           setAuthError(null);
+          setQuotaError(null);
+          if (data.liveQuotaLimit !== undefined) {
+            setLiveQuota({
+              limit: data.liveQuotaLimit,
+              used: data.liveQuotaUsed || 0,
+              remaining: data.liveQuotaRemaining !== undefined ? data.liveQuotaRemaining : Math.max(0, data.liveQuotaLimit - (data.liveQuotaUsed || 0)),
+            });
+          }
         } else if (res.status === 401) {
           const errData = await res.json();
           setAuthError(errData.error || 'Unauthorized: Demo Access Token required.');
@@ -138,6 +154,24 @@ export default function App() {
     };
     initProject();
   }, [executionMode, hasTokenConfigured]);
+
+  const refreshProjectQuota = async (id: string) => {
+    try {
+      const res = await apiFetch(`/api/projects/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.liveQuotaLimit !== undefined) {
+          setLiveQuota({
+            limit: data.liveQuotaLimit,
+            used: data.liveQuotaUsed || 0,
+            remaining: data.liveQuotaRemaining !== undefined ? data.liveQuotaRemaining : Math.max(0, data.liveQuotaLimit - (data.liveQuotaUsed || 0)),
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing project quota:', err);
+    }
+  };
 
   const handleOpenCounselReview = async (entityId: string, sceneId?: string) => {
     if (!projectId) return;
@@ -201,8 +235,13 @@ export default function App() {
           setCitations(asm.citations || []);
           if (asm.legalRationale) setCitationRationale(asm.legalRationale);
         }
+        await refreshProjectQuota(projectId);
       } else if (evalRes.status === 401) {
         setAuthError('Unauthorized: A valid Demo Access Token is required to evaluate clearance.');
+      } else if (evalRes.status === 429) {
+        const errData = await evalRes.json();
+        setQuotaError(errData.error || 'Live research quota exceeded for this project.');
+        if (errData.quota) setLiveQuota(errData.quota);
       }
       setIsCitationOpen(true);
     } catch (err) {
@@ -230,8 +269,13 @@ export default function App() {
           setIsCitationOpen(true);
         }
         setRefreshTrigger((prev) => prev + 1);
+        await refreshProjectQuota(projectId);
       } else if (res.status === 401) {
         setAuthError('Unauthorized: A valid Demo Access Token is required to evaluate clearance.');
+      } else if (res.status === 429) {
+        const errData = await res.json();
+        setQuotaError(errData.error || 'Live research quota exceeded for this project.');
+        if (errData.quota) setLiveQuota(errData.quota);
       }
     } catch (err) {
       console.error('Error evaluating clearance:', err);
@@ -252,8 +296,13 @@ export default function App() {
         const cardData = await res.json();
         setReplacementCard(cardData);
         setIsReplacementOpen(true);
+        await refreshProjectQuota(projectId);
       } else if (res.status === 401) {
         setAuthError('Unauthorized: A valid Demo Access Token is required to generate replacements.');
+      } else if (res.status === 429) {
+        const errData = await res.json();
+        setQuotaError(errData.error || 'Live research quota exceeded for this project.');
+        if (errData.quota) setLiveQuota(errData.quota);
       }
     } catch (err) {
       console.error('Error generating replacement brand:', err);
@@ -366,6 +415,29 @@ export default function App() {
             </select>
           </div>
 
+          {/* Live Quota Indicator */}
+          <div
+            className="touch-target"
+            aria-label={`Live Quota Remaining: ${liveQuota.remaining} of ${liveQuota.limit}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: liveQuota.remaining === 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0,0,0,0.3)',
+              padding: '4px 10px',
+              borderRadius: '20px',
+              border: `1px solid ${liveQuota.remaining === 0 ? 'rgba(239, 68, 68, 0.5)' : 'var(--border-color)'}`,
+              fontSize: '0.75rem',
+              fontFamily: 'JetBrains Mono, monospace',
+              color: liveQuota.remaining === 0 ? '#f87171' : 'var(--text-main)',
+            }}
+          >
+            <span>⚡ Live Quota:</span>
+            <span style={{ fontWeight: 700, color: liveQuota.remaining === 0 ? '#f87171' : 'var(--accent-cyan)' }}>
+              {liveQuota.remaining} / {liveQuota.limit}
+            </span>
+          </div>
+
           {/* Export Clearance Binder Trigger */}
           <button
             className="btn-secondary touch-target"
@@ -389,9 +461,39 @@ export default function App() {
         </div>
       </header>
 
+      {/* Quota Exhaustion Error Banner if 429 occurs */}
+      {quotaError && (
+        <div
+          role="alert"
+          style={{
+            background: 'rgba(239, 68, 68, 0.2)',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.5)',
+            padding: '10px 32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            color: '#f87171',
+            fontSize: '0.85rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>⚠️</span>
+            <span>{quotaError}</span>
+          </div>
+          <button
+            className="btn-secondary touch-target"
+            style={{ padding: '4px 12px', fontSize: '0.75rem' }}
+            onClick={() => setQuotaError(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Auth Error Banner if 401 occurs */}
       {authError && (
         <div
+          role="alert"
           style={{
             background: 'rgba(239, 68, 68, 0.15)',
             borderBottom: '1px solid rgba(239, 68, 68, 0.4)',

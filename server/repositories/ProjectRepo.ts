@@ -7,8 +7,16 @@ export interface ProjectData {
   productionCompany: string;
   scriptVersion: string;
   executionMode: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
+  liveQuotaLimit?: number;
+  liveQuotaUsed?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProjectQuotaStatus {
+  limit: number;
+  used: number;
+  remaining: number;
 }
 
 export class ProjectRepo {
@@ -20,6 +28,8 @@ export class ProjectRepo {
     const project: ProjectData = {
       id,
       ...input,
+      liveQuotaLimit: input.liveQuotaLimit !== undefined ? input.liveQuotaLimit : 25,
+      liveQuotaUsed: input.liveQuotaUsed !== undefined ? input.liveQuotaUsed : 0,
       createdAt: now,
       updatedAt: now,
     };
@@ -33,7 +43,50 @@ export class ProjectRepo {
     const docRef = await this.db.doc(`projects/${id}`);
     const snap = await docRef.get();
     if (!snap.exists) return null;
-    return snap.data() as ProjectData;
+    const data = snap.data() as ProjectData;
+    return {
+      ...data,
+      liveQuotaLimit: data.liveQuotaLimit !== undefined ? data.liveQuotaLimit : 25,
+      liveQuotaUsed: data.liveQuotaUsed !== undefined ? data.liveQuotaUsed : 0,
+    };
+  }
+
+  async getLiveQuota(projectId: string): Promise<ProjectQuotaStatus> {
+    const project = await this.getProject(projectId);
+    const limit = project?.liveQuotaLimit !== undefined ? project.liveQuotaLimit : 25;
+    const used = project?.liveQuotaUsed !== undefined ? project.liveQuotaUsed : 0;
+    const remaining = Math.max(0, limit - used);
+    return { limit, used, remaining };
+  }
+
+  async consumeLiveQuota(projectId: string, count: number = 1): Promise<{ success: boolean; quota: ProjectQuotaStatus }> {
+    const project = await this.getProject(projectId);
+    if (!project) {
+      throw new Error(`Project ${projectId} not found`);
+    }
+
+    const limit = project.liveQuotaLimit !== undefined ? project.liveQuotaLimit : 25;
+    const currentUsed = project.liveQuotaUsed !== undefined ? project.liveQuotaUsed : 0;
+    const remaining = Math.max(0, limit - currentUsed);
+
+    if (remaining < count) {
+      return {
+        success: false,
+        quota: { limit, used: currentUsed, remaining },
+      };
+    }
+
+    const newUsed = currentUsed + count;
+    const docRef = await this.db.doc(`projects/${projectId}`);
+    await docRef.update({
+      liveQuotaUsed: newUsed,
+      updatedAt: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      quota: { limit, used: newUsed, remaining: Math.max(0, limit - newUsed) },
+    };
   }
 }
 
