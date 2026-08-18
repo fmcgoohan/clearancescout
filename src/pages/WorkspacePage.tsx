@@ -24,23 +24,39 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [overrides, setOverrides] = useState<CounselOverrideItem[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [scriptFormat, setScriptFormat] = useState<'PLAINTEXT' | 'FOUNTAIN' | 'PDF'>('FOUNTAIN');
+  const [scriptFormat, setScriptFormat] = useState<'PLAINTEXT' | 'FOUNTAIN' | 'PDF'>('PLAINTEXT');
 
-  const multiCategoryFountainScript = `
-.INT. COFFEE SHOP - DAY
-ALEX sits at a corner table holding a chilled bottle of Coca-Cola, typing on an Apple MacBook. Through the speakers, Bohemian Rhapsody plays quietly.
+  const defaultFictionalDemoScript = `TITLE: THE NEON HORIZON
+AUTHOR: Entrant Studio Team
+FORMAT: Feature Screenplay Excerpt (Fully Fictional Assets)
 
-ALEX
-(whispering)
-Did you see Taylor Swift at Madison Square Garden last night?
+INT. PENTHOUSE WORKSPACE - NIGHT
 
-JORDAN
-(checking Rolex)
-Focus. The shipment near Empire State Building has an Acme Explosives warning label on the crate.
+Rain lashes against floor-to-ceiling glass overlooking the neon cityscape.
 
-.EXT. CITY STREET - NIGHT
-JORDAN accelerates in a Porsche 911 past the Empire State Building. ALEX finishes the can of Coca-Cola.
-`;
+ALEX (30s) sits at a curved glass desk. He taps the illuminated keyboard of his AeroTech Prism Laptop. Data streams across the transparent display.
+
+On the desk rests a chilled crimson can of Summit Cola. Alex pops the tab and takes a drink.
+
+Across the room, an ambient holo-screen broadcasts an archival profile of Elena Vance delivering her landmark keynote on orbital power grids.
+
+From the spatial audio system, the atmospheric synth-rock melody of Nocturne of the Wild plays softly in the background.
+
+EXT. MIDTOWN SPIRE TOWER - NIGHT
+
+Down on the wet asphalt, streetlights reflect in glistening puddles.
+
+JORDAN (20s) steers a sleek metallic silver Veloce GT sports coupe into the private circular driveway directly beneath the soaring art-deco arches of the Midtown Spire Tower.
+
+Jordan steps out, locking the car with a subtle chime.
+
+INT. INDUSTRIAL SUB-LEVEL - NIGHT
+
+Jordan walks through the reinforced maintenance corridor.
+
+Along the heavy steel bulkhead, a weathered warning sign is bolted to the wall: a bold yellow-and-black Titan Industrial Hazard Placard flashing an active circuit warning.
+
+Jordan inputs the security code. The hydraulic lock hisses open.`;
 
   const fetchWorkspaceData = async () => {
     if (!projectId) return;
@@ -102,6 +118,22 @@ JORDAN accelerates in a Porsche 911 past the Empire State Building. ALEX finishe
     }
   };
 
+  const handleLoadSampleScreenplay = async () => {
+    try {
+      const fixtureRes = await fetch('/api/fixtures/demo-screenplay');
+      let scriptToIngest = defaultFictionalDemoScript;
+      if (fixtureRes.ok) {
+        const data = await fixtureRes.json();
+        if (data.scriptText) {
+          scriptToIngest = data.scriptText;
+        }
+      }
+      await handleParseScript(scriptToIngest, 'PLAINTEXT');
+    } catch (err) {
+      await handleParseScript(defaultFictionalDemoScript, 'PLAINTEXT');
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Upload & Controls Panel */}
@@ -115,6 +147,21 @@ JORDAN accelerates in a Porsche 911 past the Empire State Building. ALEX finishe
           </p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button
+            className="btn-secondary"
+            onClick={handleLoadSampleScreenplay}
+            disabled={isUploading}
+            style={{
+              borderColor: 'var(--accent-cyan)',
+              color: 'var(--accent-cyan)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            🎬 Load Sample Screenplay
+          </button>
+
           <select
             value={scriptFormat}
             onChange={(e) => setScriptFormat(e.target.value as any)}
@@ -127,14 +174,14 @@ JORDAN accelerates in a Porsche 911 past the Empire State Building. ALEX finishe
               fontSize: '0.8rem',
             }}
           >
-            <option value="FOUNTAIN">Fountain (.fountain)</option>
             <option value="PLAINTEXT">Plaintext (.txt)</option>
+            <option value="FOUNTAIN">Fountain (.fountain)</option>
             <option value="PDF">Screenplay PDF (.pdf)</option>
           </select>
 
           <button
             className="btn-primary"
-            onClick={() => handleParseScript(multiCategoryFountainScript, scriptFormat)}
+            onClick={() => handleParseScript(defaultFictionalDemoScript, scriptFormat)}
             disabled={isUploading}
           >
             {isUploading ? 'Parsing...' : 'Ingest Screenplay'}

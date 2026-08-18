@@ -4,8 +4,8 @@ import { binderRepo } from '../repositories/BinderRepo.js';
 
 export const binderRouter = Router();
 
-// Export / Compile Project Clearance Binder
-binderRouter.get('/projects/:id/binder/export', async (req: Request, res: Response, next) => {
+// Export / Compile Project Clearance Binder (Supports both GET and POST)
+const handleBinderExport = async (req: Request, res: Response, next: any) => {
   try {
     const projectId = req.params.id;
     const binder = await binderExportWorkflow.compileAndExportBinder(projectId);
@@ -13,7 +13,10 @@ binderRouter.get('/projects/:id/binder/export', async (req: Request, res: Respon
   } catch (err) {
     next(err);
   }
-});
+};
+
+binderRouter.get('/projects/:id/binder/export', handleBinderExport);
+binderRouter.post('/projects/:id/binder/export', handleBinderExport);
 
 // Get Latest Exported Binder
 binderRouter.get('/projects/:id/binder/latest', async (req: Request, res: Response, next) => {

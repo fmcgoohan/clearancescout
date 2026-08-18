@@ -11,6 +11,7 @@ RUN npm ci
 # Copy source files
 COPY server/ ./server/
 COPY src/ ./src/
+COPY fixtures/ ./fixtures/
 COPY index.html ./
 
 # Build frontend and compile TypeScript
@@ -29,9 +30,10 @@ ENV EXECUTION_MODE=CLOUD_MODE
 COPY package*.json ./
 RUN npm ci --only=production
 
-# Copy built frontend assets and transpiled server from builder
+# Copy built frontend assets, fixtures, and transpiled server from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server ./server
+COPY --from=builder /app/fixtures ./fixtures
 COPY --from=builder /app/node_modules ./node_modules
 
 # Expose standard Cloud Run port

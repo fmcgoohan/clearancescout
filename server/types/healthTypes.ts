@@ -1,0 +1,17 @@
+export type SystemHealthStatus = 'HEALTHY' | 'DEGRADED' | 'UNHEALTHY';
+
+export interface CredentialStatus {
+  geminiConfigured: boolean;
+  parallelWebConfigured: boolean;
+}
+
+export interface HealthStatusResponse {
+  status: SystemHealthStatus;
+  executionMode: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
+  uptimeSeconds: number;
+  timestamp: string;
+  version: string;
+  credentials: CredentialStatus;
+  missingCredentials?: string[];
+  error?: string;
+}

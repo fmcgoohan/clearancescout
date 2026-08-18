@@ -9,8 +9,8 @@
 
 **Purpose**: Project configuration, licensing, and baseline routing setup.
 
-- [ ] T001 Configure health routing and fixture endpoints in `server/index.ts` and `server/api/healthRoutes.ts`
-- [ ] T002 [P] Author official standard MIT License in `LICENSE` in the repository root
+- [X] T001 Configure health routing and fixture endpoints in `server/index.ts` and `server/api/healthRoutes.ts`
+- [X] T002 [P] Author official standard MIT License in `LICENSE` in the repository root
 
 ---
 
@@ -18,8 +18,8 @@
 
 **Purpose**: Core data types, health contracts, and bundled fictional demo screenplay assets.
 
-- [ ] T003 [P] Define `HealthStatusResponse` and `CredentialStatus` data schemas in `server/types/healthTypes.ts`
-- [ ] T004 [P] Author the bundled entrant-created fully fictional demo screenplay ("The Neon Horizon") covering all 5 clearance categories in `fixtures/demo_screenplay.txt`
+- [X] T003 [P] Define `HealthStatusResponse` and `CredentialStatus` data schemas in `server/types/healthTypes.ts`
+- [X] T004 [P] Author the bundled entrant-created fully fictional demo screenplay ("The Neon Horizon") covering all 5 clearance categories in `fixtures/demo_screenplay.txt`
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -33,13 +33,13 @@
 
 ### Tests for User Story 1
 
-- [ ] T005 [P] [US1] Contract test for bundled demo screenplay loading and 5-category fictional parsing in `tests/contract/test_demo_fixture.test.ts`
+- [X] T005 [P] [US1] Contract test for bundled demo screenplay loading and 5-category fictional parsing in `tests/contract/test_demo_fixture.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Implement demo fixture loader endpoint `GET /api/fixtures/demo-screenplay` in `server/api/fixtureRoutes.ts`
-- [ ] T007 [P] [US1] Add 1-click "Load Sample Screenplay" button to script editor in `src/pages/WorkspacePage.tsx`
-- [ ] T008 [US1] Ensure deterministic recognition patterns in `server/agents/ScriptParserAgent.ts` support all fictional entities in "The Neon Horizon" (`Summit Cola`, `AeroTech Prism`, `Veloce GT`, `Midtown Spire Tower`, `Nocturne of the Wild`, `Titan Industrial Hazard Placard`)
+- [X] T006 [US1] Implement demo fixture loader endpoint `GET /api/fixtures/demo-screenplay` in `server/api/fixtureRoutes.ts`
+- [X] T007 [P] [US1] Add 1-click "Load Sample Screenplay" button to script editor in `src/pages/WorkspacePage.tsx`
+- [X] T008 [US1] Ensure deterministic recognition patterns in `server/agents/ScriptParserAgent.ts` support all fictional entities in "The Neon Horizon" (`Summit Cola`, `AeroTech Prism`, `Veloce GT`, `Midtown Spire Tower`, `Nocturne of the Wild`, `Titan Industrial Hazard Placard`)
 
 **Checkpoint**: User Story 1 complete. 1-click demo screenplay loading and fictional entity clearance operational.
 
@@ -53,12 +53,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T009 [P] [US2] Contract test for `GET /api/health` status, secret masking, and `CLOUD_MODE` fail-visible behavior in `tests/contract/test_health_api.test.ts`
+- [X] T009 [P] [US2] Contract test for `GET /api/health` status, secret masking, and `CLOUD_MODE` fail-visible behavior in `tests/contract/test_health_api.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Implement `GET /api/health` endpoint with boolean credential flags and uptime reporting in `server/api/healthRoutes.ts`
-- [ ] T011 [US2] Enforce fail-visible diagnostic status in `CLOUD_MODE` when credentials are missing or services unreachable in `server/config.ts` and `server/api/healthRoutes.ts`
+- [X] T010 [US2] Implement `GET /api/health` endpoint with boolean credential flags and uptime reporting in `server/api/healthRoutes.ts`
+- [X] T011 [US2] Enforce fail-visible diagnostic status in `CLOUD_MODE` when credentials are missing or services unreachable in `server/config.ts` and `server/api/healthRoutes.ts`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Health checking and fail-visible cloud mode operational.
 
@@ -72,10 +72,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T012 [P] [US3] Author comprehensive, truthful `README.md` documenting architecture, ADK agents (`gemini-3.6-flash`, Imagen 3), `parallel-web` grounding, execution modes, API endpoints, and legal disclaimers with strictly fictional entities
-- [ ] T013 [P] [US3] Author development provenance log `PROVENANCE.md` recording tooling, architectural milestones, model selections, and fictional-content policy
-- [ ] T014 [P] [US3] Create multi-stage production `Dockerfile` and `.dockerignore` for single Cloud Run service deployment
-- [ ] T015 [US3] Configure Express in `server/index.ts` to serve built Vite/React static assets from `dist/` and handle client SPA routing fallbacks in production
+- [X] T012 [P] [US3] Author comprehensive, truthful `README.md` documenting architecture, ADK agents (`gemini-3.6-flash`, Imagen 3), `parallel-web` grounding, execution modes, API endpoints, and legal disclaimers with strictly fictional entities
+- [X] T013 [P] [US3] Author development provenance log `PROVENANCE.md` recording tooling, architectural milestones, model selections, and fictional-content policy
+- [X] T014 [P] [US3] Create multi-stage production `Dockerfile` and `.dockerignore` for single Cloud Run service deployment
+- [X] T015 [US3] Configure Express in `server/index.ts` to serve built Vite/React static assets from `dist/` and handle client SPA routing fallbacks in production
 
 **Checkpoint**: All user stories complete. Judge-ready documentation, provenance logging, containerization, and Cloud Run deployment path unified.
 
@@ -85,9 +85,9 @@
 
 **Purpose**: End-to-end integration testing, quickstart scenario validation, and production build verification.
 
-- [ ] T016 [P] Implement end-to-end integration test for 1-click demo screenplay ingestion, health check, and full clearance workflow in `tests/integration/demo_deployment_workflow.test.ts`
-- [ ] T017 Run quickstart validation scenarios defined in `specs/005-judge-demo-deployment/quickstart.md`
-- [ ] T018 Verify production build (`tsc && vite build`) and Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [X] T016 [P] Implement end-to-end integration test for 1-click demo screenplay ingestion, health check, and full clearance workflow in `tests/integration/demo_deployment_workflow.test.ts`
+- [X] T017 Run quickstart validation scenarios defined in `specs/005-judge-demo-deployment/quickstart.md`
+- [X] T018 Verify production build (`tsc && vite build`) and Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

@@ -112,6 +112,9 @@ ${normalizedText}`,
     // 5-category deterministic recognition patterns for demo & test suites
     const candidatePatterns: Array<{ name: string; category: EntityCategory; regex: RegExp }> = [
       // 1. Brands & Trademarks
+      { name: 'Summit Cola', category: 'BRAND', regex: /\b(?:Summit Cola)\b/gi },
+      { name: 'AeroTech Prism Laptop', category: 'BRAND', regex: /\b(?:AeroTech Prism Laptop|AeroTech Prism|AeroTech)\b/gi },
+      { name: 'Veloce GT', category: 'BRAND', regex: /\b(?:Veloce GT|Veloce)\b/gi },
       { name: 'Coca-Cola', category: 'BRAND', regex: /\b(?:Coca-Cola|Coke|can of Coke)\b/gi },
       { name: 'Apple', category: 'BRAND', regex: /\b(?:MacBook|iPhone|Apple iPad|Apple)\b/gi },
       { name: 'Porsche', category: 'BRAND', regex: /\b(?:Porsche|Porsche 911)\b/gi },
@@ -122,20 +125,24 @@ ${normalizedText}`,
       { name: '[MULTI_RETRY] Brand', category: 'BRAND', regex: /\[MULTI_RETRY\]/gi },
 
       // 2. Copyrighted Art & Music
+      { name: 'Nocturne of the Wild', category: 'ART_MUSIC', regex: /\b(?:Nocturne of the Wild)\b/gi },
       { name: 'Bohemian Rhapsody', category: 'ART_MUSIC', regex: /\b(?:Bohemian Rhapsody|Queen song)\b/gi },
       { name: 'Hotel California', category: 'ART_MUSIC', regex: /\b(?:Hotel California)\b/gi },
       { name: 'Starry Night', category: 'ART_MUSIC', regex: /\b(?:Starry Night|Van Gogh painting)\b/gi },
 
       // 3. Living Public Figures
+      { name: 'Elena Vance', category: 'PUBLIC_FIGURE', regex: /\b(?:Elena Vance)\b/gi },
       { name: 'Elon Musk', category: 'PUBLIC_FIGURE', regex: /\b(?:Elon Musk)\b/gi },
       { name: 'Taylor Swift', category: 'PUBLIC_FIGURE', regex: /\b(?:Taylor Swift)\b/gi },
 
       // 4. Proprietary Locations
+      { name: 'Midtown Spire Tower', category: 'PROPRIETARY_LOCATION', regex: /\b(?:Midtown Spire Tower)\b/gi },
       { name: 'Empire State Building', category: 'PROPRIETARY_LOCATION', regex: /\b(?:Empire State Building)\b/gi },
       { name: 'Disneyland', category: 'PROPRIETARY_LOCATION', regex: /\b(?:Disneyland|Magic Kingdom)\b/gi },
       { name: 'Madison Square Garden', category: 'PROPRIETARY_LOCATION', regex: /\b(?:Madison Square Garden)\b/gi },
 
       // 5. Graphic Text / Props
+      { name: 'Titan Industrial Hazard Placard', category: 'GRAPHIC_PROP', regex: /\b(?:Titan Industrial Hazard Placard|Titan Industrial Placard)\b/gi },
       { name: 'Acme Explosives Warning', category: 'GRAPHIC_PROP', regex: /\b(?:Acme Explosives|Acme Warning Label)\b/gi },
       { name: 'Biohazard Warning Sign', category: 'GRAPHIC_PROP', regex: /\b(?:Biohazard Warning Sign|Biohazard Label)\b/gi },
     ];
