@@ -2,8 +2,19 @@
 
 **Feature Branch**: `007-failed-research-retry`  
 **Created**: 2026-08-18  
-**Status**: Draft  
+**Status**: Clarified  
 **Input**: User description: "Failed Research Retry: let a coordinator retry a failed or insufficient-evidence research run for one item without duplicating completed work and without fabricating citations. Retry must emit timeline events and remain fail-visible in CLOUD_MODE. Preserve 003 through 006 invariants. Do not add unrelated scope."
+
+---
+
+## Clarifications
+
+### Session 2026-08-18
+- Q: What is the granularity and trigger scope of research retries? → A: Retry is per-item only and never re-runs completed sibling items.
+- Q: Which entity clearance statuses are eligible for research retries? → A: Retry is allowed only for `INSUFFICIENT_EVIDENCE` or provider-failed research.
+- Q: How are errors and missing keys handled during retry in CLOUD_MODE? → A: `CLOUD_MODE` retry failures stay fail-visible and never invent citations or silently use fixtures.
+- Q: How does retrying interact with active legal counsel overrides? → A: Retry updates underlying research assessments but never mutates or erases counsel overrides.
+- Q: Which observable timeline events must be emitted upon retry execution? → A: Emit `RESEARCH_RETRY_STARTED` plus existing research timeline events (`TOOL_CALL`, `CITATION_ADDED`, `RISK_EVAL`).
 
 ---
 
@@ -21,6 +32,7 @@ As a studio clearance coordinator, when an entity has a status of `INSUFFICIENT_
 1. **Given** an entity with `INSUFFICIENT_EVIDENCE` or ungrounded status in the entity registry, **When** the coordinator clicks "Retry Research" (or "Re-Ground") on that entity row, **Then** the backend executes the clearance research pipeline strictly for that single entity.
 2. **Given** an entity whose research retry succeeds, **When** the evaluation completes, **Then** the entity's status transitions to its newly evaluated status (`NO_ISSUE_SURFACED`, `REVIEW_RECOMMENDED`, or `ACTION_REQUIRED`), retaining authentic research citations.
 3. **Given** a multi-entity project where several entities have already been evaluated, **When** a single-item retry is executed, **Then** no other entity records, citations, or replacement cards in the project are touched or re-queried.
+4. **Given** an entity with an already-cleared status (`NO_ISSUE_SURFACED`, `REVIEW_RECOMMENDED`, or `ACTION_REQUIRED`), **When** viewed in the registry table, **Then** the retry action is not shown as a failed-research prompt (retry is gated exclusively to `INSUFFICIENT_EVIDENCE` and failed evaluations).
 
 ---
 
@@ -56,7 +68,7 @@ As a studio legal counsel and compliance auditor, when a research retry executes
 
 - **Retrying an Overridden Entity**: If counsel has previously recorded a signed override on an entity, retrying research refreshes the underlying automated assessment and citations, but the entity's effective clearance status remains governed by the counsel override per 003 hierarchical resolution rules.
 - **Concurrent Retries**: Rapidly clicking retry should be guarded with a loading state on the UI button to prevent duplicate concurrent network requests.
-- **Already Cleared Entity**: If a coordinator retries an item that already has `NO_ISSUE_SURFACED` or `ACTION_REQUIRED`, the system re-runs the research query cleanly, updating timestamps and citations without creating duplicate assessment rows.
+- **Provider Outages**: If the search provider is offline during retry, `CLOUD_MODE` visibly maintains `INSUFFICIENT_EVIDENCE` and logs the API error.
 
 ---
 
@@ -64,13 +76,13 @@ As a studio legal counsel and compliance auditor, when a research retry executes
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST allow clearance coordinators to trigger a targeted research retry on an individual clearance item without re-evaluating or modifying other entities in the project.
-- **FR-002**: The system MUST expose a dedicated retry endpoint (`POST /api/projects/:id/entities/:entityId/retry-research` or single-entity clearance evaluation) that executes grounding research exclusively for the specified entity.
+- **FR-001**: The system MUST allow clearance coordinators to trigger a targeted research retry exclusively on an individual clearance item with `INSUFFICIENT_EVIDENCE` or failed research status without re-evaluating or modifying completed sibling entities.
+- **FR-002**: The system MUST expose a dedicated single-item retry endpoint (`POST /api/projects/:id/entities/:entityId/retry-research` or single-entity clearance evaluation) that executes grounding research exclusively for the specified entity.
 - **FR-003**: The system MUST strictly prohibit the fabrication of simulated search citations, fake trademark serial numbers, or invented URLs during research retries.
 - **FR-004**: In `CLOUD_MODE`, any search provider failure, timeout, or missing credential error during a retry MUST fail visibly, returning `INSUFFICIENT_EVIDENCE` with zero silent fallback to demo fixtures.
 - **FR-005**: The backend MUST emit a `RESEARCH_RETRY_STARTED` event followed by standard `TOOL_CALL`, `CITATION_ADDED`, and `RISK_EVAL` events over the SSE stream when a retry is initiated.
-- **FR-006**: A research retry MUST update the entity's underlying automated assessment, citations, and timestamps, but MUST NOT overwrite or mutate active legal counsel overrides.
-- **FR-007**: The frontend entity registry table MUST surface a dedicated "Retry Research" (or "Re-Ground") action on entities with `INSUFFICIENT_EVIDENCE` or failed assessment status.
+- **FR-006**: A research retry MUST update the entity's underlying automated assessment, citations, and timestamps, but MUST NOT mutate, override, or erase active legal counsel overrides.
+- **FR-007**: The frontend entity registry table MUST surface a dedicated "Retry Research" (or "Re-Ground") action exclusively on entities with `INSUFFICIENT_EVIDENCE` or failed assessment status.
 - **FR-008**: The system MUST preserve all existing 003 invariants (scene-specific counsel override isolation, hierarchical status resolution, and SHA-256 binder integrity digests).
 - **FR-009**: The system MUST preserve all existing 004 invariants (autonomous candidate self-clearance loop with $\le 3$ attempts, negative prompt constraints, counsel escalation, and 4-event SSE timeline taxonomy).
 - **FR-010**: The system MUST preserve all existing 005 invariants (1-click bundled fictional demo screenplay, secret-masked health check endpoint, fail-visible `CLOUD_MODE`, and exclusively fictional examples in public documentation).
@@ -97,6 +109,6 @@ As a studio legal counsel and compliance auditor, when a research retry executes
 
 ## Assumptions
 
-- Clearance coordinators can re-evaluate clearance items at any point in the pre-production timeline.
+- Clearance coordinators can retry `INSUFFICIENT_EVIDENCE` entities at any time without disturbing completed project evaluations.
 - The underlying Parallel Search API supports discrete single-entity query lookups.
 - Counsel overrides remain the supreme legal authority and are never erased by automated retry operations.
