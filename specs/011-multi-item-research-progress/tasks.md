@@ -9,7 +9,7 @@
 
 **Purpose**: Type definitions and state interfaces for batch clearance research.
 
-- [ ] T001 [P] Define `BatchItemStatus`, `BatchResearchItem`, and `BatchResearchProgress` interfaces in `src/components/EntityRegistryTable.tsx` and `src/hooks/useBatchResearch.ts`
+- [x] T001 [P] Define `BatchItemStatus`, `BatchResearchItem`, and `BatchResearchProgress` interfaces in `src/components/EntityRegistryTable.tsx` and `src/hooks/useBatchResearch.ts`
 
 ---
 
@@ -17,7 +17,7 @@
 
 **Purpose**: Asynchronous worker pool engine with strict concurrency limit of 2.
 
-- [ ] T002 [P] Implement `runBatchClearancePool` worker queue with concurrency limit of 2 in `src/hooks/useBatchResearch.ts`
+- [x] T002 [P] Implement `runBatchClearancePool` worker queue with concurrency limit of 2 in `src/hooks/useBatchResearch.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -31,12 +31,12 @@
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Contract test for "🔍 Research All Pending" trigger, eligibility filtering (`INSUFFICIENT_EVIDENCE`), and live status transitions in `tests/contract/test_batch_research.test.ts`
+- [x] T003 [P] [US1] Contract test for "🔍 Research All Pending" trigger, eligibility filtering (`INSUFFICIENT_EVIDENCE`), and live status transitions in `tests/contract/test_batch_research.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Add "🔍 Research All Pending" button, batch progress banner, and per-item badges (`QUEUED`, `RESEARCHING`, `COMPLETED`, `FAILED`) in `src/components/EntityRegistryTable.tsx`
-- [ ] T005 [P] [US1] Wire `onEvaluateBatch` in `src/pages/WorkspacePage.tsx` to execute batch evaluations and refresh entity table incrementally upon each item completion
+- [x] T004 [US1] Add "🔍 Research All Pending" button, batch progress banner, and per-item badges (`QUEUED`, `RESEARCHING`, `COMPLETED`, `FAILED`) in `src/components/EntityRegistryTable.tsx`
+- [x] T005 [P] [US1] Wire `onEvaluateBatch` in `src/pages/WorkspacePage.tsx` to execute batch evaluations and refresh entity table incrementally upon each item completion
 
 **Checkpoint**: User Story 1 complete. Multi-item batch research operational and testable independently.
 
@@ -50,11 +50,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T006 [P] [US2] Contract test verifying parallel request ceiling ($\le 2$) and complete persistence without dropped work in `tests/contract/test_batch_research.test.ts`
+- [x] T006 [P] [US2] Contract test verifying parallel request ceiling ($\le 2$) and complete persistence without dropped work in `tests/contract/test_batch_research.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Enforce strict concurrency bounding ($\le 2$) and zero-drop completion tracking in `src/hooks/useBatchResearch.ts`
+- [x] T007 [US2] Enforce strict concurrency bounding ($\le 2$) and zero-drop completion tracking in `src/hooks/useBatchResearch.ts`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Bounded concurrency and live batch tracking fully operational.
 
@@ -68,11 +68,11 @@
 
 ### Tests for User Story 3
 
-- [ ] T008 [P] [US3] Contract test verifying failed item isolation (`INSUFFICIENT_EVIDENCE`) without aborting batch queue and preserving pre-existing counsel overrides in `tests/contract/test_batch_research.test.ts`
+- [x] T008 [P] [US3] Contract test verifying failed item isolation (`INSUFFICIENT_EVIDENCE`) without aborting batch queue and preserving pre-existing counsel overrides in `tests/contract/test_batch_research.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T009 [US3] Implement try/catch item error isolation and counsel override preservation in `src/hooks/useBatchResearch.ts` and `src/components/EntityRegistryTable.tsx`
+- [x] T009 [US3] Implement try/catch item error isolation and counsel override preservation in `src/hooks/useBatchResearch.ts` and `src/components/EntityRegistryTable.tsx`
 
 **Checkpoint**: All user stories complete. Batch progress, bounded concurrency, fail-visible error handling, and override preservation verified.
 
@@ -82,9 +82,9 @@
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full build verification.
 
-- [ ] T010 [P] Implement end-to-end integration test in `tests/integration/batch_research_workflow.test.ts` verifying batch script ingestion, concurrent evaluation, live table updates, and complete binder export
-- [ ] T011 Run quickstart validation scenarios defined in `specs/011-multi-item-research-progress/quickstart.md`
-- [ ] T012 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [x] T010 [P] Implement end-to-end integration test in `tests/integration/batch_research_workflow.test.ts` verifying batch script ingestion, concurrent evaluation, live table updates, and complete binder export
+- [x] T011 Run quickstart validation scenarios defined in `specs/011-multi-item-research-progress/quickstart.md`
+- [x] T012 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

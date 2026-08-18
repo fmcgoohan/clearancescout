@@ -3,6 +3,7 @@ import { ScriptViewer, Scene, CounselOverrideItem } from '../components/ScriptVi
 import { EntityRegistryTable, CanonicalEntity } from '../components/EntityRegistryTable';
 import { ItemEditModal, EntityCategory } from '../components/ItemEditModal';
 import { ComparisonModal, ComparisonViewModel } from '../components/ComparisonModal';
+import { useBatchResearch } from '../hooks/useBatchResearch.js';
 
 interface WorkspacePageProps {
   projectId: string;
@@ -36,6 +37,14 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const [comparisonData, setComparisonData] = useState<ComparisonViewModel | null>(null);
   const [isComparisonLoading, setIsComparisonLoading] = useState(false);
+
+  // Batch research hook
+  const { progress: batchProgress, startBatchResearch } = useBatchResearch(
+    projectId,
+    () => {
+      fetchWorkspaceData();
+    }
+  );
 
   const defaultFictionalDemoScript = `TITLE: THE NEON HORIZON
 AUTHOR: Entrant Studio Team
@@ -307,6 +316,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           scenes={scenes}
           selectedSceneId={selectedSceneId}
           onEvaluateClearance={onEvaluateClearance}
+          onEvaluateBatch={startBatchResearch}
+          batchProgress={batchProgress}
           onRetryResearch={handleRetryResearch}
           onGenerateReplacement={onGenerateReplacement}
           onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}

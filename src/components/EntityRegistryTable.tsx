@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+import { BatchResearchProgress } from '../hooks/useBatchResearch.js';
+
 export type ClearanceStatusType = 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
 
 export interface CanonicalEntity {
@@ -72,11 +74,13 @@ export function filterEntities(
   });
 }
 
-interface EntityRegistryTableProps {
+export interface EntityRegistryTableProps {
   entities: CanonicalEntity[];
   scenes?: SceneFilterOption[];
   selectedSceneId?: string | null;
   onEvaluateClearance: (entityId: string) => void;
+  onEvaluateBatch?: (entities: { id: string; canonicalName: string }[]) => void;
+  batchProgress?: BatchResearchProgress;
   onRetryResearch?: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
   onOpenCounselReview?: (entityId: string) => void;
@@ -92,6 +96,8 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   scenes = [],
   selectedSceneId,
   onEvaluateClearance,
+  onEvaluateBatch,
+  batchProgress,
   onRetryResearch,
   onGenerateReplacement,
   onOpenCounselReview,
@@ -115,6 +121,9 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   }, [selectedSceneId]);
 
   const filteredEntities = filterEntities(entities, filter, scenes);
+  const pendingEntities = entities.filter(
+    (e) => !e.overallClearanceStatus || e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE'
+  );
 
   const getBadgeClass = (status: string) => {
     return `badge badge-${status}`;
@@ -168,10 +177,10 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
 
   return (
     <div className="glass-panel" style={{ padding: '20px' }}>
-      {/* Header & Item Add */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+      {/* Header & Batch/Item Triggers */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
             <h3 style={{ fontSize: '1rem', color: 'var(--accent-cyan)', margin: 0 }}>
               Canonical Entity Registry ("Clear Once, Recognize Everywhere")
             </h3>
@@ -187,6 +196,33 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                 }}
               >
                 ➕ Add Item
+              </button>
+            )}
+            {onEvaluateBatch && (
+              <button
+                className="btn-secondary"
+                onClick={() =>
+                  onEvaluateBatch(
+                    pendingEntities.map((e) => ({ id: e.id, canonicalName: e.canonicalName }))
+                  )
+                }
+                disabled={isEvaluating || batchProgress?.isActive || pendingEntities.length === 0}
+                style={{
+                  fontSize: '0.75rem',
+                  padding: '3px 10px',
+                  borderColor: pendingEntities.length > 0 ? 'var(--accent-cyan)' : 'var(--border-color)',
+                  color: pendingEntities.length > 0 ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                  cursor: pendingEntities.length === 0 || batchProgress?.isActive ? 'not-allowed' : 'pointer',
+                }}
+                title={
+                  pendingEntities.length === 0
+                    ? 'All entities already have completed clearance evaluations.'
+                    : `Run clearance research on ${pendingEntities.length} pending entities`
+                }
+              >
+                {batchProgress?.isActive
+                  ? `⏳ Evaluating (${batchProgress.completed}/${batchProgress.total})...`
+                  : `🔍 Research All Pending (${pendingEntities.length})`}
               </button>
             )}
           </div>
@@ -211,6 +247,39 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
           </button>
         )}
       </div>
+
+      {/* Batch Research Progress Banner */}
+      {batchProgress && (batchProgress.isActive || batchProgress.total > 0) && (
+        <div
+          style={{
+            background: 'rgba(56, 189, 248, 0.05)',
+            border: '1px solid rgba(56, 189, 248, 0.25)',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            marginBottom: '16px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '0.8rem' }}>
+            <span style={{ fontWeight: 600, color: 'var(--accent-cyan)' }}>
+              {batchProgress.isActive ? '⚡ Multi-Item Clearance Research in Progress' : '✅ Batch Clearance Research Completed'}
+            </span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+              {batchProgress.completed} of {batchProgress.total} Evaluated • Concurrency: {batchProgress.activeCount} / 2
+              {batchProgress.failed > 0 && <span style={{ color: '#f87171', marginLeft: '6px' }}>({batchProgress.failed} Failed)</span>}
+            </span>
+          </div>
+          <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+            <div
+              style={{
+                width: `${Math.round(((batchProgress.completed + batchProgress.failed) / (batchProgress.total || 1)) * 100)}%`,
+                height: '100%',
+                background: batchProgress.failed > 0 ? 'linear-gradient(90deg, var(--accent-cyan), #f87171)' : 'var(--accent-cyan)',
+                transition: 'width 0.3s ease',
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Multi-Dimension Filter Controls Toolbar */}
       <div
@@ -344,159 +413,200 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
               </tr>
             </thead>
             <tbody>
-              {filteredEntities.map((e) => (
-                <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-main)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span>{e.canonicalName}</span>
-                      {e.origin === 'USER_EDITED' && (
+              {filteredEntities.map((e) => {
+                const itemProgress = batchProgress?.items?.[e.id];
+                const isItemInActiveBatch =
+                  batchProgress?.isActive &&
+                  (itemProgress?.status === 'QUEUED' || itemProgress?.status === 'RESEARCHING');
+
+                return (
+                  <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-main)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span>{e.canonicalName}</span>
+                        {e.origin === 'USER_EDITED' && (
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              background: 'rgba(56, 189, 248, 0.15)',
+                              color: '#38bdf8',
+                              border: '1px solid rgba(56, 189, 248, 0.4)',
+                              borderRadius: '4px',
+                              padding: '2px 5px',
+                            }}
+                          >
+                            ✏️ Edited
+                          </span>
+                        )}
+                        {e.origin === 'MANUALLY_ADDED' && (
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              background: 'rgba(192, 132, 252, 0.15)',
+                              color: '#c084fc',
+                              border: '1px solid rgba(192, 132, 252, 0.4)',
+                              borderRadius: '4px',
+                              padding: '2px 5px',
+                            }}
+                          >
+                            ✨ Added
+                          </span>
+                        )}
+                        {e.isOverridden && (
+                          <span
+                            title={e.latestOverride ? `Overridden by ${e.latestOverride.counselName}: ${e.latestOverride.rationale}` : 'Overridden by Legal Counsel'}
+                            style={{
+                              fontSize: '0.65rem',
+                              background: 'rgba(52, 211, 153, 0.15)',
+                              color: '#34d399',
+                              border: '1px solid rgba(52, 211, 153, 0.4)',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              fontWeight: 500,
+                              cursor: 'help',
+                            }}
+                          >
+                            ⚖️ Counsel Override
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <span
+                        className="mono"
+                        style={{
+                          fontSize: '0.75rem',
+                          color: getCategoryColor(e.entityCategory),
+                          background: 'rgba(255,255,255,0.04)',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {e.entityCategory.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      {batchProgress?.isActive && itemProgress?.status === 'QUEUED' ? (
+                        <span className="badge" style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}>
+                          ⏳ Queued
+                        </span>
+                      ) : batchProgress?.isActive && itemProgress?.status === 'RESEARCHING' ? (
                         <span
+                          className="badge"
                           style={{
-                            fontSize: '0.65rem',
                             background: 'rgba(56, 189, 248, 0.15)',
                             color: '#38bdf8',
                             border: '1px solid rgba(56, 189, 248, 0.4)',
-                            borderRadius: '4px',
-                            padding: '2px 5px',
                           }}
                         >
-                          ✏️ Edited
+                          🔄 Researching...
                         </span>
-                      )}
-                      {e.origin === 'MANUALLY_ADDED' && (
+                      ) : itemProgress?.status === 'FAILED' ? (
                         <span
+                          className="badge"
                           style={{
-                            fontSize: '0.65rem',
-                            background: 'rgba(192, 132, 252, 0.15)',
-                            color: '#c084fc',
-                            border: '1px solid rgba(192, 132, 252, 0.4)',
-                            borderRadius: '4px',
-                            padding: '2px 5px',
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            color: '#f87171',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
                           }}
+                          title={itemProgress.error || 'Clearance research failed'}
                         >
-                          ✨ Added
+                          ⚠️ Failed
                         </span>
-                      )}
-                      {e.isOverridden && (
-                        <span
-                          title={e.latestOverride ? `Overridden by ${e.latestOverride.counselName}: ${e.latestOverride.rationale}` : 'Overridden by Legal Counsel'}
-                          style={{
-                            fontSize: '0.65rem',
-                            background: 'rgba(52, 211, 153, 0.15)',
-                            color: '#34d399',
-                            border: '1px solid rgba(52, 211, 153, 0.4)',
-                            borderRadius: '4px',
-                            padding: '2px 6px',
-                            fontWeight: 500,
-                            cursor: 'help',
-                          }}
-                        >
-                          ⚖️ Counsel Override
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <span
-                      className="mono"
-                      style={{
-                        fontSize: '0.75rem',
-                        color: getCategoryColor(e.entityCategory),
-                        background: 'rgba(255,255,255,0.04)',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                      }}
-                    >
-                      {e.entityCategory.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <span className={getBadgeClass(e.overallClearanceStatus)}>{formatStatus(e.overallClearanceStatus)}</span>
-                  </td>
-                  <td style={{ padding: '12px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                      {onEditItem && (
-                        <button
-                          className="btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '4px 6px' }}
-                          onClick={() => onEditItem(e)}
-                          title="Edit clearance item name, category, or context"
-                        >
-                          ✏️ Edit
-                        </button>
-                      )}
-                      {onDeleteItem && (
-                        <button
-                          className="btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '4px 6px', color: 'var(--danger-color)', borderColor: 'var(--danger-color)' }}
-                          onClick={() => {
-                            if (window.confirm(`Are you sure you want to remove "${e.canonicalName}" from the clearance registry?`)) {
-                              onDeleteItem(e.id);
-                            }
-                          }}
-                          title="Remove item from clearance registry"
-                        >
-                          🗑️
-                        </button>
-                      )}
-                      {e.replacementCard && onOpenComparison && (
-                        <button
-                          className="btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '4px 8px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
-                          onClick={() => onOpenComparison(e.id)}
-                          title="View side-by-side original and fictional replacement comparison"
-                        >
-                          🔍 Compare
-                        </button>
-                      )}
-                      {e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE' ? (
-                        <button
-                          className="btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '4px 8px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
-                          onClick={() => {
-                            if (onRetryResearch) {
-                              onRetryResearch(e.id);
-                            } else {
-                              onEvaluateClearance(e.id);
-                            }
-                          }}
-                          disabled={isEvaluating}
-                          title="Retry clearance research for this item"
-                        >
-                          {isEvaluating ? 'Retrying...' : '🔁 Retry Research'}
-                        </button>
                       ) : (
-                        <button
-                          className="btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                          onClick={() => onEvaluateClearance(e.id)}
-                          disabled={isEvaluating}
-                        >
-                          {isEvaluating ? 'Researching...' : '🔍 Ground'}
-                        </button>
+                        <span className={getBadgeClass(e.overallClearanceStatus)}>{formatStatus(e.overallClearanceStatus)}</span>
                       )}
-                      {onOpenCounselReview && (
-                        <button
-                          className="btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                          onClick={() => onOpenCounselReview(e.id)}
-                        >
-                          ⚖️ Counsel Review
-                        </button>
-                      )}
-                      {(e.overallClearanceStatus === 'ACTION_REQUIRED' || e.overallClearanceStatus === 'REVIEW_RECOMMENDED') && (
-                        <button
-                          className="btn-primary"
-                          style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                          onClick={() => onGenerateReplacement(e.id)}
-                        >
-                          Generate Replacement
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        {onEditItem && (
+                          <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '4px 6px' }}
+                            onClick={() => onEditItem(e)}
+                            disabled={isEvaluating || isItemInActiveBatch}
+                            title="Edit clearance item name, category, or context"
+                          >
+                            ✏️ Edit
+                          </button>
+                        )}
+                        {onDeleteItem && (
+                          <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '4px 6px', color: 'var(--danger-color)', borderColor: 'var(--danger-color)' }}
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to remove "${e.canonicalName}" from the clearance registry?`)) {
+                                onDeleteItem(e.id);
+                              }
+                            }}
+                            disabled={isEvaluating || isItemInActiveBatch}
+                            title="Remove item from clearance registry"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                        {e.replacementCard && onOpenComparison && (
+                          <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '4px 8px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
+                            onClick={() => onOpenComparison(e.id)}
+                            disabled={isItemInActiveBatch}
+                            title="View side-by-side original and fictional replacement comparison"
+                          >
+                            🔍 Compare
+                          </button>
+                        )}
+                        {e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE' ? (
+                          <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '4px 8px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
+                            onClick={() => {
+                              if (onRetryResearch) {
+                                onRetryResearch(e.id);
+                              } else {
+                                onEvaluateClearance(e.id);
+                              }
+                            }}
+                            disabled={isEvaluating || isItemInActiveBatch}
+                            title="Retry clearance research for this item"
+                          >
+                            {isEvaluating || isItemInActiveBatch ? 'Retrying...' : '🔁 Retry Research'}
+                          </button>
+                        ) : (
+                          <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                            onClick={() => onEvaluateClearance(e.id)}
+                            disabled={isEvaluating || isItemInActiveBatch}
+                          >
+                            {isEvaluating || isItemInActiveBatch ? 'Researching...' : '🔍 Ground'}
+                          </button>
+                        )}
+                        {onOpenCounselReview && (
+                          <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                            onClick={() => onOpenCounselReview(e.id)}
+                            disabled={isItemInActiveBatch}
+                          >
+                            ⚖️ Counsel Review
+                          </button>
+                        )}
+                        {(e.overallClearanceStatus === 'ACTION_REQUIRED' || e.overallClearanceStatus === 'REVIEW_RECOMMENDED') && (
+                          <button
+                            className="btn-primary"
+                            style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                            onClick={() => onGenerateReplacement(e.id)}
+                            disabled={isItemInActiveBatch}
+                          >
+                            Generate Replacement
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
