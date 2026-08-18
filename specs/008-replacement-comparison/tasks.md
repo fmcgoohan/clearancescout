@@ -9,7 +9,7 @@
 
 **Purpose**: Shared TypeScript interfaces and data model definitions for comparison payloads.
 
-- [ ] T001 [P] Define `ComparisonViewModel`, `OriginalEntitySummary`, `ReplacementSummary`, and `CandidateAttemptSummary` interfaces in `src/components/ComparisonModal.tsx` and `server/api/replacementRoutes.ts`
+- [X] T001 [P] Define `ComparisonViewModel`, `OriginalEntitySummary`, `ReplacementSummary`, and `CandidateAttemptSummary` interfaces in `src/components/ComparisonModal.tsx` and `server/api/replacementRoutes.ts`
 
 ---
 
@@ -17,7 +17,7 @@
 
 **Purpose**: Core backend data assembly for original entities, assessments, replacement cards, and candidate attempt history.
 
-- [ ] T002 [P] Implement comparison data retrieval method in `server/repositories/ReplacementRepo.ts` assembling original entity metadata, assessments, replacement cards, and candidate attempt history
+- [X] T002 [P] Implement comparison data retrieval method in `server/repositories/ReplacementRepo.ts` assembling original entity metadata, assessments, replacement cards, and candidate attempt history
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -31,14 +31,14 @@
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Contract test for `GET /api/projects/:id/entities/:entityId/comparison` in `tests/contract/test_replacement_comparison.test.ts`
+- [X] T003 [P] [US1] Contract test for `GET /api/projects/:id/entities/:entityId/comparison` in `tests/contract/test_replacement_comparison.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Implement `GET /api/projects/:id/entities/:entityId/comparison` endpoint in `server/api/replacementRoutes.ts` with gating (return 400 if no replacement card exists)
-- [ ] T005 [P] [US1] Create `ComparisonModal.tsx` component in `src/components/ComparisonModal.tsx` rendering two-column comparison (original entity vs replacement card)
-- [ ] T006 [P] [US1] Add "🔍 Compare" button on rows with attached replacement cards in `src/components/EntityRegistryTable.tsx`
-- [ ] T007 [US1] Connect comparison modal trigger and data fetching in `src/pages/WorkspacePage.tsx`
+- [X] T004 [US1] Implement `GET /api/projects/:id/entities/:entityId/comparison` endpoint in `server/api/replacementRoutes.ts` with gating (return 400 if no replacement card exists)
+- [X] T005 [P] [US1] Create `ComparisonModal.tsx` component in `src/components/ComparisonModal.tsx` rendering two-column comparison (original entity vs replacement card)
+- [X] T006 [P] [US1] Add "🔍 Compare" button on rows with attached replacement cards in `src/components/EntityRegistryTable.tsx`
+- [X] T007 [US1] Connect comparison modal trigger and data fetching in `src/pages/WorkspacePage.tsx`
 
 **Checkpoint**: User Story 1 complete. Side-by-side modal operational and testable independently.
 
@@ -52,11 +52,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T008 [P] [US2] Contract test for attempt history breakdown, negative constraints, and citation provenance in `tests/contract/test_replacement_comparison.test.ts`
+- [X] T008 [P] [US2] Contract test for attempt history breakdown, negative constraints, and citation provenance in `tests/contract/test_replacement_comparison.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Add candidate self-clearance attempt history accordion and citation provenance badges in `src/components/ComparisonModal.tsx`
+- [X] T009 [US2] Add candidate self-clearance attempt history accordion and citation provenance badges in `src/components/ComparisonModal.tsx`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Attempt history breakdown and citation provenance operational.
 
@@ -70,12 +70,12 @@
 
 ### Tests for User Story 3
 
-- [ ] T010 [P] [US3] Contract test for 3rd attempt escalation banner and binder export comparison data in `tests/contract/test_replacement_comparison.test.ts`
+- [X] T010 [P] [US3] Contract test for 3rd attempt escalation banner and binder export comparison data in `tests/contract/test_replacement_comparison.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T011 [US3] Render "⚖️ Counsel Review Required (Escalated on 3rd Candidate Attempt)" banner in `src/components/ComparisonModal.tsx` for un-cleared 3rd attempt replacements
-- [ ] T012 [P] [US3] Embed side-by-side original vs replacement comparison table in `src/components/BinderViewer.tsx`
+- [X] T011 [US3] Render "⚖️ Counsel Review Required (Escalated on 3rd Candidate Attempt)" banner in `src/components/ComparisonModal.tsx` for un-cleared 3rd attempt replacements
+- [X] T012 [P] [US3] Embed side-by-side original vs replacement comparison table in `src/components/BinderViewer.tsx`
 
 **Checkpoint**: All user stories complete. Full side-by-side comparison, attempt history, counsel escalation banner, and binder print integration operational.
 
@@ -85,9 +85,9 @@
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full build verification.
 
-- [ ] T013 [P] Implement end-to-end integration test in `tests/integration/replacement_comparison_workflow.test.ts` verifying comparison retrieval, attempt history, counsel escalation banner, and binder export
-- [ ] T014 Run quickstart validation scenarios defined in `specs/008-replacement-comparison/quickstart.md`
-- [ ] T015 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [X] T013 [P] Implement end-to-end integration test in `tests/integration/replacement_comparison_workflow.test.ts` verifying comparison retrieval, attempt history, counsel escalation banner, and binder export
+- [X] T014 Run quickstart validation scenarios defined in `specs/008-replacement-comparison/quickstart.md`
+- [X] T015 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

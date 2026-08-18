@@ -14,6 +14,7 @@ export interface CanonicalEntity {
     counselName: string;
     timestamp: string;
   };
+  replacementCard?: any;
 }
 
 interface EntityRegistryTableProps {
@@ -22,6 +23,7 @@ interface EntityRegistryTableProps {
   onRetryResearch?: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
   onOpenCounselReview?: (entityId: string) => void;
+  onOpenComparison?: (entityId: string) => void;
   onEditItem?: (entity: CanonicalEntity) => void;
   onDeleteItem?: (entityId: string) => void;
   onAddItem?: () => void;
@@ -34,6 +36,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   onRetryResearch,
   onGenerateReplacement,
   onOpenCounselReview,
+  onOpenComparison,
   onEditItem,
   onDeleteItem,
   onAddItem,
@@ -231,6 +234,16 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                           title="Remove item from clearance registry"
                         >
                           🗑️
+                        </button>
+                      )}
+                      {e.replacementCard && onOpenComparison && (
+                        <button
+                          className="btn-secondary"
+                          style={{ fontSize: '0.75rem', padding: '4px 8px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
+                          onClick={() => onOpenComparison(e.id)}
+                          title="View side-by-side original and fictional replacement comparison"
+                        >
+                          🔍 Compare
                         </button>
                       )}
                       {e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE' ? (

@@ -101,102 +101,122 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
             top: 0;
             width: 100%;
             height: auto;
-            background: #ffffff !important;
-            color: #000000 !important;
-            padding: 20px;
-            box-shadow: none !important;
+            background: white !important;
+            color: black !important;
+            padding: 0 !important;
           }
           .no-print {
             display: none !important;
           }
         }
       `}</style>
-
       <div
         id="printable-binder-modal"
         className="glass-panel"
         style={{
-          width: '780px',
-          maxHeight: '88vh',
+          width: '1000px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
           overflowY: 'auto',
           padding: '32px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
-          background: 'var(--bg-secondary)',
+          gap: '24px',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '12px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-              <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>
-                STUDIO E&O LEGAL CLEARANCE BINDER
-              </span>
-              <span
-                style={{
-                  fontSize: '0.65rem',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  fontWeight: 600,
-                  background: isLive
-                    ? 'rgba(6, 182, 212, 0.15)'
-                    : isFallback
-                    ? 'rgba(248, 113, 113, 0.15)'
-                    : isMixed
-                    ? 'rgba(59, 130, 246, 0.15)'
-                    : 'rgba(251, 191, 36, 0.15)',
-                  color: isLive ? 'var(--accent-cyan)' : isFallback ? '#f87171' : isMixed ? '#60a5fa' : '#fbbf24',
-                  border: `1px solid ${
-                    isLive
-                      ? 'rgba(6, 182, 212, 0.3)'
-                      : isFallback
-                      ? 'rgba(248, 113, 113, 0.3)'
-                      : isMixed
-                      ? 'rgba(59, 130, 246, 0.3)'
-                      : 'rgba(251, 191, 36, 0.3)'
-                  }`,
-                }}
-              >
-                {isLive ? 'PARALLEL LIVE' : isFallback ? 'FALLBACK FIXTURE' : isMixed ? 'MIXED EVIDENCE' : 'DEMO FIXTURE'}
-              </span>
-            </div>
-            <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>
-              {binder.projectSummary.title}
-            </h3>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {binder.projectSummary.productionCompany} • Script Version: {binder.projectSummary.scriptVersion}
+            <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              ClearanceScout Official Legal Dossier
             </span>
+            <h2 style={{ margin: '4px 0 0', fontSize: '1.4rem', color: 'var(--text-main)' }}>
+              {binder.projectSummary.title}
+            </h2>
+            <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              {binder.projectSummary.productionCompany} • Script Version: {binder.projectSummary.scriptVersion}
+            </p>
           </div>
-          <button className="btn-secondary no-print" style={{ padding: '4px 10px' }} onClick={onClose}>
-            ✕ Close
-          </button>
+          <div style={{ textAlign: 'right' }}>
+            <span
+              style={{
+                display: 'inline-block',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                background: isLive
+                  ? 'rgba(56, 189, 248, 0.15)'
+                  : isFallback
+                  ? 'rgba(251, 191, 36, 0.15)'
+                  : isMixed
+                  ? 'rgba(192, 132, 252, 0.15)'
+                  : 'rgba(52, 211, 153, 0.15)',
+                color: isLive
+                  ? '#38bdf8'
+                  : isFallback
+                  ? '#fbbf24'
+                  : isMixed
+                  ? '#c084fc'
+                  : '#34d399',
+                border: `1px solid ${
+                  isLive
+                    ? 'rgba(56, 189, 248, 0.4)'
+                    : isFallback
+                    ? 'rgba(251, 191, 36, 0.4)'
+                    : isMixed
+                    ? 'rgba(192, 132, 252, 0.4)'
+                    : 'rgba(52, 211, 153, 0.4)'
+                }`,
+              }}
+            >
+              {isLive
+                ? '🌐 Parallel-Grounded Evidence'
+                : isFallback
+                ? '⚠️ Cloud Fallback Mode'
+                : isMixed
+                ? '🔀 Mixed Provenance Evidence'
+                : '🧪 Demo Mode Fixtures'}
+            </span>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Exported: {new Date(binder.exportedAt).toLocaleString()}
+            </div>
+          </div>
         </div>
 
-        {/* SHA-256 Integrity Digest Header */}
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '14px' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-            SHA-256 Integrity Digest:
-          </div>
-          <div className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', wordBreak: 'break-all' }}>
-            {binder.integrityDigest}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-            <span>Exported & Hashed At: {new Date(binder.exportedAt).toLocaleString()}</span>
-            {binder.provenanceSummary && (
-              <span className="mono">
-                Evidence: {binder.provenanceSummary.liveCount} Live | {binder.provenanceSummary.demoCount} Demo | {binder.provenanceSummary.fallbackCount} Fallback
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Legal Disclaimer */}
+        {/* SHA-256 Digest Box */}
         <div
           style={{
+            background: 'rgba(56, 189, 248, 0.05)',
+            border: '1px solid rgba(56, 189, 248, 0.2)',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>
+              SHA-256 Binder Cryptographic Integrity Digest
+            </div>
+            <div className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-main)', marginTop: '2px', wordBreak: 'break-all' }}>
+              {binder.integrityDigest}
+            </div>
+          </div>
+          <span style={{ fontSize: '1.2rem', marginLeft: '12px' }}>🔒</span>
+        </div>
+
+        {/* Legal Disclaimer Box */}
+        <div
+          style={{
+            background: 'rgba(245, 158, 11, 0.08)',
             padding: '10px 14px',
-            borderRadius: '6px',
-            background: 'rgba(245, 158, 11, 0.1)',
+            borderRadius: '8px',
             border: '1px solid rgba(245, 158, 11, 0.3)',
             fontSize: '0.75rem',
             color: '#fbbf24',
@@ -228,6 +248,62 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
             <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#34d399' }}>{binder.projectSummary.overridesCount || 0}</div>
           </div>
         </div>
+
+        {/* Side-by-Side Original & Fictional Replacement Catalog */}
+        {binder.replacementCatalog && binder.replacementCatalog.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-cyan)', margin: 0 }}>
+              Side-by-Side Original & Fictional Replacement Catalog ({binder.replacementCatalog.length})
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {binder.replacementCatalog.map((rep, idx) => (
+                <div
+                  key={rep.id || idx}
+                  style={{
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    padding: '14px',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '16px',
+                  }}
+                >
+                  {/* Left: Original Target Entity */}
+                  <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '12px' }}>
+                    <div style={{ fontSize: '0.7rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 600 }}>
+                      Original Scripted Entity
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '2px' }}>
+                      {rep.targetEntityName || 'Original Entity'}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Status: <span className="badge badge-ACTION_REQUIRED">ACTION REQUIRED</span>
+                    </div>
+                  </div>
+
+                  {/* Right: Replacement Asset */}
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 600 }}>
+                      Fictional Replacement Card
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '2px' }}>
+                      {rep.fictionalBrandName}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Aesthetic: <span style={{ color: 'var(--accent-cyan)' }}>{rep.eraAesthetic || 'Modern Cinematic'}</span> • Attempts: {rep.totalAttempts || 1}/3
+                    </div>
+                    {rep.selfClearanceResult === 'ESCALATED_TO_COUNSEL' && (
+                      <div style={{ fontSize: '0.7rem', color: '#fbbf24', marginTop: '4px', fontWeight: 600 }}>
+                        ⚖️ Escalated to Legal Counsel
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Legal Counsel Overrides Section */}
         {binder.overridesHistory && binder.overridesHistory.length > 0 && (

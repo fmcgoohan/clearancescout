@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ScriptViewer, Scene, CounselOverrideItem } from '../components/ScriptViewer';
 import { EntityRegistryTable, CanonicalEntity } from '../components/EntityRegistryTable';
 import { ItemEditModal, EntityCategory } from '../components/ItemEditModal';
+import { ComparisonModal, ComparisonViewModel } from '../components/ComparisonModal';
 
 interface WorkspacePageProps {
   projectId: string;
@@ -30,6 +31,11 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   // Edit / Add modal state
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [entityToEdit, setEntityToEdit] = useState<CanonicalEntity | null>(null);
+
+  // Comparison modal state
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
+  const [comparisonData, setComparisonData] = useState<ComparisonViewModel | null>(null);
+  const [isComparisonLoading, setIsComparisonLoading] = useState(false);
 
   const defaultFictionalDemoScript = `TITLE: THE NEON HORIZON
 AUTHOR: Entrant Studio Team
@@ -211,6 +217,26 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     }
   };
 
+  const handleOpenComparison = async (entityId: string) => {
+    if (!projectId) return;
+    setIsComparisonModalOpen(true);
+    setIsComparisonLoading(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/entities/${entityId}/comparison`);
+      if (res.ok) {
+        const data = await res.json();
+        setComparisonData(data);
+      } else {
+        const errJson = await res.json();
+        console.error('Error fetching comparison:', errJson.error);
+      }
+    } catch (err) {
+      console.error('Failed to fetch comparison:', err);
+    } finally {
+      setIsComparisonLoading(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Upload & Controls Panel */}
@@ -282,6 +308,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           onRetryResearch={handleRetryResearch}
           onGenerateReplacement={onGenerateReplacement}
           onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
+          onOpenComparison={handleOpenComparison}
           onEditItem={handleOpenEditModal}
           onDeleteItem={handleDeleteItem}
           onAddItem={handleOpenAddModal}
@@ -296,6 +323,14 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         onSave={handleSaveItem}
         entityToEdit={entityToEdit}
         scenes={scenes.map((s) => ({ id: s.id, sceneNumber: s.sceneNumber, heading: s.heading }))}
+      />
+
+      {/* Side-by-Side Original and Replacement Comparison Modal */}
+      <ComparisonModal
+        isOpen={isComparisonModalOpen}
+        onClose={() => setIsComparisonModalOpen(false)}
+        data={comparisonData}
+        isLoading={isComparisonLoading}
       />
     </div>
   );
