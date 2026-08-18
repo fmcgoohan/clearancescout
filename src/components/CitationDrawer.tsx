@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiFetch } from '../utils/apiClient.js';
 
 export type ProvenanceType = 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE';
 
@@ -88,7 +89,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
     setSubmitError(null);
 
     try {
-      const res = await fetch(`/api/projects/${projectId}/entities/${canonicalEntityId}/override`, {
+      const res = await apiFetch(`/api/projects/${projectId}/entities/${canonicalEntityId}/override`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

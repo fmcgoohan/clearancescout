@@ -5,6 +5,7 @@ export interface AppConfig {
   port: number;
   geminiApiKey?: string;
   parallelWebApiKey?: string;
+  demoAccessToken?: string;
 }
 
 export function loadConfig(): AppConfig {
@@ -14,6 +15,7 @@ export function loadConfig(): AppConfig {
   const port = parseInt(process.env.PORT || '8088', 10);
   const geminiApiKey = process.env.GEMINI_API_KEY;
   const parallelWebApiKey = process.env.PARALLEL_WEB_API_KEY;
+  const demoAccessToken = process.env.DEMO_ACCESS_TOKEN || process.env.DEMO_TOKEN;
 
   if (executionMode === 'CLOUD_MODE') {
     if (!geminiApiKey || !parallelWebApiKey) {
@@ -34,6 +36,7 @@ export function loadConfig(): AppConfig {
     port,
     geminiApiKey,
     parallelWebApiKey,
+    demoAccessToken: demoAccessToken?.trim() || undefined,
   };
 }
 

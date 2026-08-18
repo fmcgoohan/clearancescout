@@ -4,6 +4,7 @@ import { EntityRegistryTable, CanonicalEntity } from '../components/EntityRegist
 import { ItemEditModal, EntityCategory } from '../components/ItemEditModal';
 import { ComparisonModal, ComparisonViewModel } from '../components/ComparisonModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
+import { apiFetch } from '../utils/apiClient.js';
 
 interface WorkspacePageProps {
   projectId: string;
@@ -82,8 +83,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     if (!projectId) return;
     try {
       const [scenesRes, entitiesRes] = await Promise.all([
-        fetch(`/api/projects/${projectId}/scenes`),
-        fetch(`/api/projects/${projectId}/entities`),
+        apiFetch(`/api/projects/${projectId}/scenes`),
+        apiFetch(`/api/projects/${projectId}/entities`),
       ]);
       if (scenesRes.ok) {
         const scenesData = await scenesRes.json();
@@ -97,7 +98,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         const allOverrides: CounselOverrideItem[] = [];
         for (const ent of entitiesData) {
           try {
-            const ovrRes = await fetch(`/api/projects/${projectId}/entities/${ent.id}/overrides`);
+            const ovrRes = await apiFetch(`/api/projects/${projectId}/entities/${ent.id}/overrides`);
             if (ovrRes.ok) {
               const ovrData = await ovrRes.json();
               if (ovrData.overrides) {
@@ -111,7 +112,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         setOverrides(allOverrides);
       }
     } catch (err) {
-      console.error('Error fetching workspace data:', err);
+      console.error('Failed to fetch workspace data:', err);
     }
   };
 
@@ -123,7 +124,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     if (!projectId) return;
     setIsUploading(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/script`, {
+      const res = await apiFetch(`/api/projects/${projectId}/script`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scriptText: textToParse, format }),
@@ -140,7 +141,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
   const handleLoadSampleScreenplay = async () => {
     try {
-      const fixtureRes = await fetch('/api/fixtures/demo-screenplay');
+      const fixtureRes = await apiFetch('/api/fixtures/demo-screenplay');
       let scriptToIngest = defaultFictionalDemoScript;
       if (fixtureRes.ok) {
         const data = await fixtureRes.json();
@@ -174,7 +175,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
     if (entityToEdit) {
       // Edit existing entity
-      const res = await fetch(`/api/projects/${projectId}/entities/${entityToEdit.id}`, {
+      const res = await apiFetch(`/api/projects/${projectId}/entities/${entityToEdit.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -185,7 +186,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       }
     } else {
       // Add new entity
-      const res = await fetch(`/api/projects/${projectId}/entities`, {
+      const res = await apiFetch(`/api/projects/${projectId}/entities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -201,7 +202,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
   const handleDeleteItem = async (entityId: string) => {
     if (!projectId) return;
     try {
-      const res = await fetch(`/api/projects/${projectId}/entities/${entityId}`, {
+      const res = await apiFetch(`/api/projects/${projectId}/entities/${entityId}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -215,7 +216,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
   const handleRetryResearch = async (entityId: string) => {
     if (!projectId) return;
     try {
-      const res = await fetch(`/api/projects/${projectId}/entities/${entityId}/retry-research`, {
+      const res = await apiFetch(`/api/projects/${projectId}/entities/${entityId}/retry-research`, {
         method: 'POST',
       });
       if (res.ok) {
@@ -231,7 +232,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     setIsComparisonModalOpen(true);
     setIsComparisonLoading(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/entities/${entityId}/comparison`);
+      const res = await apiFetch(`/api/projects/${projectId}/entities/${entityId}/comparison`);
       if (res.ok) {
         const data = await res.json();
         setComparisonData(data);

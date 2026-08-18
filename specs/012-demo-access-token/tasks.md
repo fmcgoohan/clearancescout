@@ -9,7 +9,7 @@
 
 **Purpose**: Server configuration property extension for `demoAccessToken`.
 
-- [ ] T001 [P] Extend `AppConfig` and `loadConfig()` with `demoAccessToken` in `server/config.ts`
+- [x] T001 [P] Extend `AppConfig` and `loadConfig()` with `demoAccessToken` in `server/config.ts`
 
 ---
 
@@ -17,7 +17,7 @@
 
 **Purpose**: Shared demo token authentication middleware.
 
-- [ ] T002 [P] Implement `demoAuthMiddleware` supporting `x-demo-token`, Bearer auth, and query parameter validation in `server/middleware/demoAuthMiddleware.ts`
+- [x] T002 [P] Implement `demoAuthMiddleware` supporting `x-demo-token`, Bearer auth, and query parameter validation in `server/middleware/demoAuthMiddleware.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can begin in parallel.
 
@@ -31,11 +31,11 @@
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Contract test for mutation endpoint protection, 401 payload without secret leak, and unset bypass in `tests/contract/test_demo_auth.test.ts`
+- [x] T003 [P] [US1] Contract test for mutation endpoint protection, 401 payload without secret leak, and unset bypass in `tests/contract/test_demo_auth.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Apply `demoAuthMiddleware` to protected write and research routers in `server/index.ts`
+- [x] T004 [US1] Apply `demoAuthMiddleware` to protected write and research routers in `server/index.ts`
 
 **Checkpoint**: User Story 1 complete. Server-side token enforcement operational and testable independently.
 
@@ -49,11 +49,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T005 [P] [US2] Contract test verifying `GET /api/health`, `GET /api/fixtures/*`, and static route exemptions in `tests/contract/test_demo_auth.test.ts`
+- [x] T005 [P] [US2] Contract test verifying `GET /api/health`, `GET /api/fixtures/*`, and static route exemptions in `tests/contract/test_demo_auth.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] Verify public exemption routing for `healthRouter`, `fixtureRouter`, and static assets in `server/index.ts`
+- [x] T006 [US2] Verify public exemption routing for `healthRouter`, `fixtureRouter`, and static assets in `server/index.ts`
 
 **Checkpoint**: User Stories 1 AND 2 complete. Protected endpoints guarded, public health probes unblocked.
 
@@ -67,8 +67,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T007 [P] [US3] Add client demo token storage helpers and header injection in `src/utils/apiClient.ts` / `src/App.tsx`
-- [ ] T008 [US3] Add Access Token modal / header control with 401 error feedback in `src/App.tsx` and header components
+- [x] T007 [P] [US3] Add client demo token storage helpers and header injection in `src/utils/apiClient.ts` / `src/App.tsx`
+- [x] T008 [US3] Add Access Token modal / header control with 401 error feedback in `src/App.tsx` and header components
 
 **Checkpoint**: All user stories complete. Server enforcement, public exemptions, and client UI token management verified.
 
@@ -78,9 +78,9 @@
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full build verification.
 
-- [ ] T009 [P] Implement end-to-end integration test in `tests/integration/demo_token_workflow.test.ts` verifying protected project creation, script ingestion, clearance research with token, and 401 rejection without token
-- [ ] T010 Run quickstart validation scenarios defined in `specs/012-demo-access-token/quickstart.md`
-- [ ] T011 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [x] T009 [P] Implement end-to-end integration test in `tests/integration/demo_token_workflow.test.ts` verifying protected project creation, script ingestion, clearance research with token, and 401 rejection without token
+- [x] T010 Run quickstart validation scenarios defined in `specs/012-demo-access-token/quickstart.md`
+- [x] T011 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

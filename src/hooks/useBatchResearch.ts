@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { apiFetch } from '../utils/apiClient.js';
 
 export type BatchItemStatus = 'QUEUED' | 'RESEARCHING' | 'COMPLETED' | 'FAILED';
 
@@ -136,7 +137,7 @@ export function useBatchResearch(
       };
 
       const evaluateSingle = async (entityId: string) => {
-        const res = await fetch(`/api/projects/${projectId}/clearance/evaluate`, {
+        const res = await apiFetch(`/api/projects/${projectId}/clearance/evaluate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ canonicalEntityIds: [entityId] }),

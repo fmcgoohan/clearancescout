@@ -1,0 +1,116 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import request from 'supertest';
+import { app } from '../../server/index.js';
+import { config } from '../../server/config.js';
+import { getDb } from '../../server/repositories/firestoreClient.js';
+
+describe('Contract Test: Demo Access Token Protection', () => {
+  const originalToken = config.demoAccessToken;
+
+  beforeEach(async () => {
+    const db = getDb();
+    if (db.reset) {
+      await db.reset();
+    }
+  });
+
+  afterEach(() => {
+    config.demoAccessToken = originalToken;
+  });
+
+  it('T003: rejects mutation requests with 401 when DEMO_ACCESS_TOKEN is configured and token is missing or invalid', async () => {
+    config.demoAccessToken = 'judge-pass-2026';
+
+    // 1. Missing Token -> 401 Unauthorized
+    const missingRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Unauthorized Test Script',
+        productionCompany: 'Rogue Productions',
+      });
+
+    expect(missingRes.status).toBe(401);
+    expect(missingRes.body).toEqual({
+      error: 'Unauthorized: Invalid or missing demo access token.',
+    });
+    // Ensure configured secret is NEVER leaked in response
+    expect(JSON.stringify(missingRes.body)).not.toContain('judge-pass-2026');
+
+    // 2. Invalid Token -> 401 Unauthorized
+    const invalidRes = await request(app)
+      .post('/api/projects')
+      .set('x-demo-token', 'wrong-token-abc')
+      .send({
+        title: 'Unauthorized Test Script',
+        productionCompany: 'Rogue Productions',
+      });
+
+    expect(invalidRes.status).toBe(401);
+    expect(invalidRes.body).toEqual({
+      error: 'Unauthorized: Invalid or missing demo access token.',
+    });
+  });
+
+  it('T003: accepts valid token across x-demo-token header, Authorization Bearer header, and query parameter', async () => {
+    config.demoAccessToken = 'judge-pass-2026';
+
+    // 1. Via x-demo-token header
+    const headerRes = await request(app)
+      .post('/api/projects')
+      .set('x-demo-token', 'judge-pass-2026')
+      .send({
+        title: 'Header Authorized Project',
+        productionCompany: 'SpecKit Studio',
+      });
+    expect(headerRes.status).toBe(201);
+    expect(headerRes.body.title).toBe('Header Authorized Project');
+
+    // 2. Via Authorization Bearer header
+    const bearerRes = await request(app)
+      .post('/api/projects')
+      .set('Authorization', 'Bearer judge-pass-2026')
+      .send({
+        title: 'Bearer Authorized Project',
+        productionCompany: 'SpecKit Studio',
+      });
+    expect(bearerRes.status).toBe(201);
+
+    // 3. Via query parameter ?token=
+    const queryRes = await request(app)
+      .post('/api/projects?token=judge-pass-2026')
+      .send({
+        title: 'Query Authorized Project',
+        productionCompany: 'SpecKit Studio',
+      });
+    expect(queryRes.status).toBe(201);
+  });
+
+  it('T003: permits open mutation access when DEMO_ACCESS_TOKEN is unset or empty (local dev default)', async () => {
+    config.demoAccessToken = undefined;
+
+    const res = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Open Local Dev Project',
+        productionCompany: 'Local Studio',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.title).toBe('Open Local Dev Project');
+  });
+
+  it('T005: keeps GET /api/health and GET /api/fixtures/* public and unauthenticated even when token is configured', async () => {
+    config.demoAccessToken = 'judge-pass-2026';
+
+    // 1. GET /api/health probe
+    const healthRes = await request(app).get('/api/health');
+    expect(healthRes.status).toBe(200);
+    expect(healthRes.body.status).toBe('HEALTHY');
+    expect(healthRes.body.executionMode).toBeDefined();
+
+    // 2. GET /api/fixtures/demo-screenplay
+    const fixtureRes = await request(app).get('/api/fixtures/demo-screenplay');
+    expect(fixtureRes.status).toBe(200);
+    expect(fixtureRes.body.title).toBe('The Neon Horizon');
+  });
+});

@@ -5,11 +5,18 @@ import { ReplacementCardModal, ReplacementCard } from './components/ReplacementC
 import { TimelineDrawer } from './components/TimelineDrawer';
 import { BinderExportModal, ClearanceBinder } from './components/BinderExportModal';
 import { useTimelineSSE } from './hooks/useTimelineSSE';
+import { apiFetch, getDemoToken, setDemoToken } from './utils/apiClient';
 
 export default function App() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [executionMode, setExecutionMode] = useState<'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE'>('DEMO_MODE');
   const [projectTitle, setProjectTitle] = useState('Production Project Workspace');
+  
+  // Demo Access Token State
+  const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
+  const [demoTokenInput, setDemoTokenInput] = useState(getDemoToken() || '');
+  const [hasTokenConfigured, setHasTokenConfigured] = useState(Boolean(getDemoToken()));
+  const [authError, setAuthError] = useState<string | null>(null);
   
   // UI Drawers & Modals State
   const [isCitationOpen, setIsCitationOpen] = useState(false);
@@ -67,11 +74,24 @@ export default function App() {
     setIsTimelineOpen(true);
   };
 
+  const handleSaveToken = (tokenToSave: string) => {
+    const trimmed = tokenToSave.trim();
+    if (trimmed) {
+      setDemoToken(trimmed);
+      setHasTokenConfigured(true);
+    } else {
+      setDemoToken(null);
+      setHasTokenConfigured(false);
+    }
+    setAuthError(null);
+    setIsTokenModalOpen(false);
+  };
+
   // Initialize or fetch project
   useEffect(() => {
     const initProject = async () => {
       try {
-        const res = await fetch('/api/projects', {
+        const res = await apiFetch('/api/projects', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -85,21 +105,25 @@ export default function App() {
           const data = await res.json();
           setProjectId(data.id);
           setProjectTitle(data.title);
+          setAuthError(null);
+        } else if (res.status === 401) {
+          const errData = await res.json();
+          setAuthError(errData.error || 'Unauthorized: Demo Access Token required.');
         }
       } catch (err) {
         console.error('Error initializing project:', err);
       }
     };
     initProject();
-  }, [executionMode]);
+  }, [executionMode, hasTokenConfigured]);
 
   const handleOpenCounselReview = async (entityId: string, sceneId?: string) => {
     if (!projectId) return;
     try {
       setSelectedSceneId(sceneId);
       const [entitiesRes, overridesRes] = await Promise.all([
-        fetch(`/api/projects/${projectId}/entities`),
-        fetch(`/api/projects/${projectId}/entities/${entityId}/overrides`),
+        apiFetch(`/api/projects/${projectId}/entities`),
+        apiFetch(`/api/projects/${projectId}/entities/${entityId}/overrides`),
       ]);
 
       let ent: any = null;
@@ -143,7 +167,7 @@ export default function App() {
         }
       }
 
-      const evalRes = await fetch(`/api/projects/${projectId}/clearance/evaluate`, {
+      const evalRes = await apiFetch(`/api/projects/${projectId}/clearance/evaluate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ canonicalEntityIds: [entityId] }),
@@ -155,6 +179,8 @@ export default function App() {
           setCitations(asm.citations || []);
           if (asm.legalRationale) setCitationRationale(asm.legalRationale);
         }
+      } else if (evalRes.status === 401) {
+        setAuthError('Unauthorized: A valid Demo Access Token is required to evaluate clearance.');
       }
       setIsCitationOpen(true);
     } catch (err) {
@@ -166,7 +192,7 @@ export default function App() {
     if (!projectId) return;
     setIsEvaluating(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/clearance/evaluate`, {
+      const res = await apiFetch(`/api/projects/${projectId}/clearance/evaluate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ canonicalEntityIds: [entityId] }),
@@ -182,6 +208,8 @@ export default function App() {
           setIsCitationOpen(true);
         }
         setRefreshTrigger((prev) => prev + 1);
+      } else if (res.status === 401) {
+        setAuthError('Unauthorized: A valid Demo Access Token is required to evaluate clearance.');
       }
     } catch (err) {
       console.error('Error evaluating clearance:', err);
@@ -193,7 +221,7 @@ export default function App() {
   const handleGenerateReplacement = async (entityId: string) => {
     if (!projectId) return;
     try {
-      const res = await fetch(`/api/projects/${projectId}/replacements/generate`, {
+      const res = await apiFetch(`/api/projects/${projectId}/replacements/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ canonicalEntityId: entityId, eraAesthetic: 'Modern Cinematic' }),
@@ -202,6 +230,8 @@ export default function App() {
         const cardData = await res.json();
         setReplacementCard(cardData);
         setIsReplacementOpen(true);
+      } else if (res.status === 401) {
+        setAuthError('Unauthorized: A valid Demo Access Token is required to generate replacements.');
       }
     } catch (err) {
       console.error('Error generating replacement brand:', err);
@@ -212,7 +242,7 @@ export default function App() {
     if (!projectId) return;
     setIsExportingBinder(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/binder/export`);
+      const res = await apiFetch(`/api/projects/${projectId}/binder/export`);
       if (res.ok) {
         const data = await res.json();
         setBinderData(data);
@@ -267,7 +297,25 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Demo Token Header Trigger */}
+          <button
+            className="btn-secondary"
+            style={{
+              fontSize: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              borderColor: hasTokenConfigured ? 'var(--accent-cyan)' : 'var(--border-color)',
+            }}
+            onClick={() => {
+              setDemoTokenInput(getDemoToken() || '');
+              setIsTokenModalOpen(true);
+            }}
+          >
+            🔑 Demo Token {hasTokenConfigured && <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>●</span>}
+          </button>
+
           {/* Execution Mode Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mode:</span>
@@ -308,6 +356,37 @@ export default function App() {
         </div>
       </header>
 
+      {/* Auth Error Banner if 401 occurs */}
+      {authError && (
+        <div
+          style={{
+            background: 'rgba(239, 68, 68, 0.15)',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.4)',
+            padding: '10px 32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            color: '#f87171',
+            fontSize: '0.85rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>⚠️</span>
+            <span>{authError}</span>
+          </div>
+          <button
+            className="btn-primary"
+            style={{ padding: '4px 12px', fontSize: '0.75rem' }}
+            onClick={() => {
+              setDemoTokenInput(getDemoToken() || '');
+              setIsTokenModalOpen(true);
+            }}
+          >
+            Set Access Token
+          </button>
+        </div>
+      )}
+
       {/* Main Workspace Area */}
       <main style={{ flex: 1, padding: '32px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
         {projectId ? (
@@ -320,9 +399,104 @@ export default function App() {
             refreshTrigger={refreshTrigger}
           />
         ) : (
-          <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Initializing ClearanceScout Workspace...</div>
+          <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
+            {authError ? 'Authentication Required to initialize Workspace.' : 'Initializing ClearanceScout Workspace...'}
+          </div>
         )}
       </main>
+
+      {/* Demo Access Token Settings Modal */}
+      {isTokenModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1400,
+          }}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '460px',
+              padding: '24px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-color)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>🔑 Demo Access Token</h3>
+              <button
+                onClick={() => setIsTokenModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
+              If this deployment is protected with a shared demo token, enter the access token below. The token will be stored in your browser session and attached to all API mutations.
+            </p>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                Access Token
+              </label>
+              <input
+                type="password"
+                value={demoTokenInput}
+                onChange={(e) => setDemoTokenInput(e.target.value)}
+                placeholder="Enter demo token (e.g. judge-pass-2026)"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  color: '#ffffff',
+                  fontSize: '0.85rem',
+                  fontFamily: 'monospace',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button
+                className="btn-secondary"
+                style={{ fontSize: '0.8rem' }}
+                onClick={() => {
+                  setDemoTokenInput('');
+                  handleSaveToken('');
+                }}
+              >
+                Clear Token
+              </button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  className="btn-secondary"
+                  style={{ fontSize: '0.8rem' }}
+                  onClick={() => setIsTokenModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn-primary"
+                  style={{ fontSize: '0.8rem' }}
+                  onClick={() => handleSaveToken(demoTokenInput)}
+                >
+                  Save Token
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Slide-over Drawers & Modals */}
       <CitationDrawer

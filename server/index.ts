@@ -11,6 +11,7 @@ import { timelineRouter } from './api/timelineRoutes.js';
 import { binderRouter } from './api/binderRoutes.js';
 import { healthRouter } from './api/healthRoutes.js';
 import { fixtureRouter } from './api/fixtureRoutes.js';
+import { demoAuthMiddleware } from './middleware/demoAuthMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +24,15 @@ app.use(express.json());
 // API Route mounts
 app.use('/api', healthRouter);
 app.use('/api', fixtureRouter);
+
+// Apply Demo Auth Middleware to all mutating write and research endpoints
+app.use('/api', (req, res, next) => {
+  if (['POST', 'PATCH', 'DELETE', 'PUT'].includes(req.method)) {
+    return demoAuthMiddleware(req, res, next);
+  }
+  return next();
+});
+
 app.use('/api', entityMutationRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api', clearanceRouter);
