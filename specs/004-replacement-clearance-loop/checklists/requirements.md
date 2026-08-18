@@ -31,4 +31,4 @@
 
 ## Notes
 
-- 16/16 checklist items passing. Spec is fully bounded and ready for `/speckit-plan`.
+- 16/16 checklist items passing. All 4 clarification decisions encoded. Spec is fully bounded and ready for `/speckit-plan`.
