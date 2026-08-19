@@ -1,12 +1,12 @@
-# Tasks: Production Clearance Operating Model (Phase 1)
+# Tasks: Production Clearance Operating Model (Phases 1 & 2)
 
 **Feature**: `specs/016-production-clearance-model` | **Branch**: `016-production-clearance-model`  
 **Input**: Plan from [`specs/016-production-clearance-model/plan.md`](plan.md), Spec from [`specs/016-production-clearance-model/spec.md`](spec.md)  
-**Scope**: Phase 1 Only (`Movie` / `TV Show` / `Commercial` project types, project listing, and landing workspace entry). Phases 2 through 10 are deliberately excluded from this task phase.
+**Scope**: Phase 1 (Completed) & Phase 2 (Active Target). Phases 3 through 10 are deliberately excluded from this task list.
 
 ---
 
-## Phase 1: Setup (Shared Infrastructure)
+## Phase 1: Setup (Phase 1 Shared Infrastructure - Completed)
 
 **Purpose**: Extend Project repository data structures with `projectType` and list query method.
 
@@ -14,38 +14,27 @@
 
 ---
 
-## Phase 2: Foundational (Blocking Prerequisites)
+## Phase 2: Foundational (Phase 1 Prerequisites - Completed)
 
 **Purpose**: Implement project listing endpoint and type validation.
 
 - [X] T002 [P] Implement `GET /api/projects` endpoint and update `POST /api/projects` in `server/api/projectRoutes.ts` to validate and return `projectType` and clearance summaries
 
-**Checkpoint**: Foundation ready - UI and contract tests can now proceed in parallel.
-
 ---
 
-## Phase 3: User Story 1 - Project Type & Production Projects UX (Priority: P1) 🎯 MVP Phase 1 Focus
+## Phase 3: User Story 1 - Project Type & Production Projects UX (Priority: P1 - Completed) 🎯 MVP
 
 **Goal**: Enable creating projects of type `Movie`, `TV Show`, and `Commercial`, listing projects, and displaying project type and clearance summary in the workspace header.
 
-**Independent Test**: Create projects of each type; verify `GET /api/projects` returns all projects and the workspace header reflects the selected project's type badge and clearance summary.
-
-### Tests for User Story 1
-
 - [X] T003 [P] [US1] Contract test for project creation with type (`Movie`, `TV Show`, `Commercial`) and project listing in `tests/contract/test_project_types.test.ts`
-
-### Implementation for User Story 1
-
 - [X] T004 [P] [US1] Create project selector and creation modal in `src/components/ProjectListModal.tsx` allowing project switching and new production creation
 - [X] T005 [US1] Update `src/App.tsx` to integrate `ProjectListModal`, display `projectType` badge in header, and render landing clearance summary
 
-**Checkpoint**: Phase 1 complete. Project types, project listing, and landing workspace summary are functional and testable independently.
-
 ---
 
-## Phase 4: Polish & Cross-Cutting Concerns
+## Phase 4: Polish & Integration (Phase 1 Polish - Completed)
 
-**Purpose**: End-to-end integration testing, quickstart validation, and full build verification.
+**Purpose**: Phase 1 integration testing, quickstart validation, and build verification.
 
 - [X] T006 [P] Implement end-to-end integration test in `tests/integration/production_projects_workflow.test.ts` verifying project type creation, project list retrieval, switching, and landing workspace summary
 - [X] T007 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
@@ -53,24 +42,72 @@
 
 ---
 
+## Phase 5: Phase 2 Setup (Occurrence Data Structures)
+
+**Purpose**: Extend `SceneEntityOccurrenceData` with evaluation metrics and roll-up methods.
+
+- [ ] T009 [P] Extend `SceneEntityOccurrenceData` with evaluation fields (`clearanceStatus`, `riskScore`, `riskRationale`, `citations`, `contextFlags`, `evaluatedAt`) and implement `updateOccurrenceEvaluation` and `computeDerivedCanonicalStatus` in `server/repositories/EntityRepo.ts`
+
+---
+
+## Phase 6: Phase 2 Foundational (Occurrence Evaluator Engine)
+
+**Purpose**: Implement occurrence-level evaluation workflow with scene context analysis and canonical roll-up calculation.
+
+- [ ] T010 [P] Implement `evaluateOccurrenceClearance` and update `evaluateEntityClearance` in `server/workflows/clearanceEvaluator.ts` to evaluate scene context and deterministically update canonical roll-up status
+
+**Checkpoint**: Occurrence evaluation engine ready - API and UI integration can proceed in parallel.
+
+---
+
+## Phase 7: User Story 2 - Occurrence-Level Evaluation as Fundamental Unit (Priority: P2) 🎯 Phase 2 Target
+
+**Goal**: Evaluate clearance risk per scene occurrence using specific scene action context rather than solely evaluating abstract global entities, and derive canonical entity status from occurrences.
+
+**Independent Test**: Ingest a script with the same entity occurring in two distinct scenes (one incidental, one defamatory); verify each occurrence receives an independent evaluation status and the canonical status is derived from occurrences.
+
+### Tests for User Story 2
+
+- [ ] T011 [P] [US2] Contract test for occurrence evaluation and derived canonical status roll-up in `tests/contract/test_occurrence_evaluation.test.ts`
+
+### Implementation for User Story 2
+
+- [ ] T012 [P] [US2] Implement `POST /api/projects/:id/occurrences/:occurrenceId/evaluate` and `GET /api/projects/:id/entities/:entityId/occurrences` in `server/api/clearanceRoutes.ts`
+- [ ] T013 [US2] Update scene occurrence rendering in `src/pages/WorkspacePage.tsx` and `src/components/EntityDetailModal.tsx` to display occurrence-level clearance badges and scene context details
+
+**Checkpoint**: Phase 2 core functionality complete. Occurrence evaluations, canonical roll-up, and UI badges operate independently.
+
+---
+
+## Phase 8: Phase 2 Polish & Cross-Cutting Concerns
+
+**Purpose**: End-to-end multi-scene integration test, quickstart validation, and full regression test.
+
+- [ ] T014 [P] Implement end-to-end integration test in `tests/integration/occurrence_clearance_workflow.test.ts` verifying multi-scene occurrence isolation, differential risk scores, canonical roll-up, and 003 override preservation
+- [ ] T015 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [ ] T016 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
 graph TD
-    Phase1[Phase 1: Setup - ProjectRepo] --> Phase2[Phase 2: Foundational - projectRoutes]
-    Phase2 --> US1_Tests[T003: Contract Tests]
-    Phase2 --> US1_Modal[T004: ProjectListModal]
-    US1_Modal --> US1_App[T005: App.tsx Integration]
-    US1_Tests --> Polish[Phase 4: Polish & Integration]
-    US1_App --> Polish
+    Phase1to4[Phase 1 Complete T001-T008] --> Phase5[Phase 5: Setup - EntityRepo Occurrence Fields]
+    Phase5 --> Phase6[Phase 6: Foundational - clearanceEvaluator Engine]
+    Phase6 --> US2_Tests[T011: Contract Tests]
+    Phase6 --> US2_Routes[T012: clearanceRoutes Occurrence Endpoints]
+    US2_Routes --> US2_UI[T013: Workspace & Modal UI]
+    US2_Tests --> Phase8[Phase 8: Polish & Integration]
+    US2_UI --> Phase8
 ```
 
 ---
 
 ## Parallel Execution Examples
 
-### User Story 1
-- `T003` (contract tests in `tests/contract/test_project_types.test.ts`) can run in parallel with `T004` (`src/components/ProjectListModal.tsx`).
+### User Story 2
+- `T011` (contract tests in `tests/contract/test_occurrence_evaluation.test.ts`) can run in parallel with `T012` (`server/api/clearanceRoutes.ts`).
 
 ### Polish Phase
-- `T006` (integration test in `tests/integration/production_projects_workflow.test.ts`) can run in parallel with `T007` (`quickstart.md`).
+- `T014` (integration test in `tests/integration/occurrence_clearance_workflow.test.ts`) can run in parallel with `T015` (`quickstart.md`).
