@@ -1,31 +1,33 @@
-# Implementation Plan: Production Clearance Operating Model (Phase 2 - Occurrence-Level Evaluation)
+# Implementation Plan: Production Clearance Operating Model (Phase 3 - Upgraded Entity Resolution & Material Equivalence)
 
-**Branch**: `016-production-clearance-model` | **Date**: 2026-08-19 | **Status**: Plan Complete (Phase 2 Focus)  
+**Branch**: `016-production-clearance-model` | **Date**: 2026-08-19 | **Status**: Plan Complete (Phase 3 Focus)  
 **Specification**: [`specs/016-production-clearance-model/spec.md`](spec.md)
 
 ---
 
-## 1. Summary of Feature & Phase 2 Scope
+## 1. Summary of Feature & Phase 3 Scope
 
-The **Occurrence-Level Evaluation Model** shifts the fundamental unit of clearance assessment from abstract global entities to specific scene occurrences.
+Phase 3 upgrades the clearance operating model with **robust multi-surface entity resolution, alias management, brand/product hierarchies, and material equivalence reuse**.
 
-### Core Objectives (Phase 2 Only):
-1. **Occurrence-Level Assessment as Fundamental Unit (`FR-002`, `US2`)**:
-   - Assessment evaluated per scene occurrence combining **Canonical Grounding Research + Occurrence Scene Action Context** (`excerptText`, `usageContext`, `sentimentScore`, `exposureDurationSeconds`).
-   - Each occurrence independently stores its `clearanceStatus` (`NO_ISSUE_SURFACED`, `REVIEW_RECOMMENDED`, `ACTION_REQUIRED`, `INSUFFICIENT_EVIDENCE`), `riskScore`, `riskRationale`, and `citations`.
-   - Distinct scene depictions of the same entity (e.g. background/incidental in Scene 1 vs. defamed/weaponized in Scene 4) produce distinct occurrence verdicts.
-2. **Deterministic Canonical Status Roll-Up (`FR-003`, `US2`)**:
-   - Canonical entity overall status is a deterministic roll-up derived from its active occurrences:
-     $$\text{Canonical Status} = \max_{\text{severity}}(\text{Occurrence Statuses})$$
-     Severity rank: `ACTION_REQUIRED` (4) > `REVIEW_RECOMMENDED` (3) > `INSUFFICIENT_EVIDENCE` (2) > `NO_ISSUE_SURFACED` (1).
-3. **Preserve Feature 003 Scene Override Hierarchy (`FR-013`)**:
-   - Effective occurrence status resolves as:
-     $$\text{Effective Occurrence} = \text{Scene Counsel Override} ?? \text{Occurrence Evaluated Status} ?? \text{Canonical Override} ?? \text{NO\_ISSUE\_SURFACED}$$
-   - Preserves signed counsel overrides and sibling occurrence isolation.
-4. **Preserve Invariants (003–015)**:
-   - 100% preservation of project types, demo tokens, quotas, SSE timelines, offline fixtures, and responsive a11y.
-5. **Strict Scope Boundary**:
-   - Phases 3 through 10 (aliases, rights objects, scene readiness state machine, actions queue, etc.) remain strictly unbuilt until Phase 2 is implemented and converged.
+### Core Objectives (Phase 3 Only):
+1. **Alias Tracking & Multi-Surface Form Recognition (`FR-004`, `US3`)**:
+   - Canonical entities store `aliases: string[]`.
+   - Normalization and matching engine recognizes varied references (e.g. *"Coke"*, *"Coca-Cola Classic"*, *"Coke Zero"*) mapping to the authoritative canonical entity.
+2. **Brand / Product Hierarchy Modeling (`FR-004`, `US3`)**:
+   - Entities support parent-child relationships (`parentEntityId`, `parentEntityName`, `relationshipType`: `'BRAND_PRODUCT' | 'SUBSIDIARY' | 'PARENT_COMPANY' | 'PRODUCT_LINE' | 'VARIATION'`).
+   - Child products inherit corporate ownership context while maintaining occurrence-specific risk tracking.
+3. **Deterministic Multi-Stage Entity Resolution Engine (`FR-004`, `US3`)**:
+   - Automated script parser and ingestion pipelines query `EntityResolutionEngine`:
+     - Stage 1: Exact Canonical Name Match (confidence 1.0)
+     - Stage 2: Exact Alias Match (confidence 0.95)
+     - Stage 3: Normalized Lexical Equivalence (confidence 0.90)
+     - Stage 4: Parent Brand Prefix / Product Line Match (confidence 0.85)
+4. **Entity Merging & Material Equivalence Reuse (`FR-004`, `US3`)**:
+   - Transactional merge operation combines duplicate entities, transfers all scene occurrences, aggregates aliases, deletes the duplicate record, and recomputes the derived canonical status.
+5. **Preserve Invariants (003–015 & Phases 1–2)**:
+   - 100% preservation of project types, occurrence-level evaluations, derived roll-up statuses, signed counsel overrides, SSE timelines, offline fixtures, and responsive UI.
+6. **Strict Scope Boundary**:
+   - Phases 4 through 10 (rights domain objects, scene readiness state machine, actions queue, placeholders, etc.) remain strictly unbuilt until Phase 3 is implemented and converged.
 
 ---
 
@@ -33,12 +35,12 @@ The **Occurrence-Level Evaluation Model** shifts the fundamental unit of clearan
 
 | Principle | Status | Compliance Details |
 |:---|:---:|:---|
-| **I. Agent Framework & Model Standard** | **PASS** | Evaluation workflow uses Gemini 3.6 Flash / deterministic reasoning over scene occurrence context. |
-| **II. Live Grounding & Research Tooling** | **PASS** | Evaluator retains Parallel Search grounding citations at both occurrence and canonical levels. |
-| **III. Architecture & Cloud Persistence** | **PASS** | Occurrences persisted in Firestore via `EntityRepo.ts` with atomic updates. |
-| **IV. Canonical Entity & Risk Invariant** | **PASS** | Occurrence verdicts roll up deterministically into canonical entity status. |
+| **I. Agent Framework & Model Standard** | **PASS** | Script parser and disambiguation utilize Gemini 3.6 Flash and deterministic resolution rules. |
+| **II. Live Grounding & Research Tooling** | **PASS** | Grounding search citations retained; parent brand hierarchy avoids duplicate trademark queries. |
+| **III. Architecture & Cloud Persistence** | **PASS** | Extended canonical entity schemas and alias arrays persisted atomically in Firestore via `EntityRepo.ts`. |
+| **IV. Canonical Entity & Risk Invariant** | **PASS** | Direct fulfillment of *"Clear once, recognize everywhere, reassess when context changes"*. |
 | **V. Multi-Tier Execution Modes** | **PASS** | Mode-locked execution (`TEST_MODE`, `DEMO_MODE`, `CLOUD_MODE`) fully preserved. |
-| **Observable Action Timeline** | **PASS** | Occurrence evaluations emit observable `RISK_EVAL` events with scene and occurrence provenance without CoT leakage. |
+| **Observable Action Timeline** | **PASS** | Emits `STATE_TRANSITION` events upon alias matching, relationship configuration, and entity merging without CoT leakage. |
 
 ---
 
@@ -46,7 +48,7 @@ The **Occurrence-Level Evaluation Model** shifts the fundamental unit of clearan
 
 - **Phase 0: Research & Architecture** ([`specs/016-production-clearance-model/research.md`](research.md))
 - **Phase 1: Data Model & Schema** ([`specs/016-production-clearance-model/data-model.md`](data-model.md))
-- **Phase 1: Interface Contracts** ([`specs/016-production-clearance-model/contracts/occurrence-evaluation-contract.md`](contracts/occurrence-evaluation-contract.md))
+- **Phase 1: Interface Contracts** ([`specs/016-production-clearance-model/contracts/entity-resolution-contract.md`](contracts/entity-resolution-contract.md))
 - **Phase 1: Quickstart Validation Guide** ([`specs/016-production-clearance-model/quickstart.md`](quickstart.md))
 
 ---
@@ -54,15 +56,17 @@ The **Occurrence-Level Evaluation Model** shifts the fundamental unit of clearan
 ## 4. Touchpoints & Target Modules
 
 - `server/repositories/EntityRepo.ts`:
-  - Extend `SceneEntityOccurrenceData` with `clearanceStatus`, `riskScore`, `riskRationale`, `citations`, `evaluatedAt`.
-  - Add `updateOccurrenceEvaluation(occurrenceId, data)` and `computeDerivedCanonicalStatus(projectId, canonicalEntityId)`.
-- `server/workflows/clearanceEvaluator.ts`:
-  - Update `evaluateEntityClearance` and add `evaluateOccurrenceClearance` to evaluate occurrences per scene context and roll up canonical status.
-- `server/api/clearanceRoutes.ts`:
-  - Support `POST /api/projects/:id/occurrences/:occurrenceId/evaluate` and return occurrence-level evaluation results.
-- `src/pages/WorkspacePage.tsx` / `src/components/EntityDetailModal.tsx`:
-  - Display occurrence-level clearance verdicts in scene breakdown tables with scene badges.
-- `tests/contract/test_occurrence_evaluation.test.ts`:
-  - Contract test validating occurrence evaluation and roll-up status calculation.
-- `tests/integration/occurrence_clearance_workflow.test.ts`:
-  - End-to-end integration test verifying multi-scene occurrence isolation, differential risk scores, and canonical roll-up.
+  - Extend `CanonicalEntityData` with `aliases?: string[]`, `parentEntityId?: string`, `parentEntityName?: string`, `relationshipType?: EntityRelationshipType`.
+  - Add repository methods: `addAlias`, `removeAlias`, `setEntityRelationship`, `mergeEntities(projectId, targetId, sourceId)`.
+- `server/workflows/entityResolutionEngine.ts`:
+  - Implement deterministic multi-stage entity resolution algorithm (`resolveEntityMention`).
+- `server/workflows/canonicalRegistryWorkflow.ts`:
+  - Integrate `entityResolutionEngine` into `processScriptUpload` to resolve entity mentions against existing canonical names and aliases.
+- `server/api/entityMutationRoutes.ts` / `server/api/clearanceRoutes.ts`:
+  - Add endpoints: `POST /entities/:entityId/aliases`, `DELETE /entities/:entityId/aliases/:alias`, `POST /entities/resolve`, `PATCH /entities/:entityId/relationship`, `POST /entities/merge`.
+- `src/components/ItemEditModal.tsx` & `src/components/EntityDetailModal.tsx`:
+  - Display and edit entity aliases, parent brand relationships, and surface mention provenance badges.
+- `tests/contract/test_entity_resolution.test.ts`:
+  - Contract test for alias management, multi-stage mention resolution, hierarchy linking, and entity merging.
+- `tests/integration/entity_resolution_workflow.test.ts`:
+  - End-to-end integration test verifying multi-scene alias deduplication, parent-child relationship inheritance, and occurrence re-linking upon merge.
