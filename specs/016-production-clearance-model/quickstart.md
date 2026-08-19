@@ -1,66 +1,41 @@
-# Quickstart: Production Clearance Operating Model (Phase 4 Validation)
+# Quickstart: Production Clearance Operating Model (Phase 5 Validation)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 4 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 5 Focus)  
 **Date**: 2026-08-19  
 
 ---
 
-## Scenario 1: Attaching a Worldwide Perpetual Rights License to an Entity
+## Scenario 1: Initial Ingestion of an Uncleared Scene Produces `RED` Status
 
 ### Steps:
 1. Create a project `POST /api/projects`.
-2. Create canonical entity `POST /api/projects/:id/entities` (`Summit Cola`).
-3. Attach a worldwide perpetual license:
-   ```bash
-   curl -X POST http://localhost:3000/api/projects/$PROJECT_ID/rights \
-     -H "Content-Type: application/json" \
-     -d '{
-       "canonicalEntityId": "'$ENTITY_ID'",
-       "licensorName": "Summit Beverage Corporation",
-       "grantType": "NON_EXCLUSIVE",
-       "territory": "WORLDWIDE",
-       "mediaWindow": "ALL_MEDIA_IN_PERPETUITY",
-       "effectiveDate": "2026-01-01",
-       "isPerpetual": true,
-       "status": "ACTIVE"
-     }'
-   ```
-4. Verify rights record created with `status: 'ACTIVE'`.
-5. Trigger clearance evaluation `POST /api/projects/:id/evaluate`.
-6. Verify entity evaluation resolves with clearance status `NO_ISSUE_SURFACED` citing active contractual rights.
+2. Ingest screenplay containing Scene 1 with an uncleared brand/music item (`ACTION_REQUIRED`).
+3. Query scene readiness `GET /api/projects/$PROJECT_ID/scenes/$SCENE_ID/readiness`.
+4. Verify `status` is **`RED`**, `blockersCount: 1`, and `blockingRationale` cites the uncleared asset.
 
 ---
 
-## Scenario 2: Scene-Specific Rights with Contractual Covenants
+## Scenario 2: Attaching a Fictional Replacement Card Transitions Scene to `WORKING CLEAR`
 
 ### Steps:
-1. Create a scene occurrence for Scene 12 (music track sync).
-2. Attach a scene-specific license with a restrictive covenant:
-   ```bash
-   curl -X POST http://localhost:3000/api/projects/$PROJECT_ID/rights \
-     -H "Content-Type: application/json" \
-     -d '{
-       "canonicalEntityId": "'$ENTITY_ID'",
-       "occurrenceIds": ["'$OCCURRENCE_ID'"],
-       "licensorName": "Sony Music Publishing",
-       "grantType": "NON_EXCLUSIVE",
-       "territory": "NORTH_AMERICA",
-       "mediaWindow": "THEATRICAL_SVOD",
-       "effectiveDate": "2026-01-01",
-       "expirationDate": "2028-12-31",
-       "isPerpetual": false,
-       "covenants": ["Prominent end credit mandatory: Courtesy of Sony Music"],
-       "status": "ACTIVE"
-     }'
-   ```
-3. Verify `GET /api/projects/:id/entities/:entityId/rights` returns the attached license and covenants.
-4. Verify occurrence evaluation reflects the license grant and notes the end credit covenant in `contextFlags`.
+1. From Scenario 1, attach a fictional replacement card to the uncleared item (`POST /api/projects/$PROJECT_ID/replacements`).
+2. Trigger scene readiness re-evaluation `POST /api/projects/$PROJECT_ID/scenes/$SCENE_ID/readiness/evaluate`.
+3. Verify `status` transitions to **`WORKING_CLEAR`**, `blockersCount: 0`, and `workingClearCount: 1`.
 
 ---
 
-## Scenario 3: Expired License Detection
+## Scenario 3: Legal Counsel Signed Override or Active License Transitions Scene to `FINAL CLEAR`
 
 ### Steps:
-1. Attach a license with an expired expiration date (`expirationDate: "2020-01-01"`).
-2. Evaluate clearance for the occurrence/entity.
-3. Verify rights coverage evaluation flags `isCovered: false` and `hasExpiringSoon: true` / `EXPIRED`, triggering trademark/copyright risk evaluation.
+1. Legal counsel submits a signed override for the item or attaches an active perpetual rights license (`POST /api/projects/$PROJECT_ID/overrides` or `POST /api/projects/$PROJECT_ID/rights`).
+2. Trigger scene readiness re-evaluation `POST /api/projects/$PROJECT_ID/scenes/$SCENE_ID/readiness/evaluate`.
+3. Verify `status` transitions to **`FINAL_CLEAR`**, `blockersCount: 0`, `workingClearCount: 0`, and `finalClearCount: 1`.
+
+---
+
+## Scenario 4: Clean Scene with No IP Detected Evaluates Directly as `FINAL CLEAR`
+
+### Steps:
+1. Ingest a screenplay with Scene 2 containing only generic character dialogue (0 extracted entities).
+2. Query scene readiness for Scene 2.
+3. Verify `status` is **`FINAL_CLEAR`** with `totalOccurrences: 0`.

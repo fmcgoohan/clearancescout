@@ -1,90 +1,68 @@
-# Research & Architectural Decisions: Production Clearance Operating Model (Phase 4)
+# Research & Architectural Decisions: Production Clearance Operating Model (Phase 5)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 4 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 5 Focus)  
 **Date**: 2026-08-19  
 **Status**: Completed  
 
 ---
 
-## 1. Rights & Restrictions Domain Model Architecture
+## 1. Deterministic Scene Readiness State Machine
 
 ### Context & Problem
-In studio film and television productions, legal clearances are governed not only by baseline intellectual property doctrines (e.g. fair use, incidental use), but primarily by **executed contractual agreements** (sync licenses, trademark release forms, location agreements, appearance releases). 
+Film and television production schedules (1st AD call sheets, line producer budgeting, daily shooting schedules) are organized by **Scene**. Production crews need to know immediately whether a scene is legally greenlit to shoot without cross-referencing dozens of individual trademark or copyright reports.
 
-Clearance software must treat Rights and Restrictions as first-class domain entities capable of linking either to the global canonical entity or to specific scene occurrences, while capturing territorial boundaries, media distribution windows, expiration dates, and restrictive covenants.
+A deterministic, three-tier state machine is standard in studio clearance workflows:
+- **`RED`**: Critical clearance blocker. The scene cannot be shot as written without legal risk.
+- **`WORKING CLEAR`**: Pre-production or shoot permitted with interim assets (approved replacement card, temp clearance release, or minor covenants under active review).
+- **`FINAL CLEAR`**: 100% legally cleared for shooting, post-production, and worldwide distribution.
 
 ### Decision
-Implement `RightsRecordData` in a dedicated repository `server/repositories/RightsRepo.ts` with Firestore collection `projects/{projectId}/rights/{rightsId}`.
+Implement `SceneReadinessEngine` in `server/workflows/sceneReadinessEngine.ts` utilizing deterministic boolean logic over occurrence clearance states, counsel overrides (Feature 003), contractual rights licenses (Phase 4), and fictional replacement cards (Feature 002).
 
-```typescript
-export interface RightsRecordData {
-  id: string;
-  projectId: string;
-  canonicalEntityId: string;
-  occurrenceIds?: string[]; // Empty = all occurrences of entity; or specific occurrences
-  licensorName: string;
-  grantType: 'EXCLUSIVE' | 'NON_EXCLUSIVE' | 'FAIR_USE' | 'PUBLIC_DOMAIN' | 'PROD_MADE';
-  territory: 'WORLDWIDE' | 'NORTH_AMERICA' | 'EUROPE' | 'US_ONLY' | 'SPECIFIED_COUNTRIES';
-  territoryDetails?: string;
-  mediaWindow: 'ALL_MEDIA_IN_PERPETUITY' | 'THEATRICAL_SVOD' | 'THEATRICAL_ONLY' | 'LINEAR_TV' | 'FESTIVAL_ONLY' | 'DIGITAL_PROMO';
-  effectiveDate: string;
-  expirationDate?: string;
-  isPerpetual: boolean;
-  covenants?: string[];
-  feeAmount?: number;
-  currency?: string;
-  documentReferenceUrl?: string;
-  status: 'ACTIVE' | 'PENDING_SIGNATURE' | 'EXPIRED' | 'REVOKED';
-  createdAt: string;
-  updatedAt: string;
-}
+```mermaid
+stateDiagram-v2
+    [*] --> RED: Initial Scene Ingestion (Uncleared Items)
+    [*] --> FINAL_CLEAR: Clean Scene (0 Items)
+    
+    RED --> WORKING_CLEAR: Replacement Cards Attached / Temp Release
+    RED --> FINAL_CLEAR: All Items Overridden / Licensed
+    
+    WORKING_CLEAR --> RED: License Revoked / New Blocker Added
+    WORKING_CLEAR --> FINAL_CLEAR: Counsel Signs Off / Executed Agreement
+    
+    FINAL_CLEAR --> RED: Scene Text Edited / New Blocker
 ```
 
-### Rationale
-1. **Explicit Granularity**: Allows studio counsel to grant project-wide rights (e.g. hero vehicle purchased with worldwide rights) or scene-specific rights (e.g. music synchronization clearance for Scene 12 only).
-2. **Deterministic Expiration Calculation**: Standardized ISO dates (`YYYY-MM-DD`) enable TypeScript code to perform deterministic expiration checks (`expirationDate < today`) and compute warning horizons.
-3. **Covenants Tracking**: Contractual negative/positive covenants (e.g. *"Must not be consumed by antagonist"*, *"End credit mandatory"*) are captured structuredly so evaluation engines and counsel review workflows highlight compliance conditions.
+### Deterministic Rule Table:
+
+| Item Clearance Status | Counsel Override | Contractual Rights | Replacement Card | Item Tier | Scene Readiness Impact |
+|:---|:---|:---|:---|:---:|:---:|
+| `ACTION_REQUIRED` | None | None / Expired | None | **BLOCKER** | Scene becomes **`RED`** |
+| `INSUFFICIENT_EVIDENCE` | None | None | None | **BLOCKER** | Scene becomes **`RED`** |
+| `ACTION_REQUIRED` | None | None | Approved Card Attached | **WORKING_CLEAR** | Contributes to **`WORKING CLEAR`** |
+| `REVIEW_RECOMMENDED` | None | None | None | **WORKING_CLEAR** | Contributes to **`WORKING CLEAR`** |
+| `ACTION_REQUIRED` | Signed Override (`NO_ISSUE_SURFACED`) | Any | Any | **FINAL_CLEAR** | Contributes to **`FINAL CLEAR`** |
+| Any | None | Active Perpetual (`NO_ISSUE_SURFACED`) | Any | **FINAL_CLEAR** | Contributes to **`FINAL CLEAR`** |
+| `NO_ISSUE_SURFACED` | None | Any | Any | **FINAL_CLEAR** | Contributes to **`FINAL CLEAR`** |
 
 ---
 
-## 2. Deterministic Rights Coverage & Evaluator Integration
+## 2. Occurrence-Level & Scene-Override Precedence
 
-### Context & Problem
-When an entity or occurrence is evaluated by `clearanceEvaluator.ts`, how should contractual rights modify the risk status?
+In accordance with Feature 003 and Phase 2, overrides operate hierarchically:
+1. **Scene-Specific Occurrence Override** (Highest precedence)
+2. **Canonical Entity Override**
+3. **Contractual Rights License Coverage**
+4. **Automated Baseline Occurrence Clearance Assessment** (Lowest precedence)
 
-### Decision
-`clearanceEvaluator.ts` invokes `rightsRepo.evaluateRightsCoverage(projectId, entityId, occurrenceId)`.
-
-1. **Active Perpetual / In-Window License**:
-   - If `status === 'ACTIVE'` and (`isPerpetual` or `expirationDate >= now`):
-     - If no restrictive covenants exist: verdict resolves to `NO_ISSUE_SURFACED` with rationale citing the executed agreement (`"Covered by active license from [LicensorName]"`).
-     - If covenants exist: verdict resolves to `REVIEW_RECOMMENDED` or `NO_ISSUE_SURFACED` with covenants flagged in `contextFlags: ["COVENANT: End credit required"]`.
-2. **Expired / Revoked License**:
-   - If license is expired or revoked: flags `LICENSE_EXPIRED` and falls back to baseline trademark/copyright risk evaluation.
-3. **Pending Signature**:
-   - Status remains `REVIEW_RECOMMENDED` (`"Clearance agreement pending signature from [LicensorName]"`).
-
-### Rationale
-This matches the constitution's **Deterministic Calculation Pattern**: deterministic code computes the mathematical date deltas and status checks, while Gemini/evaluator uses the output to formulate the legal risk rationale.
+This ensures counsel decisions for a specific scene (e.g. allowing an incidental prop in Scene 2 while blocking Scene 4) directly inform that scene's readiness without polluting other scenes.
 
 ---
 
-## 3. REST API Contract Design
-
-### Endpoints:
-- `POST /api/projects/:id/rights`: Register new rights/license record.
-- `GET /api/projects/:id/rights`: List all project rights records.
-- `GET /api/projects/:id/entities/:entityId/rights`: List rights records attached to a specific entity.
-- `GET /api/projects/:id/rights/:rightsId`: Retrieve a single rights record.
-- `PATCH /api/projects/:id/rights/:rightsId`: Update rights record details or covenants.
-- `DELETE /api/projects/:id/rights/:rightsId`: Delete/revoke rights record.
-
----
-
-## 4. Alternatives Considered
+## 3. Alternatives Considered
 
 | Approach | Assessment | Decision |
 |:---|:---|:---|
-| **Embed Rights in CanonicalEntityData** | Inflexible for multi-license arrangements (e.g. separate sync license for Scene 4 and master license for Scene 8). | **Rejected**: Dedicated `RightsRecordData` collection provides clean relational links and auditability. |
-| **Store Rights only in Counsel Overrides** | Overrides are counsel interventions rather than formal license agreements with financial/territorial terms. | **Rejected**: Overrides reference legal judgment; Rights records represent contractual reality. |
-| **Complex Rights Expression Language (REL)** | Over-engineering that complicates standard film clearance without operational benefit. | **Rejected**: Standardized enums (`territory`, `mediaWindow`, `grantType`) + string covenants provide 100% of required expressiveness. |
+| **LLM-generated Scene Status** | Non-deterministic, risking shooting halts due to LLM variance. | **Rejected**: Must follow the constitution's **Deterministic Calculation Pattern** in TypeScript code. |
+| **Binary (Clear / Uncleared)** | Too coarse; productions routinely shoot on "Working Clear" with temp replacement props while contracts are finalized. | **Rejected**: 3-state (`RED`, `WORKING CLEAR`, `FINAL CLEAR`) matches industry operating reality. |
+| **Compute On-the-Fly Only** | High latency when rendering call sheets and script views with hundreds of scenes. | **Rejected**: Store computed status on `SceneData` with on-demand and post-evaluation recalculation. |

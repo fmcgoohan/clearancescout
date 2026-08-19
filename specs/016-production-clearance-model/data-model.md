@@ -1,64 +1,72 @@
-# Data Model: Production Clearance Operating Model (Phase 4)
+# Data Model: Production Clearance Operating Model (Phase 5)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 4 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 5 Focus)  
 **Date**: 2026-08-19  
 **Status**: Completed  
 
 ---
 
-## 1. Rights & Restrictions Entity
+## 1. Scene Readiness Data Structures
 
-### `RightsRecordData`
-Stored in Firestore at `projects/{projectId}/rights/{rightsId}`.
+### `SceneReadinessStatus`
+```typescript
+export type SceneReadinessStatus = 'RED' | 'WORKING_CLEAR' | 'FINAL_CLEAR';
+export type ItemReadinessTier = 'BLOCKER' | 'WORKING_CLEAR' | 'FINAL_CLEAR';
+```
+
+### `SceneReadinessAssessment`
+```typescript
+export interface SceneItemReadinessDetail {
+  occurrenceId: string;
+  canonicalEntityId: string;
+  canonicalName: string;
+  clearanceStatus: ClearanceStatus;
+  effectiveStatus: ClearanceStatus;
+  rightsStatus: 'COVERED' | 'EXPIRED' | 'NONE';
+  hasReplacementCard: boolean;
+  hasSignedOverride: boolean;
+  readinessTier: ItemReadinessTier;
+  rationale: string;
+}
+
+export interface SceneReadinessAssessment {
+  sceneId: string;
+  sceneNumber: number;
+  heading: string;
+  status: SceneReadinessStatus;
+  evaluatedAt: string;
+  blockersCount: number;
+  workingClearCount: number;
+  finalClearCount: number;
+  totalOccurrences: number;
+  itemsBreakdown: SceneItemReadinessDetail[];
+  summaryText: string;
+  blockingRationale?: string;
+}
+```
+
+---
+
+## 2. Extended `SceneData` Entity
+
+Stored in Firestore at `projects/{projectId}/scenes/{sceneId}`.
 
 ```typescript
-export type GrantType =
-  | 'EXCLUSIVE'
-  | 'NON_EXCLUSIVE'
-  | 'FAIR_USE'
-  | 'PUBLIC_DOMAIN'
-  | 'PROD_MADE';
-
-export type TerritoryType =
-  | 'WORLDWIDE'
-  | 'NORTH_AMERICA'
-  | 'EUROPE'
-  | 'US_ONLY'
-  | 'SPECIFIED_COUNTRIES';
-
-export type MediaWindowType =
-  | 'ALL_MEDIA_IN_PERPETUITY'
-  | 'THEATRICAL_SVOD'
-  | 'THEATRICAL_ONLY'
-  | 'LINEAR_TV'
-  | 'FESTIVAL_ONLY'
-  | 'DIGITAL_PROMO';
-
-export type RightsStatus =
-  | 'ACTIVE'
-  | 'PENDING_SIGNATURE'
-  | 'EXPIRED'
-  | 'REVOKED';
-
-export interface RightsRecordData {
+export interface SceneData {
   id: string;
   projectId: string;
-  canonicalEntityId: string;
-  canonicalEntityName?: string;
-  occurrenceIds?: string[]; // Empty or omitted = applies to all occurrences of this entity
-  licensorName: string;
-  grantType: GrantType;
-  territory: TerritoryType;
-  territoryDetails?: string;
-  mediaWindow: MediaWindowType;
-  effectiveDate: string; // ISO date string YYYY-MM-DD
-  expirationDate?: string; // ISO date string YYYY-MM-DD, null if isPerpetual
-  isPerpetual: boolean;
-  covenants?: string[];
-  feeAmount?: number;
-  currency?: string;
-  documentReferenceUrl?: string;
-  status: RightsStatus;
+  sceneNumber: number;
+  heading: string;
+  locationType: 'INT' | 'EXT' | 'INT/EXT';
+  timeOfDay: 'DAY' | 'NIGHT' | 'DUSK' | 'DAWN' | 'OTHER';
+  rawText: string;
+  characterActionSummary: string;
+  
+  // Phase 5 Scene Readiness Extensions
+  readinessStatus?: SceneReadinessStatus;
+  readinessEvaluatedAt?: string;
+  readinessDetails?: SceneReadinessAssessment;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -66,33 +74,18 @@ export interface RightsRecordData {
 
 ---
 
-## 2. Coverage Evaluation Model
+## 3. Project-Level Summary Model
 
-### `RightsCoverageResult`
-Returned by `RightsRepo.evaluateRightsCoverage`.
-
+### `ProjectReadinessSummary`
 ```typescript
-export interface RightsCoverageResult {
-  isCovered: boolean;
-  activeRights: RightsRecordData[];
-  covenants: string[];
-  hasExpiringSoon: boolean;
-  expirationWarning?: string;
-  summaryText: string;
+export interface ProjectReadinessSummary {
+  projectId: string;
+  totalScenes: number;
+  redScenesCount: number;
+  workingClearScenesCount: number;
+  finalClearScenesCount: number;
+  overallReadinessPercentage: number;
+  scenes: SceneReadinessAssessment[];
+  evaluatedAt: string;
 }
-```
-
----
-
-## 3. Relationships to Existing Entities
-
-```mermaid
-erDiagram
-    PROJECT ||--o{ CANONICAL_ENTITY : contains
-    PROJECT ||--o{ SCENE : contains
-    PROJECT ||--o{ RIGHTS_RECORD : contains
-    SCENE ||--o{ OCCURRENCE : contains
-    CANONICAL_ENTITY ||--o{ OCCURRENCE : references
-    CANONICAL_ENTITY ||--o{ RIGHTS_RECORD : covered_by
-    RIGHTS_RECORD ||--o{ OCCURRENCE : restricts
 ```
