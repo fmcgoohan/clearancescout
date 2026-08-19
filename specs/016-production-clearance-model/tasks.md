@@ -1,8 +1,8 @@
-# Tasks: Production Clearance Operating Model (Phases 1, 2 & 3)
+# Tasks: Production Clearance Operating Model (Phases 1, 2, 3 & 4)
 
 **Feature**: `specs/016-production-clearance-model` | **Branch**: `016-production-clearance-model`  
 **Input**: Plan from [`specs/016-production-clearance-model/plan.md`](plan.md), Spec from [`specs/016-production-clearance-model/spec.md`](spec.md)  
-**Scope**: Phase 1 (Completed), Phase 2 (Completed) & Phase 3 (Active Target). Phases 4 through 10 are deliberately excluded from this task list.
+**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed) & Phase 4 (Active Target). Phases 5 through 10 are deliberately excluded from this task list.
 
 ---
 
@@ -78,7 +78,7 @@
 
 ---
 
-## Phase 9: Phase 3 Setup (Entity Resolution & Hierarchy Repositories)
+## Phase 9: Phase 3 Setup (Entity Resolution & Hierarchy Repositories - Completed)
 
 **Purpose**: Extend `CanonicalEntityData` schema with aliases, hierarchy relations, and merge methods in repository layer.
 
@@ -86,38 +86,27 @@
 
 ---
 
-## Phase 10: Phase 3 Foundational (Multi-Stage Entity Resolution Engine)
+## Phase 10: Phase 3 Foundational (Multi-Stage Entity Resolution Engine - Completed)
 
 **Purpose**: Implement deterministic multi-stage entity resolution algorithm and integrate with script parser ingestion workflow.
 
 - [X] T018 [P] Implement `EntityResolutionEngine` in `server/workflows/entityResolutionEngine.ts` providing deterministic multi-stage mention resolution (`EXACT_CANONICAL`, `ALIAS_MATCH`, `NORMALIZED_EQUIVALENCE`, `HIERARCHY_PARENT_MATCH`)
 - [X] T019 [P] Integrate `EntityResolutionEngine` into `CanonicalRegistryWorkflow.ts` in `server/workflows/canonicalRegistryWorkflow.ts` to deduplicate entity mentions and map aliases during script parsing
 
-**Checkpoint**: Entity resolution engine and workflow ready - API and UI integration can proceed in parallel.
-
 ---
 
-## Phase 11: User Story 3 - Upgraded Entity Resolution, Aliases & Hierarchy (Priority: P3) 🎯 Phase 3 Target
+## Phase 11: User Story 3 - Upgraded Entity Resolution, Aliases & Hierarchy (Priority: P3 - Completed) 🎯 Phase 3 Target
 
 **Goal**: Support alias management, parent brand / product relationships, candidate mention resolution, and transactional entity merging.
 
-**Independent Test**: Ingest scripts with varied aliases and product lines, verify they map to unified canonical entities, and execute alias addition and entity merge operations via REST API.
-
-### Tests for User Story 3
-
 - [X] T020 [P] [US3] Contract tests for alias management, entity resolution, hierarchy configuration, and entity merging in `tests/contract/test_entity_resolution.test.ts`
-
-### Implementation for User Story 3
-
 - [X] T021 [P] [US3] Implement `POST /api/projects/:id/entities/:entityId/aliases`, `DELETE /api/projects/:id/entities/:entityId/aliases/:alias`, `POST /api/projects/:id/entities/resolve`, `PATCH /api/projects/:id/entities/:entityId/relationship`, and `POST /api/projects/:id/entities/merge` in `server/api/entityMutationRoutes.ts`
 - [X] T022 [US3] Update `src/components/ItemEditModal.tsx` to add alias management and parent brand / relationship selection
 - [X] T023 [US3] Update `src/components/EntityRegistryTable.tsx` and `src/components/EntityDetailModal.tsx` to display aliases, parent brand badges, and entity merge action
 
-**Checkpoint**: Phase 3 core functionality complete. Alias mapping, hierarchy linking, and entity merging operate smoothly.
-
 ---
 
-## Phase 12: Phase 3 Polish & Cross-Cutting Concerns
+## Phase 12: Phase 3 Polish & Cross-Cutting Concerns (Completed)
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
 
@@ -127,26 +116,76 @@
 
 ---
 
+## Phase 13: Phase 4 Setup (Rights & Restrictions Repository)
+
+**Purpose**: Create `RightsRecordData` domain models and `RightsRepo` for contractual rights persistence, occurrence linking, and coverage evaluation.
+
+- [ ] T027 [P] Create `RightsRecordData` schema, enums (`GrantType`, `TerritoryType`, `MediaWindowType`, `RightsStatus`), and `RightsRepo` in `server/repositories/RightsRepo.ts` with CRUD methods, occurrence linking, and `evaluateRightsCoverage(projectId, canonicalEntityId, occurrenceId, queryDate)`
+
+---
+
+## Phase 14: Phase 4 Foundational (Evaluator Integration & REST Endpoints)
+
+**Purpose**: Integrate rights coverage evaluation into `clearanceEvaluator.ts` and implement rights REST API endpoints.
+
+- [ ] T028 [P] Integrate `rightsRepo.evaluateRightsCoverage` into `evaluateOccurrenceClearance` and `evaluateEntityClearance` in `server/workflows/clearanceEvaluator.ts` to factor active licenses into risk scoring and flag covenants in `contextFlags`
+- [ ] T029 [P] Implement Express router in `server/api/rightsRoutes.ts` (`POST /projects/:id/rights`, `GET /projects/:id/rights`, `GET /projects/:id/entities/:entityId/rights`, `GET /projects/:id/rights/:rightsId`, `PATCH /projects/:id/rights/:rightsId`, `DELETE /projects/:id/rights/:rightsId`) and mount router in `server/index.ts`
+
+**Checkpoint**: Rights repository and API ready - UI integration and test suites can proceed in parallel.
+
+---
+
+## Phase 15: User Story 4 - Rights & Restrictions as First-Class Domain Objects (Priority: P4) 🎯 Phase 4 Target
+
+**Goal**: Record and query contractual rights, licensed territories, media windows, expiration dates, and covenants linked to entities and occurrences.
+
+**Independent Test**: Attach a rights license with territorial and media restrictions to an entity/occurrence; verify rights coverage is queryable and visible in clearance assessments and UI.
+
+### Tests for User Story 4
+
+- [ ] T030 [P] [US4] Contract tests for rights creation, entity/occurrence linking, listing, update, delete, and coverage queries in `tests/contract/test_rights_management.test.ts`
+
+### Implementation for User Story 4
+
+- [ ] T031 [P] [US4] Create `src/components/RightsModal.tsx` for creating, viewing, and editing rights licenses, territorial grants, media windows, and contractual covenants
+- [ ] T032 [US4] Update `src/components/EntityRegistryTable.tsx`, `src/components/EntityDetailModal.tsx`, and `src/pages/WorkspacePage.tsx` to render rights badges and trigger `RightsModal`
+
+**Checkpoint**: Phase 4 core functionality complete. Rights licenses, covenants, and territorial restrictions operate smoothly.
+
+---
+
+## Phase 16: Phase 4 Polish & Cross-Cutting Concerns
+
+**Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
+
+- [ ] T033 [P] Implement end-to-end integration test in `tests/integration/rights_clearance_workflow.test.ts` verifying that attaching an active license clears clearance risk, enforces covenants in `contextFlags`, and detects expired licenses
+- [ ] T034 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [ ] T035 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
 graph TD
-    Phase1to8[Phases 1 & 2 Complete T001-T016] --> Phase9[Phase 9: Setup - EntityRepo Aliases & Hierarchy]
-    Phase9 --> Phase10[Phase 10: Foundational - EntityResolutionEngine]
-    Phase10 --> US3_Tests[T020: Contract Tests]
-    Phase10 --> US3_Routes[T021: entityMutationRoutes Endpoints]
-    US3_Routes --> US3_UI[T022 & T023: Modal & Registry UI]
-    US3_Tests --> Phase12[Phase 12: Polish & Integration]
-    US3_UI --> Phase12
+    Phase1to12[Phases 1-3 Complete T001-T026] --> Phase13[Phase 13: Setup - RightsRepo.ts]
+    Phase13 --> Phase14_Eval[Phase 14: clearanceEvaluator Integration T028]
+    Phase13 --> Phase14_Routes[Phase 14: rightsRoutes.ts Endpoints T029]
+    Phase14_Routes --> US4_Tests[T030: Contract Tests]
+    Phase14_Routes --> US4_UI_Modal[T031: RightsModal.tsx]
+    US4_UI_Modal --> US4_UI_Table[T032: Registry & Detail UI]
+    US4_Tests --> Phase16[Phase 16: Polish & Integration]
+    US4_UI_Table --> Phase16
+    Phase14_Eval --> Phase16
 ```
 
 ---
 
 ## Parallel Execution Examples
 
-### User Story 3
-- `T020` (contract tests in `tests/contract/test_entity_resolution.test.ts`) can run in parallel with `T021` (`server/api/entityMutationRoutes.ts`).
-- `T022` (`ItemEditModal.tsx`) can run in parallel with `T023` (`EntityRegistryTable.tsx`).
+### User Story 4
+- `T028` (`clearanceEvaluator.ts` integration) can run in parallel with `T029` (`server/api/rightsRoutes.ts`).
+- `T030` (`tests/contract/test_rights_management.test.ts`) can run in parallel with `T031` (`src/components/RightsModal.tsx`).
 
 ### Polish Phase
-- `T024` (integration test in `tests/integration/entity_resolution_workflow.test.ts`) can run in parallel with `T025` (`quickstart.md`).
+- `T033` (integration test in `tests/integration/rights_clearance_workflow.test.ts`) can run in parallel with `T034` (`quickstart.md`).
