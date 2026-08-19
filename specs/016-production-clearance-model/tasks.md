@@ -376,26 +376,26 @@
 
 ---
 
-## Phase 37: Phase 10 Setup (Clearance Binder Domain Extension & SHA-256 Digest)
+## Phase 37: Phase 10 Setup (Clearance Binder Domain Extension & SHA-256 Digest - Completed)
 
 **Purpose**: Extend `ClearanceBinderData` schema in `server/repositories/BinderRepo.ts` with `rightsAgreements`, `placeholders`, `sceneReadinessSchedule`, and `unresolvedActions`, and update `generateIntegrityDigest` to compute SHA-256 over all canonical data fields.
 
-- [ ] T080 [P] Extend `ClearanceBinderData` and `BinderProjectSummary` schemas in `server/repositories/BinderRepo.ts` with `rightsAgreements`, `placeholders`, `sceneReadinessSchedule`, and `unresolvedActions`, and update `generateIntegrityDigest` to compute SHA-256 over all canonical data fields
+- [X] T080 [P] Extend `ClearanceBinderData` and `BinderProjectSummary` schemas in `server/repositories/BinderRepo.ts` with `rightsAgreements`, `placeholders`, `sceneReadinessSchedule`, and `unresolvedActions`, and update `generateIntegrityDigest` to compute SHA-256 over all canonical data fields
 
 ---
 
-## Phase 38: Phase 10 Foundational (Binder Compilation Workflow & REST API Endpoints)
+## Phase 38: Phase 10 Foundational (Binder Compilation Workflow & REST API Endpoints - Completed)
 
 **Purpose**: Update `server/workflows/binderExportWorkflow.ts` and `server/api/binderRoutes.ts` to aggregate cross-domain data from all 8 clearance modules, compute SHA-256 digest, and emit `BINDER_EXPORT` SSE timeline events.
 
-- [ ] T081 [P] Update `server/workflows/binderExportWorkflow.ts` to aggregate cross-domain data from `rightsRepo`, `placeholderRepo`, `sceneReadinessEngine`, and `actionNotificationRepo`, compute SHA-256 digest, and emit `BINDER_EXPORT` SSE timeline events
-- [ ] T082 [P] Update `server/api/binderRoutes.ts` to support `GET /projects/:id/binder`, `POST /projects/:id/binder/export`, and `GET /projects/:id/binder/markdown` with formatted Markdown tables and SHA-256 seal
+- [X] T081 [P] Update `server/workflows/binderExportWorkflow.ts` to aggregate cross-domain data from `rightsRepo`, `placeholderRepo`, `sceneReadinessEngine`, and `actionNotificationRepo`, compute SHA-256 digest, and emit `BINDER_EXPORT` SSE timeline events
+- [X] T082 [P] Update `server/api/binderRoutes.ts` to support `GET /projects/:id/binder`, `POST /projects/:id/binder/export`, and `GET /projects/:id/binder/markdown` with formatted Markdown tables and SHA-256 seal
 
 **Checkpoint**: Extended binder engine and REST APIs ready - UI integration and test suites can proceed in parallel.
 
 ---
 
-## Phase 39: User Story 10 - Production Legal Clearance Binder (Priority: P10) 🎯 Phase 10 Target
+## Phase 39: User Story 10 - Production Legal Clearance Binder (Priority: P10 - Completed) 🎯 Phase 10 Target
 
 **Goal**: Deliver an audit-grade, immutable Legal Clearance Binder containing executive summary, rights catalog, fictional placeholders, scene readiness schedule, unresolved actions, and cryptographic SHA-256 integrity seal with JSON and Markdown export formats.
 
@@ -403,24 +403,24 @@
 
 ### Tests for User Story 10
 
-- [ ] T083 [P] [US10] Contract tests for extended binder export payload, Markdown generation, and SHA-256 checksum verification in `tests/contract/test_binder_export.test.ts`
+- [X] T083 [P] [US10] Contract tests for extended binder export payload, Markdown generation, and SHA-256 checksum verification in `tests/contract/test_binder_export.test.ts`
 
 ### Implementation for User Story 10
 
-- [ ] T084 [P] [US10] Update `src/components/BinderExportModal.tsx` to render multi-tab sections (Executive Summary, Scene Readiness Schedule, Rights Catalog, Placeholders Table, Unresolved Actions, and SHA-256 Checksum Badge) with JSON and Markdown download actions
-- [ ] T085 [US10] Update `src/pages/WorkspacePage.tsx` to ensure `📁 Clearance Binder` export trigger opens extended `BinderExportModal`
+- [X] T084 [P] [US10] Update `src/components/BinderExportModal.tsx` to render multi-tab sections (Executive Summary, Scene Readiness Schedule, Rights Catalog, Placeholders Table, Unresolved Actions, and SHA-256 Checksum Badge) with JSON and Markdown download actions
+- [X] T085 [US10] Update `src/pages/WorkspacePage.tsx` to ensure `📁 Clearance Binder` export trigger opens extended `BinderExportModal`
 
 **Checkpoint**: Phase 10 complete. Full production clearance operating model is operational across all 10 phases.
 
 ---
 
-## Phase 40: Phase 10 Polish & Cross-Cutting Concerns
+## Phase 40: Phase 10 Polish & Cross-Cutting Concerns (Completed)
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
 
-- [ ] T086 [P] Implement end-to-end integration test in `tests/integration/binder_export_workflow.test.ts` verifying complete multi-domain binder compilation with rights, placeholders, scene readiness, and open actions
-- [ ] T087 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
-- [ ] T088 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [X] T086 [P] Implement end-to-end integration test in `tests/integration/binder_export_workflow.test.ts` verifying complete multi-domain binder compilation with rights, placeholders, scene readiness, and open actions
+- [X] T087 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [X] T088 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

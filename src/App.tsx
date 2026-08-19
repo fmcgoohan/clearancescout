@@ -641,6 +641,7 @@ export default function App() {
             onEvaluateClearance={handleEvaluateClearance}
             onGenerateReplacement={handleGenerateReplacement}
             onOpenCounselReview={handleOpenCounselReview}
+            onExportBinder={handleExportBinder}
             isEvaluating={isEvaluating}
             refreshTrigger={refreshTrigger}
           />

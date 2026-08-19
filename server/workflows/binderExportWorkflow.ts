@@ -4,7 +4,11 @@ import { entityRepo } from '../repositories/EntityRepo.js';
 import { assessmentRepo } from '../repositories/AssessmentRepo.js';
 import { replacementRepo } from '../repositories/ReplacementRepo.js';
 import { overrideRepo } from '../repositories/OverrideRepo.js';
-import { binderRepo, ClearanceBinderData, ProvenanceSummary } from '../repositories/BinderRepo.js';
+import { rightsRepo } from '../repositories/RightsRepo.js';
+import { placeholderRepo } from '../repositories/PlaceholderRepo.js';
+import { sceneReadinessEngine } from './sceneReadinessEngine.js';
+import { actionNotificationRepo } from '../repositories/ActionNotificationRepo.js';
+import { binderRepo, ClearanceBinderData, ProvenanceSummary, BinderProjectSummary } from '../repositories/BinderRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { resolveEffectiveClearanceStatus } from './effectiveStatusResolver.js';
 
@@ -19,9 +23,16 @@ export class BinderExportWorkflow {
       throw new Error(`Project ${projectId} not found`);
     }
 
-    const rawScenes = await sceneRepo.getScenesByProject(projectId);
-    const entities = await entityRepo.getEntitiesByProject(projectId);
-    const overridesHistory = await overrideRepo.getAllOverrides(projectId);
+    const [rawScenes, entities, overridesHistory, rights, placeholders, readinessSummary, unresolvedActions] =
+      await Promise.all([
+        sceneRepo.getScenesByProject(projectId),
+        entityRepo.getEntitiesByProject(projectId),
+        overrideRepo.getAllOverrides(projectId),
+        rightsRepo.getRightsByProject(projectId),
+        placeholderRepo.getPlaceholdersByProject(projectId),
+        sceneReadinessEngine.evaluateAllScenesReadiness(projectId),
+        actionNotificationRepo.getActionsByProject(projectId, { status: 'OPEN' }),
+      ]);
 
     // Aggregate all citations and replacements
     const citationsIndex: any[] = [];
@@ -97,15 +108,24 @@ export class BinderExportWorkflow {
       })
     );
 
-    const projectSummary = {
+    const projectSummary: BinderProjectSummary = {
+      projectId,
+      projectType: project.projectType || 'Movie',
       title: project.title,
       productionCompany: project.productionCompany,
       scriptVersion: project.scriptVersion,
       totalScenes: scenes.length,
+      finalClearScenes: readinessSummary.finalClearScenesCount,
+      workingClearScenes: readinessSummary.workingClearScenesCount,
+      redScenes: readinessSummary.redScenesCount,
+      overallReadinessPercentage: readinessSummary.overallReadinessPercentage,
       totalEntities: entities.length,
       clearedCount,
       actionRequiredCount,
       reviewRecommendedCount,
+      activePlaceholdersCount: placeholders.length,
+      activeRightsCount: rights.length,
+      openActionsCount: unresolvedActions.length,
       overridesCount: overridesHistory.length,
     };
 
@@ -114,7 +134,11 @@ export class BinderExportWorkflow {
       projectSummary,
       provenanceSummary,
       scenes,
+      sceneReadinessSchedule: readinessSummary.scenes,
       canonicalEntities: entities,
+      rightsAgreements: rights,
+      placeholders,
+      unresolvedActions,
       citationsIndex,
       replacementCatalog,
       overridesHistory,
@@ -126,6 +150,7 @@ export class BinderExportWorkflow {
       integrityDigest: binder.integrityDigest,
       dominantProvenance: provenanceSummary.dominantProvenance,
       totalEntities: entities.length,
+      readinessPercentage: readinessSummary.overallReadinessPercentage,
     });
 
     return binder;
@@ -133,3 +158,4 @@ export class BinderExportWorkflow {
 }
 
 export const binderExportWorkflow = new BinderExportWorkflow();
+

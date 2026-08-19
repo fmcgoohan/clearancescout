@@ -3,6 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { CanonicalEntityData } from './EntityRepo.js';
 import { CounselOverride } from './OverrideRepo.js';
+import { RightsRecordData } from './RightsRepo.js';
+import { ReplacementPlaceholderData } from './PlaceholderRepo.js';
+import { SceneReadinessAssessment } from './SceneRepo.js';
+import { ClearanceActionItem } from './ActionNotificationRepo.js';
+import { ReplacementCardData } from './ReplacementRepo.js';
+import { ClearanceCitation } from './AssessmentRepo.js';
 
 export interface ProvenanceSummary {
   liveCount: number;
@@ -11,25 +17,40 @@ export interface ProvenanceSummary {
   dominantProvenance: 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE' | 'MIXED';
 }
 
+export interface BinderProjectSummary {
+  projectId: string;
+  projectType: string; // 'Movie' | 'TV Show' | 'Commercial'
+  title: string;
+  productionCompany: string;
+  scriptVersion: string;
+  totalScenes: number;
+  finalClearScenes: number;
+  workingClearScenes: number;
+  redScenes: number;
+  overallReadinessPercentage: number;
+  totalEntities: number;
+  clearedCount: number;
+  actionRequiredCount: number;
+  reviewRecommendedCount: number;
+  activePlaceholdersCount: number;
+  activeRightsCount: number;
+  openActionsCount: number;
+  overridesCount: number;
+}
+
 export interface ClearanceBinderData {
   id: string;
   projectId: string;
-  projectSummary: {
-    title: string;
-    productionCompany: string;
-    scriptVersion: string;
-    totalScenes: number;
-    totalEntities: number;
-    clearedCount: number;
-    actionRequiredCount: number;
-    reviewRecommendedCount: number;
-    overridesCount: number;
-  };
+  projectSummary: BinderProjectSummary;
   provenanceSummary: ProvenanceSummary;
   scenes: any[];
+  sceneReadinessSchedule: SceneReadinessAssessment[];
   canonicalEntities: CanonicalEntityData[];
-  citationsIndex: any[];
-  replacementCatalog: any[];
+  rightsAgreements: RightsRecordData[];
+  placeholders: ReplacementPlaceholderData[];
+  unresolvedActions: ClearanceActionItem[];
+  citationsIndex: ClearanceCitation[];
+  replacementCatalog: ReplacementCardData[];
   overridesHistory: CounselOverride[];
   exportedAt: string;
   integrityDigest: string; // SHA-256 integrity digest of canonical payload

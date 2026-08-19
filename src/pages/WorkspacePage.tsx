@@ -16,6 +16,7 @@ interface WorkspacePageProps {
   onEvaluateClearance: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
   onOpenCounselReview: (entityId: string, sceneId?: string) => void;
+  onExportBinder?: () => void;
   isEvaluating: boolean;
   refreshTrigger: number;
 }
@@ -25,6 +26,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   onEvaluateClearance,
   onGenerateReplacement,
   onOpenCounselReview,
+  onExportBinder,
   isEvaluating,
   refreshTrigger,
 }) => {
@@ -395,6 +397,21 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           >
             📊 Operations Dashboard
           </button>
+
+          {onExportBinder && (
+            <button
+              className="btn-secondary touch-target"
+              aria-label="Export Legal Clearance Binder"
+              onClick={onExportBinder}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              📁 Clearance Binder
+            </button>
+          )}
         </div>
       </div>
 

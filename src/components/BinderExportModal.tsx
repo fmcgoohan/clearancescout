@@ -11,19 +11,32 @@ export interface ClearanceBinder {
   id: string;
   projectId: string;
   projectSummary: {
+    projectId?: string;
+    projectType?: string;
     title: string;
     productionCompany: string;
     scriptVersion: string;
     totalScenes: number;
+    finalClearScenes?: number;
+    workingClearScenes?: number;
+    redScenes?: number;
+    overallReadinessPercentage?: number;
     totalEntities: number;
     clearedCount: number;
     actionRequiredCount: number;
     reviewRecommendedCount: number;
+    activePlaceholdersCount?: number;
+    activeRightsCount?: number;
+    openActionsCount?: number;
     overridesCount: number;
   };
   provenanceSummary?: ProvenanceSummary;
   scenes: any[];
+  sceneReadinessSchedule?: any[];
   canonicalEntities: any[];
+  rightsAgreements?: any[];
+  placeholders?: any[];
+  unresolvedActions?: any[];
   citationsIndex: any[];
   replacementCatalog: any[];
   overridesHistory: any[];
@@ -51,6 +64,9 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
 }) => {
   if (!isOpen || !binder) return null;
 
+  const [activeTab, setActiveTab] = React.useState<'ALL' | 'SCENES' | 'RIGHTS' | 'PLACEHOLDERS' | 'ACTIONS'>('ALL');
+  const [copiedDigest, setCopiedDigest] = React.useState(false);
+
   const dominant =
     binder.provenanceSummary?.dominantProvenance ||
     binder.citationsIndex[0]?.provenance ||
@@ -68,6 +84,31 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+  };
+
+  const handleDownloadMarkdown = async () => {
+    try {
+      const res = await fetch(`/api/projects/${binder.projectId}/binder/markdown`);
+      if (!res.ok) throw new Error('Failed to fetch markdown');
+      const md = await res.text();
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Clearance_Binder_${binder.projectSummary.title.replace(/\s+/g, '_')}_${binder.id}.md`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Download markdown error', e);
+    }
+  };
+
+  const handleCopyDigest = () => {
+    navigator.clipboard.writeText(binder.integrityDigest);
+    setCopiedDigest(true);
+    setTimeout(() => setCopiedDigest(false), 2000);
   };
 
   const handlePrintPdf = () => {
@@ -132,22 +173,48 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
         }}
       >
-        {/* Header */}
+        {/* Executive Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
           <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              ClearanceScout Official Legal Dossier
-            </span>
-            <h2 style={{ margin: '4px 0 0', fontSize: '1.4rem', color: 'var(--text-main)' }}>
-              {binder.projectSummary.title}
-            </h2>
-            <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Production Company: {binder.projectSummary.productionCompany} • Script: {binder.projectSummary.scriptVersion}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 'bold', margin: 0, color: 'var(--text-main)' }}>
+                {binder.projectSummary.title}
+              </h2>
+              <span className="badge" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', border: '1px solid var(--accent-cyan)', fontWeight: 600 }}>
+                {binder.projectSummary.projectType || 'Movie'}
+              </span>
+              <span className="badge badge-NO_ISSUE_SURFACED" style={{ fontSize: '0.75rem' }}>
+                AUDITABLE LEGAL DOSSIER
+              </span>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
+              Production Company: <strong style={{ color: 'var(--text-main)' }}>{binder.projectSummary.productionCompany}</strong> • Script Version: <strong style={{ color: 'var(--text-main)' }}>{binder.projectSummary.scriptVersion}</strong> • Exported: {new Date(binder.exportedAt).toLocaleString()}
             </p>
           </div>
-          <button className="btn-secondary no-print" style={{ padding: '6px 12px' }} onClick={onClose}>
-            ✕ Close
-          </button>
+          <div className="no-print" style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={handlePrintPdf}>
+              🖨️ Print PDF
+            </button>
+            <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={handleDownloadMarkdown}>
+              📝 Markdown (.md)
+            </button>
+            <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={handleDownloadJson}>
+              ⬇ JSON
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: '1.2rem',
+                cursor: 'pointer',
+                padding: '4px 8px',
+              }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Provenance Watermark Badge Banner */}
@@ -248,7 +315,16 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
               {binder.integrityDigest}
             </div>
           </div>
-          <span style={{ fontSize: '1.2rem', marginLeft: '12px' }}>🔒</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
+            <button
+              className="btn-secondary"
+              style={{ fontSize: '0.7rem', padding: '4px 8px' }}
+              onClick={handleCopyDigest}
+            >
+              {copiedDigest ? '✓ Copied' : '📋 Copy Checksum'}
+            </button>
+            <span style={{ fontSize: '1.2rem' }}>🔒</span>
+          </div>
         </div>
 
         {/* Legal Disclaimer Box */}
@@ -265,29 +341,246 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
           <strong>Legal Disclaimer:</strong> {binder.disclaimer}
         </div>
 
-        {/* Metrics Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+        {/* Executive Metrics Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
           <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Scenes</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)' }}>Shoot Readiness</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--accent-cyan)' }}>
+              {binder.projectSummary.overallReadinessPercentage ?? 100}%
+            </div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Total Scenes</div>
             <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{binder.projectSummary.totalScenes}</div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Entities</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{binder.projectSummary.totalEntities}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--status-no-issue)' }}>Final Clear</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--status-no-issue)' }}>
+              {binder.projectSummary.finalClearScenes ?? binder.projectSummary.clearedCount}
+            </div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.7rem', color: 'var(--status-no-issue)' }}>Cleared</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--status-no-issue)' }}>{binder.projectSummary.clearedCount}</div>
+            <div style={{ fontSize: '0.7rem', color: '#fbbf24' }}>Working Clear</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fbbf24' }}>
+              {binder.projectSummary.workingClearScenes ?? 0}
+            </div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.7rem', color: 'var(--status-action-required)' }}>Action Req.</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--status-action-required)' }}>{binder.projectSummary.actionRequiredCount}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--status-action-required)' }}>Red / Blocked</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--status-action-required)' }}>
+              {binder.projectSummary.redScenes ?? binder.projectSummary.actionRequiredCount}
+            </div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.7rem', color: '#34d399' }}>Overrides</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#34d399' }}>{binder.projectSummary.overridesCount || 0}</div>
+            <div style={{ fontSize: '0.7rem', color: '#34d399' }}>Rights & Props</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#34d399' }}>
+              {(binder.projectSummary.activeRightsCount || 0) + (binder.projectSummary.activePlaceholdersCount || 0)}
+            </div>
           </div>
         </div>
+
+        {/* Section Tabs */}
+        <div className="no-print" style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+          {(['ALL', 'SCENES', 'RIGHTS', 'PLACEHOLDERS', 'ACTIONS'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={activeTab === tab ? 'btn-primary' : 'btn-secondary'}
+              style={{ fontSize: '0.75rem', padding: '4px 12px' }}
+            >
+              {tab === 'ALL' && '📑 Full Binder'}
+              {tab === 'SCENES' && `🎬 Scene Schedule (${binder.sceneReadinessSchedule?.length || 0})`}
+              {tab === 'RIGHTS' && `📜 Rights Catalog (${binder.rightsAgreements?.length || 0})`}
+              {tab === 'PLACEHOLDERS' && `🎨 Placeholders (${binder.placeholders?.length || 0})`}
+              {tab === 'ACTIONS' && `📋 Unresolved Actions (${binder.unresolvedActions?.length || 0})`}
+            </button>
+          ))}
+        </div>
+
+        {/* Scene-by-Scene Shooting Readiness Schedule */}
+        {(activeTab === 'ALL' || activeTab === 'SCENES') && binder.sceneReadinessSchedule && binder.sceneReadinessSchedule.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-cyan)', margin: 0 }}>
+              Scene-by-Scene Shooting Readiness Schedule ({binder.sceneReadinessSchedule.length})
+            </h4>
+            <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {binder.sceneReadinessSchedule.map((s: any) => (
+                <div
+                  key={s.sceneId}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  <div>
+                    <span style={{ fontWeight: 600, color: 'var(--text-main)', marginRight: '8px' }}>Scene {s.sceneNumber}:</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{s.heading}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      {s.totalOccurrences} items ({s.blockersCount} blocked, {s.workingClearCount} working)
+                    </span>
+                    <span
+                      className="badge"
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        background:
+                          s.status === 'FINAL_CLEAR'
+                            ? 'rgba(52, 211, 153, 0.15)'
+                            : s.status === 'WORKING_CLEAR'
+                            ? 'rgba(251, 191, 36, 0.15)'
+                            : 'rgba(248, 113, 113, 0.15)',
+                        color:
+                          s.status === 'FINAL_CLEAR'
+                            ? '#34d399'
+                            : s.status === 'WORKING_CLEAR'
+                            ? '#fbbf24'
+                            : '#f87171',
+                      }}
+                    >
+                      {s.status?.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Contractual Rights & Restrictions Catalog */}
+        {(activeTab === 'ALL' || activeTab === 'RIGHTS') && binder.rightsAgreements && binder.rightsAgreements.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-cyan)', margin: 0 }}>
+              Contractual Rights & Restrictions Catalog ({binder.rightsAgreements.length})
+            </h4>
+            <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {binder.rightsAgreements.map((r: any) => (
+                <div
+                  key={r.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  <div>
+                    <span style={{ fontWeight: 600, color: 'var(--text-main)', marginRight: '8px' }}>{r.licensorName}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      • {r.grantType} • {r.territory} • {r.mediaWindow}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.7rem', color: r.isPerpetual ? '#34d399' : '#fbbf24' }}>
+                      {r.isPerpetual ? '♾️ Perpetual' : `Exp: ${r.expirationDate || 'N/A'}`}
+                    </span>
+                    <span className="badge badge-NO_ISSUE_SURFACED" style={{ fontSize: '0.65rem' }}>
+                      {r.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Generalized Replacements & Fictional Placeholders */}
+        {(activeTab === 'ALL' || activeTab === 'PLACEHOLDERS') && binder.placeholders && binder.placeholders.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-cyan)', margin: 0 }}>
+              Generalized Replacements & Fictional Placeholders ({binder.placeholders.length})
+            </h4>
+            <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {binder.placeholders.map((ph: any) => (
+                <div
+                  key={ph.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  <div>
+                    <span style={{ fontWeight: 600, color: 'var(--text-main)', marginRight: '8px' }}>{ph.fictionalName}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      • Category: {ph.assetCategory} • Approved By: {ph.approvedBy}
+                    </span>
+                  </div>
+                  <span
+                    className="badge"
+                    style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      background: ph.clearanceTier === 'FINAL_CLEARED' ? 'rgba(52, 211, 153, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+                      color: ph.clearanceTier === 'FINAL_CLEARED' ? '#34d399' : '#fbbf24',
+                    }}
+                  >
+                    {ph.clearanceTier?.replace(/_/g, ' ')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Unresolved Department Actions */}
+        {(activeTab === 'ALL' || activeTab === 'ACTIONS') && binder.unresolvedActions && binder.unresolvedActions.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-cyan)', margin: 0 }}>
+              Unresolved Department Actions ({binder.unresolvedActions.length})
+            </h4>
+            <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {binder.unresolvedActions.map((a: any) => (
+                <div
+                  key={a.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  <div>
+                    <span style={{ fontWeight: 600, color: 'var(--text-main)', marginRight: '8px' }}>{a.title}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      • Dept: {a.targetDepartment}
+                    </span>
+                  </div>
+                  <span
+                    className="badge"
+                    style={{
+                      fontSize: '0.65rem',
+                      background: a.priority === 'CRITICAL' ? 'rgba(248, 113, 113, 0.2)' : 'rgba(251, 191, 36, 0.2)',
+                      color: a.priority === 'CRITICAL' ? '#f87171' : '#fbbf24',
+                    }}
+                  >
+                    {a.priority}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Canonical Entity Clearance Registry */}
         {binder.canonicalEntities && binder.canonicalEntities.length > 0 && (

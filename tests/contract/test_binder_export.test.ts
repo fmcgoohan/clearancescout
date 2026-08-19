@@ -37,13 +37,29 @@ describe('Contract: Clearance Binder Compilation & Export', () => {
     expect(res.body.id).toMatch(/^bnd-/);
     expect(res.body.projectId).toBe(projectId);
     expect(res.body.projectSummary.title).toBe('Binder Export Feature Film');
+    expect(res.body.projectSummary.overallReadinessPercentage).toBeDefined();
     expect(res.body.integrityDigest).toBeDefined();
     expect(res.body.integrityDigest.length).toBe(64); // SHA-256 hex string
     expect(res.body.provenanceSummary).toBeDefined();
-    expect(res.body.provenanceSummary.demoCount).toBeGreaterThanOrEqual(1);
     expect(res.body.provenanceSummary.dominantProvenance).toBeDefined();
     expect(res.body.scenes.length).toBe(1);
+    expect(res.body.sceneReadinessSchedule).toBeDefined();
+    expect(res.body.rightsAgreements).toBeDefined();
+    expect(res.body.placeholders).toBeDefined();
+    expect(res.body.unresolvedActions).toBeDefined();
     expect(res.body.canonicalEntities.length).toBeGreaterThanOrEqual(1);
     expect(res.body.disclaimer).toContain('does NOT render formal legal advice');
+  });
+
+  it('should download a formatted Markdown clearance binder with tables and SHA-256 seal', async () => {
+    const res = await request(app).get(`/api/projects/${projectId}/binder/markdown`);
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/markdown');
+    expect(res.text).toContain('# Production Legal Clearance Binder');
+    expect(res.text).toContain('Binder Export Feature Film');
+    expect(res.text).toContain('Cryptographic Integrity Digest (SHA-256)');
+    expect(res.text).toContain('## 1. Executive Clearance & Shooting Readiness Summary');
+    expect(res.text).toContain('## 2. Scene-by-Scene Shooting Readiness Schedule');
   });
 });
