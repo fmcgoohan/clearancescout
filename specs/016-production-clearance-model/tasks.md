@@ -1,8 +1,8 @@
-# Tasks: Production Clearance Operating Model (Phases 1, 2, 3, 4, 5, 6 & 7)
+# Tasks: Production Clearance Operating Model (Phases 1, 2, 3, 4, 5, 6, 7 & 8)
 
 **Feature**: `specs/016-production-clearance-model` | **Branch**: `016-production-clearance-model`  
 **Input**: Plan from [`specs/016-production-clearance-model/plan.md`](plan.md), Spec from [`specs/016-production-clearance-model/spec.md`](spec.md)  
-**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed), Phase 5 (Completed), Phase 6 (Completed) & Phase 7 (Active Target). Phases 8 through 10 are deliberately excluded from this task list.
+**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed), Phase 5 (Completed), Phase 6 (Completed), Phase 7 (Completed) & Phase 8 (Active Target). Phases 9 through 10 are deliberately excluded from this task list.
 
 ---
 
@@ -281,28 +281,76 @@
 
 ---
 
+## Phase 29: Phase 8 Setup (Live Collision Evaluator & Negative Constraint Context)
+
+**Purpose**: Upgrade `ReplacementAttemptRecord` and `ReplacementAgent.ts` with live collision evaluation against Parallel Search citations and negative constraint context prompting.
+
+- [ ] T063 [P] Update `ReplacementAttemptRecord` schema in `server/repositories/ReplacementRepo.ts` with negative constraints applied and enhance `server/agents/ReplacementAgent.ts` with live search collision reasoning and negative constraint context prompting
+
+---
+
+## Phase 30: Phase 8 Foundational (Evidence-Driven Self-Clearance Loop & 4-Event SSE)
+
+**Purpose**: Update `replacementGenerator.ts` and `parallelSearchTool.ts` to ground candidates with live Parallel Search, evaluate real-world collision evidence, enforce $\le 3$ loop ceiling, emit 4-event SSE timeline, and escalate to legal counsel.
+
+- [ ] T064 [P] Update `server/workflows/replacementGenerator.ts` to ground candidates with live Parallel Search (`PARALLEL_LIVE`), evaluate real-world collision evidence, maintain negative constraints, enforce $\le 3$ loop ceiling, emit 4-event SSE timeline (`REPLACEMENT_ATTEMPT`, `REPLACEMENT_RESEARCH_STARTED`, `REPLACEMENT_REJECTED`, `REPLACEMENT_ACCEPTED`), and escalate to legal counsel on 3 consecutive failures
+- [ ] T065 [P] Update `server/tools/parallelSearchTool.ts` to support live trademark and web conflict queries with citation provenance in `CLOUD_MODE` / live mode
+
+**Checkpoint**: Evidence-driven self-clearance engine and API ready - UI integration and test suites can proceed in parallel.
+
+---
+
+## Phase 31: User Story 8 - Evidence-Driven Live Self-Clearance Loop (Priority: P8) 🎯 Phase 8 Target
+
+**Goal**: Autonomously iterate on candidate fictional replacements by conducting live web/trademark searches, checking for real-world collisions with citation provenance, and applying negative constraints, with a hard ceiling of 3 iterations.
+
+**Independent Test**: Trigger candidate generation in `CLOUD_MODE`/`DEMO_MODE`; verify live search grounding, 4-event SSE emissions, negative constraint accumulation on collision, early termination on clean clearance, and counsel escalation at attempt 3.
+
+### Tests for User Story 8
+
+- [ ] T066 [P] [US8] Contract tests for evidence-driven candidate generation, live search collision analysis, negative constraint accumulation, and 3-attempt loop ceiling in `tests/contract/test_evidence_self_clearance.test.ts`
+
+### Implementation for User Story 8
+
+- [ ] T067 [P] [US8] Update `src/components/TimelineDrawer.tsx` to render multi-attempt self-clearance timeline badges (`ATTEMPT #`, `SEARCHING`, `REJECTED (COLLISION)`, `ACCEPTED`) with live search citation popovers
+- [ ] T068 [US8] Update `src/components/ComparisonModal.tsx` to display multi-attempt replacement history with collision rationales, negative constraints, and live citation provenance links
+
+**Checkpoint**: Phase 8 core functionality complete. Self-clearance operates autonomously with real-world trademark grounding.
+
+---
+
+## Phase 32: Phase 8 Polish & Cross-Cutting Concerns
+
+**Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
+
+- [ ] T069 [P] Implement end-to-end integration test in `tests/integration/evidence_self_clearance_workflow.test.ts` verifying attempt 1 clean clearance, attempt 2 negative constraint progression, and attempt 3 counsel escalation with live citation provenance
+- [ ] T070 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [ ] T071 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
 graph TD
-    Phases1to6[Phases 1-6 Complete T001-T053] --> Phase25[Phase 25: PlaceholderRepo.ts T054]
-    Phase25 --> Phase26_Engine[Phase 26: sceneReadinessEngine.ts T055]
-    Phase25 --> Phase26_Routes[Phase 26: placeholderRoutes.ts T056]
-    Phase26_Engine --> US7_Tests[T057: Contract Tests]
-    Phase26_Routes --> US7_Tests
-    Phase26_Routes --> US7_UI_Modal[T058: PlaceholderManagerModal.tsx]
-    US7_UI_Modal --> US7_UI_Registry[T059: EntityRegistryTable & DetailModal]
-    US7_Tests --> Phase28[Phase 28: Polish & Integration]
-    US7_UI_Registry --> Phase28
+    Phases1to7[Phases 1-7 Complete T001-T062] --> Phase29[Phase 29: ReplacementRepo.ts & ReplacementAgent.ts T063]
+    Phase29 --> Phase30_Gen[Phase 30: replacementGenerator.ts T064]
+    Phase29 --> Phase30_Tool[Phase 30: parallelSearchTool.ts T065]
+    Phase30_Gen --> US8_Tests[T066: Contract Tests]
+    Phase30_Tool --> US8_Tests
+    Phase30_Gen --> US8_UI_Timeline[T067: TimelineDrawer.tsx]
+    US8_UI_Timeline --> US8_UI_Comparison[T068: ComparisonModal.tsx]
+    US8_Tests --> Phase32[Phase 32: Polish & Integration]
+    US8_UI_Comparison --> Phase32
 ```
 
 ---
 
 ## Parallel Execution Examples
 
-### User Story 7
-- `T055` (`sceneReadinessEngine.ts`) can run in parallel with `T056` (`server/api/placeholderRoutes.ts`).
-- `T057` (`tests/contract/test_placeholder_management.test.ts`) can run in parallel with `T058` (`src/components/PlaceholderManagerModal.tsx`).
+### User Story 8
+- `T064` (`replacementGenerator.ts`) can run in parallel with `T065` (`parallelSearchTool.ts`).
+- `T066` (`tests/contract/test_evidence_self_clearance.test.ts`) can run in parallel with `T067` (`src/components/TimelineDrawer.tsx`).
 
 ### Polish Phase
-- `T060` (integration test in `tests/integration/placeholder_clearance_workflow.test.ts`) can run in parallel with `T061` (`quickstart.md`).
+- `T069` (integration test in `tests/integration/evidence_self_clearance_workflow.test.ts`) can run in parallel with `T070` (`quickstart.md`).
