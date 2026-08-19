@@ -1,33 +1,55 @@
-# Implementation Plan: Production Clearance Operating Model (Phase 3 - Upgraded Entity Resolution & Material Equivalence)
+# Implementation Plan: Production Clearance Operating Model (Phase 4 - Rights & Restrictions Domain Objects)
 
-**Branch**: `016-production-clearance-model` | **Date**: 2026-08-19 | **Status**: Plan Complete (Phase 3 Focus)  
+**Branch**: `016-production-clearance-model` | **Date**: 2026-08-19 | **Status**: Plan Complete (Phase 4 Focus)  
 **Specification**: [`specs/016-production-clearance-model/spec.md`](spec.md)
 
 ---
 
-## 1. Summary of Feature & Phase 3 Scope
+## 1. Summary of Feature & Phase 4 Scope
 
-Phase 3 upgrades the clearance operating model with **robust multi-surface entity resolution, alias management, brand/product hierarchies, and material equivalence reuse**.
+Phase 4 upgrades the clearance operating model by establishing **Rights & Restrictions as first-class domain records** (`FR-005`, `US4`). This connects research issue-spotting with actual contractual licenses, territorial grants, media distribution windows, expiration dates, and restrictive covenants linked to entities and occurrences.
 
-### Core Objectives (Phase 3 Only):
-1. **Alias Tracking & Multi-Surface Form Recognition (`FR-004`, `US3`)**:
-   - Canonical entities store `aliases: string[]`.
-   - Normalization and matching engine recognizes varied references (e.g. *"Coke"*, *"Coca-Cola Classic"*, *"Coke Zero"*) mapping to the authoritative canonical entity.
-2. **Brand / Product Hierarchy Modeling (`FR-004`, `US3`)**:
-   - Entities support parent-child relationships (`parentEntityId`, `parentEntityName`, `relationshipType`: `'BRAND_PRODUCT' | 'SUBSIDIARY' | 'PARENT_COMPANY' | 'PRODUCT_LINE' | 'VARIATION'`).
-   - Child products inherit corporate ownership context while maintaining occurrence-specific risk tracking.
-3. **Deterministic Multi-Stage Entity Resolution Engine (`FR-004`, `US3`)**:
-   - Automated script parser and ingestion pipelines query `EntityResolutionEngine`:
-     - Stage 1: Exact Canonical Name Match (confidence 1.0)
-     - Stage 2: Exact Alias Match (confidence 0.95)
-     - Stage 3: Normalized Lexical Equivalence (confidence 0.90)
-     - Stage 4: Parent Brand Prefix / Product Line Match (confidence 0.85)
-4. **Entity Merging & Material Equivalence Reuse (`FR-004`, `US3`)**:
-   - Transactional merge operation combines duplicate entities, transfers all scene occurrences, aggregates aliases, deletes the duplicate record, and recomputes the derived canonical status.
-5. **Preserve Invariants (003–015 & Phases 1–2)**:
-   - 100% preservation of project types, occurrence-level evaluations, derived roll-up statuses, signed counsel overrides, SSE timelines, offline fixtures, and responsive UI.
-6. **Strict Scope Boundary**:
-   - Phases 4 through 10 (rights domain objects, scene readiness state machine, actions queue, placeholders, etc.) remain strictly unbuilt until Phase 3 is implemented and converged.
+### Core Objectives (Phase 4 Only):
+1. **Rights & Restrictions Domain Modeling (`FR-005`, `US4`)**:
+   - Create `RightsRecordData` domain model with structured fields:
+     - `id`: string (`rgt-...`)
+     - `projectId`: string
+     - `canonicalEntityId`: string
+     - `occurrenceIds?: string[]` (empty or omitted = applies to all occurrences of the entity; non-empty = applies to specified scene occurrences)
+     - `licensorName`: string (e.g. *"Sony Music Publishing"*, *"Summit Beverages LLC"*)
+     - `grantType`: `'EXCLUSIVE' | 'NON_EXCLUSIVE' | 'FAIR_USE' | 'PUBLIC_DOMAIN' | 'PROD_MADE'`
+     - `territory`: `'WORLDWIDE' | 'NORTH_AMERICA' | 'EUROPE' | 'US_ONLY' | 'SPECIFIED_COUNTRIES'`
+     - `territoryDetails?: string`
+     - `mediaWindow`: `'ALL_MEDIA_IN_PERPETUITY' | 'THEATRICAL_SVOD' | 'THEATRICAL_ONLY' | 'LINEAR_TV' | 'FESTIVAL_ONLY' | 'DIGITAL_PROMO'`
+     - `effectiveDate`: string (ISO date `YYYY-MM-DD`)
+     - `expirationDate?: string` (ISO date `YYYY-MM-DD`, null if in-perpetuity)
+     - `isPerpetual`: boolean
+     - `covenants?: string[]` (contractual restrictions, e.g. *"Must not be depicted alongside violent acts"*, *"End credits attribution required"*)
+     - `feeAmount?: number`, `currency?: string`
+     - `documentReferenceUrl?: string` (executed contract attachment/path)
+     - `status`: `'ACTIVE' | 'PENDING_SIGNATURE' | 'EXPIRED' | 'REVOKED'`
+2. **Rights Repository Layer (`server/repositories/RightsRepo.ts`)**:
+   - Implement complete CRUD and evaluation queries in `RightsRepo`:
+     - `createRightsRecord`, `getRightsRecordById`, `getRightsByProject`, `getRightsByEntity`, `getRightsByOccurrence`, `updateRightsRecord`, `deleteRightsRecord`.
+     - `evaluateRightsCoverage(projectId, canonicalEntityId, occurrenceId, queryDate)`: Computes deterministic license validity, checks territorial/media coverage, detects expiration status, and gathers active contractual covenants.
+3. **Rights Clearance & Evaluator Integration (`server/workflows/clearanceEvaluator.ts`)**:
+   - In `evaluateOccurrenceClearance` and `evaluateEntityClearance`:
+     - Evaluate whether active rights exist for the entity / occurrence.
+     - When active valid license is present, incorporate license grant and covenants into `contextFlags` and deterministic risk evaluation (e.g. `NO_ISSUE_SURFACED` with license grant summary, or `REVIEW_RECOMMENDED` if contractual covenants require legal inspection).
+4. **REST API Endpoints (`server/api/rightsRoutes.ts`)**:
+   - `POST /api/projects/:id/rights`
+   - `GET /api/projects/:id/rights`
+   - `GET /api/projects/:id/entities/:entityId/rights`
+   - `GET /api/projects/:id/rights/:rightsId`
+   - `PATCH /api/projects/:id/rights/:rightsId`
+   - `DELETE /api/projects/:id/rights/:rightsId`
+5. **Frontend Rights UX (`src/components/RightsModal.tsx`)**:
+   - Provide interactive modal to create, view, edit, and revoke rights records.
+   - Display rights coverage badges in `EntityRegistryTable.tsx` (`📜 Rights: Worldwide (In Perpetuity)`) and `EntityDetailModal.tsx`.
+6. **Preserve Invariants (003–015 & Phases 1–3)**:
+   - 100% preservation of project types, occurrence-level evaluations, derived roll-ups, aliases, parent brand hierarchies, counsel overrides, and SSE timeline streams.
+7. **Strict Scope Boundary**:
+   - Phases 5 through 10 (scene readiness state machine, actions queue, placeholders, live self-clearance loop, etc.) remain strictly unbuilt until Phase 4 is implemented and converged.
 
 ---
 
@@ -35,12 +57,12 @@ Phase 3 upgrades the clearance operating model with **robust multi-surface entit
 
 | Principle | Status | Compliance Details |
 |:---|:---:|:---|
-| **I. Agent Framework & Model Standard** | **PASS** | Script parser and disambiguation utilize Gemini 3.6 Flash and deterministic resolution rules. |
-| **II. Live Grounding & Research Tooling** | **PASS** | Grounding search citations retained; parent brand hierarchy avoids duplicate trademark queries. |
-| **III. Architecture & Cloud Persistence** | **PASS** | Extended canonical entity schemas and alias arrays persisted atomically in Firestore via `EntityRepo.ts`. |
-| **IV. Canonical Entity & Risk Invariant** | **PASS** | Direct fulfillment of *"Clear once, recognize everywhere, reassess when context changes"*. |
-| **V. Multi-Tier Execution Modes** | **PASS** | Mode-locked execution (`TEST_MODE`, `DEMO_MODE`, `CLOUD_MODE`) fully preserved. |
-| **Observable Action Timeline** | **PASS** | Emits `STATE_TRANSITION` events upon alias matching, relationship configuration, and entity merging without CoT leakage. |
+| **I. Agent Framework & Model Standard** | **PASS** | AI evaluation reasons over deterministic mathematical rights coverage and dates using Gemini 3.6 Flash. |
+| **II. Live Grounding & Research Tooling** | **PASS** | Contractual rights records retain provenance links and license source citations without hallucination. |
+| **III. Architecture & Cloud Persistence** | **PASS** | Rights records stored in Firestore under `projects/{projectId}/rights/{rightsId}` via `RightsRepo.ts`. |
+| **IV. Canonical Entity & Risk Invariant** | **PASS** | Rights link to canonical entities and specific scene occurrences; covenants trigger contextual review. |
+| **V. Multi-Tier Execution Modes** | **PASS** | Test, demo, and cloud modes supported; deterministic expiration and coverage checks operate identically. |
+| **Observable Action Timeline** | **PASS** | Emits `STATE_TRANSITION` events upon rights creation, coverage updates, and expiration alerts without CoT leakage. |
 
 ---
 
@@ -48,25 +70,24 @@ Phase 3 upgrades the clearance operating model with **robust multi-surface entit
 
 - **Phase 0: Research & Architecture** ([`specs/016-production-clearance-model/research.md`](research.md))
 - **Phase 1: Data Model & Schema** ([`specs/016-production-clearance-model/data-model.md`](data-model.md))
-- **Phase 1: Interface Contracts** ([`specs/016-production-clearance-model/contracts/entity-resolution-contract.md`](contracts/entity-resolution-contract.md))
+- **Phase 1: Interface Contracts** ([`specs/016-production-clearance-model/contracts/rights-contract.md`](contracts/rights-contract.md))
 - **Phase 1: Quickstart Validation Guide** ([`specs/016-production-clearance-model/quickstart.md`](quickstart.md))
 
 ---
 
 ## 4. Touchpoints & Target Modules
 
-- `server/repositories/EntityRepo.ts`:
-  - Extend `CanonicalEntityData` with `aliases?: string[]`, `parentEntityId?: string`, `parentEntityName?: string`, `relationshipType?: EntityRelationshipType`.
-  - Add repository methods: `addAlias`, `removeAlias`, `setEntityRelationship`, `mergeEntities(projectId, targetId, sourceId)`.
-- `server/workflows/entityResolutionEngine.ts`:
-  - Implement deterministic multi-stage entity resolution algorithm (`resolveEntityMention`).
-- `server/workflows/canonicalRegistryWorkflow.ts`:
-  - Integrate `entityResolutionEngine` into `processScriptUpload` to resolve entity mentions against existing canonical names and aliases.
-- `server/api/entityMutationRoutes.ts` / `server/api/clearanceRoutes.ts`:
-  - Add endpoints: `POST /entities/:entityId/aliases`, `DELETE /entities/:entityId/aliases/:alias`, `POST /entities/resolve`, `PATCH /entities/:entityId/relationship`, `POST /entities/merge`.
-- `src/components/ItemEditModal.tsx` & `src/components/EntityDetailModal.tsx`:
-  - Display and edit entity aliases, parent brand relationships, and surface mention provenance badges.
-- `tests/contract/test_entity_resolution.test.ts`:
-  - Contract test for alias management, multi-stage mention resolution, hierarchy linking, and entity merging.
-- `tests/integration/entity_resolution_workflow.test.ts`:
-  - End-to-end integration test verifying multi-scene alias deduplication, parent-child relationship inheritance, and occurrence re-linking upon merge.
+- `server/repositories/RightsRepo.ts`:
+  - New repository for rights records: CRUD operations, occurrence linking, and `evaluateRightsCoverage`.
+- `server/api/rightsRoutes.ts`:
+  - Express router for rights management endpoints mounted at `/api`.
+- `server/workflows/clearanceEvaluator.ts`:
+  - Incorporate `RightsRepo.evaluateRightsCoverage` into occurrence and canonical clearance assessment logic.
+- `src/components/RightsModal.tsx`:
+  - New React modal for viewing, creating, and updating rights records and covenants.
+- `src/components/EntityRegistryTable.tsx` & `src/components/EntityDetailModal.tsx`:
+  - Display rights status badges, license grants, and covenants.
+- `tests/contract/test_rights_management.test.ts`:
+  - Contract test validating rights CRUD, occurrence linking, and coverage query responses.
+- `tests/integration/rights_clearance_workflow.test.ts`:
+  - End-to-end integration test verifying that attaching a license clears risk and enforces contractual covenants across scene occurrences.

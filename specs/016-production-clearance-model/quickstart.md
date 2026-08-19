@@ -1,78 +1,66 @@
-# Quickstart Validation Guide: Production Clearance Operating Model (Phases 2 & 3)
+# Quickstart: Production Clearance Operating Model (Phase 4 Validation)
 
-**Feature**: `specs/016-production-clearance-model` | **Date**: 2026-08-19
-
----
-
-## Scenario 1: Multi-Scene Occurrence Evaluation and Canonical Status Roll-up (Phase 2)
-
-1. Create a production project:
-   ```bash
-   curl -X POST http://localhost:3000/api/projects \
-     -H "Content-Type: application/json" \
-     -d '{"title":"Cyberfall","productionCompany":"Apex","scriptVersion":"v1.0","projectType":"Movie","executionMode":"DEMO_MODE"}'
-   ```
-2. Ingest script with an entity appearing across Scene 1 (incidental use) and Scene 4 (tarnishing/dangerous context).
-3. Trigger occurrence evaluation.
-4. Verify:
-   - Scene 1 occurrence evaluates to `NO_ISSUE_SURFACED`.
-   - Scene 4 occurrence evaluates to `ACTION_REQUIRED`.
-   - Canonical entity `overallClearanceStatus` automatically rolls up to `ACTION_REQUIRED`.
-5. Apply a scene counsel override on Scene 4 to clear it.
-6. Verify:
-   - Scene 4 effective status becomes `NO_ISSUE_SURFACED`.
-   - Canonical entity effective roll-up status updates to `NO_ISSUE_SURFACED`.
+**Feature**: `specs/016-production-clearance-model` (Phase 4 Focus)  
+**Date**: 2026-08-19  
 
 ---
 
-## Scenario 2: Alias Registration & Script Ingestion Entity Recognition (Phase 3)
+## Scenario 1: Attaching a Worldwide Perpetual Rights License to an Entity
 
-1. Create a canonical entity:
+### Steps:
+1. Create a project `POST /api/projects`.
+2. Create canonical entity `POST /api/projects/:id/entities` (`Summit Cola`).
+3. Attach a worldwide perpetual license:
    ```bash
-   curl -X POST http://localhost:3000/api/projects/:id/entities \
+   curl -X POST http://localhost:3000/api/projects/$PROJECT_ID/rights \
      -H "Content-Type: application/json" \
-     -d '{"canonicalName":"Summit Cola","entityCategory":"BRAND","description":"Flagship beverage mark"}'
+     -d '{
+       "canonicalEntityId": "'$ENTITY_ID'",
+       "licensorName": "Summit Beverage Corporation",
+       "grantType": "NON_EXCLUSIVE",
+       "territory": "WORLDWIDE",
+       "mediaWindow": "ALL_MEDIA_IN_PERPETUITY",
+       "effectiveDate": "2026-01-01",
+       "isPerpetual": true,
+       "status": "ACTIVE"
+     }'
    ```
-2. Register an alias:
-   ```bash
-   curl -X POST http://localhost:3000/api/projects/:id/entities/:entityId/aliases \
-     -H "Content-Type: application/json" \
-     -d '{"alias":"Summit Pop"}'
-   ```
-3. Test resolution of an alias mention:
-   ```bash
-   curl -X POST http://localhost:3000/api/projects/:id/entities/resolve \
-     -H "Content-Type: application/json" \
-     -d '{"mention":"Summit Pop","category":"BRAND"}'
-   ```
-4. Verify response matches `canonicalEntityId` with `matchRule: "ALIAS_MATCH"` and `confidence: 0.95`.
+4. Verify rights record created with `status: 'ACTIVE'`.
+5. Trigger clearance evaluation `POST /api/projects/:id/evaluate`.
+6. Verify entity evaluation resolves with clearance status `NO_ISSUE_SURFACED` citing active contractual rights.
 
 ---
 
-## Scenario 3: Brand / Product Hierarchy Linking (Phase 3)
+## Scenario 2: Scene-Specific Rights with Contractual Covenants
 
-1. Create a child product entity (e.g. `Porsche 911 Turbo`).
-2. Link to parent brand (`Porsche AG`):
+### Steps:
+1. Create a scene occurrence for Scene 12 (music track sync).
+2. Attach a scene-specific license with a restrictive covenant:
    ```bash
-   curl -X PATCH http://localhost:3000/api/projects/:id/entities/:childEntityId/relationship \
+   curl -X POST http://localhost:3000/api/projects/$PROJECT_ID/rights \
      -H "Content-Type: application/json" \
-     -d '{"parentEntityId":":parentEntityId","relationshipType":"BRAND_PRODUCT"}'
+     -d '{
+       "canonicalEntityId": "'$ENTITY_ID'",
+       "occurrenceIds": ["'$OCCURRENCE_ID'"],
+       "licensorName": "Sony Music Publishing",
+       "grantType": "NON_EXCLUSIVE",
+       "territory": "NORTH_AMERICA",
+       "mediaWindow": "THEATRICAL_SVOD",
+       "effectiveDate": "2026-01-01",
+       "expirationDate": "2028-12-31",
+       "isPerpetual": false,
+       "covenants": ["Prominent end credit mandatory: Courtesy of Sony Music"],
+       "status": "ACTIVE"
+     }'
    ```
-3. Verify child entity reflects `parentEntityId` and `parentEntityName`.
+3. Verify `GET /api/projects/:id/entities/:entityId/rights` returns the attached license and covenants.
+4. Verify occurrence evaluation reflects the license grant and notes the end credit covenant in `contextFlags`.
 
 ---
 
-## Scenario 4: Entity Merge and Occurrence Re-linking (Phase 3)
+## Scenario 3: Expired License Detection
 
-1. Ingest a script creating separate mentions `HyperFuel` in Scene 1 and `HyperFuel Can` in Scene 3.
-2. Merge `HyperFuel Can` into `HyperFuel`:
-   ```bash
-   curl -X POST http://localhost:3000/api/projects/:id/entities/merge \
-     -H "Content-Type: application/json" \
-     -d '{"targetCanonicalEntityId":":targetId","sourceCanonicalEntityId":":sourceId"}'
-   ```
-3. Verify:
-   - Target entity now holds all occurrences from both Scene 1 and Scene 3.
-   - Target entity `aliases` contains `"HyperFuel Can"`.
-   - Source entity is cleanly removed.
-   - Derived canonical roll-up status reflects maximum severity across all combined occurrences.
+### Steps:
+1. Attach a license with an expired expiration date (`expirationDate: "2020-01-01"`).
+2. Evaluate clearance for the occurrence/entity.
+3. Verify rights coverage evaluation flags `isCovered: false` and `hasExpiringSoon: true` / `EXPIRED`, triggering trademark/copyright risk evaluation.

@@ -1,98 +1,90 @@
-# Research: Production Clearance Operating Model (Phases 2 & 3)
+# Research & Architectural Decisions: Production Clearance Operating Model (Phase 4)
 
-**Feature**: `specs/016-production-clearance-model` | **Date**: 2026-08-19
-
----
-
-## 1. Occurrence Context vs. Abstract Entity Risk (Phase 2 - Completed)
-
-### Context
-In film and television legal clearance, risk does not attach in the abstract—it attaches to **how an asset is depicted in a specific scene**.
-- A car driven normally in Scene 1 poses zero tarnishment (`NO_ISSUE_SURFACED`).
-- The same car depicted exploding due to "faulty steering" in Scene 4 creates acute trademark tarnishment and product disparagement liability (`ACTION_REQUIRED`).
-- Conflating both into a single global entity status without occurrence tracking forces unnecessary replacements in scenes where the brand was used innocuously.
-
-### Decision
-- Make `SceneEntityOccurrenceData` the primary evaluation record.
-- Evaluator processes `canonical entity research` + `occurrence excerpt text` + `scene action context`.
-- Persist individual risk verdicts on each occurrence record.
+**Feature**: `specs/016-production-clearance-model` (Phase 4 Focus)  
+**Date**: 2026-08-19  
+**Status**: Completed  
 
 ---
 
-## 2. Canonical Status Deterministic Roll-Up (Phase 2 - Completed)
+## 1. Rights & Restrictions Domain Model Architecture
 
-### Context
-Clearance coordinators still need a top-level summary of each brand or entity across the entire script.
+### Context & Problem
+In studio film and television productions, legal clearances are governed not only by baseline intellectual property doctrines (e.g. fair use, incidental use), but primarily by **executed contractual agreements** (sync licenses, trademark release forms, location agreements, appearance releases). 
+
+Clearance software must treat Rights and Restrictions as first-class domain entities capable of linking either to the global canonical entity or to specific scene occurrences, while capturing territorial boundaries, media distribution windows, expiration dates, and restrictive covenants.
 
 ### Decision
-- Derive the canonical entity's `overallClearanceStatus` deterministically from its occurrences:
-  - Severity ranking:
-    1. `ACTION_REQUIRED` (Severity 4 - Red)
-    2. `REVIEW_RECOMMENDED` (Severity 3 - Yellow)
-    3. `INSUFFICIENT_EVIDENCE` (Severity 2 - Gray)
-    4. `NO_ISSUE_SURFACED` (Severity 1 - Green)
-- If an entity has multiple occurrences, its canonical status is the maximum severity across its active occurrences.
-- If an entity has no occurrences, its status reflects baseline category risk.
+Implement `RightsRecordData` in a dedicated repository `server/repositories/RightsRepo.ts` with Firestore collection `projects/{projectId}/rights/{rightsId}`.
+
+```typescript
+export interface RightsRecordData {
+  id: string;
+  projectId: string;
+  canonicalEntityId: string;
+  occurrenceIds?: string[]; // Empty = all occurrences of entity; or specific occurrences
+  licensorName: string;
+  grantType: 'EXCLUSIVE' | 'NON_EXCLUSIVE' | 'FAIR_USE' | 'PUBLIC_DOMAIN' | 'PROD_MADE';
+  territory: 'WORLDWIDE' | 'NORTH_AMERICA' | 'EUROPE' | 'US_ONLY' | 'SPECIFIED_COUNTRIES';
+  territoryDetails?: string;
+  mediaWindow: 'ALL_MEDIA_IN_PERPETUITY' | 'THEATRICAL_SVOD' | 'THEATRICAL_ONLY' | 'LINEAR_TV' | 'FESTIVAL_ONLY' | 'DIGITAL_PROMO';
+  effectiveDate: string;
+  expirationDate?: string;
+  isPerpetual: boolean;
+  covenants?: string[];
+  feeAmount?: number;
+  currency?: string;
+  documentReferenceUrl?: string;
+  status: 'ACTIVE' | 'PENDING_SIGNATURE' | 'EXPIRED' | 'REVOKED';
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### Rationale
+1. **Explicit Granularity**: Allows studio counsel to grant project-wide rights (e.g. hero vehicle purchased with worldwide rights) or scene-specific rights (e.g. music synchronization clearance for Scene 12 only).
+2. **Deterministic Expiration Calculation**: Standardized ISO dates (`YYYY-MM-DD`) enable TypeScript code to perform deterministic expiration checks (`expirationDate < today`) and compute warning horizons.
+3. **Covenants Tracking**: Contractual negative/positive covenants (e.g. *"Must not be consumed by antagonist"*, *"End credit mandatory"*) are captured structuredly so evaluation engines and counsel review workflows highlight compliance conditions.
 
 ---
 
-## 3. Preserving 003 Scene Override Precedence (Phase 2 - Completed)
+## 2. Deterministic Rights Coverage & Evaluator Integration
 
-### Context
-Feature 003 established that scene-specific counsel overrides take strict precedence over canonical overrides and baseline evaluations.
+### Context & Problem
+When an entity or occurrence is evaluated by `clearanceEvaluator.ts`, how should contractual rights modify the risk status?
 
 ### Decision
-- The resolution chain for an occurrence is:
-  $$\text{Effective Occurrence} = \text{Scene Counsel Override} ?? \text{Occurrence Evaluated Status} ?? \text{Canonical Override} ?? \text{Baseline}$$
-- The canonical roll-up evaluates each occurrence's *effective* status, so a signed scene override that clears a scene properly contributes to the project summary.
+`clearanceEvaluator.ts` invokes `rightsRepo.evaluateRightsCoverage(projectId, entityId, occurrenceId)`.
+
+1. **Active Perpetual / In-Window License**:
+   - If `status === 'ACTIVE'` and (`isPerpetual` or `expirationDate >= now`):
+     - If no restrictive covenants exist: verdict resolves to `NO_ISSUE_SURFACED` with rationale citing the executed agreement (`"Covered by active license from [LicensorName]"`).
+     - If covenants exist: verdict resolves to `REVIEW_RECOMMENDED` or `NO_ISSUE_SURFACED` with covenants flagged in `contextFlags: ["COVENANT: End credit required"]`.
+2. **Expired / Revoked License**:
+   - If license is expired or revoked: flags `LICENSE_EXPIRED` and falls back to baseline trademark/copyright risk evaluation.
+3. **Pending Signature**:
+   - Status remains `REVIEW_RECOMMENDED` (`"Clearance agreement pending signature from [LicensorName]"`).
+
+### Rationale
+This matches the constitution's **Deterministic Calculation Pattern**: deterministic code computes the mathematical date deltas and status checks, while Gemini/evaluator uses the output to formulate the legal risk rationale.
 
 ---
 
-## 4. Upgraded Entity Resolution & Alias Management (Phase 3 - Active Target)
+## 3. REST API Contract Design
 
-### Context
-Screenplays and production notes refer to the same brand, character, song, or landmark using varied surface names, abbreviations, product variations, and informal nicknames (e.g., *"Coke"*, *"Coca-Cola"*, *"Diet Coke"*, *"Coca-Cola Classic"*, or *"911"*, *"Porsche 911"*, *"Porsche Carrera"*).
-Without explicit alias tracking and resolution rules:
-1. Duplicate canonical entities are created for minor textual variations.
-2. Grounding search queries are re-executed repeatedly for identical corporate marks, wasting live research quotas and slowing down script parsing.
-3. Clearance counsel sign-offs on a canonical brand fail to reflect on scenes referencing its common alias.
-
-### Decision
-- Extend `CanonicalEntityData` with `aliases: string[]`.
-- Implement a deterministic multi-stage Entity Resolution Engine:
-  1. **Stage 1 (Exact Canonical Match)**: Case-insensitive match against `canonicalName` (Confidence: 1.0, Match Rule: `EXACT_CANONICAL`).
-  2. **Stage 2 (Exact Alias Match)**: Case-insensitive match against any entry in `aliases` (Confidence: 0.95, Match Rule: `ALIAS_MATCH`).
-  3. **Stage 3 (Normalized Lexical Match)**: Stripped punctuation, normalized whitespace, and common suffix removal (Confidence: 0.90, Match Rule: `NORMALIZED_EQUIVALENCE`).
-  4. **Stage 4 (Parent/Product Hierarchy Match)**: Prefix matching against registered parent brands and product lines (Confidence: 0.85, Match Rule: `HIERARCHY_PARENT_MATCH`).
+### Endpoints:
+- `POST /api/projects/:id/rights`: Register new rights/license record.
+- `GET /api/projects/:id/rights`: List all project rights records.
+- `GET /api/projects/:id/entities/:entityId/rights`: List rights records attached to a specific entity.
+- `GET /api/projects/:id/rights/:rightsId`: Retrieve a single rights record.
+- `PATCH /api/projects/:id/rights/:rightsId`: Update rights record details or covenants.
+- `DELETE /api/projects/:id/rights/:rightsId`: Delete/revoke rights record.
 
 ---
 
-## 5. Brand & Product Relationships (Hierarchy) (Phase 3 - Active Target)
+## 4. Alternatives Considered
 
-### Context
-Many cleared items are product lines, sub-brands, or models manufactured by a parent corporate brand (e.g. *Porsche 911* is a product of *Porsche AG*; *Summit Cola Zero* is a variation of *Summit Cola*).
-Clearance research on the parent mark (trademark registration, corporate owner, known litigation posture) is directly relevant to child products.
-
-### Decision
-- Extend `CanonicalEntityData` with:
-  - `parentEntityId?: string`
-  - `parentEntityName?: string`
-  - `relationshipType?: 'BRAND_PRODUCT' | 'SUBSIDIARY' | 'PARENT_COMPANY' | 'PRODUCT_LINE' | 'VARIATION'`
-- When resolving candidate entities or performing clearance evaluation:
-  - Child entities can inherit grounding citations and corporate ownership metadata from parent entities while preserving their own occurrence context and scene-specific risks.
-
----
-
-## 6. Entity Merge & Material Equivalence Reuse Semantics (Phase 3 - Active Target)
-
-### Context
-When a clearance coordinator identifies that two distinct entities in the registry actually refer to the same real-world brand or asset (e.g., `Coke` and `Coca-Cola Can` were both extracted from different scenes), they need an atomic, audit-tracked operation to merge them without losing occurrences, research citations, or signed counsel overrides.
-
-### Decision
-- Provide a transactional merge workflow: `mergeEntities(projectId, targetCanonicalEntityId, sourceCanonicalEntityId)`:
-  1. Transfer all occurrences from source entity to target entity.
-  2. Append source entity's `canonicalName` and any existing `aliases` into target entity's `aliases` array (deduplicated).
-  3. Transfer or merge citations and replacement cards if applicable.
-  4. Delete the source entity record.
-  5. Deterministically recompute target entity's derived roll-up status across all combined occurrences.
-  6. Emit an observable `STATE_TRANSITION` timeline event detailing the entity merge.
+| Approach | Assessment | Decision |
+|:---|:---|:---|
+| **Embed Rights in CanonicalEntityData** | Inflexible for multi-license arrangements (e.g. separate sync license for Scene 4 and master license for Scene 8). | **Rejected**: Dedicated `RightsRecordData` collection provides clean relational links and auditability. |
+| **Store Rights only in Counsel Overrides** | Overrides are counsel interventions rather than formal license agreements with financial/territorial terms. | **Rejected**: Overrides reference legal judgment; Rights records represent contractual reality. |
+| **Complex Rights Expression Language (REL)** | Over-engineering that complicates standard film clearance without operational benefit. | **Rejected**: Standardized enums (`territory`, `mediaWindow`, `grantType`) + string covenants provide 100% of required expressiveness. |

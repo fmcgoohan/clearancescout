@@ -1,133 +1,98 @@
-# Data Model: Production Clearance Operating Model (Phases 2 & 3)
+# Data Model: Production Clearance Operating Model (Phase 4)
 
-**Feature**: `specs/016-production-clearance-model` | **Date**: 2026-08-19
+**Feature**: `specs/016-production-clearance-model` (Phase 4 Focus)  
+**Date**: 2026-08-19  
+**Status**: Completed  
 
 ---
 
-## 1. Canonical Entity & Occurrence Schemas
+## 1. Rights & Restrictions Entity
+
+### `RightsRecordData`
+Stored in Firestore at `projects/{projectId}/rights/{rightsId}`.
 
 ```typescript
-export type EntityRelationshipType =
-  | 'BRAND_PRODUCT'
-  | 'SUBSIDIARY'
-  | 'PARENT_COMPANY'
-  | 'PRODUCT_LINE'
-  | 'VARIATION';
+export type GrantType =
+  | 'EXCLUSIVE'
+  | 'NON_EXCLUSIVE'
+  | 'FAIR_USE'
+  | 'PUBLIC_DOMAIN'
+  | 'PROD_MADE';
 
-export interface CanonicalEntityData {
+export type TerritoryType =
+  | 'WORLDWIDE'
+  | 'NORTH_AMERICA'
+  | 'EUROPE'
+  | 'US_ONLY'
+  | 'SPECIFIED_COUNTRIES';
+
+export type MediaWindowType =
+  | 'ALL_MEDIA_IN_PERPETUITY'
+  | 'THEATRICAL_SVOD'
+  | 'THEATRICAL_ONLY'
+  | 'LINEAR_TV'
+  | 'FESTIVAL_ONLY'
+  | 'DIGITAL_PROMO';
+
+export type RightsStatus =
+  | 'ACTIVE'
+  | 'PENDING_SIGNATURE'
+  | 'EXPIRED'
+  | 'REVOKED';
+
+export interface RightsRecordData {
   id: string;
   projectId: string;
-  canonicalName: string;
-  entityCategory: EntityCategory;
-  description: string;
-  overallClearanceStatus: ClearanceStatus; // Deterministically derived from occurrences
-  origin?: EntityOrigin;
-  
-  // Phase 3 Entity Resolution & Hierarchy Extensions
-  aliases?: string[];
-  parentEntityId?: string;
-  parentEntityName?: string;
-  relationshipType?: EntityRelationshipType;
-
-  // Counsel Overrides & Assets
-  isOverridden?: boolean;
-  latestOverride?: {
-    overrideId: string;
-    overrideStatus: ClearanceStatus;
-    rationale: string;
-    counselName: string;
-    timestamp: string;
-  };
-  replacementCard?: any;
+  canonicalEntityId: string;
+  canonicalEntityName?: string;
+  occurrenceIds?: string[]; // Empty or omitted = applies to all occurrences of this entity
+  licensorName: string;
+  grantType: GrantType;
+  territory: TerritoryType;
+  territoryDetails?: string;
+  mediaWindow: MediaWindowType;
+  effectiveDate: string; // ISO date string YYYY-MM-DD
+  expirationDate?: string; // ISO date string YYYY-MM-DD, null if isPerpetual
+  isPerpetual: boolean;
+  covenants?: string[];
+  feeAmount?: number;
+  currency?: string;
+  documentReferenceUrl?: string;
+  status: RightsStatus;
   createdAt: string;
   updatedAt: string;
 }
-
-export interface SceneEntityOccurrenceData {
-  id: string;
-  sceneId: string;
-  canonicalEntityId: string;
-  scriptLineNumber: number;
-  excerptText: string;
-  usageContext: string;
-  sentimentScore?: number;
-  exposureDurationSeconds?: number;
-  
-  // Phase 2 Occurrence-Level Evaluation Fields
-  clearanceStatus?: ClearanceStatus;
-  riskScore?: number;
-  riskRationale?: string;
-  contextFlags?: string[];
-  citations?: any[];
-  evaluatedAt?: string;
-
-  // Phase 3 Surface Mention Provenance
-  surfaceMention?: string;
-  matchedVia?: 'EXACT_CANONICAL' | 'ALIAS_MATCH' | 'NORMALIZED_EQUIVALENCE' | 'HIERARCHY_PARENT_MATCH' | 'MANUAL_ENTRY';
-}
 ```
 
 ---
 
-## 2. Entity Resolution & Merge Contracts Data Structures
+## 2. Coverage Evaluation Model
+
+### `RightsCoverageResult`
+Returned by `RightsRepo.evaluateRightsCoverage`.
 
 ```typescript
-export type MatchRule =
-  | 'EXACT_CANONICAL'
-  | 'ALIAS_MATCH'
-  | 'NORMALIZED_EQUIVALENCE'
-  | 'HIERARCHY_PARENT_MATCH'
-  | 'NONE';
-
-export interface EntityResolutionResult {
-  matched: boolean;
-  canonicalEntityId?: string;
-  canonicalName?: string;
-  entityCategory?: EntityCategory;
-  confidence: number;
-  matchRule: MatchRule;
-  matchedAlias?: string;
-  parentEntity?: {
-    id: string;
-    name: string;
-    relationshipType: EntityRelationshipType;
-  };
-}
-
-export interface MergeEntitiesResult {
-  success: boolean;
-  targetEntity: CanonicalEntityData;
-  sourceEntityId: string;
-  transferredOccurrencesCount: number;
-  combinedAliases: string[];
-  derivedCanonicalStatus: ClearanceStatus;
-  mergedAt: string;
+export interface RightsCoverageResult {
+  isCovered: boolean;
+  activeRights: RightsRecordData[];
+  covenants: string[];
+  hasExpiringSoon: boolean;
+  expirationWarning?: string;
+  summaryText: string;
 }
 ```
 
 ---
 
-## 3. Entity Resolution & Hierarchy Architecture
+## 3. Relationships to Existing Entities
 
 ```mermaid
-flowchart TD
-    Mention[Raw Script Entity Mention] --> ResEngine[Entity Resolution Engine]
-    
-    subgraph MultiStageResolution["Multi-Stage Resolution Matching"]
-        ResEngine --> CheckExact{1. Exact Canonical Name?}
-        CheckExact -- Yes --> MatchedExact[Confidence 1.0: EXACT_CANONICAL]
-        CheckExact -- No --> CheckAlias{2. Exact Alias Match?}
-        CheckAlias -- Yes --> MatchedAlias[Confidence 0.95: ALIAS_MATCH]
-        CheckAlias -- No --> CheckNorm{3. Normalized Lexical Match?}
-        CheckNorm -- Yes --> MatchedNorm[Confidence 0.90: NORMALIZED_EQUIVALENCE]
-        CheckNorm -- No --> CheckParent{4. Parent Brand Prefix Match?}
-        CheckParent -- Yes --> MatchedParent[Confidence 0.85: HIERARCHY_PARENT_MATCH]
-        CheckParent -- No --> NewEntity[Create New Canonical Entity]
-    end
-
-    MatchedExact --> LinkOcc[Attach Scene Occurrence to Existing Canonical]
-    MatchedAlias --> LinkOcc
-    MatchedNorm --> LinkOcc
-    MatchedParent --> LinkOccChild[Attach Scene Occurrence to Child/Parent Entity]
-    NewEntity --> LinkOcc
+erDiagram
+    PROJECT ||--o{ CANONICAL_ENTITY : contains
+    PROJECT ||--o{ SCENE : contains
+    PROJECT ||--o{ RIGHTS_RECORD : contains
+    SCENE ||--o{ OCCURRENCE : contains
+    CANONICAL_ENTITY ||--o{ OCCURRENCE : references
+    CANONICAL_ENTITY ||--o{ RIGHTS_RECORD : covered_by
+    RIGHTS_RECORD ||--o{ OCCURRENCE : restricts
 ```
