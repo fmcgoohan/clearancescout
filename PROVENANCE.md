@@ -4,7 +4,7 @@
 **License**: MIT  
 **Date Established**: August 2026  
 **Status**: Active Production Reference  
-**Verified Test Baseline**: 108 Tests Passing across 56 Suites (100% Pass Rate)
+**Verified Test Baseline**: 111 Tests Passing across 59 Suites (100% Pass Rate)
 
 ---
 
@@ -33,7 +33,7 @@ ClearanceScout was engineered to solve one of the entertainment industry's most 
 
 ---
 
-## 3. Complete Architectural Progression & Feature History (001–016)
+## 3. Complete Architectural Progression & Feature History (001–017)
 
 ```mermaid
 timeline
@@ -54,6 +54,7 @@ timeline
     014 Accessible UI : WCAG 2.1 AA : Keyboard Navigation : Focus Rings : Mobile Stacking
     015 Quota Management : Project Live Quotas : Header Counter : Fail-Visible 429 Guards
     016 Production Operating Model : Project Types : Occurrence Unit : Entity Aliases : Rights Catalog : Scene Readiness : Action Queues : Placeholders : Live Self-Clearance : Dashboard : Extended Binder
+    017 Judge-Ready Demo : 1-Click Ingest & Auto-Eval : Populated Dashboard & Binder : Production Workspace Rebrand
 ```
 
 ### Feature 001: Script Workspace & Canonical Entity Registry
@@ -134,6 +135,11 @@ timeline
 - **Phase 9 (Operations Dashboard)**: Executive operational cockpit surfacing active shooting blockers, expiring rights ($\le 90$ days), active placeholders, scene readiness breakdown, and department queues with 1-click mitigation shortcuts.
 - **Phase 10 (Extended Legal Binder)**: Comprehensive legal delivery binder compiling multi-domain clearance dossiers with verifiable 64-character SHA-256 cryptographic integrity digest and instant JSON, Markdown, and print-ready PDF export formats.
 
+### Feature 017: Judge-Ready 1-Click Demo & Production Workspace Rebrand
+- **1-Click Demo Automation Workflow (`demoAutomationWorkflow.ts`)**: Loads the bundled entrant-authored screenplay (*"The Neon Horizon"*), resolves all entities across 10 scenes, batch executes fixture-backed clearance evaluations with `DEMO_FIXTURE` (📦) provenance, attaches sample rights (`Summit Beverage Group LLC`), creates sample prop placeholders (`NovaTech Zenith`), and computes scene shooting readiness without requiring external API keys.
+- **Populated Operations Dashboard & Extended Legal Binder**: Immediately populates executive KPIs, Shoot Readiness %, scene readiness distribution (`FINAL CLEAR`, `WORKING CLEAR`, `RED`), active blockers, upcoming rights expirations, active placeholders, department work queues, and verifiable 64-character SHA-256 integrity seal upon sample load.
+- **Production Workspace Rebranding**: Rebranded all user-facing interface copy from "MVP Workspace" / "ClearanceScout MVP" to "ClearanceScout Production Clearance Workspace" / "Production Clearance Studio".
+
 ---
 
 ## 4. Fictional-Content & Anti-Hallucination Policy
@@ -147,7 +153,8 @@ ClearanceScout operates under a strict, non-negotiable fictional-content and evi
 
 ## 5. Verification & Test Attestation
 
-As of Feature 016, the entire ClearanceScout test suite passes with 100% success rate across all contract, unit, and integration tests:
-- **Contract Tests**: Verified endpoint schemas, SSE event taxonomies, health checks, counsel overrides, multi-format parsers, project types, occurrence evaluation, entity resolution, rights management, scene readiness, action queues, placeholders, evidence self-clearance, operations dashboard, and extended binder export.
-- **Integration Tests**: Verified end-to-end script ingestion, candidate clearance loops, counsel overrides with scene isolation, batch research, offline replay, and auditable binder compilation.
+As of Feature 017, the entire ClearanceScout test suite passes with 100% success rate across all contract, unit, and integration tests:
+- **Contract Tests**: Verified endpoint schemas, SSE event taxonomies, health checks, counsel overrides, multi-format parsers, project types, occurrence evaluation, entity resolution, rights management, scene readiness, action queues, placeholders, evidence self-clearance, operations dashboard, extended binder export, and 1-click judge demo automation.
+- **Integration Tests**: Verified end-to-end script ingestion, candidate clearance loops, counsel overrides with scene isolation, batch research, offline replay, judge demo workflows, and auditable binder compilation.
+- **Test Baseline**: 111 tests passing across 59 test suites (100% pass rate).
 - **Build Verification**: Multi-stage production container and Vite production bundle compile with 0 errors across 49 modules.

@@ -6,7 +6,7 @@
 [![Runtime](https://img.shields.io/badge/Model-Gemini%203.6%20Flash-4285F4)](https://deepmind.google/technologies/gemini/)
 [![Grounding](https://img.shields.io/badge/Grounding-Parallel%20Web%20API-06B6D4)](https://parallel.ai)
 [![Deployment](https://img.shields.io/badge/Platform-Google%20Cloud%20Run-34A853)](https://cloud.google.com/run)
-[![Tests](https://img.shields.io/badge/Tests-108%20Passing%20(56%20Suites)-34D399)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-111%20Passing%20(59%20Suites)-34D399)](tests/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-34A853)](https://clearancescout-996154354252.us-central1.run.app)
 
 **Live demo:** [https://clearancescout-996154354252.us-central1.run.app](https://clearancescout-996154354252.us-central1.run.app)
@@ -97,6 +97,11 @@ ClearanceScout is an enterprise agentic platform designed for studio legal couns
 ### 20. Accessible, Responsive Studio Design (`014`)
 - WCAG 2.1 AA accessible with full keyboard navigation (`Tab`, `Enter`, `Escape`), high-contrast focus rings, touch targets ($\ge 44\text{px}$), and responsive mobile stacking.
 
+### 21. Judge-Ready 1-Click Demo & Production Workspace Rebrand (`017`)
+- Single-click demo loading (`POST /api/projects/:id/script/demo`) ingesting *"The Neon Horizon"*, auto-running deterministic batch evaluations with `DEMO_FIXTURE` (📦) provenance, attaching active beverage rights (`Summit Beverage Group LLC`) and approved fictional placeholders (`NovaTech Zenith`), and computing scene readiness without requiring external API keys.
+- Immediately populates the Operations Dashboard and Legal Clearance Binder with realistic multi-scene metrics, department queues, and verifiable 64-character SHA-256 integrity seal.
+- Complete UI rebranding from "MVP Workspace" to "Production Clearance Workspace" / "Production Clearance Studio".
+
 ---
 
 ## 🏛️ System Architecture
@@ -143,7 +148,7 @@ graph TD
 
 | Mode | Target | Description |
 |:---|:---|:---|
-| **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (108/108 tests pass). |
+| **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (111/111 tests pass). |
 | **`DEMO_MODE`** | Interactive Evaluation | Zero-configuration evaluation using synthetic datasets and bundled demo screenplay ("The Neon Horizon"). |
 | **`CLOUD_MODE`** | Production Runtime | Live Google Gemini 3.6 Flash and Parallel Search APIs. Fails visibly with diagnostics if credentials are missing. |
 
@@ -166,7 +171,7 @@ npm install
 ```bash
 npm test
 ```
-*Executes all 108 tests across 56 test files spanning contract and integration suites with 0 failures.*
+*Executes all 111 tests across 59 test files spanning contract and integration suites with 0 failures.*
 
 ### 3. Build & Run
 ```bash
