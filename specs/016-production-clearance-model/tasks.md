@@ -1,8 +1,8 @@
-# Tasks: Production Clearance Operating Model (Phases 1, 2, 3, 4, 5, 6, 7 & 8)
+# Tasks: Production Clearance Operating Model (Phases 1, 2, 3, 4, 5, 6, 7, 8 & 9)
 
 **Feature**: `specs/016-production-clearance-model` | **Branch**: `016-production-clearance-model`  
 **Input**: Plan from [`specs/016-production-clearance-model/plan.md`](plan.md), Spec from [`specs/016-production-clearance-model/spec.md`](spec.md)  
-**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed), Phase 5 (Completed), Phase 6 (Completed), Phase 7 (Completed) & Phase 8 (Active Target). Phases 9 through 10 are deliberately excluded from this task list.
+**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed), Phase 5 (Completed), Phase 6 (Completed), Phase 7 (Completed), Phase 8 (Completed) & Phase 9 (Active Target). Phase 10 is deliberately excluded from this task list.
 
 ---
 
@@ -329,28 +329,74 @@
 
 ---
 
+## Phase 33: Phase 9 Setup (Production Operations Dashboard Aggregation Service)
+
+**Purpose**: Implement `dashboardEngine.ts` to aggregate cross-repository metrics into `ProductionDashboardData`.
+
+- [ ] T072 [P] Create `ProductionDashboardData`, `ProductionDashboardKPIs`, `BlockerItemDetail`, `ExpiringRightsDetail`, `ActivePlaceholderDetail` schemas and `dashboardEngine.ts` in `server/workflows/dashboardEngine.ts` aggregating metrics across `sceneReadinessEngine`, `rightsRepo`, `placeholderRepo`, `actionNotificationRepo`, and `entityRepo`
+
+---
+
+## Phase 34: Phase 9 Foundational (Dashboard REST API Endpoints)
+
+**Purpose**: Implement Express endpoints for dashboard summary querying.
+
+- [ ] T073 [P] Implement Express router in `server/api/dashboardRoutes.ts` (`GET /projects/:id/dashboard`) and mount in `server/index.ts`
+
+**Checkpoint**: Dashboard engine and REST API ready - UI integration and test suites can proceed in parallel.
+
+---
+
+## Phase 35: User Story 9 - Production Clearance Operations Dashboard (Priority: P9) 🎯 Phase 9 Target
+
+**Goal**: Provide a single centralized operational dashboard displaying active shooting blockers, scene readiness distribution (`FINAL CLEAR`, `WORKING CLEAR`, `RED`), upcoming rights expirations ($\le 90$ days), active placeholders, pending department actions, and recent activity feed with direct mitigation shortcuts.
+
+**Independent Test**: Query `GET /api/projects/:id/dashboard`; verify consolidated KPIs, scene distribution, blocker triage list, expiring rights, and department work queue.
+
+### Tests for User Story 9
+
+- [ ] T074 [P] [US9] Contract tests for dashboard KPI calculations, scene distribution, blocker extraction, and rights expiration filtering in `tests/contract/test_production_dashboard.test.ts`
+
+### Implementation for User Story 9
+
+- [ ] T075 [P] [US9] Create `src/components/ProductionDashboardModal.tsx` displaying executive KPI cards, scene readiness distribution graphs, blocker triage table with direct mitigation triggers (`Add Rights`, `Attach Placeholder`, `Counsel Override`), expiring rights alerts, and department queues
+- [ ] T076 [US9] Update `src/pages/WorkspacePage.tsx` to add `📊 Operations Dashboard` navigation trigger and wire up `ProductionDashboardModal`
+
+**Checkpoint**: Phase 9 core functionality complete. Production leadership has centralized visibility over shoot readiness and blockers.
+
+---
+
+## Phase 36: Phase 9 Polish & Cross-Cutting Concerns
+
+**Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
+
+- [ ] T077 [P] Implement end-to-end integration test in `tests/integration/production_dashboard_workflow.test.ts` verifying multi-scene project dashboard aggregation, blocker triage, and live mitigation state refresh
+- [ ] T078 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [ ] T079 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
 graph TD
-    Phases1to7[Phases 1-7 Complete T001-T062] --> Phase29[Phase 29: ReplacementRepo.ts & ReplacementAgent.ts T063]
-    Phase29 --> Phase30_Gen[Phase 30: replacementGenerator.ts T064]
-    Phase29 --> Phase30_Tool[Phase 30: parallelSearchTool.ts T065]
-    Phase30_Gen --> US8_Tests[T066: Contract Tests]
-    Phase30_Tool --> US8_Tests
-    Phase30_Gen --> US8_UI_Timeline[T067: TimelineDrawer.tsx]
-    US8_UI_Timeline --> US8_UI_Comparison[T068: ComparisonModal.tsx]
-    US8_Tests --> Phase32[Phase 32: Polish & Integration]
-    US8_UI_Comparison --> Phase32
+    Phases1to8[Phases 1-8 Complete T001-T071] --> Phase33[Phase 33: dashboardEngine.ts T072]
+    Phase33 --> Phase34[Phase 34: dashboardRoutes.ts T073]
+    Phase34 --> US9_Tests[T074: Contract Tests]
+    Phase34 --> US9_UI_Modal[T075: ProductionDashboardModal.tsx]
+    US9_UI_Modal --> US9_UI_Page[T076: WorkspacePage.tsx Integration]
+    US9_Tests --> Phase36[Phase 36: Polish & Integration]
+    US9_UI_Page --> Phase36
 ```
 
 ---
 
 ## Parallel Execution Examples
 
-### User Story 8
-- `T064` (`replacementGenerator.ts`) can run in parallel with `T065` (`parallelSearchTool.ts`).
-- `T066` (`tests/contract/test_evidence_self_clearance.test.ts`) can run in parallel with `T067` (`src/components/TimelineDrawer.tsx`).
+### User Story 9
+- `T072` (`dashboardEngine.ts`) can run in parallel with `T073` (`dashboardRoutes.ts`).
+- `T074` (`tests/contract/test_production_dashboard.test.ts`) can run in parallel with `T075` (`src/components/ProductionDashboardModal.tsx`).
 
 ### Polish Phase
-- `T069` (integration test in `tests/integration/evidence_self_clearance_workflow.test.ts`) can run in parallel with `T070` (`quickstart.md`).
+- `T077` (integration test in `tests/integration/production_dashboard_workflow.test.ts`) can run in parallel with `T078` (`quickstart.md`).
+
