@@ -1,8 +1,8 @@
-# Tasks: Production Clearance Operating Model (Phases 1, 2, 3, 4, 5, 6, 7, 8 & 9)
+# Tasks: Production Clearance Operating Model (Phases 1 through 10)
 
 **Feature**: `specs/016-production-clearance-model` | **Branch**: `016-production-clearance-model`  
 **Input**: Plan from [`specs/016-production-clearance-model/plan.md`](plan.md), Spec from [`specs/016-production-clearance-model/spec.md`](spec.md)  
-**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed), Phase 5 (Completed), Phase 6 (Completed), Phase 7 (Completed), Phase 8 (Completed) & Phase 9 (Active Target). Phase 10 is deliberately excluded from this task list.
+**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed), Phase 5 (Completed), Phase 6 (Completed), Phase 7 (Completed), Phase 8 (Completed), Phase 9 (Completed) & Phase 10 (Active Target).
 
 ---
 
@@ -376,27 +376,78 @@
 
 ---
 
+## Phase 37: Phase 10 Setup (Clearance Binder Domain Extension & SHA-256 Digest)
+
+**Purpose**: Extend `ClearanceBinderData` schema in `server/repositories/BinderRepo.ts` with `rightsAgreements`, `placeholders`, `sceneReadinessSchedule`, and `unresolvedActions`, and update `generateIntegrityDigest` to compute SHA-256 over all canonical data fields.
+
+- [ ] T080 [P] Extend `ClearanceBinderData` and `BinderProjectSummary` schemas in `server/repositories/BinderRepo.ts` with `rightsAgreements`, `placeholders`, `sceneReadinessSchedule`, and `unresolvedActions`, and update `generateIntegrityDigest` to compute SHA-256 over all canonical data fields
+
+---
+
+## Phase 38: Phase 10 Foundational (Binder Compilation Workflow & REST API Endpoints)
+
+**Purpose**: Update `server/workflows/binderExportWorkflow.ts` and `server/api/binderRoutes.ts` to aggregate cross-domain data from all 8 clearance modules, compute SHA-256 digest, and emit `BINDER_EXPORT` SSE timeline events.
+
+- [ ] T081 [P] Update `server/workflows/binderExportWorkflow.ts` to aggregate cross-domain data from `rightsRepo`, `placeholderRepo`, `sceneReadinessEngine`, and `actionNotificationRepo`, compute SHA-256 digest, and emit `BINDER_EXPORT` SSE timeline events
+- [ ] T082 [P] Update `server/api/binderRoutes.ts` to support `GET /projects/:id/binder`, `POST /projects/:id/binder/export`, and `GET /projects/:id/binder/markdown` with formatted Markdown tables and SHA-256 seal
+
+**Checkpoint**: Extended binder engine and REST APIs ready - UI integration and test suites can proceed in parallel.
+
+---
+
+## Phase 39: User Story 10 - Production Legal Clearance Binder (Priority: P10) 🎯 Phase 10 Target
+
+**Goal**: Deliver an audit-grade, immutable Legal Clearance Binder containing executive summary, rights catalog, fictional placeholders, scene readiness schedule, unresolved actions, and cryptographic SHA-256 integrity seal with JSON and Markdown export formats.
+
+**Independent Test**: Execute `POST /api/projects/:id/binder/export`; verify complete JSON structure, valid SHA-256 digest, rights agreements catalog, active placeholders, and formatted Markdown generation.
+
+### Tests for User Story 10
+
+- [ ] T083 [P] [US10] Contract tests for extended binder export payload, Markdown generation, and SHA-256 checksum verification in `tests/contract/test_binder_export.test.ts`
+
+### Implementation for User Story 10
+
+- [ ] T084 [P] [US10] Update `src/components/BinderExportModal.tsx` to render multi-tab sections (Executive Summary, Scene Readiness Schedule, Rights Catalog, Placeholders Table, Unresolved Actions, and SHA-256 Checksum Badge) with JSON and Markdown download actions
+- [ ] T085 [US10] Update `src/pages/WorkspacePage.tsx` to ensure `📁 Clearance Binder` export trigger opens extended `BinderExportModal`
+
+**Checkpoint**: Phase 10 complete. Full production clearance operating model is operational across all 10 phases.
+
+---
+
+## Phase 40: Phase 10 Polish & Cross-Cutting Concerns
+
+**Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
+
+- [ ] T086 [P] Implement end-to-end integration test in `tests/integration/binder_export_workflow.test.ts` verifying complete multi-domain binder compilation with rights, placeholders, scene readiness, and open actions
+- [ ] T087 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [ ] T088 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
 graph TD
-    Phases1to8[Phases 1-8 Complete T001-T071] --> Phase33[Phase 33: dashboardEngine.ts T072]
-    Phase33 --> Phase34[Phase 34: dashboardRoutes.ts T073]
-    Phase34 --> US9_Tests[T074: Contract Tests]
-    Phase34 --> US9_UI_Modal[T075: ProductionDashboardModal.tsx]
-    US9_UI_Modal --> US9_UI_Page[T076: WorkspacePage.tsx Integration]
-    US9_Tests --> Phase36[Phase 36: Polish & Integration]
-    US9_UI_Page --> Phase36
+    Phases1to9[Phases 1-9 Complete T001-T079] --> Phase37[Phase 37: BinderRepo.ts T080]
+    Phase37 --> Phase38_Workflow[Phase 38: binderExportWorkflow.ts T081]
+    Phase37 --> Phase38_Routes[Phase 38: binderRoutes.ts T082]
+    Phase38_Workflow --> US10_Tests[T083: Contract Tests]
+    Phase38_Routes --> US10_Tests
+    Phase38_Workflow --> US10_UI_Modal[T084: BinderExportModal.tsx]
+    US10_UI_Modal --> US10_UI_Page[T085: WorkspacePage.tsx Integration]
+    US10_Tests --> Phase40[Phase 40: Polish & Integration]
+    US10_UI_Page --> Phase40
 ```
 
 ---
 
 ## Parallel Execution Examples
 
-### User Story 9
-- `T072` (`dashboardEngine.ts`) can run in parallel with `T073` (`dashboardRoutes.ts`).
-- `T074` (`tests/contract/test_production_dashboard.test.ts`) can run in parallel with `T075` (`src/components/ProductionDashboardModal.tsx`).
+### User Story 10
+- `T081` (`binderExportWorkflow.ts`) can run in parallel with `T082` (`binderRoutes.ts`).
+- `T083` (`tests/contract/test_binder_export.test.ts`) can run in parallel with `T084` (`src/components/BinderExportModal.tsx`).
 
 ### Polish Phase
-- `T077` (integration test in `tests/integration/production_dashboard_workflow.test.ts`) can run in parallel with `T078` (`quickstart.md`).
+- `T086` (integration test in `tests/integration/binder_export_workflow.test.ts`) can run in parallel with `T087` (`quickstart.md`).
+
 
