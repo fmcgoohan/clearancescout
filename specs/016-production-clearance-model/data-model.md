@@ -1,89 +1,77 @@
-# Data Model: Production Clearance Operating Model (Phase 9)
+# Data Model: Production Clearance Operating Model (Phase 10)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 9 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 10 Focus)  
 **Date**: 2026-08-19  
 **Status**: Completed  
 
 ---
 
-## 1. Production Dashboard Data Schema
+## 1. Comprehensive Legal Clearance Binder Data Schema
 
-### `ProductionDashboardData`
-Returned by `GET /api/projects/:id/dashboard`.
+### `ClearanceBinderData`
+Exported by `GET /api/projects/:id/binder` and `POST /api/projects/:id/binder/export`.
 
 ```typescript
-export interface ProductionDashboardKPIs {
+export interface BinderProjectSummary {
+  projectId: string;
+  projectType: string; // 'Movie' | 'TV Show' | 'Commercial'
+  title: string;
+  productionCompany: string;
+  scriptVersion: string;
   totalScenes: number;
   finalClearScenes: number;
   workingClearScenes: number;
   redScenes: number;
-  readinessPercentage: number;
+  overallReadinessPercentage: number;
   totalEntities: number;
-  criticalBlockersCount: number;
+  clearedCount: number;
+  actionRequiredCount: number;
+  reviewRecommendedCount: number;
   activePlaceholdersCount: number;
-  rightsExpiringSoonCount: number;
-  pendingActionsCount: number;
+  activeRightsCount: number;
+  openActionsCount: number;
+  overridesCount: number;
 }
 
-export interface BlockerItemDetail {
-  sceneId: string;
-  sceneNumber: number;
-  heading: string;
-  occurrenceId: string;
-  canonicalEntityId: string;
-  canonicalName: string;
-  clearanceStatus: string;
-  riskRationale: string;
+export interface ProvenanceSummary {
+  liveCount: number;
+  demoCount: number;
+  fallbackCount: number;
+  dominantProvenance: 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE' | 'MIXED';
 }
 
-export interface ExpiringRightsDetail {
-  rightsId: string;
-  canonicalEntityId: string;
-  canonicalName: string;
-  agreementName: string;
-  licensor: string;
-  expirationDate: string;
-  daysRemaining: number;
-}
-
-export interface ActivePlaceholderDetail {
-  id: string;
-  canonicalEntityId: string;
-  canonicalName: string;
-  fictionalName: string;
-  assetCategory: string;
-  clearanceTier: 'TEMP_APPROVED' | 'FINAL_CLEARED';
-  approvedBy: string;
-}
-
-export interface ProductionDashboardData {
+export interface ClearanceBinderData {
+  id: string; // e.g. 'bnd-9f8a7b6c'
   projectId: string;
-  projectTitle: string;
-  projectType: string;
-  kpis: ProductionDashboardKPIs;
-  sceneReadinessDistribution: Array<{
-    sceneId: string;
+  projectSummary: BinderProjectSummary;
+  provenanceSummary: ProvenanceSummary;
+  scenes: Array<{
+    id: string;
     sceneNumber: number;
     heading: string;
-    status: 'FINAL_CLEAR' | 'WORKING_CLEAR' | 'RED';
-    blockerCount: number;
-    workingCount: number;
-    totalOccurrences: number;
+    locationType: string;
+    timeOfDay: string;
+    readinessStatus?: string;
+    occurrences: Array<{
+      id: string;
+      canonicalEntityId: string;
+      surfaceMention?: string;
+      excerptText: string;
+      lineNumber?: number;
+      clearanceStatus: string;
+      effectiveStatus: string;
+    }>;
   }>;
-  shootBlockers: BlockerItemDetail[];
-  expiringRights: ExpiringRightsDetail[];
-  activePlaceholders: ActivePlaceholderDetail[];
-  departmentActionsSummary: {
-    ART_DEPT: number;
-    LEGAL_COUNSEL: number;
-    LOCATIONS: number;
-    PRODUCTION_MGMT: number;
-  };
-  recentActivity: Array<{
-    id: string;
-    type: string;
-    label: string;
-    timestamp: string;
-  }>;
+  sceneReadinessSchedule: SceneReadinessAssessment[];
+  canonicalEntities: CanonicalEntityData[];
+  rightsAgreements: RightsRecordData[];
+  placeholders: ReplacementPlaceholderData[];
+  unresolvedActions: ClearanceActionItem[];
+  citationsIndex: ClearanceCitation[];
+  replacementCatalog: ReplacementCardData[];
+  overridesHistory: CounselOverride[];
+  exportedAt: string; // ISO 8601 string
+  integrityDigest: string; // SHA-256 hex digest
+  disclaimer: string;
 }
 ```

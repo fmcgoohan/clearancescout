@@ -1,30 +1,36 @@
-# Implementation Plan: Production Clearance Operating Model (Phase 9 - Production Operations Dashboard)
+# Implementation Plan: Production Clearance Operating Model (Phase 10 - Legal Clearance Binder)
 
-**Branch**: `016-production-clearance-model` | **Date**: 2026-08-19 | **Status**: Plan Complete (Phase 9 Focus)  
+**Branch**: `016-production-clearance-model` | **Date**: 2026-08-19 | **Status**: Plan Complete (Phase 10 Focus)  
 **Specification**: [`specs/016-production-clearance-model/spec.md`](spec.md)
 
 ---
 
-## 1. Summary of Feature & Phase 9 Scope
+## 1. Summary of Feature & Phase 10 Scope
 
-Phase 9 establishes the **Production Clearance Operations Dashboard** (`US9`, `FR-010`), providing a unified executive cockpit for Executive Producers, Production Counsel, Line Producers, and Clearance Coordinators:
-- **Executive KPIs**: Total Scenes, % Shooting Readiness, Critical Blocker Items, Active Placeholders (`TEMP_APPROVED` vs `FINAL_CLEARED`), Expiring Rights ($\le 90$ days), and Pending Department Actions.
-- **Scene Readiness Distribution**: Visual breakdown of `FINAL CLEAR`, `WORKING CLEAR`, and `RED` scenes.
-- **Shoot Blocker Triage Center**: Scene-by-scene actionable table listing all blocking occurrences with instant resolution shortcuts (Attach Placeholder, Add Rights Agreement, Sign Counsel Override).
-- **Upcoming Rights Expirations**: Active contracts expiring within 30/60/90 days with remaining days calculations.
-- **Department Action Summary**: Real-time breakdown of open to-dos across `Art Dept`, `Legal Counsel`, `Locations`, and `Production Mgmt`.
-- **Recent Activity Feed**: Real-time observable state transition events.
+Phase 10 completes the Production Clearance Operating Model (`US10`, `FR-011`, `FR-012`) by delivering the comprehensive, audit-grade **Legal Clearance Binder**:
+- **Executive Metadata**: Project Type (`Movie`, `TV Show`, `Commercial`), Production Company, Script Version, Export Timestamp.
+- **Contractual Rights Catalog**: Complete rights & restrictions table (Grant type, territory, media window, expiration date, perpetual status, covenants, licensor).
+- **Fictional Placeholders & Replacements**: Multi-category replacement assets (`BRAND`, `ART_MUSIC`, `ARTWORK`, `DIALOGUE`, `GRAPHIC_PROP`) with clearance tiers (`TEMP_APPROVED` on-set vs `FINAL_CLEARED`).
+- **Scene-by-Scene Readiness Schedule**: Full shoot readiness breakdown (`FINAL CLEAR`, `WORKING CLEAR`, `RED`, with occurrence item breakdowns).
+- **Unresolved Department Actions**: Open to-do items across `Art Dept`, `Legal Counsel`, `Locations`, and `Production Mgmt`.
+- **Canonical Entity Registry & Citations**: Complete IP catalog with Parallel Search citations and provenance (`PARALLEL_LIVE`, `DEMO_FIXTURE`, `FALLBACK_FIXTURE`).
+- **Signed Counsel Overrides**: Immutable audit log of all legal approvals.
+- **Cryptographic SHA-256 Integrity Digest**: Hex digest computed over the canonical exported payload ensuring tamper-evident auditability.
+- **Observable Action Timeline Standard**: Emits `BINDER_EXPORT` SSE timeline events without raw model chain-of-thought.
+- **Mandatory Legal Disclaimer**: Invariant stating ClearanceScout provides issue-spotting and clearance workflow management, not formal legal opinions.
 
-### Core Objectives (Phase 9 Only):
-1. **Aggregated Dashboard Workflow (`server/workflows/dashboardEngine.ts`)**:
-   - Deterministically compute consolidated metrics across `SceneReadinessEngine`, `RightsRepo`, `PlaceholderRepo`, `ActionNotificationRepo`, and `EntityRepo`.
-2. **REST API Contract (`server/api/dashboardRoutes.ts`)**:
-   - `GET /api/projects/:id/dashboard`
-3. **Executive Dashboard UI (`src/components/ProductionDashboardModal.tsx`)**:
-   - Multi-metric KPI cards, scene readiness distribution graphs, blocker mitigation shortcuts, expiring rights alerts, and department work queues.
-   - Header button in `src/pages/WorkspacePage.tsx`: `📊 Operations Dashboard`.
-4. **Strict Scope Boundaries**:
-   - Phase 10 (Final Clearance Binder Export) remains strictly unbuilt until Phase 9 is converged and committed.
+### Core Objectives (Phase 10 Only):
+1. **Extend Binder Domain Models & Repo (`server/repositories/BinderRepo.ts`)**:
+   - Add `rightsAgreements`, `placeholders`, `sceneReadinessSchedule`, `unresolvedActions`, and extended `projectSummary` to `ClearanceBinderData`.
+   - Ensure `generateIntegrityDigest` computes SHA-256 over all canonical data fields.
+2. **Update Compilation Workflow (`server/workflows/binderExportWorkflow.ts`)**:
+   - Pull from `projectRepo`, `entityRepo`, `rightsRepo`, `placeholderRepo`, `sceneReadinessEngine`, `actionNotificationRepo`, `overrideRepo`, and `assessmentRepo`.
+3. **REST Endpoints (`server/api/binderRoutes.ts`)**:
+   - `GET /projects/:id/binder`
+   - `POST /projects/:id/binder/export`
+   - `GET /projects/:id/binder/markdown`
+4. **UI Binder Viewer (`src/components/BinderExportModal.tsx`)**:
+   - Render multi-section tabs with rights, placeholders, scene readiness, open actions, and cryptographic checksum.
 
 ---
 
@@ -32,12 +38,12 @@ Phase 9 establishes the **Production Clearance Operations Dashboard** (`US9`, `F
 
 | Principle | Status | Compliance Details |
 |:---|:---:|:---|
-| **I. Agent Framework & Model Standard** | **PASS** | Dashboard uses deterministic TypeScript calculation over repository data; no unneeded model calls. |
-| **II. Live Grounding & Research Tooling** | **PASS** | Cites exact repository data, occurrence records, and rights agreement dates. |
-| **III. Architecture & Cloud Persistence** | **PASS** | Backend aggregation in `server/workflows/dashboardEngine.ts` and `server/api/dashboardRoutes.ts`. |
-| **IV. Canonical Entity & Risk Invariant** | **PASS** | Accurately rolls up occurrence blockers, rights coverage, and scene readiness. |
+| **I. Agent Framework & Model Standard** | **PASS** | Binder compilation uses deterministic TypeScript aggregation; no unneeded model calls. |
+| **II. Live Grounding & Research Tooling** | **PASS** | Exact citation URLs, rights agreement terms, and occurrence provenance preserved. |
+| **III. Architecture & Cloud Persistence** | **PASS** | Backend persistence in Firestore collection `projects/{projectId}/binder_exports`. |
+| **IV. Canonical Entity & Risk Invariant** | **PASS** | Occurrence-level roll-ups and scene readiness tiers accurately represented. |
 | **V. Multi-Tier Execution Modes** | **PASS** | Functions identically in `TEST_MODE`, `DEMO_MODE`, and `CLOUD_MODE`. |
-| **Observable Action Timeline** | **PASS** | Integrates recent activity stream without raw model CoT. |
+| **Observable Action Timeline** | **PASS** | Emits `BINDER_EXPORT` with digest and metadata; CoT remains hidden. |
 
 ---
 
@@ -45,22 +51,22 @@ Phase 9 establishes the **Production Clearance Operations Dashboard** (`US9`, `F
 
 - **Phase 0: Research & Architecture** ([`specs/016-production-clearance-model/research.md`](research.md))
 - **Phase 1: Data Model & Schema** ([`specs/016-production-clearance-model/data-model.md`](data-model.md))
-- **Phase 1: Interface Contracts** ([`specs/016-production-clearance-model/contracts/dashboard-contract.md`](contracts/dashboard-contract.md))
+- **Phase 1: Interface Contracts** ([`specs/016-production-clearance-model/contracts/binder-contract.md`](contracts/binder-contract.md))
 - **Phase 1: Quickstart Validation Guide** ([`specs/016-production-clearance-model/quickstart.md`](quickstart.md))
 
 ---
 
 ## 4. Touchpoints & Target Modules
 
-- `server/workflows/dashboardEngine.ts`:
-  - New service aggregating cross-repository production metrics and blocker lists.
-- `server/api/dashboardRoutes.ts`:
-  - Express endpoint `GET /projects/:id/dashboard`.
-- `src/components/ProductionDashboardModal.tsx`:
-  - Executive dashboard modal with KPI summary cards, blocker triage table, rights expiration alerts, and department queues.
-- `src/pages/WorkspacePage.tsx`:
-  - Header integration for `📊 Operations Dashboard` trigger.
-- `tests/contract/test_production_dashboard.test.ts`:
-  - Contract test validating consolidated KPI calculations, blocker listings, and expiration filters.
-- `tests/integration/production_dashboard_workflow.test.ts`:
-  - End-to-end integration test validating multi-department dashboard aggregation and mitigation workflows.
+- `server/repositories/BinderRepo.ts`:
+  - Extended `ClearanceBinderData` schema, SHA-256 digest computation.
+- `server/workflows/binderExportWorkflow.ts`:
+  - End-to-end binder compilation across all 8 domain modules.
+- `server/api/binderRoutes.ts`:
+  - JSON and Markdown export routes.
+- `src/components/BinderExportModal.tsx`:
+  - Full binder viewer modal with rights catalog, placeholders, scene schedule, and SHA-256 download actions.
+- `tests/contract/test_binder_export.test.ts`:
+  - Contract test for extended binder payload and SHA-256 digest.
+- `tests/integration/binder_export_workflow.test.ts`:
+  - End-to-end integration test validating full binder compilation with rights, placeholders, scene readiness, and open actions.
