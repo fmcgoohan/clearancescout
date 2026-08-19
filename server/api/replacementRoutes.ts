@@ -37,6 +37,39 @@ replacementRouter.post('/projects/:id/replacements/generate', async (req: Reques
   }
 });
 
+// Save / attach replacement card to entity
+replacementRouter.post('/projects/:id/replacements', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const projectId = req.params.id;
+    const { canonicalEntityId, fictionalBrandName, visualDescription, creativeRationale, status } = req.body;
+
+    if (!canonicalEntityId) {
+      return res.status(400).json({ error: 'canonicalEntityId is required.' });
+    }
+
+    const card = {
+      id: `rep-${Math.random().toString(36).substring(2, 10)}`,
+      canonicalEntityId,
+      fictionalBrandName: fictionalBrandName || 'Fictional Brand',
+      designBrief: visualDescription || creativeRationale || 'Prop replacement',
+      nonInfringementRationale: creativeRationale || 'Custom created prop',
+      clearanceStatus: 'NO_ISSUE_SURFACED',
+      status: status || 'APPROVED',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updatedEntity = await entityRepo.attachReplacementCard(projectId, canonicalEntityId, card);
+    if (!updatedEntity) {
+      return res.status(404).json({ error: `Entity ${canonicalEntityId} not found.` });
+    }
+
+    return res.status(201).json(card);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Get Side-by-Side Original and Replacement Comparison Data (Read-Only)
 replacementRouter.get('/projects/:id/entities/:entityId/comparison', async (req: Request, res: Response, next: NextFunction) => {
   try {

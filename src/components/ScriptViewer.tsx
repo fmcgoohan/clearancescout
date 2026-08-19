@@ -9,6 +9,15 @@ export interface Scene {
   timeOfDay: string;
   rawText: string;
   characterActionSummary: string;
+  readinessStatus?: 'RED' | 'WORKING_CLEAR' | 'FINAL_CLEAR';
+  readinessDetails?: {
+    blockersCount?: number;
+    workingClearCount?: number;
+    finalClearCount?: number;
+    totalOccurrences?: number;
+    summaryText?: string;
+    blockingRationale?: string;
+  };
 }
 
 export interface CounselOverrideItem {
@@ -201,10 +210,60 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
                 transition: 'all 0.2s ease',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                  SCENE {s.sceneNumber}: {s.heading}
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    SCENE {s.sceneNumber}: {s.heading}
+                  </span>
+                  {s.readinessStatus === 'FINAL_CLEAR' && (
+                    <span
+                      title={s.readinessDetails?.summaryText || 'Scene is 100% Cleared for Shooting'}
+                      style={{
+                        fontSize: '0.68rem',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: 'rgba(52, 211, 153, 0.15)',
+                        color: '#34d399',
+                        border: '1px solid rgba(52, 211, 153, 0.4)',
+                        fontWeight: 600,
+                      }}
+                    >
+                      🟢 FINAL CLEAR
+                    </span>
+                  )}
+                  {s.readinessStatus === 'WORKING_CLEAR' && (
+                    <span
+                      title={s.readinessDetails?.summaryText || 'Scene is Working Clear with interim assets'}
+                      style={{
+                        fontSize: '0.68rem',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: 'rgba(251, 191, 36, 0.15)',
+                        color: '#fbbf24',
+                        border: '1px solid rgba(251, 191, 36, 0.4)',
+                        fontWeight: 600,
+                      }}
+                    >
+                      🟡 WORKING CLEAR
+                    </span>
+                  )}
+                  {s.readinessStatus === 'RED' && (
+                    <span
+                      title={s.readinessDetails?.blockingRationale || s.readinessDetails?.summaryText || 'Clearance Blocker: Cannot Shoot As Written'}
+                      style={{
+                        fontSize: '0.68rem',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        color: '#f87171',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        fontWeight: 600,
+                      }}
+                    >
+                      🔴 RED
+                    </span>
+                  )}
+                </div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   {s.locationType} • {s.timeOfDay}
                 </span>

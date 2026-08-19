@@ -50,6 +50,15 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [rightsEntityId, setRightsEntityId] = useState<string | null>(null);
   const [rightsEntityName, setRightsEntityName] = useState<string>('');
 
+  // Scene Readiness summary state (Phase 5)
+  const [readinessSummary, setReadinessSummary] = useState<{
+    totalScenes: number;
+    redScenesCount: number;
+    workingClearScenesCount: number;
+    finalClearScenesCount: number;
+    overallReadinessPercentage: number;
+  } | null>(null);
+
   // Batch research hook
   const { progress: batchProgress, startBatchResearch } = useBatchResearch(
     projectId,
@@ -93,14 +102,34 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
   const fetchWorkspaceData = async () => {
     if (!projectId) return;
     try {
-      const [scenesRes, entitiesRes] = await Promise.all([
+      const [scenesRes, entitiesRes, readinessRes] = await Promise.all([
         apiFetch(`/api/projects/${projectId}/scenes`),
         apiFetch(`/api/projects/${projectId}/entities`),
+        apiFetch(`/api/projects/${projectId}/scenes/readiness`),
       ]);
-      if (scenesRes.ok) {
-        const scenesData = await scenesRes.json();
-        setScenes(scenesData);
+
+      let readinessMap = new Map<string, any>();
+      if (readinessRes.ok) {
+        const readinessData = await readinessRes.json();
+        setReadinessSummary(readinessData);
+        if (Array.isArray(readinessData.scenes)) {
+          readinessData.scenes.forEach((s: any) => readinessMap.set(s.sceneId, s));
+        }
       }
+
+      if (scenesRes.ok) {
+        const scenesData: Scene[] = await scenesRes.json();
+        const mappedScenes = scenesData.map((s) => {
+          const readiness = readinessMap.get(s.id);
+          return {
+            ...s,
+            readinessStatus: readiness ? readiness.status : s.readinessStatus,
+            readinessDetails: readiness || s.readinessDetails,
+          };
+        });
+        setScenes(mappedScenes);
+      }
+
       if (entitiesRes.ok) {
         const entitiesData = await entitiesRes.json();
         setEntities(entitiesData);
@@ -316,6 +345,72 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           </button>
         </div>
       </div>
+
+      {/* Phase 5 Scene Shooting Readiness Banner */}
+      {scenes.length > 0 && readinessSummary && (
+        <div
+          className="glass-panel"
+          style={{
+            padding: '14px 20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px',
+            borderLeft:
+              readinessSummary.redScenesCount > 0
+                ? '4px solid #f87171'
+                : readinessSummary.workingClearScenesCount > 0
+                ? '4px solid #fbbf24'
+                : '4px solid #34d399',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              🎬 Scene Shooting Readiness ({readinessSummary.totalScenes} Scenes):
+            </span>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                padding: '3px 8px',
+                borderRadius: '6px',
+                background: 'rgba(52, 211, 153, 0.15)',
+                color: '#34d399',
+                fontWeight: 600,
+              }}
+            >
+              🟢 Final Clear: {readinessSummary.finalClearScenesCount}
+            </span>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                padding: '3px 8px',
+                borderRadius: '6px',
+                background: 'rgba(251, 191, 36, 0.15)',
+                color: '#fbbf24',
+                fontWeight: 600,
+              }}
+            >
+              🟡 Working Clear: {readinessSummary.workingClearScenesCount}
+            </span>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                padding: '3px 8px',
+                borderRadius: '6px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                color: '#f87171',
+                fontWeight: 600,
+              }}
+            >
+              🔴 Red (Blocked): {readinessSummary.redScenesCount}
+            </span>
+          </div>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-cyan)' }}>
+            Shooting Readiness Index: {readinessSummary.overallReadinessPercentage}%
+          </div>
+        </div>
+      )}
 
       {/* Main Grid Workspace - Responsive Stacking */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>

@@ -371,14 +371,13 @@ export class EntityRepo {
   async attachReplacementCard(projectId: string, entityId: string, card: any): Promise<CanonicalEntityData | null> {
     const docRef = await this.db.doc(`projects/${projectId}/entities/${entityId}`);
     const snap = await docRef.get();
-    if (snap.exists) {
-      const data = snap.data() as CanonicalEntityData;
-      data.replacementCard = card;
-      data.updatedAt = new Date().toISOString();
-      await docRef.set(data);
-      return data;
-    }
-    return null;
+    if (!snap.exists) return null;
+
+    const data = snap.data() as CanonicalEntityData;
+    data.replacementCard = card;
+    data.updatedAt = new Date().toISOString();
+    await docRef.set(data);
+    return data;
   }
 
   async getEntitiesByProject(projectId: string): Promise<CanonicalEntityData[]> {

@@ -40,6 +40,21 @@ export class OverrideRepo {
     return override;
   }
 
+  async createOverride(
+    projectId: string,
+    data: any
+  ): Promise<CounselOverride> {
+    return this.recordOverride(projectId, {
+      canonicalEntityId: data.canonicalEntityId,
+      sceneId: data.sceneId,
+      previousStatus: data.previousStatus || 'ACTION_REQUIRED',
+      overrideStatus: data.overrideStatus || data.status || 'NO_ISSUE_SURFACED',
+      rationale: data.rationale || '',
+      counselName: data.counselName || 'Legal Counsel',
+      counselRole: data.counselRole,
+    });
+  }
+
   async getOverridesByEntity(projectId: string, canonicalEntityId: string): Promise<CounselOverride[]> {
     const col = await this.getCollection(projectId);
     const snapshot = await col.where('canonicalEntityId', '==', canonicalEntityId).get();
