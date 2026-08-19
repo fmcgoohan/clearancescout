@@ -11,6 +11,10 @@ export interface CanonicalEntity {
   description: string;
   overallClearanceStatus: ClearanceStatusType;
   origin?: 'AUTO_EXTRACTED' | 'USER_EDITED' | 'MANUALLY_ADDED';
+  aliases?: string[];
+  parentEntityId?: string;
+  parentEntityName?: string;
+  relationshipType?: string;
   isOverridden?: boolean;
   latestOverride?: {
     overrideStatus: string;
@@ -462,6 +466,36 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             }}
                           >
                             ✨ Added
+                          </span>
+                        )}
+                        {e.parentEntityName && (
+                          <span
+                            title={`Child entity of ${e.parentEntityName} (${e.relationshipType || 'BRAND_PRODUCT'})`}
+                            style={{
+                              fontSize: '0.65rem',
+                              background: 'rgba(251, 146, 60, 0.15)',
+                              color: '#fb923c',
+                              border: '1px solid rgba(251, 146, 60, 0.4)',
+                              borderRadius: '4px',
+                              padding: '2px 5px',
+                            }}
+                          >
+                            🏢 Part of: {e.parentEntityName}
+                          </span>
+                        )}
+                        {e.aliases && e.aliases.length > 0 && (
+                          <span
+                            title={`Recognized Aliases: ${e.aliases.join(', ')}`}
+                            style={{
+                              fontSize: '0.65rem',
+                              background: 'rgba(244, 114, 182, 0.15)',
+                              color: '#f472b6',
+                              border: '1px solid rgba(244, 114, 182, 0.4)',
+                              borderRadius: '4px',
+                              padding: '2px 5px',
+                            }}
+                          >
+                            🏷️ {e.aliases.length} {e.aliases.length === 1 ? 'alias' : 'aliases'}
                           </span>
                         )}
                         {e.isOverridden && (

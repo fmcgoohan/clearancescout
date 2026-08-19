@@ -8,6 +8,13 @@ export type EntityCategory =
   | 'PROPRIETARY_LOCATION'
   | 'GRAPHIC_PROP';
 
+export type EntityRelationshipType =
+  | 'BRAND_PRODUCT'
+  | 'SUBSIDIARY'
+  | 'PARENT_COMPANY'
+  | 'PRODUCT_LINE'
+  | 'VARIATION';
+
 interface ItemEditModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,10 +22,14 @@ interface ItemEditModalProps {
     canonicalName: string;
     entityCategory: EntityCategory;
     description: string;
+    aliases?: string[];
+    parentEntityId?: string;
+    relationshipType?: EntityRelationshipType;
     sceneId?: string;
   }) => Promise<void>;
   entityToEdit?: CanonicalEntity | null;
   scenes?: Array<{ id: string; sceneNumber: number; heading: string }>;
+  existingEntities?: CanonicalEntity[];
 }
 
 export const ItemEditModal: React.FC<ItemEditModalProps> = ({
@@ -27,11 +38,15 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
   onSave,
   entityToEdit,
   scenes = [],
+  existingEntities = [],
 }) => {
   const isEditing = !!entityToEdit;
   const [name, setName] = useState('');
   const [category, setCategory] = useState<EntityCategory>('BRAND');
   const [description, setDescription] = useState('');
+  const [aliasesText, setAliasesText] = useState('');
+  const [parentEntityId, setParentEntityId] = useState('');
+  const [relationshipType, setRelationshipType] = useState<EntityRelationshipType>('BRAND_PRODUCT');
   const [sceneId, setSceneId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,11 +56,17 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
       setName(entityToEdit.canonicalName || '');
       setCategory((entityToEdit.entityCategory as EntityCategory) || 'BRAND');
       setDescription(entityToEdit.description || '');
+      setAliasesText((entityToEdit.aliases || []).join(', '));
+      setParentEntityId(entityToEdit.parentEntityId || '');
+      setRelationshipType((entityToEdit.relationshipType as EntityRelationshipType) || 'BRAND_PRODUCT');
       setSceneId('');
     } else {
       setName('');
       setCategory('BRAND');
       setDescription('');
+      setAliasesText('');
+      setParentEntityId('');
+      setRelationshipType('BRAND_PRODUCT');
       setSceneId(scenes[0]?.id || '');
     }
     setError(null);
@@ -62,11 +83,20 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
 
     setIsSubmitting(true);
     setError(null);
+
+    const aliases = aliasesText
+      .split(',')
+      .map((a) => a.trim())
+      .filter((a) => a.length > 0);
+
     try {
       await onSave({
         canonicalName: name.trim(),
         entityCategory: category,
         description: description.trim(),
+        aliases,
+        parentEntityId: parentEntityId || undefined,
+        relationshipType: parentEntityId ? relationshipType : undefined,
         sceneId: sceneId || undefined,
       });
       onClose();
@@ -77,8 +107,12 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
     }
   };
 
+  const potentialParents = existingEntities.filter((e) => !entityToEdit || e.id !== entityToEdit.id);
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         top: 0,
@@ -90,168 +124,221 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000,
+        zIndex: 1400,
+        padding: '16px',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="glass-panel"
+        className="glass-panel modal-responsive"
         style={{
-          width: '520px',
-          maxWidth: '90vw',
-          padding: '24px',
-          borderRadius: '12px',
-          border: '1px solid var(--border-color)',
-          background: 'var(--bg-card)',
+          width: '560px',
+          maxWidth: '92vw',
+          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          gap: '16px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          overflow: 'hidden',
+          borderRadius: '12px',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-main)', fontWeight: 600 }}>
-            {isEditing ? '✏️ Edit Clearance Item' : '➕ Add Clearance Item'}
-          </h3>
+        {/* Header */}
+        <div
+          style={{
+            padding: '20px 24px',
+            borderBottom: '1px solid var(--border-color)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <div>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
+              {isEditing ? `Edit Clearance Item: ${entityToEdit?.canonicalName}` : 'Add New Clearance Item'}
+            </h2>
+            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              {isEditing
+                ? 'Updating details invalidates automated baseline risk assessment (unless overridden by counsel).'
+                : 'Manually register a brand, prop, music track, or public figure.'}
+            </p>
+          </div>
           <button
+            className="btn-secondary touch-target"
             onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              fontSize: '1.2rem',
-              cursor: 'pointer',
-            }}
+            aria-label="Close edit modal"
+            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
           >
             ✕
           </button>
         </div>
 
-        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          {isEditing
-            ? 'Correcting name or category resets automated research while preserving signed counsel overrides.'
-            : 'Manually add an unscripted prop, music track, brand, or background element for clearance.'}
-        </p>
-
-        {error && (
-          <div
-            style={{
-              padding: '8px 12px',
-              borderRadius: '6px',
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid var(--danger-color)',
-              color: 'var(--danger-color)',
-              fontSize: '0.85rem',
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Item / Trademark Name *
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Summit Cola, AeroTech Laptop"
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+          {error && (
+            <div
               style={{
-                width: '100%',
-                padding: '8px 12px',
+                padding: '10px 14px',
                 borderRadius: '6px',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-main)',
-                fontSize: '0.9rem',
-                boxSizing: 'border-box',
-              }}
-              required
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Clearance Category *
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as EntityCategory)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-main)',
-                fontSize: '0.9rem',
-                boxSizing: 'border-box',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#f87171',
+                fontSize: '0.85rem',
+                marginBottom: '16px',
               }}
             >
-              <option value="BRAND">🏷️ BRAND (Trademarks, Consumer Products, Autos)</option>
-              <option value="ART_MUSIC">🎵 ART_MUSIC (Songs, Lyrics, Paintings)</option>
-              <option value="PUBLIC_FIGURE">👤 PUBLIC_FIGURE (Living Celebrities, Figures)</option>
-              <option value="PROPRIETARY_LOCATION">🏛️ PROPRIETARY_LOCATION (Landmarks, Private Venues)</option>
-              <option value="GRAPHIC_PROP">⚠️ GRAPHIC_PROP (Signs, Placards, Labels)</option>
-            </select>
-          </div>
-
-          {!isEditing && scenes.length > 0 && (
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                Associate with Scene (Optional)
-              </label>
-              <select
-                value={sceneId}
-                onChange={(e) => setSceneId(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-main)',
-                  fontSize: '0.9rem',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <option value="">-- No Specific Scene --</option>
-                {scenes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    Scene {s.sceneNumber}: {s.heading}
-                  </option>
-                ))}
-              </select>
+              {error}
             </div>
           )}
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Usage Notes / Placement Context
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe physical placement, prominent exposure, or character interaction..."
-              rows={3}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-main)',
-                fontSize: '0.9rem',
-                boxSizing: 'border-box',
-                resize: 'vertical',
-              }}
-            />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Canonical Name */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+                Canonical Item Name *
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="e.g. Summit Cola, Porsche 911"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+                Clearance Category *
+              </label>
+              <select
+                className="input-field"
+                value={category}
+                onChange={(e) => setCategory(e.target.value as EntityCategory)}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              >
+                <option value="BRAND">BRAND (Commercial Trademark, Product, Automotive, Tech)</option>
+                <option value="ART_MUSIC">ART_MUSIC (Song, Melody, Painting, Literature)</option>
+                <option value="PUBLIC_FIGURE">PUBLIC_FIGURE (Living Celebrity, Athlete, Official)</option>
+                <option value="PROPRIETARY_LOCATION">PROPRIETARY_LOCATION (Landmark, Stadium, Private Venue)</option>
+                <option value="GRAPHIC_PROP">GRAPHIC_PROP (Graphic Sign, Warning Placard, Branded Prop)</option>
+              </select>
+            </div>
+
+            {/* Aliases (Phase 3) */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+                Aliases & Multi-Surface Forms (comma separated)
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="e.g. Coke, Coke Zero, Diet Coke"
+                value={aliasesText}
+                onChange={(e) => setAliasesText(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+              <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Recognized variations automatically map to this canonical item during script parsing.
+              </p>
+            </div>
+
+            {/* Brand / Product Hierarchy (Phase 3) */}
+            {potentialParents.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+                    Parent Brand / Entity (Optional)
+                  </label>
+                  <select
+                    className="input-field"
+                    value={parentEntityId}
+                    onChange={(e) => setParentEntityId(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                  >
+                    <option value="">-- None (Standalone Mark) --</option>
+                    {potentialParents.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.canonicalName} ({p.entityCategory})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+                    Relationship Type
+                  </label>
+                  <select
+                    className="input-field"
+                    value={relationshipType}
+                    onChange={(e) => setRelationshipType(e.target.value as EntityRelationshipType)}
+                    disabled={!parentEntityId}
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                  >
+                    <option value="BRAND_PRODUCT">Brand Product</option>
+                    <option value="PRODUCT_LINE">Product Line</option>
+                    <option value="SUBSIDIARY">Subsidiary</option>
+                    <option value="PARENT_COMPANY">Parent Company</option>
+                    <option value="VARIATION">Variation</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Description */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+                Description / Context Notes
+              </label>
+              <textarea
+                className="input-field"
+                placeholder="Details regarding context, depicted packaging, or clearance notes..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
+              />
+            </div>
+
+            {/* Scene placement for new item */}
+            {!isEditing && scenes.length > 0 && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+                  Assign Initial Scene Placement
+                </label>
+                <select
+                  className="input-field"
+                  value={sceneId}
+                  onChange={(e) => setSceneId(e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                >
+                  {scenes.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      Scene #{s.sceneNumber}: {s.heading}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+          {/* Footer */}
+          <div
+            style={{
+              marginTop: '24px',
+              paddingTop: '16px',
+              borderTop: '1px solid var(--border-color)',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+            }}
+          >
             <button
               type="button"
-              className="btn-secondary"
+              className="btn-secondary touch-target"
               onClick={onClose}
               disabled={isSubmitting}
             >
@@ -259,10 +346,10 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
             </button>
             <button
               type="submit"
-              className="btn-primary"
+              className="btn-primary touch-target"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Item'}
+              {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Item'}
             </button>
           </div>
         </form>

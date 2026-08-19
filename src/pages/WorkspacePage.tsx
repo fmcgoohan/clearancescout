@@ -350,6 +350,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         onSave={handleSaveItem}
         entityToEdit={entityToEdit}
         scenes={scenes.map((s) => ({ id: s.id, sceneNumber: s.sceneNumber, heading: s.heading }))}
+        existingEntities={entities}
       />
 
       {/* Side-by-Side Original and Replacement Comparison Modal */}

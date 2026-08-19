@@ -22,6 +22,13 @@ export type ClearanceStatus =
 
 export type EntityOrigin = 'AUTO_EXTRACTED' | 'USER_EDITED' | 'MANUALLY_ADDED';
 
+export type EntityRelationshipType =
+  | 'BRAND_PRODUCT'
+  | 'SUBSIDIARY'
+  | 'PARENT_COMPANY'
+  | 'PRODUCT_LINE'
+  | 'VARIATION';
+
 export interface CanonicalEntityData {
   id: string;
   projectId: string;
@@ -30,6 +37,14 @@ export interface CanonicalEntityData {
   description: string;
   overallClearanceStatus: ClearanceStatus;
   origin?: EntityOrigin;
+
+  // Phase 3 Entity Resolution & Hierarchy
+  aliases?: string[];
+  parentEntityId?: string;
+  parentEntityName?: string;
+  relationshipType?: EntityRelationshipType;
+
+  // Counsel Overrides & Cards
   isOverridden?: boolean;
   latestOverride?: {
     overrideId: string;
@@ -58,6 +73,20 @@ export interface SceneEntityOccurrenceData {
   contextFlags?: string[];
   citations?: any[];
   evaluatedAt?: string;
+
+  // Phase 3 Surface Mention Provenance
+  surfaceMention?: string;
+  matchedVia?: 'EXACT_CANONICAL' | 'ALIAS_MATCH' | 'NORMALIZED_EQUIVALENCE' | 'HIERARCHY_PARENT_MATCH' | 'MANUAL_ENTRY';
+}
+
+export interface MergeEntitiesResult {
+  success: boolean;
+  targetEntity: CanonicalEntityData;
+  sourceEntityId: string;
+  transferredOccurrencesCount: number;
+  combinedAliases: string[];
+  derivedCanonicalStatus: ClearanceStatus;
+  mergedAt: string;
 }
 
 export const STATUS_SEVERITY_RANK: Record<ClearanceStatus, number> = {
@@ -77,6 +106,7 @@ export class EntityRepo {
       id,
       isOverridden: false,
       origin: input.origin || 'AUTO_EXTRACTED',
+      aliases: input.aliases || [],
       ...input,
       createdAt: now,
       updatedAt: now,
@@ -104,6 +134,10 @@ export class EntityRepo {
       entityCategory?: EntityCategory;
       description?: string;
       origin?: EntityOrigin;
+      aliases?: string[];
+      parentEntityId?: string;
+      parentEntityName?: string;
+      relationshipType?: EntityRelationshipType;
     }
   ): Promise<{ entity: CanonicalEntityData; assessmentInvalidated: boolean } | null> {
     const docRef = await this.db.doc(`projects/${projectId}/entities/${entityId}`);
@@ -129,11 +163,140 @@ export class EntityRepo {
     if (updates.canonicalName) data.canonicalName = updates.canonicalName.trim();
     if (updates.entityCategory) data.entityCategory = updates.entityCategory;
     if (updates.description !== undefined) data.description = updates.description.trim();
+    if (updates.aliases) data.aliases = updates.aliases;
+    if (updates.parentEntityId !== undefined) data.parentEntityId = updates.parentEntityId;
+    if (updates.parentEntityName !== undefined) data.parentEntityName = updates.parentEntityName;
+    if (updates.relationshipType !== undefined) data.relationshipType = updates.relationshipType;
+
     data.origin = updates.origin || 'USER_EDITED';
     data.updatedAt = new Date().toISOString();
 
     await docRef.set(data);
     return { entity: data, assessmentInvalidated };
+  }
+
+  async addAlias(projectId: string, entityId: string, alias: string): Promise<CanonicalEntityData | null> {
+    const docRef = await this.db.doc(`projects/${projectId}/entities/${entityId}`);
+    const snap = await docRef.get();
+    if (!snap.exists) return null;
+
+    const data = snap.data() as CanonicalEntityData;
+    const cleanAlias = alias.trim();
+    if (!cleanAlias) return data;
+
+    const aliases = data.aliases || [];
+    if (!aliases.some((a) => a.toLowerCase() === cleanAlias.toLowerCase())) {
+      aliases.push(cleanAlias);
+      data.aliases = aliases;
+      data.updatedAt = new Date().toISOString();
+      await docRef.set(data);
+    }
+    return data;
+  }
+
+  async removeAlias(projectId: string, entityId: string, alias: string): Promise<CanonicalEntityData | null> {
+    const docRef = await this.db.doc(`projects/${projectId}/entities/${entityId}`);
+    const snap = await docRef.get();
+    if (!snap.exists) return null;
+
+    const data = snap.data() as CanonicalEntityData;
+    const cleanAlias = alias.trim().toLowerCase();
+    data.aliases = (data.aliases || []).filter((a) => a.toLowerCase() !== cleanAlias);
+    data.updatedAt = new Date().toISOString();
+    await docRef.set(data);
+    return data;
+  }
+
+  async setEntityRelationship(
+    projectId: string,
+    entityId: string,
+    parentEntityId: string,
+    relationshipType: EntityRelationshipType
+  ): Promise<CanonicalEntityData | null> {
+    const childRef = await this.db.doc(`projects/${projectId}/entities/${entityId}`);
+    const childSnap = await childRef.get();
+    if (!childSnap.exists) return null;
+
+    const parentRef = await this.db.doc(`projects/${projectId}/entities/${parentEntityId}`);
+    const parentSnap = await parentRef.get();
+    if (!parentSnap.exists) {
+      throw new Error(`Parent entity ${parentEntityId} not found in project ${projectId}`);
+    }
+
+    const parentData = parentSnap.data() as CanonicalEntityData;
+    const childData = childSnap.data() as CanonicalEntityData;
+
+    childData.parentEntityId = parentEntityId;
+    childData.parentEntityName = parentData.canonicalName;
+    childData.relationshipType = relationshipType;
+    childData.updatedAt = new Date().toISOString();
+
+    await childRef.set(childData);
+    return childData;
+  }
+
+  async mergeEntities(projectId: string, targetId: string, sourceId: string): Promise<MergeEntitiesResult | null> {
+    if (targetId === sourceId) {
+      throw new Error('Cannot merge entity into itself.');
+    }
+
+    const targetRef = await this.db.doc(`projects/${projectId}/entities/${targetId}`);
+    const targetSnap = await targetRef.get();
+    if (!targetSnap.exists) return null;
+
+    const sourceRef = await this.db.doc(`projects/${projectId}/entities/${sourceId}`);
+    const sourceSnap = await sourceRef.get();
+    if (!sourceSnap.exists) return null;
+
+    const target = targetSnap.data() as CanonicalEntityData;
+    const source = sourceSnap.data() as CanonicalEntityData;
+
+    // 1. Transfer all occurrences of source to target
+    const sourceOccurrences = await this.getOccurrencesByEntity(projectId, sourceId);
+    for (const occ of sourceOccurrences) {
+      const occDocRef = await this.db.doc(`projects/${projectId}/scenes/${occ.sceneId}/occurrences/${occ.id}`);
+      await occDocRef.set({
+        ...occ,
+        canonicalEntityId: targetId,
+      });
+    }
+
+    // 2. Combine aliases (add source canonical name and its aliases into target)
+    const combinedAliasesSet = new Set<string>(target.aliases || []);
+    if (source.canonicalName.toLowerCase() !== target.canonicalName.toLowerCase()) {
+      combinedAliasesSet.add(source.canonicalName);
+    }
+    (source.aliases || []).forEach((a) => {
+      if (a.toLowerCase() !== target.canonicalName.toLowerCase()) {
+        combinedAliasesSet.add(a);
+      }
+    });
+    target.aliases = Array.from(combinedAliasesSet);
+
+    // 3. Inherit replacement card if target has none and source does
+    if (!target.replacementCard && source.replacementCard) {
+      target.replacementCard = source.replacementCard;
+    }
+
+    target.updatedAt = new Date().toISOString();
+    await targetRef.set(target);
+
+    // 4. Delete source entity
+    await sourceRef.delete();
+
+    // 5. Recompute derived canonical status across all combined occurrences
+    const derivedStatus = await this.computeDerivedCanonicalStatus(projectId, targetId);
+    const updatedTarget = (await this.getEntityById(projectId, targetId)) || target;
+
+    return {
+      success: true,
+      targetEntity: updatedTarget,
+      sourceEntityId: sourceId,
+      transferredOccurrencesCount: sourceOccurrences.length,
+      combinedAliases: updatedTarget.aliases || [],
+      derivedCanonicalStatus: derivedStatus,
+      mergedAt: new Date().toISOString(),
+    };
   }
 
   async deleteCanonicalEntity(projectId: string, entityId: string): Promise<boolean> {

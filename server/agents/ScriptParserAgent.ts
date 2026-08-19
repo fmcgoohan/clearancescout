@@ -112,10 +112,10 @@ ${normalizedText}`,
     // 5-category deterministic recognition patterns for demo & test suites
     const candidatePatterns: Array<{ name: string; category: EntityCategory; regex: RegExp }> = [
       // 1. Brands & Trademarks
-      { name: 'Summit Cola', category: 'BRAND', regex: /\b(?:Summit Cola)\b/gi },
+      { name: 'Summit Cola', category: 'BRAND', regex: /\b(?:Summit Cola|Summit Pop|Summit Soda|Summit Energy Drink)\b/gi },
       { name: 'AeroTech Prism Laptop', category: 'BRAND', regex: /\b(?:AeroTech Prism Laptop|AeroTech Prism|AeroTech)\b/gi },
-      { name: 'Veloce GT', category: 'BRAND', regex: /\b(?:Veloce GT|Veloce)\b/gi },
-      { name: 'Coca-Cola', category: 'BRAND', regex: /\b(?:Coca-Cola|Coke|can of Coke)\b/gi },
+      { name: 'Veloce GT', category: 'BRAND', regex: /\b(?:Veloce GT|Veloce Motors|Veloce)\b/gi },
+      { name: 'Coca-Cola', category: 'BRAND', regex: /\b(?:Coca-Cola|Coke|can of Coke|Coke Zero)\b/gi },
       { name: 'Apple', category: 'BRAND', regex: /\b(?:MacBook|iPhone|Apple iPad|Apple)\b/gi },
       { name: 'Porsche', category: 'BRAND', regex: /\b(?:Porsche|Porsche 911)\b/gi },
       { name: 'Starbucks', category: 'BRAND', regex: /\b(?:Starbucks|Frappuccino)\b/gi },

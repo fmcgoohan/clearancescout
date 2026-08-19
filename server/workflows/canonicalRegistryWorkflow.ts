@@ -2,6 +2,7 @@ import { projectRepo } from '../repositories/ProjectRepo.js';
 import { sceneRepo, SceneData } from '../repositories/SceneRepo.js';
 import { entityRepo, CanonicalEntityData } from '../repositories/EntityRepo.js';
 import { scriptParserAgent, ParsedScene } from '../agents/ScriptParserAgent.js';
+import { entityResolutionEngine } from './entityResolutionEngine.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 
 export interface WorkflowResult {
@@ -29,14 +30,6 @@ export class CanonicalRegistryWorkflow {
       count: parsedScenes.length,
     });
 
-    // Fetch existing canonical entities for deduplication ("Clear once, recognize everywhere")
-    const existingEntities = await entityRepo.getEntitiesByProject(projectId);
-    const entityMap = new Map<string, CanonicalEntityData>();
-
-    for (const ent of existingEntities) {
-      entityMap.set(ent.canonicalName.toLowerCase(), ent);
-    }
-
     const createdScenes: SceneData[] = [];
 
     for (const pScene of parsedScenes) {
@@ -52,17 +45,31 @@ export class CanonicalRegistryWorkflow {
       createdScenes.push(scene);
 
       for (const entMention of pScene.entities) {
-        const normKey = entMention.name.toLowerCase();
+        // Multi-stage Entity Resolution (Phase 3)
+        const resolution = await entityResolutionEngine.resolveEntityMention(
+          projectId,
+          entMention.name,
+          entMention.category
+        );
+
         let canonicalEnt: CanonicalEntityData;
 
-        if (entityMap.has(normKey)) {
-          canonicalEnt = entityMap.get(normKey)!;
-          timelineEmitter.emit(projectId, 'STATE_TRANSITION', `Matched Canonical Entity: ${canonicalEnt.canonicalName}`, {
-            entityId: canonicalEnt.id,
-            sceneNumber: scene.sceneNumber,
-            canonicalName: canonicalEnt.canonicalName,
-            category: canonicalEnt.entityCategory,
-          });
+        if (resolution.matched && resolution.canonicalEntityId) {
+          const matched = await entityRepo.getEntityById(projectId, resolution.canonicalEntityId);
+          canonicalEnt = matched!;
+          timelineEmitter.emit(
+            projectId,
+            'STATE_TRANSITION',
+            `Resolved Entity Mention "${entMention.name}" -> ${canonicalEnt.canonicalName} (${resolution.matchRule})`,
+            {
+              entityId: canonicalEnt.id,
+              sceneNumber: scene.sceneNumber,
+              canonicalName: canonicalEnt.canonicalName,
+              matchRule: resolution.matchRule,
+              confidence: resolution.confidence,
+              matchedAlias: resolution.matchedAlias,
+            }
+          );
         } else {
           canonicalEnt = await entityRepo.createCanonicalEntity({
             projectId,
@@ -70,15 +77,20 @@ export class CanonicalRegistryWorkflow {
             entityCategory: entMention.category,
             description: `Auto-extracted ${entMention.category} item: ${entMention.name}`,
             overallClearanceStatus: 'INSUFFICIENT_EVIDENCE',
+            aliases: [],
           });
-          entityMap.set(normKey, canonicalEnt);
 
-          timelineEmitter.emit(projectId, 'STATE_TRANSITION', `Registered New Canonical Entity: ${canonicalEnt.canonicalName}`, {
-            entityId: canonicalEnt.id,
-            sceneNumber: scene.sceneNumber,
-            canonicalName: canonicalEnt.canonicalName,
-            category: canonicalEnt.entityCategory,
-          });
+          timelineEmitter.emit(
+            projectId,
+            'STATE_TRANSITION',
+            `Registered New Canonical Entity: ${canonicalEnt.canonicalName}`,
+            {
+              entityId: canonicalEnt.id,
+              sceneNumber: scene.sceneNumber,
+              canonicalName: canonicalEnt.canonicalName,
+              category: canonicalEnt.entityCategory,
+            }
+          );
         }
 
         await entityRepo.createOccurrence(projectId, {
@@ -87,11 +99,13 @@ export class CanonicalRegistryWorkflow {
           scriptLineNumber: entMention.lineNumber,
           excerptText: entMention.excerptText,
           usageContext: entMention.usageContext,
+          surfaceMention: entMention.name,
+          matchedVia: resolution.matched ? (resolution.matchRule as any) : 'EXACT_CANONICAL',
         });
       }
     }
 
-    const finalEntities = Array.from(entityMap.values());
+    const finalEntities = await entityRepo.getEntitiesByProject(projectId);
 
     timelineEmitter.emit(projectId, 'STATE_TRANSITION', 'Script Parsing & Entity Registry Complete', {
       scenesParsed: createdScenes.length,

@@ -7,6 +7,8 @@ export interface OccurrenceItem {
   scriptLineNumber: number;
   excerptText: string;
   usageContext: string;
+  surfaceMention?: string;
+  matchedVia?: string;
   sentimentScore?: number;
   exposureDurationSeconds?: number;
   clearanceStatus?: 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
@@ -36,6 +38,9 @@ export function EntityDetailModal({
 }: EntityDetailModalProps) {
   const [occurrences, setOccurrences] = useState<OccurrenceItem[]>([]);
   const [canonicalName, setCanonicalName] = useState('');
+  const [aliases, setAliases] = useState<string[]>([]);
+  const [parentEntityName, setParentEntityName] = useState<string | null>(null);
+  const [relationshipType, setRelationshipType] = useState<string | null>(null);
   const [derivedStatus, setDerivedStatus] = useState<string>('INSUFFICIENT_EVIDENCE');
   const [isLoading, setIsLoading] = useState(false);
   const [evaluatingOccId, setEvaluatingOccId] = useState<string | null>(null);
@@ -44,12 +49,26 @@ export function EntityDetailModal({
     if (!projectId || !entityId) return;
     setIsLoading(true);
     try {
-      const res = await apiFetch(`/api/projects/${projectId}/entities/${entityId}/occurrences`);
-      if (res.ok) {
-        const data = await res.json();
+      const [occRes, entRes] = await Promise.all([
+        apiFetch(`/api/projects/${projectId}/entities/${entityId}/occurrences`),
+        apiFetch(`/api/projects/${projectId}/entities`),
+      ]);
+
+      if (occRes.ok) {
+        const data = await occRes.json();
         setCanonicalName(data.canonicalName || '');
         setDerivedStatus(data.derivedOverallStatus || 'INSUFFICIENT_EVIDENCE');
         setOccurrences(data.occurrences || []);
+      }
+
+      if (entRes.ok) {
+        const allEntities = await entRes.json();
+        const thisEnt = allEntities.find((e: any) => e.id === entityId);
+        if (thisEnt) {
+          setAliases(thisEnt.aliases || []);
+          setParentEntityName(thisEnt.parentEntityName || null);
+          setRelationshipType(thisEnt.relationshipType || null);
+        }
       }
     } catch (err) {
       console.error('Error fetching occurrences:', err);
@@ -142,7 +161,7 @@ export function EntityDetailModal({
           }}
         >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <h2 id="entity-detail-title" style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
                 {canonicalName || 'Clearance Asset Occurrences'}
               </h2>
@@ -158,7 +177,26 @@ export function EntityDetailModal({
               >
                 Roll-up: {canonicalBadge.label}
               </span>
+              {parentEntityName && (
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    background: 'rgba(251, 146, 60, 0.15)',
+                    color: '#fb923c',
+                    fontWeight: 600,
+                  }}
+                >
+                  🏢 Parent: {parentEntityName} ({relationshipType || 'BRAND_PRODUCT'})
+                </span>
+              )}
             </div>
+            {aliases.length > 0 && (
+              <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#f472b6' }}>
+                🏷️ Aliases: {aliases.join(', ')}
+              </p>
+            )}
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               Occurrence-level scene breakdown & contextual legal risk evaluation
             </p>
@@ -202,13 +240,39 @@ export function EntityDetailModal({
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
                           Occurrence #{idx + 1}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           ({occ.sceneId} · Line {occ.scriptLineNumber})
                         </span>
+                        {occ.surfaceMention && occ.surfaceMention.toLowerCase() !== canonicalName.toLowerCase() && (
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              background: 'rgba(244, 114, 182, 0.15)',
+                              color: '#f472b6',
+                            }}
+                          >
+                            Mentioned as: "{occ.surfaceMention}"
+                          </span>
+                        )}
+                        {occ.matchedVia && (
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              color: 'var(--text-muted)',
+                            }}
+                          >
+                            Match: {occ.matchedVia}
+                          </span>
+                        )}
                       </div>
                       <span
                         style={{
