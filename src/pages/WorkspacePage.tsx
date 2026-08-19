@@ -6,6 +6,7 @@ import { ComparisonModal, ComparisonViewModel } from '../components/ComparisonMo
 import { EntityDetailModal } from '../components/EntityDetailModal';
 import { RightsModal } from '../components/RightsModal';
 import { ActionListModal } from '../components/ActionListModal';
+import { PlaceholderManagerModal } from '../components/PlaceholderManagerModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
 import { apiFetch } from '../utils/apiClient.js';
 
@@ -63,6 +64,12 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   // Action Center modal state (Phase 6)
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [openActionsCount, setOpenActionsCount] = useState(0);
+
+  // Placeholder Manager modal state (Phase 7)
+  const [isPlaceholderModalOpen, setIsPlaceholderModalOpen] = useState(false);
+  const [placeholderEntityId, setPlaceholderEntityId] = useState<string | null>(null);
+  const [placeholderEntityName, setPlaceholderEntityName] = useState<string>('');
+  const [placeholderEntityCategory, setPlaceholderEntityCategory] = useState<string>('BRAND');
 
   // Batch research hook
   const { progress: batchProgress, startBatchResearch } = useBatchResearch(
@@ -463,6 +470,12 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             setRightsEntityName(entityName);
             setIsRightsModalOpen(true);
           }}
+          onOpenPlaceholderModal={(entityId, entityName, entityCategory) => {
+            setPlaceholderEntityId(entityId);
+            setPlaceholderEntityName(entityName);
+            setPlaceholderEntityCategory(entityCategory || 'BRAND');
+            setIsPlaceholderModalOpen(true);
+          }}
           onOpenComparison={handleOpenComparison}
           onViewOccurrences={(entityId) => {
             setSelectedDetailEntityId(entityId);
@@ -512,6 +525,13 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           setRightsEntityName(entityName);
           setIsRightsModalOpen(true);
         }}
+        onOpenPlaceholderModal={(entityId, entityName) => {
+          setIsDetailModalOpen(false);
+          setPlaceholderEntityId(entityId);
+          setPlaceholderEntityName(entityName);
+          setPlaceholderEntityCategory('BRAND');
+          setIsPlaceholderModalOpen(true);
+        }}
         onOccurrenceEvaluated={() => {
           fetchWorkspaceData();
         }}
@@ -539,6 +559,23 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         isOpen={isActionModalOpen}
         onClose={() => setIsActionModalOpen(false)}
         onActionUpdated={() => {
+          fetchWorkspaceData();
+        }}
+      />
+
+      {/* Generalized Replacement & Placeholder Manager Modal (Phase 7) */}
+      <PlaceholderManagerModal
+        projectId={projectId}
+        entityId={placeholderEntityId}
+        entityName={placeholderEntityName}
+        entityCategory={placeholderEntityCategory}
+        isOpen={isPlaceholderModalOpen}
+        onClose={() => {
+          setIsPlaceholderModalOpen(false);
+          setPlaceholderEntityId(null);
+          setPlaceholderEntityName('');
+        }}
+        onPlaceholderUpdated={() => {
           fetchWorkspaceData();
         }}
       />

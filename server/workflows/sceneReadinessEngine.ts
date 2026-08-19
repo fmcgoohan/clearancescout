@@ -9,6 +9,7 @@ import {
 import { entityRepo } from '../repositories/EntityRepo.js';
 import { overrideRepo } from '../repositories/OverrideRepo.js';
 import { rightsRepo } from '../repositories/RightsRepo.js';
+import { placeholderRepo } from '../repositories/PlaceholderRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { resolveEffectiveClearanceStatus } from './effectiveStatusResolver.js';
 
@@ -72,7 +73,8 @@ export class SceneReadinessEngine {
         occ.id
       );
 
-      const hasReplacementCard = Boolean(entity.replacementCard);
+      const placeholder = await placeholderRepo.getPlaceholderByEntity(projectId, occ.canonicalEntityId);
+      const hasReplacementCard = Boolean(entity.replacementCard || placeholder);
       const matchingOverride = overrides
         .filter((o) => o.canonicalEntityId === entity.id && (o.sceneId === sceneId || !o.sceneId))
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
@@ -96,6 +98,12 @@ export class SceneReadinessEngine {
           : rightsCoverage.isCovered
           ? `Cleared via executed rights agreement (${rightsCoverage.summaryText}).`
           : `Fully cleared; no infringement or clearance issues surfaced.`;
+      } else if (placeholder && placeholder.clearanceTier === 'FINAL_CLEARED') {
+        readinessTier = 'FINAL_CLEAR';
+        rationale = `Cleared via finalized replacement placeholder: ${placeholder.fictionalName} (${placeholder.assetCategory}).`;
+      } else if (placeholder && placeholder.clearanceTier === 'TEMP_APPROVED') {
+        readinessTier = 'WORKING_CLEAR';
+        rationale = `Working Clear: Temporary placeholder approved for on-set shooting: ${placeholder.fictionalName} (${placeholder.assetCategory}).`;
       } else if (hasReplacementCard) {
         readinessTier = 'WORKING_CLEAR';
         rationale = `Working Clear: Approved fictional replacement prop card attached (${entity.replacementCard?.fictionalBrandName}).`;

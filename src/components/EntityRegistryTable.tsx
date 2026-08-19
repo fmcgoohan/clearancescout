@@ -89,6 +89,7 @@ export interface EntityRegistryTableProps {
   onGenerateReplacement: (entityId: string) => void;
   onOpenCounselReview?: (entityId: string) => void;
   onOpenRightsModal?: (entityId: string, entityName: string) => void;
+  onOpenPlaceholderModal?: (entityId: string, entityName: string, entityCategory: string) => void;
   onOpenComparison?: (entityId: string) => void;
   onViewOccurrences?: (entityId: string) => void;
   onEditItem?: (entity: CanonicalEntity) => void;
@@ -108,6 +109,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   onGenerateReplacement,
   onOpenCounselReview,
   onOpenRightsModal,
+  onOpenPlaceholderModal,
   onOpenComparison,
   onViewOccurrences,
   onEditItem,
@@ -639,6 +641,17 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             title="Manage contractual rights, licenses, and covenants"
                           >
                             📜 Rights
+                          </button>
+                        )}
+                        {onOpenPlaceholderModal && (
+                          <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '4px 6px', color: 'var(--accent-cyan)', borderColor: 'rgba(0, 240, 255, 0.4)' }}
+                            onClick={() => onOpenPlaceholderModal(e.id, e.canonicalName, e.entityCategory)}
+                            disabled={isEvaluating || isItemInActiveBatch}
+                            title="Manage generalized fictional replacement and production placeholder"
+                          >
+                            🎨 Placeholder
                           </button>
                         )}
                         {onViewOccurrences && (

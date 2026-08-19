@@ -26,6 +26,7 @@ interface EntityDetailModalProps {
   onClose: () => void;
   onOpenCounselReview?: (entityId: string, sceneId?: string) => void;
   onOpenRightsModal?: (entityId: string, entityName: string) => void;
+  onOpenPlaceholderModal?: (entityId: string, entityName: string) => void;
   onOccurrenceEvaluated?: () => void;
 }
 
@@ -36,6 +37,7 @@ export function EntityDetailModal({
   onClose,
   onOpenCounselReview,
   onOpenRightsModal,
+  onOpenPlaceholderModal,
   onOccurrenceEvaluated,
 }: EntityDetailModalProps) {
   const [occurrences, setOccurrences] = useState<OccurrenceItem[]>([]);
@@ -214,6 +216,18 @@ export function EntityDetailModal({
                 style={{ padding: '6px 12px', fontSize: '0.85rem', color: '#34d399', borderColor: 'rgba(52, 211, 153, 0.4)' }}
               >
                 📜 Rights
+              </button>
+            )}
+            {onOpenPlaceholderModal && (
+              <button
+                className="btn-secondary touch-target"
+                onClick={() => {
+                  onOpenPlaceholderModal(entityId, canonicalName);
+                  onClose();
+                }}
+                style={{ padding: '6px 12px', fontSize: '0.85rem', color: 'var(--accent-cyan)', borderColor: 'rgba(0, 240, 255, 0.4)' }}
+              >
+                🎨 Placeholder
               </button>
             )}
             <button

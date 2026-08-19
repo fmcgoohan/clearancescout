@@ -58,14 +58,18 @@ class InMemoryStore {
         },
       }),
       where: (field: string, op: string, val: any) => ({
-        get: async () => ({
-          docs: Array.from(col.entries())
+        get: async () => {
+          const docs = Array.from(col.entries())
             .filter(([_, data]) => data && data[field] === val)
             .map(([id, data]) => ({
               id,
               data: () => data,
-            })),
-        }),
+            }));
+          return {
+            empty: docs.length === 0,
+            docs,
+          };
+        },
       }),
       get: async () => ({
         empty: col.size === 0,

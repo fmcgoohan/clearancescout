@@ -233,26 +233,26 @@
 
 ---
 
-## Phase 25: Phase 7 Setup (Placeholder Data Models & PlaceholderRepo)
+## Phase 25: Phase 7 Setup (Placeholder Data Models & PlaceholderRepo - Completed)
 
 **Purpose**: Create `ReplacementPlaceholderData` schemas, enums, and `PlaceholderRepo` for multi-category placeholder persistence.
 
-- [ ] T054 [P] Create `ReplacementPlaceholderData` domain model, enums (`PlaceholderAssetCategory`, `PlaceholderClearanceTier`), category details map, and `PlaceholderRepo` in `server/repositories/PlaceholderRepo.ts` with CRUD, category filtering, and tier update methods
+- [X] T054 [P] Create `ReplacementPlaceholderData` domain model, enums (`PlaceholderAssetCategory`, `PlaceholderClearanceTier`), category details map, and `PlaceholderRepo` in `server/repositories/PlaceholderRepo.ts` with CRUD, category filtering, and tier update methods
 
 ---
 
-## Phase 26: Phase 7 Foundational (Scene Readiness Integration & REST Endpoints)
+## Phase 26: Phase 7 Foundational (Scene Readiness Integration & REST Endpoints - Completed)
 
 **Purpose**: Integrate placeholders with scene readiness state machine and implement REST endpoints.
 
-- [ ] T055 [P] Update `server/workflows/sceneReadinessEngine.ts` to evaluate `TEMP_APPROVED` placeholders (yielding `WORKING CLEAR`) and `FINAL_CLEARED` placeholders (yielding `FINAL CLEAR`)
-- [ ] T056 [P] Implement Express router in `server/api/placeholderRoutes.ts` (`GET /projects/:id/placeholders`, `GET /projects/:id/entities/:entityId/placeholder`, `POST /projects/:id/placeholders`, `PATCH /projects/:id/placeholders/:placeholderId/tier`, `DELETE /projects/:id/placeholders/:placeholderId`) and mount in `server/index.ts`
+- [X] T055 [P] Update `server/workflows/sceneReadinessEngine.ts` to evaluate `TEMP_APPROVED` placeholders (yielding `WORKING CLEAR`) and `FINAL_CLEARED` placeholders (yielding `FINAL CLEAR`)
+- [X] T056 [P] Implement Express router in `server/api/placeholderRoutes.ts` (`GET /projects/:id/placeholders`, `GET /projects/:id/entities/:entityId/placeholder`, `POST /projects/:id/placeholders`, `PATCH /projects/:id/placeholders/:placeholderId/tier`, `DELETE /projects/:id/placeholders/:placeholderId`) and mount in `server/index.ts`
 
 **Checkpoint**: Placeholder engine and API ready - UI integration and test suites can proceed in parallel.
 
 ---
 
-## Phase 27: User Story 7 - Generalized Replacement & Placeholder Management (Priority: P7) 🎯 Phase 7 Target
+## Phase 27: User Story 7 - Generalized Replacement & Placeholder Management (Priority: P7 - Completed) 🎯 Phase 7 Target
 
 **Goal**: Manage fictional replacements and temporary production placeholders across brands, music, artwork, dialogue, and props, distinguishing between `TEMP_APPROVED` and `FINAL_CLEARED` tiers.
 
@@ -260,24 +260,24 @@
 
 ### Tests for User Story 7
 
-- [ ] T057 [P] [US7] Contract tests for placeholder CRUD, category-specific payload retention, tier transitions, and scene readiness impact in `tests/contract/test_placeholder_management.test.ts`
+- [X] T057 [P] [US7] Contract tests for placeholder CRUD, category-specific payload retention, tier transitions, and scene readiness impact in `tests/contract/test_placeholder_management.test.ts`
 
 ### Implementation for User Story 7
 
-- [ ] T058 [P] [US7] Create `src/components/PlaceholderManagerModal.tsx` allowing users to configure domain-specific replacement assets (Music BPM/key, Dialogue alternatives, Artwork prompt/specs, Prop details) and promote/demote clearance tiers (`TEMP_APPROVED` $\leftrightarrow$ `FINAL_CLEARED`)
-- [ ] T059 [US7] Update `src/components/EntityRegistryTable.tsx` and `src/components/EntityDetailModal.tsx` to display placeholder badges (`TEMP APPROVED`, `FINAL CLEARED`) and wire up `PlaceholderManagerModal`
+- [X] T058 [P] [US7] Create `src/components/PlaceholderManagerModal.tsx` allowing users to configure domain-specific replacement assets (Music BPM/key, Dialogue alternatives, Artwork prompt/specs, Prop details) and promote/demote clearance tiers (`TEMP_APPROVED` $\leftrightarrow$ `FINAL_CLEARED`)
+- [X] T059 [US7] Update `src/components/EntityRegistryTable.tsx` and `src/components/EntityDetailModal.tsx` to display placeholder badges (`TEMP APPROVED`, `FINAL CLEARED`) and wire up `PlaceholderManagerModal`
 
 **Checkpoint**: Phase 7 core functionality complete. Generalized placeholders operate across all 5 asset categories.
 
 ---
 
-## Phase 28: Phase 7 Polish & Cross-Cutting Concerns
+## Phase 28: Phase 7 Polish & Cross-Cutting Concerns (Completed)
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
 
-- [ ] T060 [P] Implement end-to-end integration test in `tests/integration/placeholder_clearance_workflow.test.ts` verifying brand, music, artwork, dialogue, and prop placeholders across script ingestion, on-set `TEMP_APPROVED` shooting, and legal `FINAL_CLEARED` delivery
-- [ ] T061 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
-- [ ] T062 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [X] T060 [P] Implement end-to-end integration test in `tests/integration/placeholder_clearance_workflow.test.ts` verifying brand, music, artwork, dialogue, and prop placeholders across script ingestion, on-set `TEMP_APPROVED` shooting, and legal `FINAL_CLEARED` delivery
+- [X] T061 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [X] T062 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 
