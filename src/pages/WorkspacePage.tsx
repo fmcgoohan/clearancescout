@@ -20,6 +20,7 @@ interface WorkspacePageProps {
   onRefreshProjectSummary?: () => void;
   isEvaluating: boolean;
   refreshTrigger: number;
+  executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
 }
 
 export const WorkspacePage: React.FC<WorkspacePageProps> = ({
@@ -31,6 +32,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   onRefreshProjectSummary,
   isEvaluating,
   refreshTrigger,
+  executionMode = 'DEMO_MODE',
 }) => {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [entities, setEntities] = useState<CanonicalEntity[]>([]);
@@ -214,9 +216,10 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          autoEvaluate: true,
-          includeSampleRights: true,
-          includeSamplePlaceholders: true,
+          // CLOUD_MODE must not silently substitute DEMO_FIXTURE evaluations.
+          autoEvaluate: executionMode !== 'CLOUD_MODE',
+          includeSampleRights: executionMode !== 'CLOUD_MODE',
+          includeSamplePlaceholders: executionMode !== 'CLOUD_MODE',
         }),
       });
 

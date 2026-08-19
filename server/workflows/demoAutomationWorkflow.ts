@@ -10,6 +10,7 @@ import { canonicalRegistryWorkflow } from './canonicalRegistryWorkflow.js';
 import { clearanceEvaluator } from './clearanceEvaluator.js';
 import { actionNotificationRepo } from '../repositories/ActionNotificationRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
+import { config } from '../config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,9 +28,10 @@ export class DemoAutomationWorkflow {
    * attaches sample rights & placeholders, and computes scene readiness.
    */
   async loadDemoScreenplay(projectId: string, options: DemoScriptLoadOptions = {}) {
-    const autoEvaluate = options.autoEvaluate !== false;
-    const includeSampleRights = options.includeSampleRights !== false;
-    const includeSamplePlaceholders = options.includeSamplePlaceholders !== false;
+    const liveCloud = config.executionMode === 'CLOUD_MODE';
+    const autoEvaluate = liveCloud ? false : options.autoEvaluate !== false;
+    const includeSampleRights = liveCloud ? false : options.includeSampleRights !== false;
+    const includeSamplePlaceholders = liveCloud ? false : options.includeSamplePlaceholders !== false;
 
     const project = await projectRepo.getProject(projectId);
     if (!project) {

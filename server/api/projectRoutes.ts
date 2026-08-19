@@ -5,6 +5,7 @@ import { sceneRepo } from '../repositories/SceneRepo.js';
 import { entityRepo } from '../repositories/EntityRepo.js';
 import { canonicalRegistryWorkflow } from '../workflows/canonicalRegistryWorkflow.js';
 import { demoAutomationWorkflow } from '../workflows/demoAutomationWorkflow.js';
+import { config } from '../config.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 export const projectRouter = Router();
@@ -61,7 +62,8 @@ projectRouter.post('/', async (req: Request, res: Response, next) => {
       productionCompany,
       scriptVersion: scriptVersion || 'v1.0',
       projectType: projectType || 'Movie',
-      executionMode: executionMode || 'DEMO_MODE',
+      executionMode:
+        config.executionMode === 'CLOUD_MODE' ? 'CLOUD_MODE' : executionMode || 'DEMO_MODE',
     });
 
     const quota = await projectRepo.getLiveQuota(project.id);

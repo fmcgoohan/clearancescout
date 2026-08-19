@@ -6,7 +6,7 @@
 [![Runtime](https://img.shields.io/badge/Model-Gemini%203.6%20Flash-4285F4)](https://deepmind.google/technologies/gemini/)
 [![Grounding](https://img.shields.io/badge/Grounding-Parallel%20Web%20API-06B6D4)](https://parallel.ai)
 [![Deployment](https://img.shields.io/badge/Platform-Google%20Cloud%20Run-34A853)](https://cloud.google.com/run)
-[![Tests](https://img.shields.io/badge/Tests-111%20Passing%20(59%20Suites)-34D399)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-114%20Passing%20(60%20Suites)-34D399)](tests/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-34A853)](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
 
 **Live demo (CLOUD_MODE):** [https://clearance-scout-n3tcx4jcbq-uc.a.run.app](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
@@ -28,7 +28,7 @@ ClearanceScout is an enterprise agentic platform designed for studio legal couns
 - *“Clear once, recognize everywhere”*: Canonical registry resolves entity occurrences across scenes.
 
 ### 2. Live Grounded Trademark & Case-Law Research
-- Grounded directly via the official `@parallel-web/sdk` web search engine.
+- Grounded directly via the official `parallel-web` TypeScript SDK web search engine.
 - Retains exact source URLs, trademark owner details, registration statuses, and precedent snippets with verifiable provenance badges (`PARALLEL_LIVE` 🌐, `DEMO_FIXTURE` 📦, `FALLBACK_FIXTURE` ⚡, `MIXED` 🔀).
 - Strict anti-hallucination invariant: Never invents external web evidence.
 
@@ -111,7 +111,7 @@ graph TD
     Client[Vite / React 18 SPA] -->|REST / SSE| Server[Express 4 Cloud Run Service]
     subgraph Backend[server/ directory isolation]
         Parser[ScriptParserAgent - Gemini 3.6 Flash]
-        Grounding[ParallelSearchTool - @parallel-web/sdk]
+        Grounding[ParallelSearchTool - parallel-web SDK]
         Evaluator[ClearanceEvaluator - Deterministic Math + Gemini]
         Replacements[ReplacementGenerator - Closed-Loop Self-Clearance]
         RightsEngine[RightsManagementWorkflow - Contractual Terms]
@@ -148,7 +148,7 @@ graph TD
 
 | Mode | Target | Description |
 |:---|:---|:---|
-| **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (111/111 tests pass). |
+| **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (114/114 tests pass). |
 | **`DEMO_MODE`** | Interactive Evaluation | Zero-configuration evaluation using synthetic datasets and bundled demo screenplay ("The Neon Horizon"). |
 | **`CLOUD_MODE`** | Production Runtime | Live Google Gemini 3.6 Flash and Parallel Search APIs. Fails visibly with diagnostics if credentials are missing. |
 
@@ -171,7 +171,7 @@ npm install
 ```bash
 npm test
 ```
-*Executes all 111 tests across 59 test files spanning contract and integration suites with 0 failures.*
+*Executes all 114 tests across 60 test files spanning contract and integration suites with 0 failures.*
 
 ### 3. Build & Run
 ```bash

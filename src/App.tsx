@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { CitationDrawer, Citation } from './components/CitationDrawer';
 import { ReplacementCardModal, ReplacementCard } from './components/ReplacementCardModal';
@@ -11,6 +11,7 @@ import { apiFetch, getDemoToken, setDemoToken } from './utils/apiClient';
 export default function App() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [executionMode, setExecutionMode] = useState<'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE'>('DEMO_MODE');
+  const serverExecutionModeRef = useRef<'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE'>('DEMO_MODE');
   const [projectTitle, setProjectTitle] = useState('Production Project Workspace');
   const [projectType, setProjectType] = useState<'Movie' | 'TV Show' | 'Commercial'>('Movie');
   const [projectSummary, setProjectSummary] = useState<{
@@ -143,7 +144,7 @@ export default function App() {
         setProjectId(data.id);
         setProjectTitle(data.title);
         setProjectType(data.projectType || 'Movie');
-        setExecutionMode(data.executionMode || 'DEMO_MODE');
+        setExecutionMode(serverExecutionModeRef.current || data.executionMode || 'DEMO_MODE');
         setAuthError(null);
         setQuotaError(null);
         setProjectSummary({
@@ -166,9 +167,11 @@ export default function App() {
     }
   };
 
-  // Initialize or fetch project
+  // Initialize or fetch project. Header mode is sourced from GET /api/health on first paint.
   useEffect(() => {
-    const initProject = async () => {
+    let cancelled = false;
+
+    const initProject = async (serverMode: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE') => {
       try {
         const listRes = await apiFetch('/api/projects');
         if (listRes.ok) {
@@ -187,7 +190,7 @@ export default function App() {
             productionCompany: 'Apex Entertainment',
             scriptVersion: 'v1.0-ShootingDraft',
             projectType: 'Movie',
-            executionMode,
+            executionMode: serverMode,
           }),
         });
         if (res.ok) {
@@ -201,7 +204,36 @@ export default function App() {
         console.error('Error initializing project:', err);
       }
     };
-    initProject();
+
+    const bootstrapFromHealth = async () => {
+      let serverMode: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE' = 'DEMO_MODE';
+      try {
+        const healthRes = await apiFetch('/api/health');
+        if (healthRes.ok) {
+          const health = await healthRes.json();
+          if (
+            health.executionMode === 'TEST_MODE' ||
+            health.executionMode === 'DEMO_MODE' ||
+            health.executionMode === 'CLOUD_MODE'
+          ) {
+            serverMode = health.executionMode;
+          }
+        }
+      } catch (err) {
+        console.error('Error loading /api/health execution mode:', err);
+      }
+
+      serverExecutionModeRef.current = serverMode;
+      if (!cancelled) {
+        setExecutionMode(serverMode);
+        await initProject(serverMode);
+      }
+    };
+
+    bootstrapFromHealth();
+    return () => {
+      cancelled = true;
+    };
   }, [hasTokenConfigured]);
 
   const refreshProjectSummary = async (id: string) => {
@@ -514,7 +546,8 @@ export default function App() {
             <label htmlFor="mode-select" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mode:</label>
             <select
               id="mode-select"
-              aria-label="Select System Execution Mode"
+              aria-label="Server execution mode from health endpoint"
+              title="Execution mode reported by GET /api/health"
               value={executionMode}
               onChange={(e) => setExecutionMode(e.target.value as any)}
               style={{
@@ -655,6 +688,7 @@ export default function App() {
             }}
             isEvaluating={isEvaluating}
             refreshTrigger={refreshTrigger}
+            executionMode={executionMode}
           />
         ) : (
           <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>

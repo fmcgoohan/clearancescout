@@ -24,26 +24,47 @@ export class ParallelSearchTool {
           precedents: 'Standard trademark protections apply under Nice Classification.',
         };
 
-    // If in CLOUD_MODE, attempt live parallel-web SDK search
+    // If in CLOUD_MODE, attempt live Parallel Search
     if (config.executionMode === 'CLOUD_MODE') {
       if (config.parallelWebApiKey) {
         try {
-          // @ts-ignore
-          const ParallelClient = (await import('@parallel-web/sdk')).default;
-          const parallel = new ParallelClient({ apiKey: config.parallelWebApiKey });
-          const res = await (parallel as any).search({ query, limit: 3 });
+          const Parallel = (await import('parallel-web')).default;
+          const parallel = new Parallel({ apiKey: config.parallelWebApiKey });
+          const res = await parallel.search({
+            objective: query,
+            search_queries: [`${entityName} trademark registration`, `${entityName} USPTO`],
+            mode: 'fast',
+            advanced_settings: { max_results: 3 },
+          });
 
-          const citations: ClearanceCitation[] = (res.results || []).map((r: any) => ({
-            id: `cit-${uuidv4().slice(0, 8)}`,
-            sourceUrl: r.url || 'https://parallel.ai/search',
-            query,
-            retrievedAt: now,
-            excerptSnippet: r.snippet || r.title || `Trademark search result for ${entityName}`,
-            registrationStatus: 'REGISTERED_ACTIVE' as const,
-            corporateOwner: ownerInfo.owner,
-            disputePrecedents: ownerInfo.precedents,
-            provenance: 'PARALLEL_LIVE' as const,
-          }));
+          const liveHits = res.results || [];
+          const citations: ClearanceCitation[] =
+            liveHits.length > 0
+              ? liveHits.slice(0, 3).map((r) => ({
+                  id: `cit-${uuidv4().slice(0, 8)}`,
+                  sourceUrl: r.url || 'https://parallel.ai/search',
+                  query,
+                  retrievedAt: now,
+                  excerptSnippet:
+                    (r.excerpts && r.excerpts[0]) || r.title || `Live search result for ${entityName}`,
+                  registrationStatus: 'REGISTERED_ACTIVE' as const,
+                  corporateOwner: ownerInfo.owner,
+                  disputePrecedents: ownerInfo.precedents,
+                  provenance: 'PARALLEL_LIVE' as const,
+                }))
+              : [
+                  {
+                    id: `cit-${uuidv4().slice(0, 8)}`,
+                    sourceUrl: 'https://parallel.ai/search',
+                    query,
+                    retrievedAt: now,
+                    excerptSnippet: `Live Parallel Search returned no trademark hits for ${entityName}.`,
+                    registrationStatus: 'UNKNOWN' as const,
+                    corporateOwner: ownerInfo.owner,
+                    disputePrecedents: ownerInfo.precedents,
+                    provenance: 'PARALLEL_LIVE' as const,
+                  },
+                ];
 
           return { query, citations, provenance: 'PARALLEL_LIVE' };
         } catch (err) {

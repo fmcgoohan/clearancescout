@@ -4,7 +4,7 @@
 **License**: MIT  
 **Date Established**: August 2026  
 **Status**: Active Production Reference  
-**Verified Test Baseline**: 111 Tests Passing across 59 Suites (100% Pass Rate)
+**Verified Test Baseline**: 114 Tests Passing across 60 Suites (100% Pass Rate)
 
 ---
 
@@ -156,5 +156,5 @@ ClearanceScout operates under a strict, non-negotiable fictional-content and evi
 As of Feature 017, the entire ClearanceScout test suite passes with 100% success rate across all contract, unit, and integration tests:
 - **Contract Tests**: Verified endpoint schemas, SSE event taxonomies, health checks, counsel overrides, multi-format parsers, project types, occurrence evaluation, entity resolution, rights management, scene readiness, action queues, placeholders, evidence self-clearance, operations dashboard, extended binder export, and 1-click judge demo automation.
 - **Integration Tests**: Verified end-to-end script ingestion, candidate clearance loops, counsel overrides with scene isolation, batch research, offline replay, judge demo workflows, and auditable binder compilation.
-- **Test Baseline**: 111 tests passing across 59 test suites (100% pass rate).
+- **Test Baseline**: 114 tests passing across 60 test suites (100% pass rate).
 - **Build Verification**: Multi-stage production container and Vite production bundle compile with 0 errors across 49 modules.
