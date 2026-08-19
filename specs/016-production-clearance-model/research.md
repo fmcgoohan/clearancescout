@@ -1,43 +1,47 @@
-# Research: Production Clearance Operating Model (Phase 1)
+# Research: Production Clearance Operating Model (Phase 2 - Occurrence Evaluation)
 
 **Feature**: `specs/016-production-clearance-model` | **Date**: 2026-08-19
 
 ---
 
-## 1. Project Type Taxonomy
+## 1. Occurrence Context vs. Abstract Entity Risk
 
 ### Context
-Entertainment clearance requirements differ fundamentally across production formats:
-- **Feature Films (`Movie`)**: Deep narrative scripts, multi-scene continuity, synchronization rights for score and soundtrack, hero prop licensing.
-- **Episodic Series (`TV Show`)**: Episodic scripts, recurring character brands, multi-season licensing, broadcast Standards & Practices (S&P).
-- **Short-Form Advertising (`Commercial`)**: Tight product placement covenants, competitor disparagement rules, broadcast legal vetting.
+In film and television legal clearance, risk does not attach in the abstract—it attaches to **how an asset is depicted in a specific scene**.
+- A car driven normally in Scene 1 poses zero tarnishment (`NO_ISSUE_SURFACED`).
+- The same car depicted exploding due to "faulty steering" in Scene 4 creates acute trademark tarnishment and product disparagement liability (`ACTION_REQUIRED`).
+- Conflating both into a single global entity status without occurrence tracking forces unnecessary replacements in scenes where the brand was used innocuously.
 
 ### Decision
-- Formally support `projectType: 'Movie' | 'TV Show' | 'Commercial'` in `ProjectData`.
-- Default to `'Movie'` when unspecified to ensure 100% backward compatibility with existing tests and scripts.
+- Make `SceneEntityOccurrenceData` the primary evaluation record.
+- Evaluator processes `canonical entity research` + `occurrence excerpt text` + `scene action context`.
+- Persist individual risk verdicts on each occurrence record.
 
 ---
 
-## 2. Project List & Workspace Landing Pattern
+## 2. Canonical Status Deterministic Roll-Up
 
 ### Context
-Users need to browse existing studio productions, create new ones with explicit type categorization, and land on a workspace that reflects the active production's title, type, and current clearance summary.
+Clearance coordinators still need a top-level summary of each brand or entity across the entire script.
 
 ### Decision
-- Add `GET /api/projects` in `server/api/projectRoutes.ts` returning an array of projects with their live quota and entity count summary.
-- Add an accessible project switcher & creation UI in `src/App.tsx` / `src/components/ProjectListModal.tsx` allowing switching between projects without page reload.
-- Display a prominent production type pill badge in the header:
-  - `🎬 Movie` (accent blue)
-  - `📺 TV Show` (accent cyan)
-  - `📢 Commercial` (accent amber)
+- Derive the canonical entity's `overallClearanceStatus` deterministically from its occurrences:
+  - Severity ranking:
+    1. `ACTION_REQUIRED` (Severity 4 - Red)
+    2. `REVIEW_RECOMMENDED` (Severity 3 - Yellow)
+    3. `INSUFFICIENT_EVIDENCE` (Severity 2 - Gray)
+    4. `NO_ISSUE_SURFACED` (Severity 1 - Green)
+- If an entity has multiple occurrences, its canonical status is the maximum severity across its active occurrences.
+- If an entity has no occurrences, its status reflects baseline category risk.
 
 ---
 
-## 3. Strict 10-Phase Scope Boundary
+## 3. Preserving 003 Scene Override Precedence
 
 ### Context
-The user's directive explicitly mandates that Phase 1 must not collapse or implement Phases 2 through 10.
+Feature 003 established that scene-specific counsel overrides take strict precedence over canonical overrides and baseline evaluations.
 
 ### Decision
-- Restrict all Phase 1 schema, API, and UI changes strictly to project types, project listing, and landing workspace summary.
-- Defer occurrence-level evaluation modeling to Phase 2.
+- The resolution chain for an occurrence is:
+  $$\text{Effective Occurrence} = \text{Scene Counsel Override} ?? \text{Occurrence Evaluated Status} ?? \text{Canonical Override} ?? \text{Baseline}$$
+- The canonical roll-up evaluates each occurrence's *effective* status, so a signed scene override that clears a scene properly contributes to the project summary.
