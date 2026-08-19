@@ -10,6 +10,7 @@ export interface ReplacementAttemptRecord {
   eraAesthetic?: string;
   clearanceStatus: ClearanceStatus; // 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE'
   collisionRationale?: string;    // If rejected, specific trademark or commercial collision reason
+  negativeConstraintsApplied?: string[]; // Negative constraints applied during synthesis
   citations: ClearanceCitation[]; // Research citations grounded via ParallelSearch or fixture
   provenance: ProvenanceType;     // 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE'
   timestamp: string;               // ISO 8601 string

@@ -64,7 +64,7 @@ export class ReplacementGenerator {
       // 2. Ground candidate in trademark & web clearance search
       const searchResult: SearchResult = await parallelSearchTool.searchTrademarkGrounding(candidate.fictionalBrandName);
 
-      // 3. Evaluate candidate risk against deterministic clearance policy
+      // 3. Evaluate candidate risk against evidence-driven clearance policy
       let status: ClearanceStatus = 'NO_ISSUE_SURFACED';
       let collisionReason: string | undefined = undefined;
 
@@ -73,41 +73,17 @@ export class ReplacementGenerator {
         status = 'INSUFFICIENT_EVIDENCE';
         collisionReason = `Live Parallel Search unavailable in CLOUD_MODE. Candidate clearance cannot be verified without live search connection.`;
       } else {
-        // Known test collision words for multi-attempt simulations
-        const knownCollisions = [
-          'radiant pop',
-          'atomic cola',
-          'monza sprint',
-          'aero coupe',
-          'prism computer',
-          'novabook',
-          'symphony of the night',
-          'rhapsody in starlight',
-          'crown plaza spire',
-          'metropolis tower',
-          'apex munitions caution sign',
-          'standard hazard label',
-          'nuka-cola',
-          'porsche',
-          'coca-cola',
-          'apple',
-          '[collision]'
-        ];
-
-        const isCollision = knownCollisions.some(c => candidate.fictionalBrandName.toLowerCase().includes(c));
-
-        if (isCollision) {
-          status = 'ACTION_REQUIRED';
-          collisionReason = `Trademark conflict detected: active commercial registration or proprietary mark found for '${candidate.fictionalBrandName}'.`;
-        } else if (candidate.fictionalBrandName.toLowerCase().includes('insufficient')) {
-          status = 'INSUFFICIENT_EVIDENCE';
-          collisionReason = `Insufficient public trademark registry evidence surfaced for '${candidate.fictionalBrandName}'.`;
-        } else {
-          status = 'NO_ISSUE_SURFACED';
-        }
+        const evalResult = await replacementAgent.evaluateCollision(
+          candidate.fictionalBrandName,
+          entity.entityCategory,
+          searchResult.citations
+        );
+        status = evalResult.clearanceStatus;
+        collisionReason = evalResult.collisionRationale;
       }
 
-      // Record attempt in history
+      // Record attempt in history with negative constraints context
+      const negativeConstraintsApplied = attemptHistory.map((a) => a.candidateName);
       const attemptRecord: ReplacementAttemptRecord = {
         attemptNumber,
         candidateName: candidate.fictionalBrandName,
@@ -115,6 +91,7 @@ export class ReplacementGenerator {
         eraAesthetic: candidate.eraAesthetic,
         clearanceStatus: status,
         collisionRationale: status !== 'NO_ISSUE_SURFACED' ? collisionReason : undefined,
+        negativeConstraintsApplied: negativeConstraintsApplied.length > 0 ? negativeConstraintsApplied : undefined,
         citations: searchResult.citations,
         provenance: searchResult.provenance,
         timestamp: new Date().toISOString(),

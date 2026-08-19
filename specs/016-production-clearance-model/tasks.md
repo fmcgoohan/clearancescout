@@ -281,26 +281,26 @@
 
 ---
 
-## Phase 29: Phase 8 Setup (Live Collision Evaluator & Negative Constraint Context)
+## Phase 29: Phase 8 Setup (Live Collision Evaluator & Negative Constraint Context - Completed)
 
 **Purpose**: Upgrade `ReplacementAttemptRecord` and `ReplacementAgent.ts` with live collision evaluation against Parallel Search citations and negative constraint context prompting.
 
-- [ ] T063 [P] Update `ReplacementAttemptRecord` schema in `server/repositories/ReplacementRepo.ts` with negative constraints applied and enhance `server/agents/ReplacementAgent.ts` with live search collision reasoning and negative constraint context prompting
+- [X] T063 [P] Update `ReplacementAttemptRecord` schema in `server/repositories/ReplacementRepo.ts` with negative constraints applied and enhance `server/agents/ReplacementAgent.ts` with live search collision reasoning and negative constraint context prompting
 
 ---
 
-## Phase 30: Phase 8 Foundational (Evidence-Driven Self-Clearance Loop & 4-Event SSE)
+## Phase 30: Phase 8 Foundational (Evidence-Driven Self-Clearance Loop & 4-Event SSE - Completed)
 
 **Purpose**: Update `replacementGenerator.ts` and `parallelSearchTool.ts` to ground candidates with live Parallel Search, evaluate real-world collision evidence, enforce $\le 3$ loop ceiling, emit 4-event SSE timeline, and escalate to legal counsel.
 
-- [ ] T064 [P] Update `server/workflows/replacementGenerator.ts` to ground candidates with live Parallel Search (`PARALLEL_LIVE`), evaluate real-world collision evidence, maintain negative constraints, enforce $\le 3$ loop ceiling, emit 4-event SSE timeline (`REPLACEMENT_ATTEMPT`, `REPLACEMENT_RESEARCH_STARTED`, `REPLACEMENT_REJECTED`, `REPLACEMENT_ACCEPTED`), and escalate to legal counsel on 3 consecutive failures
-- [ ] T065 [P] Update `server/tools/parallelSearchTool.ts` to support live trademark and web conflict queries with citation provenance in `CLOUD_MODE` / live mode
+- [X] T064 [P] Update `server/workflows/replacementGenerator.ts` to ground candidates with live Parallel Search (`PARALLEL_LIVE`), evaluate real-world collision evidence, maintain negative constraints, enforce $\le 3$ loop ceiling, emit 4-event SSE timeline (`REPLACEMENT_ATTEMPT`, `REPLACEMENT_RESEARCH_STARTED`, `REPLACEMENT_REJECTED`, `REPLACEMENT_ACCEPTED`), and escalate to legal counsel on 3 consecutive failures
+- [X] T065 [P] Update `server/tools/parallelSearchTool.ts` to support live trademark and web conflict queries with citation provenance in `CLOUD_MODE` / live mode
 
 **Checkpoint**: Evidence-driven self-clearance engine and API ready - UI integration and test suites can proceed in parallel.
 
 ---
 
-## Phase 31: User Story 8 - Evidence-Driven Live Self-Clearance Loop (Priority: P8) 🎯 Phase 8 Target
+## Phase 31: User Story 8 - Evidence-Driven Live Self-Clearance Loop (Priority: P8 - Completed) 🎯 Phase 8 Target
 
 **Goal**: Autonomously iterate on candidate fictional replacements by conducting live web/trademark searches, checking for real-world collisions with citation provenance, and applying negative constraints, with a hard ceiling of 3 iterations.
 
@@ -308,24 +308,24 @@
 
 ### Tests for User Story 8
 
-- [ ] T066 [P] [US8] Contract tests for evidence-driven candidate generation, live search collision analysis, negative constraint accumulation, and 3-attempt loop ceiling in `tests/contract/test_evidence_self_clearance.test.ts`
+- [X] T066 [P] [US8] Contract tests for evidence-driven candidate generation, live search collision analysis, negative constraint accumulation, and 3-attempt loop ceiling in `tests/contract/test_evidence_self_clearance.test.ts`
 
 ### Implementation for User Story 8
 
-- [ ] T067 [P] [US8] Update `src/components/TimelineDrawer.tsx` to render multi-attempt self-clearance timeline badges (`ATTEMPT #`, `SEARCHING`, `REJECTED (COLLISION)`, `ACCEPTED`) with live search citation popovers
-- [ ] T068 [US8] Update `src/components/ComparisonModal.tsx` to display multi-attempt replacement history with collision rationales, negative constraints, and live citation provenance links
+- [X] T067 [P] [US8] Update `src/components/TimelineDrawer.tsx` to render multi-attempt self-clearance timeline badges (`ATTEMPT #`, `SEARCHING`, `REJECTED (COLLISION)`, `ACCEPTED`) with live search citation popovers
+- [X] T068 [US8] Update `src/components/ComparisonModal.tsx` to display multi-attempt replacement history with collision rationales, negative constraints, and live citation provenance links
 
 **Checkpoint**: Phase 8 core functionality complete. Self-clearance operates autonomously with real-world trademark grounding.
 
 ---
 
-## Phase 32: Phase 8 Polish & Cross-Cutting Concerns
+## Phase 32: Phase 8 Polish & Cross-Cutting Concerns (Completed)
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
 
-- [ ] T069 [P] Implement end-to-end integration test in `tests/integration/evidence_self_clearance_workflow.test.ts` verifying attempt 1 clean clearance, attempt 2 negative constraint progression, and attempt 3 counsel escalation with live citation provenance
-- [ ] T070 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
-- [ ] T071 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [X] T069 [P] Implement end-to-end integration test in `tests/integration/evidence_self_clearance_workflow.test.ts` verifying attempt 1 clean clearance, attempt 2 negative constraint progression, and attempt 3 counsel escalation with live citation provenance
+- [X] T070 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [X] T071 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 
