@@ -4,6 +4,7 @@ import { CitationDrawer, Citation } from './components/CitationDrawer';
 import { ReplacementCardModal, ReplacementCard } from './components/ReplacementCardModal';
 import { TimelineDrawer } from './components/TimelineDrawer';
 import { BinderExportModal, ClearanceBinder } from './components/BinderExportModal';
+import { ProjectListModal } from './components/ProjectListModal';
 import { useTimelineSSE } from './hooks/useTimelineSSE';
 import { apiFetch, getDemoToken, setDemoToken } from './utils/apiClient';
 
@@ -11,6 +12,21 @@ export default function App() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [executionMode, setExecutionMode] = useState<'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE'>('DEMO_MODE');
   const [projectTitle, setProjectTitle] = useState('Production Project Workspace');
+  const [projectType, setProjectType] = useState<'Movie' | 'TV Show' | 'Commercial'>('Movie');
+  const [projectSummary, setProjectSummary] = useState<{
+    entityCount: number;
+    clearedCount: number;
+    actionRequiredCount: number;
+    reviewRecommendedCount: number;
+  }>({
+    entityCount: 0,
+    clearedCount: 0,
+    actionRequiredCount: 0,
+    reviewRecommendedCount: 0,
+  });
+
+  // Project List Modal State
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   
   // Demo Access Token State
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
@@ -109,18 +125,60 @@ export default function App() {
           setIsTimelineOpen(false);
         } else if (isTokenModalOpen) {
           setIsTokenModalOpen(false);
+        } else if (isProjectModalOpen) {
+          setIsProjectModalOpen(false);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isReplacementOpen, isBinderOpen, isCitationOpen, isTimelineOpen, isTokenModalOpen]);
+  }, [isReplacementOpen, isBinderOpen, isCitationOpen, isTimelineOpen, isTokenModalOpen, isProjectModalOpen]);
+
+  const loadProjectDetails = async (id: string) => {
+    try {
+      const res = await apiFetch(`/api/projects/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setProjectId(data.id);
+        setProjectTitle(data.title);
+        setProjectType(data.projectType || 'Movie');
+        setExecutionMode(data.executionMode || 'DEMO_MODE');
+        setAuthError(null);
+        setQuotaError(null);
+        setProjectSummary({
+          entityCount: data.entityCount || 0,
+          clearedCount: data.clearedCount || 0,
+          actionRequiredCount: data.actionRequiredCount || 0,
+          reviewRecommendedCount: data.reviewRecommendedCount || 0,
+        });
+        if (data.liveQuotaLimit !== undefined) {
+          setLiveQuota({
+            limit: data.liveQuotaLimit,
+            used: data.liveQuotaUsed || 0,
+            remaining: data.liveQuotaRemaining !== undefined ? data.liveQuotaRemaining : Math.max(0, data.liveQuotaLimit - (data.liveQuotaUsed || 0)),
+          });
+        }
+        setRefreshTrigger((prev) => prev + 1);
+      }
+    } catch (err) {
+      console.error('Error loading project details:', err);
+    }
+  };
 
   // Initialize or fetch project
   useEffect(() => {
     const initProject = async () => {
       try {
+        const listRes = await apiFetch('/api/projects');
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          if (listData.projects && listData.projects.length > 0) {
+            await loadProjectDetails(listData.projects[0].id);
+            return;
+          }
+        }
+
         const res = await apiFetch('/api/projects', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -128,22 +186,13 @@ export default function App() {
             title: 'ClearanceScout MVP Workspace',
             productionCompany: 'Apex Entertainment',
             scriptVersion: 'v1.0-ShootingDraft',
+            projectType: 'Movie',
             executionMode,
           }),
         });
         if (res.ok) {
           const data = await res.json();
-          setProjectId(data.id);
-          setProjectTitle(data.title);
-          setAuthError(null);
-          setQuotaError(null);
-          if (data.liveQuotaLimit !== undefined) {
-            setLiveQuota({
-              limit: data.liveQuotaLimit,
-              used: data.liveQuotaUsed || 0,
-              remaining: data.liveQuotaRemaining !== undefined ? data.liveQuotaRemaining : Math.max(0, data.liveQuotaLimit - (data.liveQuotaUsed || 0)),
-            });
-          }
+          await loadProjectDetails(data.id);
         } else if (res.status === 401) {
           const errData = await res.json();
           setAuthError(errData.error || 'Unauthorized: Demo Access Token required.');
@@ -153,7 +202,7 @@ export default function App() {
       }
     };
     initProject();
-  }, [executionMode, hasTokenConfigured]);
+  }, [hasTokenConfigured]);
 
   const refreshProjectQuota = async (id: string) => {
     try {
@@ -365,12 +414,74 @@ export default function App() {
             CS
           </div>
           <div>
-            <h1 style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em' }}>ClearanceScout</h1>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Agentic Entertainment Clearance Workspace</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1 style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
+                {projectTitle}
+              </h1>
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  background:
+                    projectType === 'TV Show'
+                      ? 'rgba(56, 189, 248, 0.15)'
+                      : projectType === 'Commercial'
+                      ? 'rgba(251, 191, 36, 0.15)'
+                      : 'rgba(129, 140, 248, 0.15)',
+                  color:
+                    projectType === 'TV Show'
+                      ? '#38bdf8'
+                      : projectType === 'Commercial'
+                      ? '#fbbf24'
+                      : '#818cf8',
+                  fontWeight: 600,
+                }}
+              >
+                {projectType === 'TV Show' ? '📺 TV Show' : projectType === 'Commercial' ? '📢 Commercial' : '🎬 Movie'}
+              </span>
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              ClearanceScout · Agentic Entertainment Clearance Workspace
+            </span>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          {/* Project Switcher Trigger */}
+          <button
+            className="btn-secondary touch-target"
+            aria-label="Switch or Create Production Project"
+            style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+            onClick={() => setIsProjectModalOpen(true)}
+          >
+            📁 Switch Project
+          </button>
+
+          {/* Landing Clearance Summary Indicator */}
+          <div
+            className="touch-target"
+            aria-label={`Project Summary: ${projectSummary.entityCount} Total Entities, ${projectSummary.clearedCount} Cleared, ${projectSummary.actionRequiredCount} Action Required`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(0,0,0,0.3)',
+              padding: '4px 10px',
+              borderRadius: '20px',
+              border: '1px solid var(--border-color)',
+              fontSize: '0.75rem',
+              fontFamily: 'JetBrains Mono, monospace',
+            }}
+          >
+            <span style={{ color: 'var(--text-muted)' }}>📊 Summary:</span>
+            <span style={{ color: '#34d399', fontWeight: 600 }}>{projectSummary.clearedCount} Cleared</span>
+            {projectSummary.actionRequiredCount > 0 && (
+              <span style={{ color: '#f87171', fontWeight: 600 }}>{projectSummary.actionRequiredCount} Action</span>
+            )}
+            <span style={{ color: 'var(--text-muted)' }}>({projectSummary.entityCount} Entities)</span>
+          </div>
+
           {/* Demo Token Header Trigger */}
           <button
             className="btn-secondary touch-target"
@@ -671,6 +782,13 @@ export default function App() {
         onClose={() => setIsTimelineOpen(false)}
         targetEntityName={timelineTargetEntity}
         onClearTargetEntity={() => setTimelineTargetEntity(null)}
+      />
+
+      <ProjectListModal
+        isOpen={isProjectModalOpen}
+        activeProjectId={projectId}
+        onSelectProject={(selectedId) => loadProjectDetails(selectedId)}
+        onClose={() => setIsProjectModalOpen(false)}
       />
     </div>
   );

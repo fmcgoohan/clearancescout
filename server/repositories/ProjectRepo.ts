@@ -1,11 +1,14 @@
 import { getDb } from './firestoreClient.js';
 import { v4 as uuidv4 } from 'uuid';
 
+export type ProductionProjectType = 'Movie' | 'TV Show' | 'Commercial';
+
 export interface ProjectData {
   id: string;
   title: string;
   productionCompany: string;
   scriptVersion: string;
+  projectType?: ProductionProjectType;
   executionMode: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
   liveQuotaLimit?: number;
   liveQuotaUsed?: number;
@@ -28,6 +31,7 @@ export class ProjectRepo {
     const project: ProjectData = {
       id,
       ...input,
+      projectType: input.projectType || 'Movie',
       liveQuotaLimit: input.liveQuotaLimit !== undefined ? input.liveQuotaLimit : 25,
       liveQuotaUsed: input.liveQuotaUsed !== undefined ? input.liveQuotaUsed : 0,
       createdAt: now,
@@ -46,9 +50,26 @@ export class ProjectRepo {
     const data = snap.data() as ProjectData;
     return {
       ...data,
+      projectType: data.projectType || 'Movie',
       liveQuotaLimit: data.liveQuotaLimit !== undefined ? data.liveQuotaLimit : 25,
       liveQuotaUsed: data.liveQuotaUsed !== undefined ? data.liveQuotaUsed : 0,
     };
+  }
+
+  async listProjects(): Promise<ProjectData[]> {
+    const colRef = await this.db.collection('projects');
+    const snap = await colRef.get();
+    const projects: ProjectData[] = snap.docs.map((d: any) => {
+      const data = d.data();
+      return {
+        ...data,
+        projectType: data.projectType || 'Movie',
+        liveQuotaLimit: data.liveQuotaLimit !== undefined ? data.liveQuotaLimit : 25,
+        liveQuotaUsed: data.liveQuotaUsed !== undefined ? data.liveQuotaUsed : 0,
+      };
+    });
+
+    return projects.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   async getLiveQuota(projectId: string): Promise<ProjectQuotaStatus> {

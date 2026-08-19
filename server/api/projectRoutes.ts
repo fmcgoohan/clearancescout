@@ -8,18 +8,58 @@ import { canonicalRegistryWorkflow } from '../workflows/canonicalRegistryWorkflo
 const upload = multer({ storage: multer.memoryStorage() });
 export const projectRouter = Router();
 
+// List All Projects
+projectRouter.get('/', async (_req: Request, res: Response, next) => {
+  try {
+    const rawProjects = await projectRepo.listProjects();
+    const projects = await Promise.all(
+      rawProjects.map(async (proj) => {
+        const [quota, entities] = await Promise.all([
+          projectRepo.getLiveQuota(proj.id),
+          entityRepo.getEntitiesByProject(proj.id),
+        ]);
+        const entityCount = entities.length;
+        const clearedCount = entities.filter((e) => e.overallClearanceStatus === 'NO_ISSUE_SURFACED').length;
+        const actionRequiredCount = entities.filter((e) => e.overallClearanceStatus === 'ACTION_REQUIRED').length;
+        const reviewRecommendedCount = entities.filter((e) => e.overallClearanceStatus === 'REVIEW_RECOMMENDED').length;
+
+        return {
+          ...proj,
+          liveQuotaLimit: quota.limit,
+          liveQuotaUsed: quota.used,
+          liveQuotaRemaining: quota.remaining,
+          entityCount,
+          clearedCount,
+          actionRequiredCount,
+          reviewRecommendedCount,
+        };
+      })
+    );
+
+    return res.json({ projects });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Create Project
 projectRouter.post('/', async (req: Request, res: Response, next) => {
   try {
-    const { title, productionCompany, scriptVersion, executionMode } = req.body;
+    const { title, productionCompany, scriptVersion, projectType, executionMode } = req.body;
     if (!title || !productionCompany) {
       return res.status(400).json({ error: 'Title and productionCompany are required.' });
+    }
+
+    const validTypes = ['Movie', 'TV Show', 'Commercial'];
+    if (projectType && !validTypes.includes(projectType)) {
+      return res.status(400).json({ error: 'Invalid projectType. Must be Movie, TV Show, or Commercial.' });
     }
 
     const project = await projectRepo.createProject({
       title,
       productionCompany,
       scriptVersion: scriptVersion || 'v1.0',
+      projectType: projectType || 'Movie',
       executionMode: executionMode || 'DEMO_MODE',
     });
 
@@ -30,6 +70,10 @@ projectRouter.post('/', async (req: Request, res: Response, next) => {
       liveQuotaLimit: quota.limit,
       liveQuotaUsed: quota.used,
       liveQuotaRemaining: quota.remaining,
+      entityCount: 0,
+      clearedCount: 0,
+      actionRequiredCount: 0,
+      reviewRecommendedCount: 0,
     });
   } catch (err) {
     next(err);
@@ -43,12 +87,25 @@ projectRouter.get('/:id', async (req: Request, res: Response, next) => {
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    const quota = await projectRepo.getLiveQuota(project.id);
+    const [quota, entities] = await Promise.all([
+      projectRepo.getLiveQuota(project.id),
+      entityRepo.getEntitiesByProject(project.id),
+    ]);
+
+    const entityCount = entities.length;
+    const clearedCount = entities.filter((e) => e.overallClearanceStatus === 'NO_ISSUE_SURFACED').length;
+    const actionRequiredCount = entities.filter((e) => e.overallClearanceStatus === 'ACTION_REQUIRED').length;
+    const reviewRecommendedCount = entities.filter((e) => e.overallClearanceStatus === 'REVIEW_RECOMMENDED').length;
+
     return res.json({
       ...project,
       liveQuotaLimit: quota.limit,
       liveQuotaUsed: quota.used,
       liveQuotaRemaining: quota.remaining,
+      entityCount,
+      clearedCount,
+      actionRequiredCount,
+      reviewRecommendedCount,
     });
   } catch (err) {
     next(err);
