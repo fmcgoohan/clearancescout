@@ -1,46 +1,35 @@
-# Quickstart: Production Clearance Operating Model (Phase 6 Validation)
+# Quickstart: Production Clearance Operating Model (Phase 7 Validation)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 6 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 7 Focus)  
 **Date**: 2026-08-19  
 
 ---
 
-## Scenario 1: Screenplay Ingestion Generates Department-Routed Action Items
+## Scenario 1: Attach Music Placeholder with Key/BPM at `TEMP_APPROVED` Tier
 
 ### Steps:
-1. Create a project `POST /api/projects`.
-2. Ingest screenplay containing Scene 1 with `GRAPHIC_PROP` ("Titan Hazard Placard") and `ART_MUSIC` ("Nocturne of the Wild").
-3. Trigger action sync `POST /api/projects/$PROJECT_ID/actions/sync` or evaluate clearance.
-4. Query actions `GET /api/projects/$PROJECT_ID/actions`.
-5. Verify:
-   - Art Dept action item is generated (`actionType: 'ART_DEPT_REPLACEMENT'`, `targetDepartment: 'ART_DEPT'`).
-   - Legal Counsel action item is generated (`actionType: 'LEGAL_COUNSEL_RELEASE'`, `targetDepartment: 'LEGAL_COUNSEL'`).
+1. Create a project and ingest screenplay with music mention ("Nocturne of the Wild").
+2. Create music placeholder via `POST /api/projects/$PROJECT_ID/placeholders`:
+   - `assetCategory: 'ART_MUSIC'`
+   - `fictionalName: 'Echoes of the Wild'`
+   - `clearanceTier: 'TEMP_APPROVED'`
+   - `categoryDetails: { bpm: 110, key: 'D Minor', musicalStyle: 'Atmospheric Rock' }`
+3. Evaluate Scene 1 readiness $\to$ Scene transitions to **`WORKING CLEAR`**.
 
 ---
 
-## Scenario 2: Scene `RED` State Generates Production Management Alert
+## Scenario 2: Promote Music Placeholder to `FINAL_CLEARED`
 
 ### Steps:
-1. Evaluate scene readiness for Scene 1 (`POST /api/projects/$PROJECT_ID/scenes/$SCENE_ID/readiness/evaluate`).
-2. Verify Scene 1 status is `RED`.
-3. Query notifications `GET /api/projects/$PROJECT_ID/notifications`.
-4. Verify critical alert notification is generated with `targetDepartment: 'PRODUCTION_MGMT'` and `severity: 'CRITICAL'`.
+1. Promote placeholder tier via `PATCH /api/projects/$PROJECT_ID/placeholders/$PLACEHOLDER_ID/tier` with `{ clearanceTier: 'FINAL_CLEARED' }`.
+2. Evaluate Scene 1 readiness $\to$ Scene upgrades to **`FINAL CLEAR`**.
 
 ---
 
-## Scenario 3: Attaching Fictional Replacement Card Auto-Resolves Art Department Action
+## Scenario 3: Attach Dialogue and Artwork Placeholders
 
 ### Steps:
-1. Attach replacement card to the graphic prop (`POST /api/projects/$PROJECT_ID/replacements`).
-2. Query actions `GET /api/projects/$PROJECT_ID/actions?department=ART_DEPT`.
-3. Verify the Art Department action status is automatically updated to **`RESOLVED`** with `resolutionTrigger: 'REPLACEMENT_CARD_ATTACHED'`.
-
----
-
-## Scenario 4: Legal Counsel Signed Override Auto-Resolves Legal Action and Scene Blocker
-
-### Steps:
-1. Submit signed counsel override for the music track (`POST /api/projects/$PROJECT_ID/overrides`).
-2. Query actions `GET /api/projects/$PROJECT_ID/actions?department=LEGAL_COUNSEL`.
-3. Verify Legal action status transitions to **`RESOLVED`**.
-4. Re-evaluate Scene 1 readiness $\to$ Scene transitions to `FINAL_CLEAR` and production review actions are resolved.
+1. Create dialogue placeholder with `categoryDetails: { alternativeLines: ['Line A', 'Line B'] }`.
+2. Create artwork placeholder with `categoryDetails: { artistPrompt: 'Fictional cyberpunk skyline painting in acrylic style' }`.
+3. Query placeholders `GET /api/projects/$PROJECT_ID/placeholders`.
+4. Verify both placeholders retain category details and link accurately to canonical entities.

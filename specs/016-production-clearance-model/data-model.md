@@ -1,53 +1,70 @@
-# Data Model: Production Clearance Operating Model (Phase 6)
+# Data Model: Production Clearance Operating Model (Phase 7)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 6 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 7 Focus)  
 **Date**: 2026-08-19  
 **Status**: Completed  
 
 ---
 
-## 1. Action Items Domain Model
+## 1. Generalized Replacement & Placeholder Domain Models
 
-### `ClearanceActionType` & `DepartmentTarget`
+### Enums
 ```typescript
-export type ClearanceActionType =
-  | 'ART_DEPT_REPLACEMENT'
-  | 'LEGAL_COUNSEL_RELEASE'
-  | 'LOCATIONS_PERMIT'
-  | 'PRODUCTION_REVIEW'
-  | 'COUNSEL_OVERRIDE_REVIEW';
+export type PlaceholderAssetCategory =
+  | 'BRAND'
+  | 'ART_MUSIC'
+  | 'ARTWORK'
+  | 'DIALOGUE'
+  | 'GRAPHIC_PROP';
 
-export type DepartmentTarget =
-  | 'ART_DEPT'
-  | 'LEGAL_COUNSEL'
-  | 'LOCATIONS'
-  | 'PRODUCTION_MGMT'
-  | 'CLEARANCE_TEAM';
-
-export type ActionPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-export type ActionStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'DISMISSED';
+export type PlaceholderClearanceTier = 'TEMP_APPROVED' | 'FINAL_CLEARED';
 ```
 
-### `ClearanceActionItem`
-Stored in Firestore at `projects/{projectId}/actions/{actionId}`.
+### `ReplacementPlaceholderData`
+Stored in Firestore at `projects/{projectId}/placeholders/{placeholderId}`.
 
 ```typescript
-export interface ClearanceActionItem {
-  id: string;                      // e.g. 'act-a1b2c3d4'
+export interface ReplacementPlaceholderData {
+  id: string;                      // e.g. 'ph-a1b2c3d4'
   projectId: string;
-  sceneId?: string;
-  sceneNumber?: number;
-  canonicalEntityId?: string;
-  canonicalName?: string;
-  occurrenceId?: string;
-  actionType: ClearanceActionType;
-  targetDepartment: DepartmentTarget;
-  title: string;
+  canonicalEntityId: string;
+  canonicalName: string;
+  assetCategory: PlaceholderAssetCategory;
+  fictionalName: string;
   description: string;
-  priority: ActionPriority;
-  status: ActionStatus;
-  resolutionTrigger?: string;
-  resolvedAt?: string;
+  clearanceTier: PlaceholderClearanceTier;
+  creativeRationale: string;
+  approvedBy: string;
+  approvedRole?: string;
+  approvalDate: string;
+  expirationDate?: string;
+  categoryDetails?: {
+    // Brand
+    trademarkSearchNotes?: string;
+    packagingDimensions?: string;
+    fictionalTagline?: string;
+
+    // Music
+    bpm?: number;
+    key?: string;
+    musicalStyle?: string;
+    licenseType?: string;
+
+    // Artwork
+    artistPrompt?: string;
+    visualStyle?: string;
+    dimensions?: string;
+    imageUrl?: string;
+
+    // Dialogue
+    alternativeLines?: string[];
+    subtextRationale?: string;
+
+    // Prop
+    physicalSpecs?: string;
+    safetyClearanceNotes?: string;
+    graphicLabelUrl?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -55,22 +72,15 @@ export interface ClearanceActionItem {
 
 ---
 
-## 2. Notification Model
-
-### `ClearanceNotification`
-Stored in Firestore at `projects/{projectId}/notifications/{notifId}`.
+## 2. Scene Readiness Integration
 
 ```typescript
-export interface ClearanceNotification {
-  id: string;                      // e.g. 'notif-98765432'
-  projectId: string;
-  sceneId?: string;
-  sceneNumber?: number;
-  targetDepartment: DepartmentTarget;
-  headline: string;
-  message: string;
-  severity: 'INFO' | 'WARNING' | 'ALERT' | 'CRITICAL';
-  isRead: boolean;
-  createdAt: string;
+// sceneReadinessEngine.ts
+if (placeholder) {
+  if (placeholder.clearanceTier === 'FINAL_CLEARED') {
+    readinessTier = 'FINAL_CLEAR';
+  } else if (placeholder.clearanceTier === 'TEMP_APPROVED') {
+    readinessTier = 'WORKING_CLEAR';
+  }
 }
 ```

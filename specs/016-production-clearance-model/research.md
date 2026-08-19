@@ -1,55 +1,73 @@
-# Research & Architectural Decisions: Production Clearance Operating Model (Phase 6)
+# Research & Architectural Decisions: Production Clearance Operating Model (Phase 7)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 6 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 7 Focus)  
 **Date**: 2026-08-19  
 **Status**: Completed  
 
 ---
 
-## 1. Automated Department Action Dispatching
+## 1. Multi-Domain Placeholder Parameterization
 
 ### Context & Problem
-In film and TV production, clearance issue spotting is useless unless routed to the specific department responsible for resolving it:
-- **Art Department (Prop Masters, Graphic Designers)**: Needs immediate notice when a graphic prop, label, or packaging needs a fictional replacement design card.
-- **Legal Counsel / Clearance Coordinators**: Needs to draft and execute releases for trademarked marks, sync licenses for copyrighted songs, and review rights of publicity.
-- **Locations Department**: Needs to secure filming permits or location agreements when private/proprietary buildings or landmarks appear in scene action.
-- **Production Management (Line Producers, 1st ADs)**: Needs instant alerts when a scene is `RED` (blocked from shooting) so call sheets and shooting schedules can be adjusted.
+In film & TV productions, replacement assets are not limited to fictional brand logos. Different departments have distinct replacement needs:
+- **Art Department (Props & Graphics)**: Needs printable fictional prop packaging with exact physical dimensions.
+- **Music Department**: Needs tempo (BPM), musical key, and acoustic style guidelines for score/source composition substitutes.
+- **Dialogue / Script Supervisors**: Needs scripted alternative lines with preserved dramatic subtext to replace defamatory or trademarked dialogue.
+- **Set Dressing / Art Gallery**: Needs artist prompt guidelines and copyright-free visual artwork specs.
 
 ### Decision
-Implement `ActionDispatcher` in `server/workflows/actionDispatcher.ts` with deterministic rule-based routing:
+Implement `ReplacementPlaceholderData` supporting a polymorphic `categoryDetails` JSON structure:
 
-```mermaid
-graph TD
-    StateTransition[Clearance State Transition] --> Dispatcher[ActionDispatcher]
-    
-    Dispatcher -->|GRAPHIC_PROP + ACTION_REQUIRED| ArtDept[Art Dept: Create Fictional Replacement Card]
-    Dispatcher -->|BRAND / MUSIC + ACTION_REQUIRED| Legal[Legal: Draft & Execute Release Agreement]
-    Dispatcher -->|PROPRIETARY_LOCATION + REVIEW| Locations[Locations: Secure Filming Permit]
-    Dispatcher -->|Scene RED| ProdMgmt[Production Mgmt: Critical Shoot Block Alert]
-    
-    Resolution[Replacement Attached / Signed Override / Rights License] --> AutoResolve[Action Auto-Resolved]
+```typescript
+export interface CategoryDetailsMap {
+  BRAND: {
+    trademarkSearchNotes?: string;
+    packagingDimensions?: string;
+    fictionalTagline?: string;
+  };
+  ART_MUSIC: {
+    bpm?: number;
+    key?: string;
+    musicalStyle?: string;
+    licenseType?: string;
+  };
+  ARTWORK: {
+    artistPrompt?: string;
+    visualStyle?: string;
+    dimensions?: string;
+    imageUrl?: string;
+  };
+  DIALOGUE: {
+    alternativeLines?: string[];
+    subtextRationale?: string;
+  };
+  GRAPHIC_PROP: {
+    physicalSpecs?: string;
+    safetyClearanceNotes?: string;
+    graphicLabelUrl?: string;
+  };
+}
 ```
-
-### Department Action Mapping Matrix:
-
-| Trigger Event | Entity Category / State | Target Department | Action Type | Default Priority | Auto-Resolution Trigger |
-|:---|:---|:---|:---|:---:|:---|
-| Occurrence evaluated | `GRAPHIC_PROP` (`ACTION_REQUIRED`) | `ART_DEPT` | `ART_DEPT_REPLACEMENT` | `HIGH` | `REPLACEMENT_CARD_ATTACHED` |
-| Occurrence evaluated | `ART_MUSIC` (`ACTION_REQUIRED`) | `LEGAL_COUNSEL` | `LEGAL_COUNSEL_RELEASE` | `HIGH` | `RIGHTS_LICENSE_ATTACHED` or `COUNSEL_OVERRIDE` |
-| Occurrence evaluated | `BRAND` (`ACTION_REQUIRED`) | `LEGAL_COUNSEL` | `LEGAL_COUNSEL_RELEASE` | `HIGH` | `RIGHTS_LICENSE_ATTACHED` or `COUNSEL_OVERRIDE` |
-| Occurrence evaluated | `PROPRIETARY_LOCATION` (`REVIEW_RECOMMENDED`) | `LOCATIONS` | `LOCATIONS_PERMIT` | `MEDIUM` | `COUNSEL_OVERRIDE` |
-| Occurrence evaluated | `PUBLIC_FIGURE` (`REVIEW_RECOMMENDED`) | `LEGAL_COUNSEL` | `COUNSEL_OVERRIDE_REVIEW` | `MEDIUM` | `COUNSEL_OVERRIDE` |
-| Scene evaluated | `RED` | `PRODUCTION_MGMT` | `PRODUCTION_REVIEW` | `CRITICAL` | Scene becomes `WORKING_CLEAR` or `FINAL_CLEAR` |
 
 ---
 
-## 2. Auto-Resolution Lifecycle
+## 2. Two-Tier Lifecycle: `TEMP_APPROVED` vs `FINAL_CLEARED`
 
-When an action item's underlying blocker is addressed, the system automatically marks the action item as `RESOLVED`:
-1. If a replacement card is attached (`attachReplacementCard`), all open `ART_DEPT_REPLACEMENT` actions for that entity become `RESOLVED`.
-2. If a rights license is attached (`createRightsRecord`), all open `LEGAL_COUNSEL_RELEASE` actions for that entity become `RESOLVED`.
-3. If a signed counsel override is recorded (`recordOverride`), all open actions for that entity and scene become `RESOLVED`.
-4. If a scene transitions to `WORKING_CLEAR` or `FINAL_CLEAR`, all open `PRODUCTION_REVIEW` actions for that scene become `RESOLVED`.
+### Definition:
+1. **`TEMP_APPROVED` (On-Set / Shooting Clearance)**:
+   - Asset is approved by the Department Lead (e.g. Prop Master, Music Supervisor) for physical filming on set.
+   - **Scene Readiness Impact**: Satisfies shooting safety, yielding **`WORKING CLEAR`** (allows call sheet lock).
+2. **`FINAL_CLEARED` (Distribution / Picture Lock Clearance)**:
+   - Asset has completed final trademark clearance searches, written release execution, or counsel review.
+   - **Scene Readiness Impact**: Unlocks full distribution clearance, yielding **`FINAL CLEAR`**.
+
+### Transition Matrix:
+
+| Current State | Target Action | New Tier | Scene Readiness Impact |
+|:---|:---|:---:|:---:|
+| No placeholder | Create on-set replacement | `TEMP_APPROVED` | Scene becomes `WORKING_CLEAR` |
+| `TEMP_APPROVED` | Legal Counsel sign-off | `FINAL_CLEARED` | Scene upgrades to `FINAL_CLEAR` |
+| `FINAL_CLEARED` | Demote / Re-evaluate | `TEMP_APPROVED` | Scene shifts to `WORKING_CLEAR` |
 
 ---
 
@@ -57,5 +75,5 @@ When an action item's underlying blocker is addressed, the system automatically 
 
 | Approach | Assessment | Decision |
 |:---|:---|:---|
-| **Manual Action Creation Only** | High risk of coordinators missing critical prop or legal releases in busy production schedules. | **Rejected**: State transitions must automatically generate actions. |
-| **Email / Slack Webhooks Only** | External dependencies fail in offline/test modes and create noise without in-app tracking. | **Rejected**: Implement robust in-app action repository and modal first, with notification log. |
+| **Simple Boolean Flag** | Fails to capture the rich metadata needed by music supervisors (BPM/key) or script supervisors (alternative lines). | **Rejected**: Use domain-specific parameter mapping. |
+| **Separate Independent Repositories per Category** | High architectural sprawl (5 distinct tables/repos). | **Rejected**: Unified `PlaceholderRepo` with typed category discriminant. |

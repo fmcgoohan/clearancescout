@@ -1,40 +1,44 @@
-# Implementation Plan: Production Clearance Operating Model (Phase 6 - Action & Notification Lists)
+# Implementation Plan: Production Clearance Operating Model (Phase 7 - Generalized Replacement & Placeholders)
 
-**Branch**: `016-production-clearance-model` | **Date**: 2026-08-19 | **Status**: Plan Complete (Phase 6 Focus)  
+**Branch**: `016-production-clearance-model` | **Date**: 2026-08-19 | **Status**: Plan Complete (Phase 7 Focus)  
 **Specification**: [`specs/016-production-clearance-model/spec.md`](spec.md)
 
 ---
 
-## 1. Summary of Feature & Phase 6 Scope
+## 1. Summary of Feature & Phase 7 Scope
 
-Phase 6 introduces **Action and Notification Lists Derived from Clearance State Transitions** (`FR-007`, `US6`). State transitions across occurrences, entities, rights agreements, and scene readiness automatically generate structured, department-routed to-do action items (`ART_DEPT`, `LEGAL_COUNSEL`, `LOCATIONS`, `PRODUCTION_MGMT`) and broadcast high-priority production alerts.
+Phase 7 generalizes the fictional replacement mechanism (Feature 002) into a comprehensive **Replacement & Placeholder Management System** (`FR-008`, `US7`) supporting all 5 clearance domains:
+- **`BRAND`**: Fictional brand names, trademark safety notes, packaging dimensions.
+- **`ART_MUSIC`**: Musical key, tempo (BPM), style description, sync license notes.
+- **`ARTWORK`**: Visual style, generation prompt, dimensions, image asset URL.
+- **`DIALOGUE`**: Alternative scripted lines, legal subtext rationale.
+- **`GRAPHIC_PROP`**: Physical specifications, safety clearances, prop placard details.
 
-### Core Objectives (Phase 6 Only):
-1. **Action & Notification Domain Modeling (`FR-007`, `US6`)**:
-   - Define `ClearanceActionItem` with `actionType`, `targetDepartment`, `priority`, `status` (`OPEN`, `IN_PROGRESS`, `RESOLVED`, `DISMISSED`), and `resolutionTrigger`.
-   - Define `ClearanceNotification` with `targetDepartment`, `severity` (`INFO`, `WARNING`, `ALERT`, `CRITICAL`), and read status.
-2. **Repository Layer (`server/repositories/ActionNotificationRepo.ts`)**:
-   - Manage Firestore collections `projects/{projectId}/actions/{actionId}` and `projects/{projectId}/notifications/{notifId}`.
-   - Support department filtering, resolution hooks, and status updates.
-3. **Automated Action Dispatcher Workflow (`server/workflows/actionDispatcher.ts`)**:
-   - **Art Dept Triggers**: Occurrence `ACTION_REQUIRED` for `GRAPHIC_PROP` $\to$ `ART_DEPT_REPLACEMENT` action item for prop master.
-   - **Legal Counsel Triggers**: Occurrence `ACTION_REQUIRED` for `BRAND` or `ART_MUSIC` $\to$ `LEGAL_COUNSEL_RELEASE` action item for legal team.
-   - **Locations Triggers**: Occurrence `REVIEW_RECOMMENDED` for `PROPRIETARY_LOCATION` $\to$ `LOCATIONS_PERMIT` action item.
-   - **Production Management Triggers**: Scene readiness `RED` $\to$ `PRODUCTION_REVIEW` critical alert and action for line producer / 1st AD.
-   - **Auto-Resolution**: Attaching a replacement card, recording a signed counsel override, or attaching an active license automatically marks corresponding action items as `RESOLVED`.
-4. **REST API Endpoints (`server/api/actionRoutes.ts`)**:
-   - `GET /api/projects/:id/actions` (filter by department/status)
-   - `PATCH /api/projects/:id/actions/:actionId` (update action status)
-   - `GET /api/projects/:id/notifications` (list notifications)
-   - `PATCH /api/projects/:id/notifications/:notifId/read` (mark notification read)
-   - `POST /api/projects/:id/actions/sync` (re-sync actions from project state)
-5. **Frontend UI Integration**:
-   - Create `src/components/ActionListModal.tsx` with department tabs (`Art Dept`, `Legal`, `Locations`, `Production Management`).
-   - Add `📋 Actions` badge in `src/pages/WorkspacePage.tsx` with active blocker counter.
-6. **Preserve Invariants (003–015 & Phases 1–5)**:
-   - 100% preservation of project types, occurrence assessments, derived roll-ups, aliases, rights records, scene readiness engine, and SSE timeline streams.
-7. **Strict Scope Boundary**:
-   - Phases 7 through 10 (generalized placeholders, live self-clearance loop, dashboard, binder) remain strictly unbuilt until Phase 6 is implemented and converged.
+It establishes an explicit two-tier clearance lifecycle:
+- **`TEMP_APPROVED`**: Interim on-set / shooting approval (yields `WORKING CLEAR` in scene readiness engine).
+- **`FINAL_CLEARED`**: Unconditional permanent clearance for post-production picture lock & distribution (yields `FINAL CLEAR` in scene readiness engine).
+
+### Core Objectives (Phase 7 Only):
+1. **Domain Model (`FR-008`, `US7`)**:
+   - Define `PlaceholderAssetCategory`, `PlaceholderClearanceTier` (`'TEMP_APPROVED' | 'FINAL_CLEARED'`), and `ReplacementPlaceholderData` with category-specific details payload.
+2. **Repository Layer (`server/repositories/PlaceholderRepo.ts`)**:
+   - Manage Firestore collection `projects/{projectId}/placeholders/{placeholderId}`.
+   - Support CRUD, tier promotion (`TEMP_APPROVED` $\to$ `FINAL_CLEARED`), and entity lookup.
+3. **Integration with Scene Readiness State Machine (`server/workflows/sceneReadinessEngine.ts`)**:
+   - `FINAL_CLEARED` placeholder $\to$ elevates occurrence readiness to `FINAL_CLEAR`.
+   - `TEMP_APPROVED` placeholder $\to$ provides `WORKING_CLEAR` shooting clearance.
+4. **REST API Endpoints (`server/api/placeholderRoutes.ts`)**:
+   - `GET /api/projects/:id/placeholders` (filter by category and tier)
+   - `GET /api/projects/:id/entities/:entityId/placeholder`
+   - `POST /api/projects/:id/placeholders`
+   - `PATCH /api/projects/:id/placeholders/:placeholderId/tier`
+   - `DELETE /api/projects/:id/placeholders/:placeholderId`
+5. **Frontend UI Integration (`src/components/PlaceholderManagerModal.tsx`)**:
+   - Modal supporting domain-specific configuration forms (Music BPM/key, Dialogue alternatives, Artwork prompt/style, Prop specs).
+   - Instant promotion between `TEMP_APPROVED` and `FINAL_CLEARED` with role sign-off.
+   - Wired into `EntityRegistryTable.tsx` and `EntityDetailModal.tsx`.
+6. **Strict Scope Boundary**:
+   - Phases 8 through 10 (live self-clearance loop, production dashboard, final clearance binder export) remain strictly unbuilt until Phase 7 is implemented and converged.
 
 ---
 
@@ -42,12 +46,12 @@ Phase 6 introduces **Action and Notification Lists Derived from Clearance State 
 
 | Principle | Status | Compliance Details |
 |:---|:---:|:---|
-| **I. Agent Framework & Model Standard** | **PASS** | Action items and notifications are dispatched deterministically in TypeScript code based on structured state transitions. |
-| **II. Live Grounding & Research Tooling** | **PASS** | Actions reference grounded research citations and occurrence context. |
-| **III. Architecture & Cloud Persistence** | **PASS** | Actions and notifications persisted in Firestore under `projects/{projectId}/actions` and `notifications`. |
-| **IV. Canonical Entity & Risk Invariant** | **PASS** | Actions link directly to canonical entities and scene occurrences; auto-resolves upon counsel override. |
-| **V. Multi-Tier Execution Modes** | **PASS** | Operates identically in `TEST_MODE`, `DEMO_MODE`, and `CLOUD_MODE`. |
-| **Observable Action Timeline** | **PASS** | Emits `TOOL_CALL` and `STATE_TRANSITION` events for action creation and auto-resolution. |
+| **I. Agent Framework & Model Standard** | **PASS** | Placeholder records and deterministic tier calculations are pure TypeScript logic; image prompts adhere to Imagen standards. |
+| **II. Live Grounding & Research Tooling** | **PASS** | Placeholders cite underlying entity research and clearance reasons. |
+| **III. Architecture & Cloud Persistence** | **PASS** | Stored in Firestore under `projects/{projectId}/placeholders/{placeholderId}`. |
+| **IV. Canonical Entity & Risk Invariant** | **PASS** | Placeholders link to canonical entities, elevating scene readiness deterministically. |
+| **V. Multi-Tier Execution Modes** | **PASS** | Operates uniformly in `TEST_MODE`, `DEMO_MODE`, and `CLOUD_MODE`. |
+| **Observable Action Timeline** | **PASS** | Emits `STATE_TRANSITION` events upon placeholder creation and tier promotion. |
 
 ---
 
@@ -55,22 +59,22 @@ Phase 6 introduces **Action and Notification Lists Derived from Clearance State 
 
 - **Phase 0: Research & Architecture** ([`specs/016-production-clearance-model/research.md`](research.md))
 - **Phase 1: Data Model & Schema** ([`specs/016-production-clearance-model/data-model.md`](data-model.md))
-- **Phase 1: Interface Contracts** ([`specs/016-production-clearance-model/contracts/actions-contract.md`](contracts/actions-contract.md))
+- **Phase 1: Interface Contracts** ([`specs/016-production-clearance-model/contracts/placeholders-contract.md`](contracts/placeholders-contract.md))
 - **Phase 1: Quickstart Validation Guide** ([`specs/016-production-clearance-model/quickstart.md`](quickstart.md))
 
 ---
 
 ## 4. Touchpoints & Target Modules
 
-- `server/repositories/ActionNotificationRepo.ts`:
-  - New repository for action items and department notifications.
-- `server/workflows/actionDispatcher.ts`:
-  - Workflow for dispatching department actions on state transitions and auto-resolving upon clearance.
-- `server/api/actionRoutes.ts`:
-  - Express routes for action listing, status patching, and notification reading.
-- `src/components/ActionListModal.tsx` & `src/pages/WorkspacePage.tsx`:
-  - Department-filtered action list UI modal and header badge counter.
-- `tests/contract/test_action_notifications.test.ts`:
-  - Contract test for action dispatch, department filtering, and auto-resolution.
-- `tests/integration/action_workflow.test.ts`:
-  - Integration test verifying end-to-end action lifecycle across script ingestion, replacement attachment, and counsel override.
+- `server/repositories/PlaceholderRepo.ts`:
+  - New repository managing generalized replacement and placeholder records.
+- `server/workflows/sceneReadinessEngine.ts`:
+  - Updated to evaluate `TEMP_APPROVED` vs `FINAL_CLEARED` placeholder tiers.
+- `server/api/placeholderRoutes.ts`:
+  - Express routes for placeholder CRUD and tier promotion.
+- `src/components/PlaceholderManagerModal.tsx` & `src/components/EntityRegistryTable.tsx`:
+  - UI modal for managing domain-specific replacement assets and clearance tiers.
+- `tests/contract/test_placeholder_management.test.ts`:
+  - Contract test for category-specific placeholder creation, tier transitions, and scene readiness impact.
+- `tests/integration/placeholder_clearance_workflow.test.ts`:
+  - Integration test covering brand, music, artwork, dialogue, and prop placeholders.
