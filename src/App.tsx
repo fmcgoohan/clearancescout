@@ -204,11 +204,17 @@ export default function App() {
     initProject();
   }, [hasTokenConfigured]);
 
-  const refreshProjectQuota = async (id: string) => {
+  const refreshProjectSummary = async (id: string) => {
     try {
       const res = await apiFetch(`/api/projects/${id}`);
       if (res.ok) {
         const data = await res.json();
+        setProjectSummary({
+          entityCount: data.entityCount || 0,
+          clearedCount: data.clearedCount || 0,
+          actionRequiredCount: data.actionRequiredCount || 0,
+          reviewRecommendedCount: data.reviewRecommendedCount || 0,
+        });
         if (data.liveQuotaLimit !== undefined) {
           setLiveQuota({
             limit: data.liveQuotaLimit,
@@ -218,9 +224,11 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.error('Error refreshing project quota:', err);
+      console.error('Error refreshing project summary:', err);
     }
   };
+
+  const refreshProjectQuota = refreshProjectSummary;
 
   const handleOpenCounselReview = async (entityId: string, sceneId?: string) => {
     if (!projectId) return;
@@ -642,6 +650,9 @@ export default function App() {
             onGenerateReplacement={handleGenerateReplacement}
             onOpenCounselReview={handleOpenCounselReview}
             onExportBinder={handleExportBinder}
+            onRefreshProjectSummary={() => {
+              if (projectId) refreshProjectSummary(projectId);
+            }}
             isEvaluating={isEvaluating}
             refreshTrigger={refreshTrigger}
           />
@@ -763,7 +774,10 @@ export default function App() {
         isOverridden={isOverridden}
         latestOverride={latestOverride}
         executionMode={executionMode}
-        onOverrideSaved={() => setRefreshTrigger((prev) => prev + 1)}
+        onOverrideSaved={() => {
+          setRefreshTrigger((prev) => prev + 1);
+          if (projectId) refreshProjectSummary(projectId);
+        }}
       />
 
       <ReplacementCardModal card={replacementCard} isOpen={isReplacementOpen} onClose={() => setIsReplacementOpen(false)} />

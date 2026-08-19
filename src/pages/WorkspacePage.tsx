@@ -17,6 +17,7 @@ interface WorkspacePageProps {
   onGenerateReplacement: (entityId: string) => void;
   onOpenCounselReview: (entityId: string, sceneId?: string) => void;
   onExportBinder?: () => void;
+  onRefreshProjectSummary?: () => void;
   isEvaluating: boolean;
   refreshTrigger: number;
 }
@@ -27,6 +28,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   onGenerateReplacement,
   onOpenCounselReview,
   onExportBinder,
+  onRefreshProjectSummary,
   isEvaluating,
   refreshTrigger,
 }) => {
@@ -175,6 +177,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         }
         setOverrides(allOverrides);
       }
+      onRefreshProjectSummary?.();
     } catch (err) {
       console.error('Failed to fetch workspace data:', err);
     }

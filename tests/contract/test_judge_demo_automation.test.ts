@@ -54,5 +54,12 @@ describe('Contract: Feature 017 Judge-Ready 1-Click Demo Automation', () => {
     expect(assessments.length).toBeGreaterThanOrEqual(1);
     expect(assessments[0].provenance).toBe('DEMO_FIXTURE');
     expect(assessments[0].citations[0].provenance).toBe('DEMO_FIXTURE');
+
+    // 4. Regression Test: Verify GET /api/projects/:id returns updated project summary counts for App header
+    const projDetailRes = await request(app).get(`/api/projects/${projectId}`);
+    expect(projDetailRes.status).toBe(200);
+    expect(projDetailRes.body.entityCount).toBeGreaterThanOrEqual(6);
+    expect(projDetailRes.body.clearedCount).toBeGreaterThanOrEqual(1);
+    expect(projDetailRes.body.entityCount).toBe(entities.length);
   });
 });
