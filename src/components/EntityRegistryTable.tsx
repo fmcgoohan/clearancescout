@@ -85,6 +85,7 @@ export interface EntityRegistryTableProps {
   onGenerateReplacement: (entityId: string) => void;
   onOpenCounselReview?: (entityId: string) => void;
   onOpenComparison?: (entityId: string) => void;
+  onViewOccurrences?: (entityId: string) => void;
   onEditItem?: (entity: CanonicalEntity) => void;
   onDeleteItem?: (entityId: string) => void;
   onAddItem?: () => void;
@@ -102,6 +103,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   onGenerateReplacement,
   onOpenCounselReview,
   onOpenComparison,
+  onViewOccurrences,
   onEditItem,
   onDeleteItem,
   onAddItem,
@@ -590,6 +592,17 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             disabled={isEvaluating || isItemInActiveBatch}
                           >
                             {isEvaluating || isItemInActiveBatch ? 'Researching...' : '🔍 Ground'}
+                          </button>
+                        )}
+                        {onViewOccurrences && (
+                          <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                            onClick={() => onViewOccurrences(e.id)}
+                            disabled={isItemInActiveBatch}
+                            title="View scene occurrences and contextual clearance evaluation"
+                          >
+                            🎬 Occurrences
                           </button>
                         )}
                         {onOpenCounselReview && (

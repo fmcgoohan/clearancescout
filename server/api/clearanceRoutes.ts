@@ -32,6 +32,47 @@ clearanceRouter.post('/projects/:id/clearance/evaluate', async (req: Request, re
   }
 });
 
+// Evaluate Single Scene Occurrence (Feature 016 Phase 2)
+clearanceRouter.post('/projects/:id/occurrences/:occurrenceId/evaluate', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: projectId, occurrenceId } = req.params;
+    const result = await clearanceEvaluator.evaluateOccurrenceClearance(projectId, occurrenceId);
+    return res.json({
+      ...result.occurrence,
+      occurrence: result.occurrence,
+      assessment: result.assessment,
+      derivedCanonicalStatus: result.derivedCanonicalStatus,
+      evaluatedAt: result.evaluatedAt,
+    });
+  } catch (err: any) {
+    if (err.status) {
+      return res.status(err.status).json({ error: err.message, quota: err.quota });
+    }
+    next(err);
+  }
+});
+
+// Get Occurrences for Entity (Feature 016 Phase 2)
+clearanceRouter.get('/projects/:id/entities/:entityId/occurrences', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: projectId, entityId } = req.params;
+    const entity = await entityRepo.getEntityById(projectId, entityId);
+    if (!entity) {
+      return res.status(404).json({ error: 'Entity not found' });
+    }
+
+    const occurrences = await entityRepo.getOccurrencesByEntity(projectId, entityId);
+    return res.json({
+      canonicalEntityId: entity.id,
+      canonicalName: entity.canonicalName,
+      derivedOverallStatus: entity.overallClearanceStatus,
+      occurrences,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Retry Research for Single Failed or INSUFFICIENT_EVIDENCE Entity
 clearanceRouter.post('/projects/:id/entities/:entityId/retry-research', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -60,28 +101,29 @@ clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Re
     ];
 
     if (!overrideStatus || !validStatuses.includes(overrideStatus)) {
-      return res.status(400).json({ error: 'A valid overrideStatus is required.' });
+      return res.status(400).json({ error: 'Valid overrideStatus is required.' });
     }
 
     if (!rationale || typeof rationale !== 'string' || rationale.trim().length === 0) {
-      return res.status(400).json({ error: 'A non-empty legal counsel rationale is mandatory for audit logging.' });
+      return res.status(400).json({ error: 'Rationale is required for legal audit trail.' });
     }
 
     if (!counselName || typeof counselName !== 'string' || counselName.trim().length === 0) {
       return res.status(400).json({ error: 'counselName is required.' });
     }
 
-    const entities = await entityRepo.getEntitiesByProject(projectId);
-    const existingEntity = entities.find((e) => e.id === entityId);
+    const existingEntity = await entityRepo.getEntityById(projectId, entityId);
     if (!existingEntity) {
-      return res.status(404).json({ error: `Entity ${entityId} not found.` });
+      return res.status(404).json({ error: 'Entity not found' });
     }
 
-    // Compute previousStatus as the effective status immediately before this override
+    // Fetch existing overrides for this entity
     const existingOverrides = await overrideRepo.getOverridesByEntity(projectId, entityId);
-    const previousStatus = resolveEffectiveClearanceStatus(existingEntity, existingOverrides, sceneId || undefined);
 
-    // Record override audit log in OverrideRepo
+    // Determine authoritative effective status before this new override is recorded
+    const previousStatus = resolveEffectiveClearanceStatus(existingEntity, existingOverrides, sceneId);
+
+    // Persist Override in OverrideRepo
     const override = await overrideRepo.recordOverride(projectId, {
       canonicalEntityId: entityId,
       sceneId: sceneId || undefined,
@@ -89,12 +131,13 @@ clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Re
       overrideStatus,
       rationale: rationale.trim(),
       counselName: counselName.trim(),
-      counselRole: counselRole?.trim() || 'Production Legal Counsel',
+      counselRole: counselRole?.trim() || 'Clearance Counsel',
     });
 
-    // If global entity override, update the CanonicalEntity record
     let resultingEntity = existingEntity;
+
     if (!sceneId) {
+      // Direct canonical override applied
       const updated = await entityRepo.updateCanonicalEntityOverride(
         projectId,
         entityId,
@@ -106,6 +149,11 @@ clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Re
           timestamp: override.timestamp,
         }
       );
+      if (updated) resultingEntity = updated;
+    } else {
+      // Scene-specific override applied: Recompute derived canonical status across all scenes
+      await entityRepo.computeDerivedCanonicalStatus(projectId, entityId);
+      const updated = await entityRepo.getEntityById(projectId, entityId);
       if (updated) resultingEntity = updated;
     }
 

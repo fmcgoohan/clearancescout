@@ -3,6 +3,7 @@ import { ScriptViewer, Scene, CounselOverrideItem } from '../components/ScriptVi
 import { EntityRegistryTable, CanonicalEntity } from '../components/EntityRegistryTable';
 import { ItemEditModal, EntityCategory } from '../components/ItemEditModal';
 import { ComparisonModal, ComparisonViewModel } from '../components/ComparisonModal';
+import { EntityDetailModal } from '../components/EntityDetailModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
 import { apiFetch } from '../utils/apiClient.js';
 
@@ -38,6 +39,10 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const [comparisonData, setComparisonData] = useState<ComparisonViewModel | null>(null);
   const [isComparisonLoading, setIsComparisonLoading] = useState(false);
+
+  // Occurrences Detail modal state (Phase 2)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedDetailEntityId, setSelectedDetailEntityId] = useState<string | null>(null);
 
   // Batch research hook
   const { progress: batchProgress, startBatchResearch } = useBatchResearch(
@@ -327,6 +332,10 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           onGenerateReplacement={onGenerateReplacement}
           onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
           onOpenComparison={handleOpenComparison}
+          onViewOccurrences={(entityId) => {
+            setSelectedDetailEntityId(entityId);
+            setIsDetailModalOpen(true);
+          }}
           onEditItem={handleOpenEditModal}
           onDeleteItem={handleDeleteItem}
           onAddItem={handleOpenAddModal}
@@ -349,6 +358,24 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         onClose={() => setIsComparisonModalOpen(false)}
         data={comparisonData}
         isLoading={isComparisonLoading}
+      />
+
+      {/* Occurrence-Level Detail & Evaluation Modal (Phase 2) */}
+      <EntityDetailModal
+        projectId={projectId}
+        entityId={selectedDetailEntityId}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedDetailEntityId(null);
+        }}
+        onOpenCounselReview={(entityId, sceneId) => {
+          setIsDetailModalOpen(false);
+          onOpenCounselReview(entityId, sceneId);
+        }}
+        onOccurrenceEvaluated={() => {
+          fetchWorkspaceData();
+        }}
       />
     </div>
   );

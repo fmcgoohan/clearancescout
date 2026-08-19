@@ -1,5 +1,6 @@
 import { getDb } from './firestoreClient.js';
 import { v4 as uuidv4 } from 'uuid';
+import { overrideRepo } from './OverrideRepo.js';
 
 export type EntityCategory =
   | 'BRAND'
@@ -51,7 +52,20 @@ export interface SceneEntityOccurrenceData {
   usageContext: string;
   sentimentScore?: number;
   exposureDurationSeconds?: number;
+  clearanceStatus?: ClearanceStatus;
+  riskScore?: number;
+  riskRationale?: string;
+  contextFlags?: string[];
+  citations?: any[];
+  evaluatedAt?: string;
 }
+
+export const STATUS_SEVERITY_RANK: Record<ClearanceStatus, number> = {
+  ACTION_REQUIRED: 4,
+  REVIEW_RECOMMENDED: 3,
+  INSUFFICIENT_EVIDENCE: 2,
+  NO_ISSUE_SURFACED: 1,
+};
 
 export class EntityRepo {
   private db = getDb();
@@ -133,7 +147,6 @@ export class EntityRepo {
   }
 
   async deleteOccurrencesByEntity(projectId: string, entityId: string): Promise<void> {
-    // Look across all project scenes to remove occurrences for this entity
     const scenesCol = await this.db.collection(`projects/${projectId}/scenes`);
     const scenesSnap = await scenesCol.get();
     for (const sceneDoc of scenesSnap.docs) {
@@ -215,8 +228,10 @@ export class EntityRepo {
     const id = `occ-${uuidv4().slice(0, 8)}`;
     const occurrence: SceneEntityOccurrenceData = {
       id,
+      clearanceStatus: input.clearanceStatus || 'INSUFFICIENT_EVIDENCE',
       ...input,
     };
+
     const docRef = await this.db.doc(`projects/${projectId}/scenes/${input.sceneId}/occurrences/${id}`);
     await docRef.set(occurrence);
     return occurrence;
@@ -226,6 +241,118 @@ export class EntityRepo {
     const colRef = await this.db.collection(`projects/${projectId}/scenes/${sceneId}/occurrences`);
     const snap = await colRef.get();
     return snap.docs.map((d: any) => d.data() as SceneEntityOccurrenceData);
+  }
+
+  async getAllOccurrences(projectId: string): Promise<SceneEntityOccurrenceData[]> {
+    if (typeof this.db.listCollectionNames === 'function') {
+      const colNames: string[] = this.db.listCollectionNames();
+      const occCols = colNames.filter(
+        (name) => name.startsWith(`projects/${projectId}/scenes/`) && name.endsWith('/occurrences')
+      );
+      const allOccurrences: SceneEntityOccurrenceData[] = [];
+      for (const colName of occCols) {
+        const col = await this.db.collection(colName);
+        const snap = await col.get();
+        for (const doc of snap.docs) {
+          allOccurrences.push(doc.data() as SceneEntityOccurrenceData);
+        }
+      }
+      return allOccurrences;
+    }
+
+    const scenesCol = await this.db.collection(`projects/${projectId}/scenes`);
+    const scenesSnap = await scenesCol.get();
+    const allOccurrences: SceneEntityOccurrenceData[] = [];
+
+    for (const sceneDoc of scenesSnap.docs) {
+      const occCol = await this.db.collection(`projects/${projectId}/scenes/${sceneDoc.id}/occurrences`);
+      const occSnap = await occCol.get();
+      for (const occDoc of occSnap.docs) {
+        allOccurrences.push(occDoc.data() as SceneEntityOccurrenceData);
+      }
+    }
+    return allOccurrences;
+  }
+
+  async getOccurrencesByEntity(projectId: string, canonicalEntityId: string): Promise<SceneEntityOccurrenceData[]> {
+    const all = await this.getAllOccurrences(projectId);
+    return all.filter((occ) => occ.canonicalEntityId === canonicalEntityId);
+  }
+
+  async getOccurrenceById(projectId: string, occurrenceId: string): Promise<{ occurrence: SceneEntityOccurrenceData; sceneId: string } | null> {
+    const all = await this.getAllOccurrences(projectId);
+    const found = all.find((o) => o.id === occurrenceId);
+    if (found) {
+      return {
+        occurrence: found,
+        sceneId: found.sceneId,
+      };
+    }
+    return null;
+  }
+
+  async updateOccurrenceEvaluation(
+    projectId: string,
+    sceneId: string,
+    occurrenceId: string,
+    evaluation: Partial<SceneEntityOccurrenceData>
+  ): Promise<SceneEntityOccurrenceData | null> {
+    const docRef = await this.db.doc(`projects/${projectId}/scenes/${sceneId}/occurrences/${occurrenceId}`);
+    const snap = await docRef.get();
+    if (!snap.exists) return null;
+
+    const existing = snap.data() as SceneEntityOccurrenceData;
+    const updated: SceneEntityOccurrenceData = {
+      ...existing,
+      ...evaluation,
+      evaluatedAt: evaluation.evaluatedAt || new Date().toISOString(),
+    };
+
+    await docRef.set(updated);
+    return updated;
+  }
+
+  async computeDerivedCanonicalStatus(projectId: string, canonicalEntityId: string): Promise<ClearanceStatus> {
+    const occurrences = await this.getOccurrencesByEntity(projectId, canonicalEntityId);
+    
+    // Fetch overrides for this entity via overrideRepo
+    const overrides = await overrideRepo.getOverridesByEntity(projectId, canonicalEntityId);
+
+    if (occurrences.length === 0) {
+      const entity = await this.getEntityById(projectId, canonicalEntityId);
+      return entity?.overallClearanceStatus || 'INSUFFICIENT_EVIDENCE';
+    }
+
+    // Filter to evaluated occurrences or occurrences with scene overrides
+    const evaluatedOccurrences = occurrences.filter(
+      (occ) => occ.evaluatedAt || overrides.some((o: any) => o.sceneId === occ.sceneId)
+    );
+
+    const targetOccurrences = evaluatedOccurrences.length > 0 ? evaluatedOccurrences : occurrences;
+
+    // Determine effective status for each occurrence taking into account scene overrides (Feature 003)
+    let maxSeverity = 0;
+    let derivedStatus: ClearanceStatus = 'NO_ISSUE_SURFACED';
+
+    for (const occ of targetOccurrences) {
+      // Check for scene-specific override
+      const sceneOvr = overrides.find((o: any) => o.sceneId === occ.sceneId);
+      const effectiveOccStatus: ClearanceStatus = sceneOvr?.overrideStatus || occ.clearanceStatus || 'INSUFFICIENT_EVIDENCE';
+      const severity = STATUS_SEVERITY_RANK[effectiveOccStatus] || 1;
+
+      if (severity > maxSeverity) {
+        maxSeverity = severity;
+        derivedStatus = effectiveOccStatus;
+      }
+    }
+
+    // Update canonical entity overallClearanceStatus unless it has an active direct entity override
+    const entity = await this.getEntityById(projectId, canonicalEntityId);
+    if (entity && !entity.isOverridden) {
+      await this.updateCanonicalEntityStatus(projectId, canonicalEntityId, derivedStatus);
+    }
+
+    return derivedStatus;
   }
 }
 

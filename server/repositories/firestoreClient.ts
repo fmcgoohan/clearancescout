@@ -4,6 +4,10 @@ import { config } from '../config.js';
 class InMemoryStore {
   private collections: Map<string, Map<string, any>> = new Map();
 
+  listCollectionNames(): string[] {
+    return Array.from(this.collections.keys());
+  }
+
   private getCollection(name: string) {
     if (!this.collections.has(name)) {
       this.collections.set(name, new Map());
