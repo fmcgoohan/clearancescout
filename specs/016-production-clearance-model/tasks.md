@@ -1,8 +1,8 @@
-# Tasks: Production Clearance Operating Model (Phases 1, 2, 3, 4, 5 & 6)
+# Tasks: Production Clearance Operating Model (Phases 1, 2, 3, 4, 5, 6 & 7)
 
 **Feature**: `specs/016-production-clearance-model` | **Branch**: `016-production-clearance-model`  
 **Input**: Plan from [`specs/016-production-clearance-model/plan.md`](plan.md), Spec from [`specs/016-production-clearance-model/spec.md`](spec.md)  
-**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed), Phase 5 (Completed) & Phase 6 (Active Target). Phases 7 through 10 are deliberately excluded from this task list.
+**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed), Phase 5 (Completed), Phase 6 (Completed) & Phase 7 (Active Target). Phases 8 through 10 are deliberately excluded from this task list.
 
 ---
 
@@ -233,28 +233,76 @@
 
 ---
 
+## Phase 25: Phase 7 Setup (Placeholder Data Models & PlaceholderRepo)
+
+**Purpose**: Create `ReplacementPlaceholderData` schemas, enums, and `PlaceholderRepo` for multi-category placeholder persistence.
+
+- [ ] T054 [P] Create `ReplacementPlaceholderData` domain model, enums (`PlaceholderAssetCategory`, `PlaceholderClearanceTier`), category details map, and `PlaceholderRepo` in `server/repositories/PlaceholderRepo.ts` with CRUD, category filtering, and tier update methods
+
+---
+
+## Phase 26: Phase 7 Foundational (Scene Readiness Integration & REST Endpoints)
+
+**Purpose**: Integrate placeholders with scene readiness state machine and implement REST endpoints.
+
+- [ ] T055 [P] Update `server/workflows/sceneReadinessEngine.ts` to evaluate `TEMP_APPROVED` placeholders (yielding `WORKING CLEAR`) and `FINAL_CLEARED` placeholders (yielding `FINAL CLEAR`)
+- [ ] T056 [P] Implement Express router in `server/api/placeholderRoutes.ts` (`GET /projects/:id/placeholders`, `GET /projects/:id/entities/:entityId/placeholder`, `POST /projects/:id/placeholders`, `PATCH /projects/:id/placeholders/:placeholderId/tier`, `DELETE /projects/:id/placeholders/:placeholderId`) and mount in `server/index.ts`
+
+**Checkpoint**: Placeholder engine and API ready - UI integration and test suites can proceed in parallel.
+
+---
+
+## Phase 27: User Story 7 - Generalized Replacement & Placeholder Management (Priority: P7) 🎯 Phase 7 Target
+
+**Goal**: Manage fictional replacements and temporary production placeholders across brands, music, artwork, dialogue, and props, distinguishing between `TEMP_APPROVED` and `FINAL_CLEARED` tiers.
+
+**Independent Test**: Attach music/dialogue/artwork placeholder with `TEMP_APPROVED`; verify scene is `WORKING CLEAR`. Promote placeholder to `FINAL_CLEARED`; verify scene upgrades to `FINAL CLEAR`.
+
+### Tests for User Story 7
+
+- [ ] T057 [P] [US7] Contract tests for placeholder CRUD, category-specific payload retention, tier transitions, and scene readiness impact in `tests/contract/test_placeholder_management.test.ts`
+
+### Implementation for User Story 7
+
+- [ ] T058 [P] [US7] Create `src/components/PlaceholderManagerModal.tsx` allowing users to configure domain-specific replacement assets (Music BPM/key, Dialogue alternatives, Artwork prompt/specs, Prop details) and promote/demote clearance tiers (`TEMP_APPROVED` $\leftrightarrow$ `FINAL_CLEARED`)
+- [ ] T059 [US7] Update `src/components/EntityRegistryTable.tsx` and `src/components/EntityDetailModal.tsx` to display placeholder badges (`TEMP APPROVED`, `FINAL CLEARED`) and wire up `PlaceholderManagerModal`
+
+**Checkpoint**: Phase 7 core functionality complete. Generalized placeholders operate across all 5 asset categories.
+
+---
+
+## Phase 28: Phase 7 Polish & Cross-Cutting Concerns
+
+**Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
+
+- [ ] T060 [P] Implement end-to-end integration test in `tests/integration/placeholder_clearance_workflow.test.ts` verifying brand, music, artwork, dialogue, and prop placeholders across script ingestion, on-set `TEMP_APPROVED` shooting, and legal `FINAL_CLEARED` delivery
+- [ ] T061 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [ ] T062 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
 graph TD
-    Phases1to5[Phases 1-5 Complete T001-T044] --> Phase21[Phase 21: ActionNotificationRepo.ts T045]
-    Phase21 --> Phase22_Dispatcher[Phase 22: actionDispatcher.ts T046]
-    Phase21 --> Phase22_Routes[Phase 22: actionRoutes.ts T047]
-    Phase22_Dispatcher --> US6_Tests[T048: Contract Tests]
-    Phase22_Routes --> US6_Tests
-    Phase22_Routes --> US6_UI_Modal[T049: ActionListModal.tsx]
-    US6_UI_Modal --> US6_UI_Workspace[T050: WorkspacePage Badge]
-    US6_Tests --> Phase24[Phase 24: Polish & Integration]
-    US6_UI_Workspace --> Phase24
+    Phases1to6[Phases 1-6 Complete T001-T053] --> Phase25[Phase 25: PlaceholderRepo.ts T054]
+    Phase25 --> Phase26_Engine[Phase 26: sceneReadinessEngine.ts T055]
+    Phase25 --> Phase26_Routes[Phase 26: placeholderRoutes.ts T056]
+    Phase26_Engine --> US7_Tests[T057: Contract Tests]
+    Phase26_Routes --> US7_Tests
+    Phase26_Routes --> US7_UI_Modal[T058: PlaceholderManagerModal.tsx]
+    US7_UI_Modal --> US7_UI_Registry[T059: EntityRegistryTable & DetailModal]
+    US7_Tests --> Phase28[Phase 28: Polish & Integration]
+    US7_UI_Registry --> Phase28
 ```
 
 ---
 
 ## Parallel Execution Examples
 
-### User Story 6
-- `T046` (`actionDispatcher.ts`) can run in parallel with `T047` (`server/api/actionRoutes.ts`).
-- `T048` (`tests/contract/test_action_notifications.test.ts`) can run in parallel with `T049` (`src/components/ActionListModal.tsx`).
+### User Story 7
+- `T055` (`sceneReadinessEngine.ts`) can run in parallel with `T056` (`server/api/placeholderRoutes.ts`).
+- `T057` (`tests/contract/test_placeholder_management.test.ts`) can run in parallel with `T058` (`src/components/PlaceholderManagerModal.tsx`).
 
 ### Polish Phase
-- `T051` (integration test in `tests/integration/action_workflow.test.ts`) can run in parallel with `T052` (`quickstart.md`).
+- `T060` (integration test in `tests/integration/placeholder_clearance_workflow.test.ts`) can run in parallel with `T061` (`quickstart.md`).
