@@ -7,9 +7,9 @@
 [![Grounding](https://img.shields.io/badge/Grounding-Parallel%20Web%20API-06B6D4)](https://parallel.ai)
 [![Deployment](https://img.shields.io/badge/Platform-Google%20Cloud%20Run-34A853)](https://cloud.google.com/run)
 [![Tests](https://img.shields.io/badge/Tests-111%20Passing%20(59%20Suites)-34D399)](tests/)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-34A853)](https://clearancescout-996154354252.us-central1.run.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-34A853)](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
 
-**Live demo:** [https://clearancescout-996154354252.us-central1.run.app](https://clearancescout-996154354252.us-central1.run.app)
+**Live demo (CLOUD_MODE):** [https://clearance-scout-n3tcx4jcbq-uc.a.run.app](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
 
 ClearanceScout is an enterprise agentic platform designed for studio legal counsel, clearance coordinators, art directors, and production delivery supervisors. It transforms unstructured screenplays into structured, auditable clearance binders by automatically extracting brand marks, music compositions, public figures, proprietary locations, and prop graphics, grounding them against live USPTO and web trademark registries via Parallel Search, generating verified non-infringing replacement assets, and orchestrating comprehensive production clearance operating workflows.
 
@@ -187,7 +187,9 @@ Open [http://localhost:8080](http://localhost:8080) to access the ClearanceScout
 
 ## 🐳 Google Cloud Run Deployment
 
-**Live demo (DEMO_MODE):** [https://clearancescout-996154354252.us-central1.run.app](https://clearancescout-996154354252.us-central1.run.app)
+**Live service (CLOUD_MODE):** [https://clearance-scout-n3tcx4jcbq-uc.a.run.app](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
+
+GCP project: `clearance-scout-2026` (ClearanceScout 2026). Service: `clearance-scout` in `us-central1`.
 
 ClearanceScout is packaged as a single unified container serving both the Express REST/SSE API and compiled static React frontend.
 
@@ -199,20 +201,22 @@ docker run -p 8080:8080 -e EXECUTION_MODE=DEMO_MODE clearancescout:latest
 
 ### Deploy to Google Cloud Run
 ```bash
-gcloud run deploy clearancescout \
+gcloud run deploy clearance-scout \
   --source . \
+  --project clearance-scout-2026 \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
   --port 8080 \
-  --set-env-vars EXECUTION_MODE=DEMO_MODE
+  --set-env-vars EXECUTION_MODE=CLOUD_MODE,GOOGLE_CLOUD_PROJECT=clearance-scout-2026 \
+  --set-secrets GEMINI_API_KEY=clearance-gemini-api-key:latest,PARALLEL_WEB_API_KEY=clearance-parallel-api-key:latest
 ```
 
-For live `CLOUD_MODE`, also bind `GEMINI_API_KEY` and `PARALLEL_WEB_API_KEY` as secrets. Missing production credentials must fail visibly.
+Missing production credentials must fail visibly. Do not silently substitute DEMO fixtures in `CLOUD_MODE`.
 
 ### Health & Readiness Check
 ```bash
-curl -s https://clearancescout-996154354252.us-central1.run.app/api/health
+curl -s https://clearance-scout-n3tcx4jcbq-uc.a.run.app/api/health
 ```
 
 ---
