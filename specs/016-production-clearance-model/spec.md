@@ -2,8 +2,19 @@
 
 **Feature Branch**: `016-production-clearance-model`  
 **Created**: 2026-08-19  
-**Status**: Draft  
+**Status**: Clarified (Phase 1 Target)  
 **Input**: User description: "Production Clearance Operating Model. Encode this exact recommended next sequence as ordered phases and user stories. Later phases MUST NOT be implemented until earlier phases are specified, planned, tasked, implemented, and converged. Phase 1 P1: Project Type plus real Projects UX. Users create and land on a project of type Movie, TV Show, or Commercial, then open a project dashboard. Phase 2 P2: Occurrence-level evaluation is the fundamental assessment unit: Occurrence plus canonical research plus actual scene context. Canonical status is derived, not the primary verdict. Phase 3 P3: Upgrade entity resolution with aliases, brand/product relationships, and materially equivalent reuse. Phase 4 P4: Rights and Restrictions as first-class domain objects. Phase 5 P5: Deterministic Scene Readiness RED / WORKING CLEAR / FINAL CLEAR derived from occurrences, rights, and placeholders. Phase 6 P6: Action and Notification lists derived from state transitions. Phase 7 P7: Generalize Replacement into Replacement plus Placeholder covering music, artwork, and other categories, with temp versus final lifecycle. Phase 8 P8: Make self-clearance genuinely evidence-driven using live Parallel results, not collision fixtures. Phase 9 P9: Project Dashboard around blockers, scenes, rights, placeholders, and recent activity. Phase 10 P10: Extend the existing binder to include rights, active placeholders, unresolved actions, and working-versus-final clearance. Include a Recommended Next Sequence section listing these 10 phases in this order. Preserve 003 through 015 invariants. Do not implement code. Do not collapse later phases into Phase 1."
+
+---
+
+## Clarifications
+
+### Session 2026-08-19
+- Q: How must the 10 phases be executed? → A: The 10 phases must be executed strictly in listed order. Later phases MUST NOT be implemented until earlier phases are specified, planned, tasked, implemented, and converged.
+- Q: What is the exact scope of the current planning and implementation cycle? → A: Current planning and implementation is Phase 1 only: `Movie` / `TV Show` / `Commercial` project type, project list/landing page, and a project workspace entry.
+- Q: What constitutes the Phase 1 dashboard? → A: Phase 1 dashboard is a landing workspace with title, type, and current clearance summary, not the Phase 9 operations dashboard.
+- Q: What is the designated next phase after Phase 1 convergence? → A: Phase 2 occurrence-level evaluation remains the next phase after Phase 1 converges.
+- Q: Are prior invariants preserved? → A: Existing 003–015 invariants stay strictly in force.
 
 ---
 
@@ -11,8 +22,8 @@
 
 The production clearance operating model is structured into ten sequential, dependency-ordered phases. **Rule**: Later phases MUST NOT be implemented until earlier phases have been specified, planned, tasked, implemented, verified, and converged in order.
 
-1. **Phase 1 (P1)**: **Project Type & Production Projects UX** — Users create and manage studio projects categorized by production type (`Movie`, `TV Show`, `Commercial`) and land on a dedicated project workspace.
-2. **Phase 2 (P2)**: **Occurrence-Level Evaluation as Fundamental Unit** — Assessment is centered on specific scene occurrences combined with canonical research and scene context; canonical entity status is a derived roll-up rather than the primary assessment verdict.
+1. **Phase 1 (P1)**: **Project Type & Production Projects UX** *(Active Implementation Scope)* — Users create and manage studio projects categorized by production type (`Movie`, `TV Show`, `Commercial`) and land on a dedicated project landing workspace displaying title, type, and active clearance summary.
+2. **Phase 2 (P2)**: **Occurrence-Level Evaluation as Fundamental Unit** *(Next Phase)* — Assessment is centered on specific scene occurrences combined with canonical research and scene context; canonical entity status is a derived roll-up rather than the primary assessment verdict.
 3. **Phase 3 (P3)**: **Upgraded Entity Resolution & Material Equivalence** — Advanced disambiguation supporting aliases, brand/parent relationships, and materially equivalent asset reuse across scenes.
 4. **Phase 4 (P4)**: **Rights & Restrictions as First-Class Domain Objects** — Explicit modeling of territorial, media, temporal, and contractual rights terms with clearance constraint tracking.
 5. **Phase 5 (P5)**: **Deterministic Scene Readiness (`RED` / `WORKING CLEAR` / `FINAL CLEAR`)** — Objective mathematical readiness state machine derived deterministically from occurrence evaluations, active rights, and approved placeholders.
@@ -26,9 +37,9 @@ The production clearance operating model is structured into ten sequential, depe
 
 ## User Scenarios & Testing
 
-### User Story 1 (Phase 1) - Project Type & Production Projects UX (Priority: P1) 🎯 MVP Phase 1 Focus
+### User Story 1 (Phase 1) - Project Type & Production Projects UX (Priority: P1) 🎯 MVP Active Scope
 
-As a studio clearance coordinator or legal administrator, I want to create and select projects designated by specific production types (`Movie`, `TV Show`, or `Commercial`) and navigate between projects seamlessly, so that project-specific clearance rules, scene structures, and metadata are properly contextualized.
+As a studio clearance coordinator or legal administrator, I want to create and select projects designated by specific production types (`Movie`, `TV Show`, or `Commercial`) and navigate between projects seamlessly, landing on a project workspace with title, type badge, and clearance summary, so that project-specific clearance rules, scene structures, and metadata are properly contextualized.
 
 **Why this priority**: Foundational entry point establishing project categorization and workspace navigation required for all subsequent production clearance operations.
 
@@ -36,7 +47,7 @@ As a studio clearance coordinator or legal administrator, I want to create and s
 
 **Acceptance Scenarios**:
 1. **Given** a clearance administrator creating a new project, **When** they provide a title, production company, and select a project type (`Movie`, `TV Show`, or `Commercial`), **Then** the project is persisted with its designated type and appears in the projects list.
-2. **Given** multiple studio projects, **When** a user selects a project from the workspace, **Then** the application lands on that project's workspace displaying its title, production type, and active clearance state.
+2. **Given** multiple studio projects, **When** a user selects a project from the workspace list/landing page, **Then** the application opens that project's landing workspace displaying its title, production type badge, and current clearance summary.
 
 ---
 
@@ -166,17 +177,17 @@ As a production legal counsel and studio distributor, I want to export an expand
 ### Functional Requirements
 
 - **FR-001**: The system MUST support project creation and categorization by `projectType` (`Movie`, `TV Show`, `Commercial`) with seamless switching between projects in the workspace.
-- **FR-002**: Occurrence-level evaluation MUST serve as the fundamental unit of clearance assessment, evaluating each specific scene occurrence against canonical research and scene action context.
+- **FR-002**: Occurrence-level evaluation MUST serve as the fundamental unit of clearance assessment in Phase 2, evaluating each specific scene occurrence against canonical research and scene action context.
 - **FR-003**: Canonical entity clearance status MUST be deterministically derived as a roll-up of its underlying occurrence evaluations.
-- **FR-004**: The system MUST support entity resolution with aliases, brand/product hierarchies, and material equivalence matching across scenes.
-- **FR-005**: Rights and restrictions MUST be represented as first-class domain records defining territory, media windows, expiration dates, and covenants.
-- **FR-006**: Scene readiness MUST be deterministically computed as `RED`, `WORKING CLEAR`, or `FINAL CLEAR` based on occurrence statuses, active rights, and approved placeholders.
-- **FR-007**: The system MUST automatically generate action items and notifications upon clearance state transitions.
-- **FR-008**: Fictional replacements MUST be generalized to structured placeholders covering brands, music, artwork, dialogue, and props, managing temporary versus final lifecycle states.
-- **FR-009**: Candidate self-clearance loops in live mode MUST be grounded strictly in live search evidence with complete citation provenance.
-- **FR-010**: The project dashboard MUST surface scene readiness distributions, active blockers, pending actions, rights milestones, and timeline activity.
-- **FR-011**: The clearance binder MUST compile occurrence evidence, contractual rights, placeholders, unresolved actions, and scene readiness with a verifiable SHA-256 digest.
-- **FR-012**: Implementation MUST strictly follow the ordered 10-phase sequence without implementing later phases until earlier phases are converged.
+- **FR-004**: The system MUST support entity resolution with aliases, brand/product hierarchies, and material equivalence matching across scenes in Phase 3.
+- **FR-005**: Rights and restrictions MUST be represented as first-class domain records defining territory, media windows, expiration dates, and covenants in Phase 4.
+- **FR-006**: Scene readiness MUST be deterministically computed as `RED`, `WORKING CLEAR`, or `FINAL CLEAR` based on occurrence statuses, active rights, and approved placeholders in Phase 5.
+- **FR-007**: The system MUST automatically generate action items and notifications upon clearance state transitions in Phase 6.
+- **FR-008**: Fictional replacements MUST be generalized to structured placeholders covering brands, music, artwork, dialogue, and props, managing temporary versus final lifecycle states in Phase 7.
+- **FR-009**: Candidate self-clearance loops in live mode MUST be grounded strictly in live search evidence with complete citation provenance in Phase 8.
+- **FR-010**: The production operations dashboard MUST surface scene readiness distributions, active blockers, pending actions, rights milestones, and timeline activity in Phase 9.
+- **FR-011**: The clearance binder MUST compile occurrence evidence, contractual rights, placeholders, unresolved actions, and scene readiness with a verifiable SHA-256 digest in Phase 10.
+- **FR-012**: Implementation MUST strictly follow the ordered 10-phase sequence, currently executing Phase 1 only, without implementing later phases until earlier phases are converged.
 - **FR-013**: The system MUST preserve all 003 invariants (scene-specific counsel override isolation, hierarchical status resolution, and SHA-256 binder integrity digests).
 - **FR-014**: The system MUST preserve all 004 invariants (autonomous candidate self-clearance loop ceiling $\le 3$, negative constraints, and 4-event SSE timeline).
 - **FR-015**: The system MUST preserve all 005 invariants (bundled fictional demo screenplay, secret-masked health API, fail-visible `CLOUD_MODE`).
@@ -198,15 +209,16 @@ As a production legal counsel and studio distributor, I want to export an expand
 ### Measurable Outcomes
 
 - **SC-001**: Users can create, classify (`Movie`, `TV Show`, `Commercial`), and switch between projects with zero data collision or leakage.
-- **SC-002**: 100% of occurrence evaluations accurately reflect scene context without overwriting sibling occurrences of the same canonical entity.
-- **SC-003**: Scene readiness statuses (`RED`, `WORKING CLEAR`, `FINAL CLEAR`) are 100% deterministically reproducible from underlying occurrences and rights.
-- **SC-004**: Exported binders include complete multi-section clearance records with valid SHA-256 cryptographic integrity verification.
-- **SC-005**: All test suites maintain 100% pass rate across contract and integration tests with zero regressions.
+- **SC-002**: In Phase 1, project landing workspace displays project title, type badge, and current clearance summary accurately.
+- **SC-003**: 100% of occurrence evaluations in Phase 2 accurately reflect scene context without overwriting sibling occurrences of the same canonical entity.
+- **SC-004**: Scene readiness statuses (`RED`, `WORKING CLEAR`, `FINAL CLEAR`) in Phase 5 are 100% deterministically reproducible from underlying occurrences and rights.
+- **SC-005**: Exported binders in Phase 10 include complete multi-section clearance records with valid SHA-256 cryptographic integrity verification.
+- **SC-006**: All test suites maintain 100% pass rate across contract and integration tests with zero regressions.
 
 ---
 
 ## Assumptions
 
 - Each phase in the 10-phase sequence will undergo dedicated `/speckit-plan`, `/speckit-tasks`, `/speckit-implement`, and `/speckit-converge` execution cycles.
-- Phase 1 focuses on project type selection, multi-project navigation, and project workspace landing.
+- Phase 1 scope is strictly constrained to project type selection (`Movie`, `TV Show`, `Commercial`), project listing/landing page, and project workspace entry with summary.
 - Phase-to-phase dependencies are strictly sequential.
