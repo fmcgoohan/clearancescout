@@ -1,8 +1,8 @@
-# Tasks: Production Clearance Operating Model (Phases 1 & 2)
+# Tasks: Production Clearance Operating Model (Phases 1, 2 & 3)
 
 **Feature**: `specs/016-production-clearance-model` | **Branch**: `016-production-clearance-model`  
 **Input**: Plan from [`specs/016-production-clearance-model/plan.md`](plan.md), Spec from [`specs/016-production-clearance-model/spec.md`](spec.md)  
-**Scope**: Phase 1 (Completed) & Phase 2 (Active Target). Phases 3 through 10 are deliberately excluded from this task list.
+**Scope**: Phase 1 (Completed), Phase 2 (Completed) & Phase 3 (Active Target). Phases 4 through 10 are deliberately excluded from this task list.
 
 ---
 
@@ -42,7 +42,7 @@
 
 ---
 
-## Phase 5: Phase 2 Setup (Occurrence Data Structures)
+## Phase 5: Phase 2 Setup (Occurrence Data Structures - Completed)
 
 **Purpose**: Extend `SceneEntityOccurrenceData` with evaluation metrics and roll-up methods.
 
@@ -50,36 +50,25 @@
 
 ---
 
-## Phase 6: Phase 2 Foundational (Occurrence Evaluator Engine)
+## Phase 6: Phase 2 Foundational (Occurrence Evaluator Engine - Completed)
 
 **Purpose**: Implement occurrence-level evaluation workflow with scene context analysis and canonical roll-up calculation.
 
 - [X] T010 [P] Implement `evaluateOccurrenceClearance` and update `evaluateEntityClearance` in `server/workflows/clearanceEvaluator.ts` to evaluate scene context and deterministically update canonical roll-up status
 
-**Checkpoint**: Occurrence evaluation engine ready - API and UI integration can proceed in parallel.
-
 ---
 
-## Phase 7: User Story 2 - Occurrence-Level Evaluation as Fundamental Unit (Priority: P2) 🎯 Phase 2 Target
+## Phase 7: User Story 2 - Occurrence-Level Evaluation as Fundamental Unit (Priority: P2 - Completed) 🎯 Phase 2 Target
 
 **Goal**: Evaluate clearance risk per scene occurrence using specific scene action context rather than solely evaluating abstract global entities, and derive canonical entity status from occurrences.
 
-**Independent Test**: Ingest a script with the same entity occurring in two distinct scenes (one incidental, one defamatory); verify each occurrence receives an independent evaluation status and the canonical status is derived from occurrences.
-
-### Tests for User Story 2
-
 - [X] T011 [P] [US2] Contract test for occurrence evaluation and derived canonical status roll-up in `tests/contract/test_occurrence_evaluation.test.ts`
-
-### Implementation for User Story 2
-
 - [X] T012 [P] [US2] Implement `POST /api/projects/:id/occurrences/:occurrenceId/evaluate` and `GET /api/projects/:id/entities/:entityId/occurrences` in `server/api/clearanceRoutes.ts`
 - [X] T013 [US2] Update scene occurrence rendering in `src/pages/WorkspacePage.tsx` and `src/components/EntityDetailModal.tsx` to display occurrence-level clearance badges and scene context details
 
-**Checkpoint**: Phase 2 core functionality complete. Occurrence evaluations, canonical roll-up, and UI badges operate independently.
-
 ---
 
-## Phase 8: Phase 2 Polish & Cross-Cutting Concerns
+## Phase 8: Phase 2 Polish & Cross-Cutting Concerns (Completed)
 
 **Purpose**: End-to-end multi-scene integration test, quickstart validation, and full regression test.
 
@@ -89,25 +78,75 @@
 
 ---
 
+## Phase 9: Phase 3 Setup (Entity Resolution & Hierarchy Repositories)
+
+**Purpose**: Extend `CanonicalEntityData` schema with aliases, hierarchy relations, and merge methods in repository layer.
+
+- [ ] T017 [P] Extend `CanonicalEntityData` schema in `server/repositories/EntityRepo.ts` with `aliases?: string[]`, `parentEntityId?: string`, `parentEntityName?: string`, and `relationshipType?: EntityRelationshipType`, and implement repository methods `addAlias`, `removeAlias`, `setEntityRelationship`, and `mergeEntities(projectId, targetId, sourceId)`
+
+---
+
+## Phase 10: Phase 3 Foundational (Multi-Stage Entity Resolution Engine)
+
+**Purpose**: Implement deterministic multi-stage entity resolution algorithm and integrate with script parser ingestion workflow.
+
+- [ ] T018 [P] Implement `EntityResolutionEngine` in `server/workflows/entityResolutionEngine.ts` providing deterministic multi-stage mention resolution (`EXACT_CANONICAL`, `ALIAS_MATCH`, `NORMALIZED_EQUIVALENCE`, `HIERARCHY_PARENT_MATCH`)
+- [ ] T019 [P] Integrate `EntityResolutionEngine` into `CanonicalRegistryWorkflow.ts` in `server/workflows/canonicalRegistryWorkflow.ts` to deduplicate entity mentions and map aliases during script parsing
+
+**Checkpoint**: Entity resolution engine and workflow ready - API and UI integration can proceed in parallel.
+
+---
+
+## Phase 11: User Story 3 - Upgraded Entity Resolution, Aliases & Hierarchy (Priority: P3) 🎯 Phase 3 Target
+
+**Goal**: Support alias management, parent brand / product relationships, candidate mention resolution, and transactional entity merging.
+
+**Independent Test**: Ingest scripts with varied aliases and product lines, verify they map to unified canonical entities, and execute alias addition and entity merge operations via REST API.
+
+### Tests for User Story 3
+
+- [ ] T020 [P] [US3] Contract tests for alias management, entity resolution, hierarchy configuration, and entity merging in `tests/contract/test_entity_resolution.test.ts`
+
+### Implementation for User Story 3
+
+- [ ] T021 [P] [US3] Implement `POST /api/projects/:id/entities/:entityId/aliases`, `DELETE /api/projects/:id/entities/:entityId/aliases/:alias`, `POST /api/projects/:id/entities/resolve`, `PATCH /api/projects/:id/entities/:entityId/relationship`, and `POST /api/projects/:id/entities/merge` in `server/api/entityMutationRoutes.ts`
+- [ ] T022 [US3] Update `src/components/ItemEditModal.tsx` to add alias management and parent brand / relationship selection
+- [ ] T023 [US3] Update `src/components/EntityRegistryTable.tsx` and `src/components/EntityDetailModal.tsx` to display aliases, parent brand badges, and entity merge action
+
+**Checkpoint**: Phase 3 core functionality complete. Alias mapping, hierarchy linking, and entity merging operate smoothly.
+
+---
+
+## Phase 12: Phase 3 Polish & Cross-Cutting Concerns
+
+**Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
+
+- [ ] T024 [P] Implement end-to-end integration test in `tests/integration/entity_resolution_workflow.test.ts` verifying multi-scene alias deduplication, parent-child relationship inheritance, and occurrence re-linking upon merge
+- [ ] T025 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [ ] T026 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
 graph TD
-    Phase1to4[Phase 1 Complete T001-T008] --> Phase5[Phase 5: Setup - EntityRepo Occurrence Fields]
-    Phase5 --> Phase6[Phase 6: Foundational - clearanceEvaluator Engine]
-    Phase6 --> US2_Tests[T011: Contract Tests]
-    Phase6 --> US2_Routes[T012: clearanceRoutes Occurrence Endpoints]
-    US2_Routes --> US2_UI[T013: Workspace & Modal UI]
-    US2_Tests --> Phase8[Phase 8: Polish & Integration]
-    US2_UI --> Phase8
+    Phase1to8[Phases 1 & 2 Complete T001-T016] --> Phase9[Phase 9: Setup - EntityRepo Aliases & Hierarchy]
+    Phase9 --> Phase10[Phase 10: Foundational - EntityResolutionEngine]
+    Phase10 --> US3_Tests[T020: Contract Tests]
+    Phase10 --> US3_Routes[T021: entityMutationRoutes Endpoints]
+    US3_Routes --> US3_UI[T022 & T023: Modal & Registry UI]
+    US3_Tests --> Phase12[Phase 12: Polish & Integration]
+    US3_UI --> Phase12
 ```
 
 ---
 
 ## Parallel Execution Examples
 
-### User Story 2
-- `T011` (contract tests in `tests/contract/test_occurrence_evaluation.test.ts`) can run in parallel with `T012` (`server/api/clearanceRoutes.ts`).
+### User Story 3
+- `T020` (contract tests in `tests/contract/test_entity_resolution.test.ts`) can run in parallel with `T021` (`server/api/entityMutationRoutes.ts`).
+- `T022` (`ItemEditModal.tsx`) can run in parallel with `T023` (`EntityRegistryTable.tsx`).
 
 ### Polish Phase
-- `T014` (integration test in `tests/integration/occurrence_clearance_workflow.test.ts`) can run in parallel with `T015` (`quickstart.md`).
+- `T024` (integration test in `tests/integration/entity_resolution_workflow.test.ts`) can run in parallel with `T025` (`quickstart.md`).
