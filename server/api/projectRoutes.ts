@@ -4,6 +4,7 @@ import { projectRepo } from '../repositories/ProjectRepo.js';
 import { sceneRepo } from '../repositories/SceneRepo.js';
 import { entityRepo } from '../repositories/EntityRepo.js';
 import { canonicalRegistryWorkflow } from '../workflows/canonicalRegistryWorkflow.js';
+import { demoAutomationWorkflow } from '../workflows/demoAutomationWorkflow.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 export const projectRouter = Router();
@@ -139,6 +140,22 @@ projectRouter.post('/:id/script', upload.single('script'), async (req: Request, 
     }
 
     const result = await canonicalRegistryWorkflow.processScriptUpload(projectId, scriptText, format);
+    return res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 1-Click Demo Screenplay Ingestion & Auto-Evaluation (Feature 017)
+projectRouter.post('/:id/script/demo', async (req: Request, res: Response, next) => {
+  try {
+    const projectId = req.params.id;
+    const { autoEvaluate, includeSampleRights, includeSamplePlaceholders } = req.body || {};
+    const result = await demoAutomationWorkflow.loadDemoScreenplay(projectId, {
+      autoEvaluate: autoEvaluate !== false,
+      includeSampleRights: includeSampleRights !== false,
+      includeSamplePlaceholders: includeSamplePlaceholders !== false,
+    });
     return res.json(result);
   } catch (err) {
     next(err);

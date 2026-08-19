@@ -204,7 +204,25 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
   };
 
   const handleLoadSampleScreenplay = async () => {
+    if (!projectId) return;
+    setIsUploading(true);
     try {
+      const demoRes = await apiFetch(`/api/projects/${projectId}/script/demo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          autoEvaluate: true,
+          includeSampleRights: true,
+          includeSamplePlaceholders: true,
+        }),
+      });
+
+      if (demoRes.ok) {
+        await fetchWorkspaceData();
+        return;
+      }
+
+      // Fallback if demo route not supported
       const fixtureRes = await apiFetch('/api/fixtures/demo-screenplay');
       let scriptToIngest = defaultFictionalDemoScript;
       if (fixtureRes.ok) {
@@ -216,6 +234,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       await handleParseScript(scriptToIngest, 'PLAINTEXT');
     } catch (err) {
       await handleParseScript(defaultFictionalDemoScript, 'PLAINTEXT');
+    } finally {
+      setIsUploading(false);
     }
   };
 

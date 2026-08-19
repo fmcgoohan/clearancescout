@@ -178,14 +178,16 @@ export class RightsRepo {
     for (const r of applicableRights) {
       if (r.status !== 'ACTIVE') continue;
 
+      const safeCovenants = Array.isArray(r.covenants) ? r.covenants : r.covenants ? [r.covenants] : [];
+
       // Check date validity
       if (r.isPerpetual || !r.expirationDate) {
         activeRights.push(r);
-        (r.covenants || []).forEach((c) => covenantsSet.add(c));
+        safeCovenants.forEach((c) => covenantsSet.add(c));
       } else {
         if (r.expirationDate >= todayIso) {
           activeRights.push(r);
-          (r.covenants || []).forEach((c) => covenantsSet.add(c));
+          safeCovenants.forEach((c) => covenantsSet.add(c));
 
           // Check if expiring within 60 days
           const expDate = new Date(r.expirationDate);

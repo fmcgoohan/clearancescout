@@ -11,7 +11,7 @@
 
 **Purpose**: Verify and prepare deterministic demo fixtures and data infrastructure.
 
-- [ ] T001 [P] Ensure `fixtures/demo_screenplay.txt` and `server/repositories/fixtures/entityResolutionFixtures.ts` have complete 10-scene coverage with deterministic clearance records and `DEMO_FIXTURE` provenance
+- [X] T001 [P] Ensure `fixtures/demo_screenplay.txt` and `server/repositories/fixtures/entityResolutionFixtures.ts` have complete 10-scene coverage with deterministic clearance records and `DEMO_FIXTURE` provenance
 
 ---
 
@@ -21,8 +21,8 @@
 
 **⚠️ CRITICAL**: Foundational engine MUST be complete before UI integration.
 
-- [ ] T002 [P] Implement `demoAutomationWorkflow.ts` in `server/workflows/demoAutomationWorkflow.ts` coordinating script parsing, batch entity evaluation, demo rights attachment, and placeholder creation with `DEMO_FIXTURE` provenance
-- [ ] T003 [P] Add `POST /projects/:id/script/demo` route in `server/api/scriptRoutes.ts` supporting `autoEvaluate` in `DEMO_MODE`
+- [X] T002 [P] Implement `demoAutomationWorkflow.ts` in `server/workflows/demoAutomationWorkflow.ts` coordinating script parsing, batch entity evaluation, demo rights attachment, and placeholder creation with `DEMO_FIXTURE` provenance
+- [X] T003 [P] Add `POST /projects/:id/script/demo` route in `server/api/scriptRoutes.ts` supporting `autoEvaluate` in `DEMO_MODE`
 
 **Checkpoint**: Backend demo automation workflow and REST endpoints ready.
 
@@ -36,11 +36,11 @@
 
 ### Tests for User Story 1
 
-- [ ] T004 [P] [US1] Contract test for `POST /api/projects/:id/script/demo` verifying auto-evaluated entities with `DEMO_FIXTURE` provenance in `tests/contract/test_judge_demo_automation.test.ts`
+- [X] T004 [P] [US1] Contract test for `POST /api/projects/:id/script/demo` verifying auto-evaluated entities with `DEMO_FIXTURE` provenance in `tests/contract/test_judge_demo_automation.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Update `src/pages/WorkspacePage.tsx` to call `POST /api/projects/:id/script/demo` when clicking "Load Sample Screenplay" in `DEMO_MODE` and automatically refresh workspace state
+- [X] T005 [US1] Update `src/pages/WorkspacePage.tsx` to call `POST /api/projects/:id/script/demo` when clicking "Load Sample Screenplay" in `DEMO_MODE` and automatically refresh workspace state
 
 **Checkpoint**: User Story 1 complete. 1-click demo screenplay ingestion and auto-evaluation functional.
 
@@ -54,11 +54,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T006 [P] [US2] Contract test verifying populated dashboard metrics and extended clearance binder export with SHA-256 digest in `tests/contract/test_judge_demo_dashboard_binder.test.ts`
+- [X] T006 [P] [US2] Contract test verifying populated dashboard metrics and extended clearance binder export with SHA-256 digest in `tests/contract/test_judge_demo_dashboard_binder.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Verify and refine `server/workflows/dashboardEngine.ts` and `server/workflows/binderExportWorkflow.ts` to aggregate demo rights, placeholders, scene readiness, and unresolved actions seamlessly in `DEMO_MODE`
+- [X] T007 [US2] Verify and refine `server/workflows/dashboardEngine.ts` and `server/workflows/binderExportWorkflow.ts` to aggregate demo rights, placeholders, scene readiness, and unresolved actions seamlessly in `DEMO_MODE`
 
 **Checkpoint**: User Stories 1 and 2 functional. Dashboard and binder reflect full operating model.
 
@@ -72,8 +72,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T008 [P] [US3] Update `src/App.tsx` default project title from `'ClearanceScout MVP Workspace'` to `'ClearanceScout Production Clearance Workspace'`
-- [ ] T009 [P] [US3] Update `src/components/ProjectListModal.tsx` and `index.html` copy to reflect "Production Clearance Workspace" and "Production Clearance Studio"
+- [X] T008 [P] [US3] Update `src/App.tsx` default project title from `'ClearanceScout MVP Workspace'` to `'ClearanceScout Production Clearance Workspace'`
+- [X] T009 [P] [US3] Update `src/components/ProjectListModal.tsx` and `index.html` copy to reflect "Production Clearance Workspace" and "Production Clearance Studio"
 
 **Checkpoint**: User Stories 1, 2, and 3 complete. Branding is unified.
 
@@ -83,9 +83,9 @@
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full regression verification preserving 003–016 invariants.
 
-- [ ] T010 [P] Implement end-to-end integration test in `tests/integration/judge_demo_workflow.test.ts` verifying 1-click demo load, populated dashboard, binder export with SHA-256, and 003–016 invariant preservation
-- [ ] T011 Run quickstart validation scenarios defined in `specs/017-judge-ready-demo/quickstart.md`
-- [ ] T012 Verify production build (`npm run build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [X] T010 [P] Implement end-to-end integration test in `tests/integration/judge_demo_workflow.test.ts` verifying 1-click demo load, populated dashboard, binder export with SHA-256, and 003–016 invariant preservation
+- [X] T011 Run quickstart validation scenarios defined in `specs/017-judge-ready-demo/quickstart.md`
+- [X] T012 Verify production build (`npm run build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

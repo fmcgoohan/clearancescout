@@ -115,6 +115,42 @@ export const PARALLEL_SEARCH_FIXTURES: Record<string, ParallelTrademarkFixture> 
     corporateOwner: 'Veloce Automobili S.p.A. (Turin, Italy)',
     disputePrecedents: 'Active automotive trade dress registration; review recommended for high-profile cinematic hero vehicle placement.',
     niceClassifications: [12]
+  },
+  'elena vance': {
+    queryKey: 'elena vance',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Elena_Vance',
+    excerptSnippet: 'Public biographical registry for Elena Vance, pioneer in orbital clean energy grids and clean power infrastructure.',
+    registrationStatus: 'REGISTERED_ACTIVE',
+    corporateOwner: 'Elena Vance Trust / Orbital Energy Institute',
+    disputePrecedents: 'Living public figure; incidental or archival broadcast portrayal permitted with standard documentary clearance.',
+    niceClassifications: [41]
+  },
+  'nocturne of the wild': {
+    queryKey: 'nocturne of the wild',
+    sourceUrl: 'https://www.ascap.com/repertory#/ace/work/99000003',
+    excerptSnippet: 'ASCAP Work #99000003 for NOCTURNE OF THE WILD. Registered musical work and synthetic audio master.',
+    registrationStatus: 'REGISTERED_ACTIVE',
+    corporateOwner: 'SynthWave Publishing Ltd / Neon Audio Masters',
+    disputePrecedents: 'Background spatial audio playback cleared for incidental film synchronization under standard publisher sync.',
+    niceClassifications: [41, 9]
+  },
+  'midtown spire tower': {
+    queryKey: 'midtown spire tower',
+    sourceUrl: 'https://uspto.gov/trademarks/search?q=midtown+spire+tower',
+    excerptSnippet: 'Property and Architectural Registry for MIDTOWN SPIRE TOWER. Commercial high-rise and private circular plaza.',
+    registrationStatus: 'REGISTERED_ACTIVE',
+    corporateOwner: 'Midtown Architectural Properties Trust (New York, NY)',
+    disputePrecedents: 'Exterior building facade and plaza; cleared for exterior establishment shots under incidental location filming.',
+    niceClassifications: [36, 41]
+  },
+  'titan industrial hazard placard': {
+    queryKey: 'titan industrial hazard placard',
+    sourceUrl: 'https://osha.gov/standards/safety-signs?q=titan-hazard',
+    excerptSnippet: 'Standard ANSI/OSHA Industrial Safety Warning Placard format for heavy circuit bulkhead signage.',
+    registrationStatus: 'REGISTERED_ACTIVE',
+    corporateOwner: 'Titan Industrial Safety Standards / Public Domain Standard',
+    disputePrecedents: 'Standard industrial safety prop; no proprietary commercial trademark infringement surfaced.',
+    niceClassifications: [9]
   }
 };
 

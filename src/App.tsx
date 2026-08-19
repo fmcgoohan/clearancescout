@@ -183,7 +183,7 @@ export default function App() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: 'ClearanceScout MVP Workspace',
+            title: 'ClearanceScout Production Clearance Workspace',
             productionCompany: 'Apex Entertainment',
             scriptVersion: 'v1.0-ShootingDraft',
             projectType: 'Movie',
@@ -442,7 +442,7 @@ export default function App() {
               </span>
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              ClearanceScout · Agentic Entertainment Clearance Workspace
+              ClearanceScout · Production Clearance Workspace
             </span>
           </div>
         </div>
