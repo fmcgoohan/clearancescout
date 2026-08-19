@@ -1,70 +1,50 @@
-# Data Model: Production Clearance Operating Model (Phase 7)
+# Data Model: Production Clearance Operating Model (Phase 8)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 7 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 8 Focus)  
 **Date**: 2026-08-19  
 **Status**: Completed  
 
 ---
 
-## 1. Generalized Replacement & Placeholder Domain Models
+## 1. Replacement Attempt & Self-Clearance Data Models
 
-### Enums
+### `ReplacementAttemptRecord`
+Captures every individual candidate generation and search grounding attempt within the $\le 3$ iteration loop:
+
 ```typescript
-export type PlaceholderAssetCategory =
-  | 'BRAND'
-  | 'ART_MUSIC'
-  | 'ARTWORK'
-  | 'DIALOGUE'
-  | 'GRAPHIC_PROP';
-
-export type PlaceholderClearanceTier = 'TEMP_APPROVED' | 'FINAL_CLEARED';
+export interface ReplacementAttemptRecord {
+  attemptNumber: number;          // 1, 2, or 3
+  candidateName: string;
+  designBrief: string;
+  eraAesthetic: string;
+  clearanceStatus: ClearanceStatus;  // 'NO_ISSUE_SURFACED' | 'ACTION_REQUIRED' | 'REVIEW_RECOMMENDED' | 'INSUFFICIENT_EVIDENCE'
+  collisionRationale?: string;
+  negativeConstraintsApplied?: string[];
+  citations: ClearanceCitation[];
+  provenance: ProvenanceType;     // 'PARALLEL_LIVE' | 'FALLBACK_FIXTURE' | 'LOCAL_MOCK'
+  timestamp: string;
+}
 ```
 
-### `ReplacementPlaceholderData`
-Stored in Firestore at `projects/{projectId}/placeholders/{placeholderId}`.
-
+### `ReplacementCardData` (Updated for Live Self-Clearance)
 ```typescript
-export interface ReplacementPlaceholderData {
-  id: string;                      // e.g. 'ph-a1b2c3d4'
+export interface ReplacementCardData {
+  id: string;
   projectId: string;
   canonicalEntityId: string;
-  canonicalName: string;
-  assetCategory: PlaceholderAssetCategory;
-  fictionalName: string;
-  description: string;
-  clearanceTier: PlaceholderClearanceTier;
-  creativeRationale: string;
-  approvedBy: string;
-  approvedRole?: string;
-  approvalDate: string;
-  expirationDate?: string;
-  categoryDetails?: {
-    // Brand
-    trademarkSearchNotes?: string;
-    packagingDimensions?: string;
-    fictionalTagline?: string;
-
-    // Music
-    bpm?: number;
-    key?: string;
-    musicalStyle?: string;
-    licenseType?: string;
-
-    // Artwork
-    artistPrompt?: string;
-    visualStyle?: string;
-    dimensions?: string;
-    imageUrl?: string;
-
-    // Dialogue
-    alternativeLines?: string[];
-    subtextRationale?: string;
-
-    // Prop
-    physicalSpecs?: string;
-    safetyClearanceNotes?: string;
-    graphicLabelUrl?: string;
-  };
+  targetEntityName: string;
+  fictionalBrandName: string;
+  designBrief: string;
+  eraAesthetic: string;
+  artworkImageUrl: string;
+  nonInfringementRationale: string;
+  clearanceStatus: ClearanceStatus;
+  selfClearanceResult: 'ACCEPTED' | 'ESCALATED_TO_COUNSEL';
+  totalAttempts: number;
+  attemptHistory: ReplacementAttemptRecord[];
+  citations: ClearanceCitation[];
+  provenance: ProvenanceType;
+  status: 'APPROVED' | 'PROPOSED' | 'REJECTED';
   createdAt: string;
   updatedAt: string;
 }
@@ -72,15 +52,11 @@ export interface ReplacementPlaceholderData {
 
 ---
 
-## 2. Scene Readiness Integration
+## 2. 4-Event SSE Stream Specification
 
-```typescript
-// sceneReadinessEngine.ts
-if (placeholder) {
-  if (placeholder.clearanceTier === 'FINAL_CLEARED') {
-    readinessTier = 'FINAL_CLEAR';
-  } else if (placeholder.clearanceTier === 'TEMP_APPROVED') {
-    readinessTier = 'WORKING_CLEAR';
-  }
-}
-```
+| SSE Event Name | Event Payload Key Fields | Trigger Point |
+|:---|:---|:---|
+| `REPLACEMENT_ATTEMPT` | `canonicalEntityId`, `candidateName`, `eraAesthetic`, `attemptNumber` | Generated new candidate from Gemini model. |
+| `REPLACEMENT_RESEARCH_STARTED` | `canonicalEntityId`, `candidateName`, `attemptNumber` | Dispatched Parallel Search query for trademark grounding. |
+| `REPLACEMENT_REJECTED` | `canonicalEntityId`, `candidateName`, `attemptNumber`, `rejectionStatus`, `collisionRationale` | Conflict or trademark collision detected; loop continues with added negative constraints. |
+| `REPLACEMENT_ACCEPTED` | `canonicalEntityId`, `acceptedName`, `attemptNumber`, `totalAttempts`, `clearanceStatus` | Zero conflicts surfaced; loop accepts candidate and initiates artwork generation. |
