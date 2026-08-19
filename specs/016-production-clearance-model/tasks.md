@@ -1,8 +1,8 @@
-# Tasks: Production Clearance Operating Model (Phases 1, 2, 3 & 4)
+# Tasks: Production Clearance Operating Model (Phases 1, 2, 3, 4 & 5)
 
 **Feature**: `specs/016-production-clearance-model` | **Branch**: `016-production-clearance-model`  
 **Input**: Plan from [`specs/016-production-clearance-model/plan.md`](plan.md), Spec from [`specs/016-production-clearance-model/spec.md`](spec.md)  
-**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed) & Phase 4 (Active Target). Phases 5 through 10 are deliberately excluded from this task list.
+**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed) & Phase 5 (Active Target). Phases 6 through 10 are deliberately excluded from this task list.
 
 ---
 
@@ -155,28 +155,76 @@
 
 ---
 
+## Phase 17: Phase 5 Setup (Scene Readiness Models & SceneRepo Extensions)
+
+**Purpose**: Extend `SceneData` schema and `SceneRepo` with readiness fields and update methods.
+
+- [ ] T036 [P] Extend `SceneData` schema in `server/repositories/SceneRepo.ts` with `readinessStatus` (`'RED' | 'WORKING_CLEAR' | 'FINAL_CLEAR'`), `readinessEvaluatedAt`, `readinessDetails`, and add `updateSceneReadiness(projectId, sceneId, assessment)` and `getSceneReadiness(projectId, sceneId)`
+
+---
+
+## Phase 18: Phase 5 Foundational (Deterministic State Machine Engine & API Endpoints)
+
+**Purpose**: Implement deterministic scene readiness evaluation and REST endpoints.
+
+- [ ] T037 [P] Implement `server/workflows/sceneReadinessEngine.ts` with `evaluateSceneReadiness(projectId, sceneId)` and `evaluateAllScenesReadiness(projectId)` computing `RED`, `WORKING CLEAR`, and `FINAL CLEAR` deterministically across occurrences, counsel overrides, rights coverage, and replacement cards
+- [ ] T038 [P] Implement Express router in `server/api/sceneRoutes.ts` (`GET /projects/:id/scenes/readiness`, `GET /projects/:id/scenes/:sceneId/readiness`, `POST /projects/:id/scenes/:sceneId/readiness/evaluate`, `POST /projects/:id/scenes/readiness/evaluate-all`) and mount in `server/index.ts`
+
+**Checkpoint**: Scene readiness engine and API ready - UI integration and test suites can proceed in parallel.
+
+---
+
+## Phase 19: User Story 5 - Deterministic Scene Readiness State Machine (Priority: P5) 🎯 Phase 5 Target
+
+**Goal**: Evaluate each scene to determine shooting readiness (`RED`, `WORKING CLEAR`, or `FINAL CLEAR`) derived from occurrence verdicts, contractual rights, and replacement cards.
+
+**Independent Test**: Ingest a screenplay with uncleared items; verify scene is `RED`. Attach replacement card; verify scene transitions to `WORKING CLEAR`. Add counsel override/license; verify scene transitions to `FINAL CLEAR`.
+
+### Tests for User Story 5
+
+- [ ] T039 [P] [US5] Contract tests for scene readiness queries, evaluations, and state transitions in `tests/contract/test_scene_readiness.test.ts`
+
+### Implementation for User Story 5
+
+- [ ] T040 [P] [US5] Update `src/components/ScriptViewer.tsx` to render scene readiness badges (`🔴 RED`, `🟡 WORKING CLEAR`, `🟢 FINAL CLEAR`) on scene headers with breakdown popover/tooltips
+- [ ] T041 [US5] Update `src/pages/WorkspacePage.tsx` to render a top-level Scene Readiness summary banner (`Final Clear`, `Working Clear`, `Red` counts) and refresh scene readiness on occurrence/rights/override changes
+
+**Checkpoint**: Phase 5 core functionality complete. Scene readiness state machine operates deterministically across all scenes.
+
+---
+
+## Phase 20: Phase 5 Polish & Cross-Cutting Concerns
+
+**Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
+
+- [ ] T042 [P] Implement end-to-end integration test in `tests/integration/scene_readiness_workflow.test.ts` verifying full multi-scene script ingestion, initial `RED` blocking, replacement card transition to `WORKING CLEAR`, signed override transition to `FINAL CLEAR`, and clean scene automatic `FINAL CLEAR`
+- [ ] T043 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [ ] T044 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
 graph TD
-    Phase1to12[Phases 1-3 Complete T001-T026] --> Phase13[Phase 13: Setup - RightsRepo.ts]
-    Phase13 --> Phase14_Eval[Phase 14: clearanceEvaluator Integration T028]
-    Phase13 --> Phase14_Routes[Phase 14: rightsRoutes.ts Endpoints T029]
-    Phase14_Routes --> US4_Tests[T030: Contract Tests]
-    Phase14_Routes --> US4_UI_Modal[T031: RightsModal.tsx]
-    US4_UI_Modal --> US4_UI_Table[T032: Registry & Detail UI]
-    US4_Tests --> Phase16[Phase 16: Polish & Integration]
-    US4_UI_Table --> Phase16
-    Phase14_Eval --> Phase16
+    Phases1to4[Phases 1-4 Complete T001-T035] --> Phase17[Phase 17: SceneRepo.ts Extensions T036]
+    Phase17 --> Phase18_Engine[Phase 18: sceneReadinessEngine.ts T037]
+    Phase17 --> Phase18_Routes[Phase 18: sceneRoutes.ts T038]
+    Phase18_Engine --> US5_Tests[T039: Contract Tests]
+    Phase18_Routes --> US5_Tests
+    Phase18_Routes --> US5_UI_Viewer[T040: ScriptViewer Badges]
+    US5_UI_Viewer --> US5_UI_Workspace[T041: WorkspacePage Summary Banner]
+    US5_Tests --> Phase20[Phase 20: Polish & Integration]
+    US5_UI_Workspace --> Phase20
 ```
 
 ---
 
 ## Parallel Execution Examples
 
-### User Story 4
-- `T028` (`clearanceEvaluator.ts` integration) can run in parallel with `T029` (`server/api/rightsRoutes.ts`).
-- `T030` (`tests/contract/test_rights_management.test.ts`) can run in parallel with `T031` (`src/components/RightsModal.tsx`).
+### User Story 5
+- `T037` (`sceneReadinessEngine.ts`) can run in parallel with `T038` (`server/api/sceneRoutes.ts`).
+- `T039` (`tests/contract/test_scene_readiness.test.ts`) can run in parallel with `T040` (`src/components/ScriptViewer.tsx`).
 
 ### Polish Phase
-- `T033` (integration test in `tests/integration/rights_clearance_workflow.test.ts`) can run in parallel with `T034` (`quickstart.md`).
+- `T042` (integration test in `tests/integration/scene_readiness_workflow.test.ts`) can run in parallel with `T043` (`quickstart.md`).
