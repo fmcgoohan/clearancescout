@@ -7,6 +7,9 @@
 [![Grounding](https://img.shields.io/badge/Grounding-Parallel%20Web%20API-06B6D4)](https://parallel.ai)
 [![Deployment](https://img.shields.io/badge/Platform-Google%20Cloud%20Run-34A853)](https://cloud.google.com/run)
 [![Tests](https://img.shields.io/badge/Tests-108%20Passing%20(56%20Suites)-34D399)](tests/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-34A853)](https://clearancescout-996154354252.us-central1.run.app)
+
+**Live demo:** [https://clearancescout-996154354252.us-central1.run.app](https://clearancescout-996154354252.us-central1.run.app)
 
 ClearanceScout is an enterprise agentic platform designed for studio legal counsel, clearance coordinators, art directors, and production delivery supervisors. It transforms unstructured screenplays into structured, auditable clearance binders by automatically extracting brand marks, music compositions, public figures, proprietary locations, and prop graphics, grounding them against live USPTO and web trademark registries via Parallel Search, generating verified non-infringing replacement assets, and orchestrating comprehensive production clearance operating workflows.
 
@@ -174,6 +177,38 @@ npm run build
 npm start
 ```
 Open [http://localhost:8080](http://localhost:8080) to access the ClearanceScout Studio Workspace.
+
+---
+
+## 🐳 Google Cloud Run Deployment
+
+**Live demo (DEMO_MODE):** [https://clearancescout-996154354252.us-central1.run.app](https://clearancescout-996154354252.us-central1.run.app)
+
+ClearanceScout is packaged as a single unified container serving both the Express REST/SSE API and compiled static React frontend.
+
+### Build & Run Container Locally
+```bash
+docker build -t clearancescout:latest .
+docker run -p 8080:8080 -e EXECUTION_MODE=DEMO_MODE clearancescout:latest
+```
+
+### Deploy to Google Cloud Run
+```bash
+gcloud run deploy clearancescout \
+  --source . \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --set-env-vars EXECUTION_MODE=DEMO_MODE
+```
+
+For live `CLOUD_MODE`, also bind `GEMINI_API_KEY` and `PARALLEL_WEB_API_KEY` as secrets. Missing production credentials must fail visibly.
+
+### Health & Readiness Check
+```bash
+curl -s https://clearancescout-996154354252.us-central1.run.app/api/health
+```
 
 ---
 
