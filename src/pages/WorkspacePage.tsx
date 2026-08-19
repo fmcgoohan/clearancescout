@@ -5,6 +5,7 @@ import { ItemEditModal, EntityCategory } from '../components/ItemEditModal';
 import { ComparisonModal, ComparisonViewModel } from '../components/ComparisonModal';
 import { EntityDetailModal } from '../components/EntityDetailModal';
 import { RightsModal } from '../components/RightsModal';
+import { ActionListModal } from '../components/ActionListModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
 import { apiFetch } from '../utils/apiClient.js';
 
@@ -59,6 +60,10 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     overallReadinessPercentage: number;
   } | null>(null);
 
+  // Action Center modal state (Phase 6)
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [openActionsCount, setOpenActionsCount] = useState(0);
+
   // Batch research hook
   const { progress: batchProgress, startBatchResearch } = useBatchResearch(
     projectId,
@@ -102,11 +107,17 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
   const fetchWorkspaceData = async () => {
     if (!projectId) return;
     try {
-      const [scenesRes, entitiesRes, readinessRes] = await Promise.all([
+      const [scenesRes, entitiesRes, readinessRes, actionsRes] = await Promise.all([
         apiFetch(`/api/projects/${projectId}/scenes`),
         apiFetch(`/api/projects/${projectId}/entities`),
         apiFetch(`/api/projects/${projectId}/scenes/readiness`),
+        apiFetch(`/api/projects/${projectId}/actions?status=OPEN`),
       ]);
+
+      if (actionsRes.ok) {
+        const actionsData = await actionsRes.json();
+        setOpenActionsCount(Array.isArray(actionsData) ? actionsData.length : 0);
+      }
 
       let readinessMap = new Map<string, any>();
       if (readinessRes.ok) {
@@ -343,6 +354,21 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           >
             {isUploading ? 'Parsing...' : 'Ingest Screenplay'}
           </button>
+
+          <button
+            className="btn-secondary touch-target"
+            aria-label="Open Department Action & Notification Center"
+            onClick={() => setIsActionModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              border: openActionsCount > 0 ? '1px solid #f87171' : '1px solid var(--border-color)',
+              color: openActionsCount > 0 ? '#f87171' : 'var(--text-main)',
+            }}
+          >
+            📋 Actions ({openActionsCount})
+          </button>
         </div>
       </div>
 
@@ -503,6 +529,16 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           setRightsEntityName('');
         }}
         onRightsUpdated={() => {
+          fetchWorkspaceData();
+        }}
+      />
+
+      {/* Department Action & Notification Center Modal (Phase 6) */}
+      <ActionListModal
+        projectId={projectId}
+        isOpen={isActionModalOpen}
+        onClose={() => setIsActionModalOpen(false)}
+        onActionUpdated={() => {
           fetchWorkspaceData();
         }}
       />

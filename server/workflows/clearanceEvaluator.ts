@@ -2,6 +2,7 @@ import { entityRepo, ClearanceStatus, CanonicalEntityData, SceneEntityOccurrence
 import { assessmentRepo, ClearanceRiskAssessmentData } from '../repositories/AssessmentRepo.js';
 import { projectRepo } from '../repositories/ProjectRepo.js';
 import { rightsRepo } from '../repositories/RightsRepo.js';
+import { actionDispatcher } from './actionDispatcher.js';
 import { parallelSearchTool } from '../tools/parallelSearchTool.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { GoogleGenAI } from '@google/genai';
@@ -192,6 +193,15 @@ export class ClearanceEvaluator {
 
     // Step 7: Compute Derived Canonical Status
     const derivedCanonicalStatus = await entityRepo.computeDerivedCanonicalStatus(projectId, entity.id);
+
+    // Step 8: Dispatch Department Action Items (Phase 6)
+    if (status === 'ACTION_REQUIRED' || status === 'REVIEW_RECOMMENDED') {
+      try {
+        await actionDispatcher.dispatchOccurrenceAction(projectId, updatedOcc || occurrence, entity);
+      } catch (err) {
+        console.error('Failed to dispatch occurrence action:', err);
+      }
+    }
 
     timelineEmitter.emit(projectId, 'RISK_EVAL', `Occurrence Risk Verdict (${sceneId}): ${status}`, {
       occurrenceId,

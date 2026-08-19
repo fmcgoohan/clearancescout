@@ -15,6 +15,7 @@ import { demoAuthMiddleware } from './middleware/demoAuthMiddleware.js';
 
 import { rightsRouter } from './api/rightsRoutes.js';
 import { sceneRouter } from './api/sceneRoutes.js';
+import { actionRouter } from './api/actionRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,6 +42,7 @@ app.use('/api/projects', projectRouter);
 app.use('/api', clearanceRouter);
 app.use('/api', rightsRouter);
 app.use('/api', sceneRouter);
+app.use('/api', actionRouter);
 app.use('/api', replacementRouter);
 app.use('/api', timelineRouter);
 app.use('/api', binderRouter);

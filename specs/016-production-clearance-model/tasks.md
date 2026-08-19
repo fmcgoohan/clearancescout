@@ -194,51 +194,42 @@
 
 ---
 
-## Phase 21: Phase 6 Setup (Action & Notification Repository)
+## Phase 21: Phase 6 Setup (Action & Notification Repository - Completed)
 
 **Purpose**: Create `ClearanceActionItem`, `ClearanceNotification` schemas and `ActionNotificationRepo` for persistence and auto-resolution.
 
-- [ ] T045 [P] Create `ClearanceActionItem`, `ClearanceNotification` domain models, enums (`ClearanceActionType`, `DepartmentTarget`, `ActionPriority`, `ActionStatus`), and `ActionNotificationRepo` in `server/repositories/ActionNotificationRepo.ts` with CRUD, department filtering, and auto-resolution methods
+- [X] T045 [P] Create `ClearanceActionItem`, `ClearanceNotification` domain models, enums (`ClearanceActionType`, `DepartmentTarget`, `ActionPriority`, `ActionStatus`), and `ActionNotificationRepo` in `server/repositories/ActionNotificationRepo.ts` with CRUD, department filtering, and auto-resolution methods
 
 ---
 
-## Phase 22: Phase 6 Foundational (Automated Action Dispatcher & REST Endpoints)
+## Phase 22: Phase 6 Foundational (Automated Action Dispatcher & REST Endpoints - Completed)
 
 **Purpose**: Implement automated department action routing, auto-resolution triggers, and REST endpoints.
 
-- [ ] T046 [P] Implement `server/workflows/actionDispatcher.ts` with automated department routing (`ART_DEPT`, `LEGAL_COUNSEL`, `LOCATIONS`, `PRODUCTION_MGMT`), state transition event listeners, and auto-resolution triggers
-- [ ] T047 [P] Implement Express router in `server/api/actionRoutes.ts` (`GET /projects/:id/actions`, `PATCH /projects/:id/actions/:actionId`, `GET /projects/:id/notifications`, `PATCH /projects/:id/notifications/:notifId/read`, `POST /projects/:id/actions/sync`) and mount in `server/index.ts`
+- [X] T046 [P] Implement `server/workflows/actionDispatcher.ts` with automated department routing (`ART_DEPT`, `LEGAL_COUNSEL`, `LOCATIONS`, `PRODUCTION_MGMT`), state transition event listeners, and auto-resolution triggers
+- [X] T047 [P] Implement Express router in `server/api/actionRoutes.ts` (`GET /projects/:id/actions`, `PATCH /projects/:id/actions/:actionId`, `GET /projects/:id/notifications`, `PATCH /projects/:id/notifications/:notifId/read`, `POST /projects/:id/actions/sync`) and mount in `server/index.ts`
 
 **Checkpoint**: Action dispatcher and API ready - UI integration and test suites can proceed in parallel.
 
 ---
 
-## Phase 23: User Story 6 - Action & Notification Lists Derived from State Transitions (Priority: P6) 🎯 Phase 6 Target
+## Phase 23: User Story 6 - Action & Notification Lists Derived from State Transitions (Priority: P6 - Completed) 🎯 Phase 6 Target
 
 **Goal**: Automatically generate department-routed to-do action items and high-priority shoot block alerts upon clearance state transitions, and auto-resolve them upon mitigation.
 
-**Independent Test**: Evaluate an uncleared graphic prop or brand; verify department action is created. Trigger scene `RED`; verify production management alert. Attach replacement or override; verify action item transitions to `RESOLVED`.
-
-### Tests for User Story 6
-
-- [ ] T048 [P] [US6] Contract tests for action dispatch, department filtering, status updates, and auto-resolution in `tests/contract/test_action_notifications.test.ts`
-
-### Implementation for User Story 6
-
-- [ ] T049 [P] [US6] Create `src/components/ActionListModal.tsx` allowing department-filtered viewing (`Art Dept`, `Legal`, `Locations`, `Production Management`), status updates, and manual resolution
-- [ ] T050 [US6] Update `src/pages/WorkspacePage.tsx` to render an `📋 Actions (${count})` header trigger with active blocker badge and wire up action list modal and auto-refresh
-
-**Checkpoint**: Phase 6 core functionality complete. Department actions and notifications dispatch and auto-resolve smoothly.
+- [X] T048 [P] [US6] Contract tests for action dispatch, department filtering, status updates, and auto-resolution in `tests/contract/test_action_notifications.test.ts`
+- [X] T049 [P] [US6] Create `src/components/ActionListModal.tsx` allowing department-filtered viewing (`Art Dept`, `Legal`, `Locations`, `Production Management`), status updates, and manual resolution
+- [X] T050 [US6] Update `src/pages/WorkspacePage.tsx` to render an `📋 Actions (${count})` header trigger with active blocker badge and wire up action list modal and auto-refresh
 
 ---
 
-## Phase 24: Phase 6 Polish & Cross-Cutting Concerns
+## Phase 24: Phase 6 Polish & Cross-Cutting Concerns (Completed)
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
 
-- [ ] T051 [P] Implement end-to-end integration test in `tests/integration/action_workflow.test.ts` verifying script ingestion action generation, scene `RED` alert broadcasting, and multi-department auto-resolution
-- [ ] T052 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
-- [ ] T053 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [X] T051 [P] Implement end-to-end integration test in `tests/integration/action_workflow.test.ts` verifying script ingestion action generation, scene `RED` alert broadcasting, and multi-department auto-resolution
+- [X] T052 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [X] T053 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 
