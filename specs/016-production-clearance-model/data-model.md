@@ -1,62 +1,89 @@
-# Data Model: Production Clearance Operating Model (Phase 8)
+# Data Model: Production Clearance Operating Model (Phase 9)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 8 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 9 Focus)  
 **Date**: 2026-08-19  
 **Status**: Completed  
 
 ---
 
-## 1. Replacement Attempt & Self-Clearance Data Models
+## 1. Production Dashboard Data Schema
 
-### `ReplacementAttemptRecord`
-Captures every individual candidate generation and search grounding attempt within the $\le 3$ iteration loop:
+### `ProductionDashboardData`
+Returned by `GET /api/projects/:id/dashboard`.
 
 ```typescript
-export interface ReplacementAttemptRecord {
-  attemptNumber: number;          // 1, 2, or 3
-  candidateName: string;
-  designBrief: string;
-  eraAesthetic: string;
-  clearanceStatus: ClearanceStatus;  // 'NO_ISSUE_SURFACED' | 'ACTION_REQUIRED' | 'REVIEW_RECOMMENDED' | 'INSUFFICIENT_EVIDENCE'
-  collisionRationale?: string;
-  negativeConstraintsApplied?: string[];
-  citations: ClearanceCitation[];
-  provenance: ProvenanceType;     // 'PARALLEL_LIVE' | 'FALLBACK_FIXTURE' | 'LOCAL_MOCK'
-  timestamp: string;
+export interface ProductionDashboardKPIs {
+  totalScenes: number;
+  finalClearScenes: number;
+  workingClearScenes: number;
+  redScenes: number;
+  readinessPercentage: number;
+  totalEntities: number;
+  criticalBlockersCount: number;
+  activePlaceholdersCount: number;
+  rightsExpiringSoonCount: number;
+  pendingActionsCount: number;
 }
-```
 
-### `ReplacementCardData` (Updated for Live Self-Clearance)
-```typescript
-export interface ReplacementCardData {
-  id: string;
-  projectId: string;
+export interface BlockerItemDetail {
+  sceneId: string;
+  sceneNumber: number;
+  heading: string;
+  occurrenceId: string;
   canonicalEntityId: string;
-  targetEntityName: string;
-  fictionalBrandName: string;
-  designBrief: string;
-  eraAesthetic: string;
-  artworkImageUrl: string;
-  nonInfringementRationale: string;
-  clearanceStatus: ClearanceStatus;
-  selfClearanceResult: 'ACCEPTED' | 'ESCALATED_TO_COUNSEL';
-  totalAttempts: number;
-  attemptHistory: ReplacementAttemptRecord[];
-  citations: ClearanceCitation[];
-  provenance: ProvenanceType;
-  status: 'APPROVED' | 'PROPOSED' | 'REJECTED';
-  createdAt: string;
-  updatedAt: string;
+  canonicalName: string;
+  clearanceStatus: string;
+  riskRationale: string;
+}
+
+export interface ExpiringRightsDetail {
+  rightsId: string;
+  canonicalEntityId: string;
+  canonicalName: string;
+  agreementName: string;
+  licensor: string;
+  expirationDate: string;
+  daysRemaining: number;
+}
+
+export interface ActivePlaceholderDetail {
+  id: string;
+  canonicalEntityId: string;
+  canonicalName: string;
+  fictionalName: string;
+  assetCategory: string;
+  clearanceTier: 'TEMP_APPROVED' | 'FINAL_CLEARED';
+  approvedBy: string;
+}
+
+export interface ProductionDashboardData {
+  projectId: string;
+  projectTitle: string;
+  projectType: string;
+  kpis: ProductionDashboardKPIs;
+  sceneReadinessDistribution: Array<{
+    sceneId: string;
+    sceneNumber: number;
+    heading: string;
+    status: 'FINAL_CLEAR' | 'WORKING_CLEAR' | 'RED';
+    blockerCount: number;
+    workingCount: number;
+    totalOccurrences: number;
+  }>;
+  shootBlockers: BlockerItemDetail[];
+  expiringRights: ExpiringRightsDetail[];
+  activePlaceholders: ActivePlaceholderDetail[];
+  departmentActionsSummary: {
+    ART_DEPT: number;
+    LEGAL_COUNSEL: number;
+    LOCATIONS: number;
+    PRODUCTION_MGMT: number;
+  };
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    label: string;
+    timestamp: string;
+  }>;
 }
 ```
-
----
-
-## 2. 4-Event SSE Stream Specification
-
-| SSE Event Name | Event Payload Key Fields | Trigger Point |
-|:---|:---|:---|
-| `REPLACEMENT_ATTEMPT` | `canonicalEntityId`, `candidateName`, `eraAesthetic`, `attemptNumber` | Generated new candidate from Gemini model. |
-| `REPLACEMENT_RESEARCH_STARTED` | `canonicalEntityId`, `candidateName`, `attemptNumber` | Dispatched Parallel Search query for trademark grounding. |
-| `REPLACEMENT_REJECTED` | `canonicalEntityId`, `candidateName`, `attemptNumber`, `rejectionStatus`, `collisionRationale` | Conflict or trademark collision detected; loop continues with added negative constraints. |
-| `REPLACEMENT_ACCEPTED` | `canonicalEntityId`, `acceptedName`, `attemptNumber`, `totalAttempts`, `clearanceStatus` | Zero conflicts surfaced; loop accepts candidate and initiates artwork generation. |

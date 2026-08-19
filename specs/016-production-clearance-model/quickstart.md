@@ -1,34 +1,34 @@
-# Quickstart: Production Clearance Operating Model (Phase 8 Validation)
+# Quickstart: Production Clearance Operating Model (Phase 9 Validation)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 8 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 9 Focus)  
 **Date**: 2026-08-19  
 
 ---
 
-## Scenario 1: Clean Clearance on Attempt 1 (Zero Conflicts)
+## Scenario 1: Fetch Consolidated Dashboard for Ingested Multi-Scene Project
 
 ### Steps:
-1. Ingest screenplay with branded item ("Coca-Cola").
-2. Trigger replacement generation with era aesthetic:
-   `POST /api/projects/$PROJECT_ID/replacements/generate` with `{ canonicalEntityId: "$ENTITY_ID", eraAesthetic: "Modern Minimalist" }`.
-3. Candidate generated $\to$ Parallel Search executes $\to$ Evaluates clean (`NO_ISSUE_SURFACED`).
-4. Loop terminates immediately with `totalAttempts: 1`, `selfClearanceResult: 'ACCEPTED'`, `status: 'APPROVED'`.
+1. Ingest screenplay with 3 scenes (Scene 1: clean, Scene 2: blocked brand, Scene 3: music placeholder).
+2. Attach 1 music placeholder (`TEMP_APPROVED`) to Scene 3.
+3. Attach 1 rights agreement with expiration within 45 days.
+4. Execute `GET /api/projects/$PROJECT_ID/dashboard`.
+5. Verify response payload contains:
+   - `kpis`: Total scenes (3), `redScenes` (1), `workingClearScenes` (1), `finalClearScenes` (1), `readinessPercentage` (50%).
+   - `shootBlockers`: Contains the exact Scene 2 blocked item.
+   - `expiringRights`: Contains the 45-day expiring agreement.
+   - `activePlaceholders`: Contains the music placeholder.
+   - `departmentActionsSummary`: Accurate count of open actions per department.
 
 ---
 
-## Scenario 2: Collision on Attempt 1, Clean on Attempt 2 (Negative Constraints)
+## Scenario 2: Blocker Triage and Immediate Mitigation from Dashboard
 
 ### Steps:
-1. Candidate 1 collides with existing brand mark $\to$ `REPLACEMENT_REJECTED` emitted with collision details.
-2. Candidate 1 is added to negative constraints for Attempt 2.
-3. Candidate 2 generated $\to$ Search executes $\to$ Evaluates clean (`NO_ISSUE_SURFACED`).
-4. Loop terminates on Attempt 2 with full 2-attempt citation provenance retained.
-
----
-
-## Scenario 3: Bounded Escalation at 3 Failed Attempts ($\le 3$ Ceiling)
-
-### Steps:
-1. Force 3 consecutive conflicts across attempts 1, 2, and 3.
-2. Verify loop strictly terminates at attempt 3.
-3. Candidate marked with `selfClearanceResult: 'ESCALATED_TO_COUNSEL'`, `status: 'PROPOSED'`, and high-priority action dispatched to Legal Counsel.
+1. Identify Scene 2 blocker in `shootBlockers`.
+2. Apply signed counsel override on Scene 2 blocker.
+3. Re-query `GET /api/projects/$PROJECT_ID/dashboard`.
+4. Verify:
+   - `shootBlockers` is now empty.
+   - `redScenes` is 0.
+   - `finalClearScenes` increases.
+   - `readinessPercentage` upgrades to higher percentage.

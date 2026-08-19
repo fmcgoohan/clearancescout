@@ -1,71 +1,54 @@
-# Research & Architectural Decisions: Production Clearance Operating Model (Phase 8)
+# Research & Architectural Decisions: Production Clearance Operating Model (Phase 9)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 8 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 9 Focus)  
 **Date**: 2026-08-19  
 **Status**: Completed  
 
 ---
 
-## 1. Evidence-Driven Live Self-Clearance Architecture
+## 1. Production Dashboard Aggregation Architecture
 
 ### Context & Problem
-In Feature 004, the replacement generator tested loop termination and multi-attempt logic using synthetic keyword collision arrays (e.g. `[collision]`, `atomic cola`, `radiant pop`). In live production (`CLOUD_MODE`), candidates must be evaluated against real-world trademark and brand evidence retrieved via live Parallel Search.
+Clearance supervision across film and television projects requires visibility across distinct domain systems:
+1. **Shooting Blockers**: Occurrences with `ACTION_REQUIRED` or `INSUFFICIENT_EVIDENCE` lacking an executed override or replacement card.
+2. **Scene Readiness**: Deterministic scene tiers (`FINAL_CLEAR`, `WORKING_CLEAR`, `RED`).
+3. **Rights & Restrictions Expirations**: Contracts expiring within 30, 60, or 90 days.
+4. **Active Placeholders**: Fictional replacement assets by department (`Art Dept`, `Music`, `Dialogue`, `Props`).
+5. **Department Work Queues**: Pending action items routed to specific teams.
 
 ### Architecture:
 
 ```mermaid
-sequenceDiagram
-    participant ArtDept as Art Dept / User
-    participant Gen as ReplacementGenerator
-    participant Agent as ReplacementAgent (Gemini 3.6 Flash)
-    participant Search as ParallelSearchTool (Parallel Live API)
-    participant SSE as TimelineEmitter (SSE Stream)
-    participant Repo as EntityRepo & SceneEngine
-
-    ArtDept->>Gen: generateClearedReplacement(entityId, aesthetic)
-    loop Attempt 1..3 (Hard Ceiling <= 3)
-        Gen->>Agent: generateCandidate(target, category, aesthetic, negativeConstraints)
-        Gen->>SSE: emit(REPLACEMENT_ATTEMPT)
-        Gen->>Search: searchTrademarkGrounding(candidateName)
-        Gen->>SSE: emit(REPLACEMENT_RESEARCH_STARTED)
-        Search-->>Gen: SearchResult (Citations, Provenance)
-        Gen->>Agent: evaluateCollision(candidateName, searchCitations)
-        alt Collision Detected (ACTION_REQUIRED)
-            Gen->>SSE: emit(REPLACEMENT_REJECTED, conflictReason)
-            Gen->>Gen: appendToNegativeConstraints(candidateName, conflictReason)
-        else Zero Conflicts (NO_ISSUE_SURFACED)
-            Gen->>SSE: emit(REPLACEMENT_ACCEPTED)
-            Gen->>Gen: generateArtwork(candidateName)
-            Gen->>Repo: attachReplacementCard(APPROVED)
-            Gen-->>ArtDept: Cleared Replacement Card
-        end
-    end
-    alt Max Attempts (3) Reached
-        Gen->>Repo: attachReplacementCard(PROPOSED, ESCALATED_TO_COUNSEL)
-        Gen-->>ArtDept: Escalated Replacement Card
-    end
+graph TD
+    DashboardEngine[dashboardEngine.ts] --> SceneEngine[sceneReadinessEngine.ts]
+    DashboardEngine --> RightsRepo[RightsRepo.ts]
+    DashboardEngine --> PlaceholderRepo[PlaceholderRepo.ts]
+    DashboardEngine --> ActionRepo[ActionNotificationRepo.ts]
+    DashboardEngine --> EntityRepo[EntityRepo.ts]
+    DashboardEngine --> Output[ProductionDashboardData JSON]
 ```
 
 ---
 
-## 2. Collision Evaluation Logic (Live vs Fixture Modes)
+## 2. Deterministic KPI Calculation Rules
 
-### 1. `CLOUD_MODE` / Live Grounding:
-- **Search Execution**: Runs live Parallel Search with query: `${candidateName} registered trademark commercial brand status`.
-- **Reasoning**: Gemini 3.6 Flash analyzes the search citations:
-  - If citations show an active company, product trademark, registered service mark, or famous character $\to$ `ACTION_REQUIRED` with conflict summary.
-  - If search citations show only generic dictionary definitions or unrelated terms $\to$ `NO_ISSUE_SURFACED`.
-- **Fail-Visible**: If live search fails or API key is missing in `CLOUD_MODE`, flags `INSUFFICIENT_EVIDENCE` visibly without hiding failure.
+1. **Shooting Readiness Index (%)**:
+   $$\text{Readiness \%} = \text{round}\left(\frac{\text{Final Clear Scenes} + 0.5 \times \text{Working Clear Scenes}}{\text{Total Scenes}} \times 100\right)$$
+   *(Note: Clean scenes count as 100%, Working Clear counts as 50% progress, Red counts as 0% progress).*
 
-### 2. `TEST_MODE` / `DEMO_MODE`:
-- Deterministic simulation using record-replay fixture mappings and simulated collision tokens (`[collision]`, `atomic cola`, etc.) to guarantee 100% predictable, reproducible test suites.
+2. **Critical Blocker Item Extraction**:
+   - Every occurrence in a `RED` scene where `readinessTier === 'BLOCKER'`.
+   - Returns occurrence ID, canonical entity ID, canonical name, scene number, heading, and risk rationale.
+
+3. **Expiring Rights Filtering**:
+   - Filter all agreements in `RightsRepo` where `expirationDate` is within 90 days of `now`.
+   - Calculate exact `daysRemaining = Math.ceil((new Date(expirationDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))`.
 
 ---
 
-## 3. Negative Constraint Accumulation Matrix
+## 3. Mitigation Action Shortcuts
 
-| Attempt # | Input Negative Constraints | Output Candidate | Search Verdict | Action |
-|:---:|:---|:---|:---:|:---|
-| 1 | None | `Candidate 1` | Collision (`ACTION_REQUIRED`) | Emit `REPLACEMENT_REJECTED`; Add `Candidate 1` + conflict to negative constraints. |
-| 2 | `Avoid Candidate 1 and related phonetics/branding` | `Candidate 2` | Clean (`NO_ISSUE_SURFACED`) | Emit `REPLACEMENT_ACCEPTED`; Generate artwork; Terminate loop early. |
-| 3 (if needed) | `Avoid Candidate 1, Candidate 2` | `Candidate 3` | Clean or Escalate | If clean $\to$ Accept; If collision $\to$ `ESCALATED_TO_COUNSEL`. |
+From the Dashboard UI, users can take immediate resolution actions on any blocker item:
+- **`📜 Add Rights`**: Opens RightsModal with entity pre-selected.
+- **`🎨 Attach Placeholder`**: Opens PlaceholderManagerModal with entity pre-selected.
+- **`⚖️ Counsel Override`**: Opens Counsel Review flow to execute a signed legal approval.

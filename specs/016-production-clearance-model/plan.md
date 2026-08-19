@@ -1,32 +1,30 @@
-# Implementation Plan: Production Clearance Operating Model (Phase 8 - Evidence-Driven Live Self-Clearance)
+# Implementation Plan: Production Clearance Operating Model (Phase 9 - Production Operations Dashboard)
 
-**Branch**: `016-production-clearance-model` | **Date**: 2026-08-19 | **Status**: Plan Complete (Phase 8 Focus)  
+**Branch**: `016-production-clearance-model` | **Date**: 2026-08-19 | **Status**: Plan Complete (Phase 9 Focus)  
 **Specification**: [`specs/016-production-clearance-model/spec.md`](spec.md)
 
 ---
 
-## 1. Summary of Feature & Phase 8 Scope
+## 1. Summary of Feature & Phase 9 Scope
 
-Phase 8 elevates the autonomous candidate generation and replacement workflow into an **Evidence-Driven Live Self-Clearance Engine** (`US8`, `FR-009`) operating directly against live Parallel Search and USPTO/WIPO trademark databases in `CLOUD_MODE` / live mode, rather than relying on synthetic keyword collision fixtures.
+Phase 9 establishes the **Production Clearance Operations Dashboard** (`US9`, `FR-010`), providing a unified executive cockpit for Executive Producers, Production Counsel, Line Producers, and Clearance Coordinators:
+- **Executive KPIs**: Total Scenes, % Shooting Readiness, Critical Blocker Items, Active Placeholders (`TEMP_APPROVED` vs `FINAL_CLEARED`), Expiring Rights ($\le 90$ days), and Pending Department Actions.
+- **Scene Readiness Distribution**: Visual breakdown of `FINAL CLEAR`, `WORKING CLEAR`, and `RED` scenes.
+- **Shoot Blocker Triage Center**: Scene-by-scene actionable table listing all blocking occurrences with instant resolution shortcuts (Attach Placeholder, Add Rights Agreement, Sign Counsel Override).
+- **Upcoming Rights Expirations**: Active contracts expiring within 30/60/90 days with remaining days calculations.
+- **Department Action Summary**: Real-time breakdown of open to-dos across `Art Dept`, `Legal Counsel`, `Locations`, and `Production Mgmt`.
+- **Recent Activity Feed**: Real-time observable state transition events.
 
-### Core Objectives (Phase 8 Only):
-1. **Live Parallel Search Grounding**:
-   - In `CLOUD_MODE` (and live `DEMO_MODE`), every generated replacement candidate is grounded via real-time Parallel Search (`PARALLEL_LIVE` provenance).
-   - Gemini evaluates real search result snippets and trademark registration data to detect actual collisions, trademark dilution, or defamatory conflicts.
-2. **Negative Constraint Accumulation & Loop Bounding**:
-   - Hard iteration ceiling: $\le 3$ attempts (`MAX_ATTEMPTS = 3`).
-   - On collision detection, the collided name, conflicting brand, and citation provenance are added to the negative constraints context passed to Gemini for the next iteration.
-   - Early termination: Clean clearance with zero collisions immediately accepts the candidate, generates visual artwork, and exits the loop.
-3. **4-Event SSE Timeline Stream**:
-   - `REPLACEMENT_ATTEMPT`: Dispatched when a new candidate is synthesized.
-   - `REPLACEMENT_RESEARCH_STARTED`: Dispatched when trademark queries launch.
-   - `REPLACEMENT_REJECTED`: Dispatched when a collision is discovered, detailing the conflict and updated negative constraints.
-   - `REPLACEMENT_ACCEPTED`: Dispatched when a candidate passes clearance with zero collisions.
-4. **Counsel Escalation & Department Action**:
-   - If 3 consecutive iterations fail to clear, the system marks the candidate as `ESCALATED_TO_COUNSEL` (`PROPOSED`), attaches full multi-attempt citation history, and dispatches high-priority actions to Art Dept and Legal Counsel via `actionDispatcher`.
-5. **Strict Invariant & Scope Boundaries**:
-   - Preserves all 003–015 invariants (occurrence evaluation, rights covenants, scene readiness calculation, action lists, multi-domain placeholders).
-   - Phases 9 and 10 (production dashboard and final clearance binder export) remain strictly unbuilt.
+### Core Objectives (Phase 9 Only):
+1. **Aggregated Dashboard Workflow (`server/workflows/dashboardEngine.ts`)**:
+   - Deterministically compute consolidated metrics across `SceneReadinessEngine`, `RightsRepo`, `PlaceholderRepo`, `ActionNotificationRepo`, and `EntityRepo`.
+2. **REST API Contract (`server/api/dashboardRoutes.ts`)**:
+   - `GET /api/projects/:id/dashboard`
+3. **Executive Dashboard UI (`src/components/ProductionDashboardModal.tsx`)**:
+   - Multi-metric KPI cards, scene readiness distribution graphs, blocker mitigation shortcuts, expiring rights alerts, and department work queues.
+   - Header button in `src/pages/WorkspacePage.tsx`: `📊 Operations Dashboard`.
+4. **Strict Scope Boundaries**:
+   - Phase 10 (Final Clearance Binder Export) remains strictly unbuilt until Phase 9 is converged and committed.
 
 ---
 
@@ -34,12 +32,12 @@ Phase 8 elevates the autonomous candidate generation and replacement workflow in
 
 | Principle | Status | Compliance Details |
 |:---|:---:|:---|
-| **I. Agent Framework & Model Standard** | **PASS** | Uses `gemini-3.6-flash` for candidate generation and live search collision analysis; Imagen 3 for concept artwork. |
-| **II. Live Grounding & Research Tooling** | **PASS** | In `CLOUD_MODE`, uses real Parallel Search with full citation URLs, retrieved timestamps, and excerpt snippets. Fails visibly if API keys are missing. |
-| **III. Architecture & Cloud Persistence** | **PASS** | Backend isolation in `server/workflows/replacementGenerator.ts` and `server/agents/ReplacementAgent.ts`. |
-| **IV. Canonical Entity & Risk Invariant** | **PASS** | Attachments update canonical entities and refresh scene readiness deterministically. |
-| **V. Multi-Tier Execution Modes** | **PASS** | `TEST_MODE` uses deterministic fixtures; `CLOUD_MODE` enforces live grounding with live quota consumption. |
-| **Observable Action Timeline** | **PASS** | 4-event SSE timeline emits observable events without logging raw model CoT. |
+| **I. Agent Framework & Model Standard** | **PASS** | Dashboard uses deterministic TypeScript calculation over repository data; no unneeded model calls. |
+| **II. Live Grounding & Research Tooling** | **PASS** | Cites exact repository data, occurrence records, and rights agreement dates. |
+| **III. Architecture & Cloud Persistence** | **PASS** | Backend aggregation in `server/workflows/dashboardEngine.ts` and `server/api/dashboardRoutes.ts`. |
+| **IV. Canonical Entity & Risk Invariant** | **PASS** | Accurately rolls up occurrence blockers, rights coverage, and scene readiness. |
+| **V. Multi-Tier Execution Modes** | **PASS** | Functions identically in `TEST_MODE`, `DEMO_MODE`, and `CLOUD_MODE`. |
+| **Observable Action Timeline** | **PASS** | Integrates recent activity stream without raw model CoT. |
 
 ---
 
@@ -47,23 +45,22 @@ Phase 8 elevates the autonomous candidate generation and replacement workflow in
 
 - **Phase 0: Research & Architecture** ([`specs/016-production-clearance-model/research.md`](research.md))
 - **Phase 1: Data Model & Schema** ([`specs/016-production-clearance-model/data-model.md`](data-model.md))
-- **Phase 1: Interface Contracts** ([`specs/016-production-clearance-model/contracts/self-clearance-contract.md`](contracts/self-clearance-contract.md))
+- **Phase 1: Interface Contracts** ([`specs/016-production-clearance-model/contracts/dashboard-contract.md`](contracts/dashboard-contract.md))
 - **Phase 1: Quickstart Validation Guide** ([`specs/016-production-clearance-model/quickstart.md`](quickstart.md))
 
 ---
 
 ## 4. Touchpoints & Target Modules
 
-- `server/agents/ReplacementAgent.ts`:
-  - Candidate generator prompting with negative constraints and aesthetic style.
-  - Live collision evaluator evaluating real-time search citations.
-- `server/workflows/replacementGenerator.ts`:
-  - Iterative $\le 3$ self-clearance loop, 4-event SSE emission, live Parallel Search integration, and fallback handling.
-- `server/tools/parallelSearchTool.ts`:
-  - Live trademark and web grounding with `PARALLEL_LIVE` provenance.
-- `server/api/replacementRoutes.ts`:
-  - SSE and REST endpoints for candidate replacement generation and live clearance stream.
-- `tests/contract/test_evidence_self_clearance.test.ts`:
-  - Contract test for live search evaluation, negative constraints, and 3-attempt bounding.
-- `tests/integration/evidence_self_clearance_workflow.test.ts`:
-  - Integration test for end-to-end self-clearance loop across single and multi-iteration scenarios.
+- `server/workflows/dashboardEngine.ts`:
+  - New service aggregating cross-repository production metrics and blocker lists.
+- `server/api/dashboardRoutes.ts`:
+  - Express endpoint `GET /projects/:id/dashboard`.
+- `src/components/ProductionDashboardModal.tsx`:
+  - Executive dashboard modal with KPI summary cards, blocker triage table, rights expiration alerts, and department queues.
+- `src/pages/WorkspacePage.tsx`:
+  - Header integration for `📊 Operations Dashboard` trigger.
+- `tests/contract/test_production_dashboard.test.ts`:
+  - Contract test validating consolidated KPI calculations, blocker listings, and expiration filters.
+- `tests/integration/production_dashboard_workflow.test.ts`:
+  - End-to-end integration test validating multi-department dashboard aggregation and mitigation workflows.
