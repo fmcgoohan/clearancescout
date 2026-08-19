@@ -7,6 +7,7 @@ import { EntityDetailModal } from '../components/EntityDetailModal';
 import { RightsModal } from '../components/RightsModal';
 import { ActionListModal } from '../components/ActionListModal';
 import { PlaceholderManagerModal } from '../components/PlaceholderManagerModal';
+import { ProductionDashboardModal } from '../components/ProductionDashboardModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
 import { apiFetch } from '../utils/apiClient.js';
 
@@ -70,6 +71,9 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [placeholderEntityId, setPlaceholderEntityId] = useState<string | null>(null);
   const [placeholderEntityName, setPlaceholderEntityName] = useState<string>('');
   const [placeholderEntityCategory, setPlaceholderEntityCategory] = useState<string>('BRAND');
+
+  // Operations Dashboard modal state (Phase 9)
+  const [isDashboardModalOpen, setIsDashboardModalOpen] = useState(false);
 
   // Batch research hook
   const { progress: batchProgress, startBatchResearch } = useBatchResearch(
@@ -376,6 +380,21 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           >
             📋 Actions ({openActionsCount})
           </button>
+
+          <button
+            className="btn-secondary touch-target"
+            aria-label="Open Production Operations Dashboard"
+            onClick={() => setIsDashboardModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              borderColor: 'var(--accent-cyan)',
+              color: 'var(--accent-cyan)',
+            }}
+          >
+            📊 Operations Dashboard
+          </button>
         </div>
       </div>
 
@@ -577,6 +596,29 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         }}
         onPlaceholderUpdated={() => {
           fetchWorkspaceData();
+        }}
+      />
+
+      {/* Production Clearance Operations Dashboard Modal (Phase 9) */}
+      <ProductionDashboardModal
+        projectId={projectId}
+        isOpen={isDashboardModalOpen}
+        onClose={() => setIsDashboardModalOpen(false)}
+        onMitigateRights={(canonicalEntityId) => {
+          const ent = entities.find((e) => e.id === canonicalEntityId);
+          setRightsEntityId(canonicalEntityId);
+          setRightsEntityName(ent?.canonicalName || 'Selected Entity');
+          setIsRightsModalOpen(true);
+        }}
+        onMitigatePlaceholder={(canonicalEntityId) => {
+          const ent = entities.find((e) => e.id === canonicalEntityId);
+          setPlaceholderEntityId(canonicalEntityId);
+          setPlaceholderEntityName(ent?.canonicalName || 'Selected Entity');
+          setPlaceholderEntityCategory(ent?.entityCategory || 'BRAND');
+          setIsPlaceholderModalOpen(true);
+        }}
+        onMitigateOverride={(canonicalEntityId) => {
+          onOpenCounselReview(canonicalEntityId);
         }}
       />
     </div>

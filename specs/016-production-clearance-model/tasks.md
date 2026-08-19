@@ -329,25 +329,25 @@
 
 ---
 
-## Phase 33: Phase 9 Setup (Production Operations Dashboard Aggregation Service)
+## Phase 33: Phase 9 Setup (Production Operations Dashboard Aggregation Service - Completed)
 
 **Purpose**: Implement `dashboardEngine.ts` to aggregate cross-repository metrics into `ProductionDashboardData`.
 
-- [ ] T072 [P] Create `ProductionDashboardData`, `ProductionDashboardKPIs`, `BlockerItemDetail`, `ExpiringRightsDetail`, `ActivePlaceholderDetail` schemas and `dashboardEngine.ts` in `server/workflows/dashboardEngine.ts` aggregating metrics across `sceneReadinessEngine`, `rightsRepo`, `placeholderRepo`, `actionNotificationRepo`, and `entityRepo`
+- [X] T072 [P] Create `ProductionDashboardData`, `ProductionDashboardKPIs`, `BlockerItemDetail`, `ExpiringRightsDetail`, `ActivePlaceholderDetail` schemas and `dashboardEngine.ts` in `server/workflows/dashboardEngine.ts` aggregating metrics across `sceneReadinessEngine`, `rightsRepo`, `placeholderRepo`, `actionNotificationRepo`, and `entityRepo`
 
 ---
 
-## Phase 34: Phase 9 Foundational (Dashboard REST API Endpoints)
+## Phase 34: Phase 9 Foundational (Dashboard REST API Endpoints - Completed)
 
 **Purpose**: Implement Express endpoints for dashboard summary querying.
 
-- [ ] T073 [P] Implement Express router in `server/api/dashboardRoutes.ts` (`GET /projects/:id/dashboard`) and mount in `server/index.ts`
+- [X] T073 [P] Implement Express router in `server/api/dashboardRoutes.ts` (`GET /projects/:id/dashboard`) and mount in `server/index.ts`
 
 **Checkpoint**: Dashboard engine and REST API ready - UI integration and test suites can proceed in parallel.
 
 ---
 
-## Phase 35: User Story 9 - Production Clearance Operations Dashboard (Priority: P9) 🎯 Phase 9 Target
+## Phase 35: User Story 9 - Production Clearance Operations Dashboard (Priority: P9 - Completed) 🎯 Phase 9 Target
 
 **Goal**: Provide a single centralized operational dashboard displaying active shooting blockers, scene readiness distribution (`FINAL CLEAR`, `WORKING CLEAR`, `RED`), upcoming rights expirations ($\le 90$ days), active placeholders, pending department actions, and recent activity feed with direct mitigation shortcuts.
 
@@ -355,24 +355,24 @@
 
 ### Tests for User Story 9
 
-- [ ] T074 [P] [US9] Contract tests for dashboard KPI calculations, scene distribution, blocker extraction, and rights expiration filtering in `tests/contract/test_production_dashboard.test.ts`
+- [X] T074 [P] [US9] Contract tests for dashboard KPI calculations, scene distribution, blocker extraction, and rights expiration filtering in `tests/contract/test_production_dashboard.test.ts`
 
 ### Implementation for User Story 9
 
-- [ ] T075 [P] [US9] Create `src/components/ProductionDashboardModal.tsx` displaying executive KPI cards, scene readiness distribution graphs, blocker triage table with direct mitigation triggers (`Add Rights`, `Attach Placeholder`, `Counsel Override`), expiring rights alerts, and department queues
-- [ ] T076 [US9] Update `src/pages/WorkspacePage.tsx` to add `📊 Operations Dashboard` navigation trigger and wire up `ProductionDashboardModal`
+- [X] T075 [P] [US9] Create `src/components/ProductionDashboardModal.tsx` displaying executive KPI cards, scene readiness distribution graphs, blocker triage table with direct mitigation triggers (`Add Rights`, `Attach Placeholder`, `Counsel Override`), expiring rights alerts, and department queues
+- [X] T076 [US9] Update `src/pages/WorkspacePage.tsx` to add `📊 Operations Dashboard` navigation trigger and wire up `ProductionDashboardModal`
 
 **Checkpoint**: Phase 9 core functionality complete. Production leadership has centralized visibility over shoot readiness and blockers.
 
 ---
 
-## Phase 36: Phase 9 Polish & Cross-Cutting Concerns
+## Phase 36: Phase 9 Polish & Cross-Cutting Concerns (Completed)
 
 **Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
 
-- [ ] T077 [P] Implement end-to-end integration test in `tests/integration/production_dashboard_workflow.test.ts` verifying multi-scene project dashboard aggregation, blocker triage, and live mitigation state refresh
-- [ ] T078 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
-- [ ] T079 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+- [X] T077 [P] Implement end-to-end integration test in `tests/integration/production_dashboard_workflow.test.ts` verifying multi-scene project dashboard aggregation, blocker triage, and live mitigation state refresh
+- [X] T078 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [X] T079 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
 
 ---
 

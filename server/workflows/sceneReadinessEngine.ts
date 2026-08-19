@@ -98,6 +98,9 @@ export class SceneReadinessEngine {
           : rightsCoverage.isCovered
           ? `Cleared via executed rights agreement (${rightsCoverage.summaryText}).`
           : `Fully cleared; no infringement or clearance issues surfaced.`;
+      } else if (rightsCoverage.isCovered) {
+        readinessTier = 'FINAL_CLEAR';
+        rationale = `Cleared via executed rights agreement (${rightsCoverage.summaryText}).`;
       } else if (placeholder && placeholder.clearanceTier === 'FINAL_CLEARED') {
         readinessTier = 'FINAL_CLEAR';
         rationale = `Cleared via finalized replacement placeholder: ${placeholder.fictionalName} (${placeholder.assetCategory}).`;
