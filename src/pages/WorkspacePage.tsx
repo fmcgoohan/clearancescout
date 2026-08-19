@@ -4,6 +4,7 @@ import { EntityRegistryTable, CanonicalEntity } from '../components/EntityRegist
 import { ItemEditModal, EntityCategory } from '../components/ItemEditModal';
 import { ComparisonModal, ComparisonViewModel } from '../components/ComparisonModal';
 import { EntityDetailModal } from '../components/EntityDetailModal';
+import { RightsModal } from '../components/RightsModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
 import { apiFetch } from '../utils/apiClient.js';
 
@@ -43,6 +44,11 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   // Occurrences Detail modal state (Phase 2)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedDetailEntityId, setSelectedDetailEntityId] = useState<string | null>(null);
+
+  // Rights modal state (Phase 4)
+  const [isRightsModalOpen, setIsRightsModalOpen] = useState(false);
+  const [rightsEntityId, setRightsEntityId] = useState<string | null>(null);
+  const [rightsEntityName, setRightsEntityName] = useState<string>('');
 
   // Batch research hook
   const { progress: batchProgress, startBatchResearch } = useBatchResearch(
@@ -331,6 +337,11 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           onRetryResearch={handleRetryResearch}
           onGenerateReplacement={onGenerateReplacement}
           onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
+          onOpenRightsModal={(entityId, entityName) => {
+            setRightsEntityId(entityId);
+            setRightsEntityName(entityName);
+            setIsRightsModalOpen(true);
+          }}
           onOpenComparison={handleOpenComparison}
           onViewOccurrences={(entityId) => {
             setSelectedDetailEntityId(entityId);
@@ -374,7 +385,29 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           setIsDetailModalOpen(false);
           onOpenCounselReview(entityId, sceneId);
         }}
+        onOpenRightsModal={(entityId, entityName) => {
+          setIsDetailModalOpen(false);
+          setRightsEntityId(entityId);
+          setRightsEntityName(entityName);
+          setIsRightsModalOpen(true);
+        }}
         onOccurrenceEvaluated={() => {
+          fetchWorkspaceData();
+        }}
+      />
+
+      {/* Rights & Restrictions Modal (Phase 4) */}
+      <RightsModal
+        projectId={projectId}
+        entityId={rightsEntityId}
+        entityName={rightsEntityName}
+        isOpen={isRightsModalOpen}
+        onClose={() => {
+          setIsRightsModalOpen(false);
+          setRightsEntityId(null);
+          setRightsEntityName('');
+        }}
+        onRightsUpdated={() => {
           fetchWorkspaceData();
         }}
       />

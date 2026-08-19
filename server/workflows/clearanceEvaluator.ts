@@ -1,6 +1,7 @@
 import { entityRepo, ClearanceStatus, CanonicalEntityData, SceneEntityOccurrenceData } from '../repositories/EntityRepo.js';
 import { assessmentRepo, ClearanceRiskAssessmentData } from '../repositories/AssessmentRepo.js';
 import { projectRepo } from '../repositories/ProjectRepo.js';
+import { rightsRepo } from '../repositories/RightsRepo.js';
 import { parallelSearchTool } from '../tools/parallelSearchTool.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { GoogleGenAI } from '@google/genai';
@@ -98,7 +99,10 @@ export class ClearanceEvaluator {
       provenance: searchResult.provenance,
     });
 
-    // Step 2: Scene Action Context Analysis
+    // Step 2: Contractual Rights & Restrictions Evaluation (Phase 4)
+    const rightsCoverage = await rightsRepo.evaluateRightsCoverage(projectId, entity.id, occurrenceId);
+
+    // Step 3: Scene Action Context Analysis
     const defamatoryKeywords = ['dangerous', 'toxic', 'poisonous', 'faulty', 'exploded', 'stole', 'illegal', 'scam', 'killed', 'disaster', 'counterfeit', 'weapon'];
     const sceneContextText = `${occurrence.excerptText || ''} ${occurrence.usageContext || ''}`.toLowerCase();
 
@@ -109,13 +113,25 @@ export class ClearanceEvaluator {
       }
     });
 
-    // Step 3: Occurrence Verdict Calculation
+    // Step 4: Occurrence Verdict Calculation
     let status: ClearanceStatus = 'REVIEW_RECOMMENDED';
     let riskScore = 45;
     let rationale = `Grounding search confirmed active registration for ${entity.canonicalName}. Category: ${entity.entityCategory}. Usage in ${sceneId} is neutral to moderate risk.`;
     const contextFlags: string[] = ['TRADEMARK_ACTIVE'];
 
-    if (isDefamatory) {
+    if (rightsCoverage.isCovered) {
+      // Contractual Rights cover this usage
+      status = 'NO_ISSUE_SURFACED';
+      riskScore = 5;
+      rationale = `${rightsCoverage.summaryText} Scene usage in ${sceneId} is cleared under executed agreement.`;
+      contextFlags.push('CONTRACTUAL_RIGHTS_ACTIVE');
+      if (rightsCoverage.covenants.length > 0) {
+        rightsCoverage.covenants.forEach((c) => contextFlags.push(`COVENANT: ${c}`));
+      }
+      if (rightsCoverage.hasExpiringSoon && rightsCoverage.expirationWarning) {
+        contextFlags.push('LICENSE_EXPIRING_SOON');
+      }
+    } else if (isDefamatory) {
       status = 'ACTION_REQUIRED';
       riskScore = 90;
       rationale = `High tarnishment / disparagement risk in ${sceneId}: "${entity.canonicalName}" is depicted in negative scene context ("${occurrence.excerptText}"). Replacement or counsel release required.`;
@@ -151,7 +167,7 @@ export class ClearanceEvaluator {
       rationale = `No infringement or tarnishment issues surfaced for ${entity.canonicalName} in ${sceneId} context.`;
     }
 
-    // Step 4: Persist Occurrence Evaluation
+    // Step 5: Persist Occurrence Evaluation
     const updatedOcc = await entityRepo.updateOccurrenceEvaluation(projectId, sceneId, occurrenceId, {
       clearanceStatus: status,
       riskScore,
@@ -161,7 +177,7 @@ export class ClearanceEvaluator {
       evaluatedAt: new Date().toISOString(),
     });
 
-    // Step 5: Persist Assessment Record
+    // Step 6: Persist Assessment Record
     const assessment = await assessmentRepo.createAssessment({
       occurrenceId,
       canonicalEntityId: entity.id,
@@ -174,7 +190,7 @@ export class ClearanceEvaluator {
       provenance: searchResult.provenance,
     });
 
-    // Step 6: Compute Derived Canonical Status
+    // Step 7: Compute Derived Canonical Status
     const derivedCanonicalStatus = await entityRepo.computeDerivedCanonicalStatus(projectId, entity.id);
 
     timelineEmitter.emit(projectId, 'RISK_EVAL', `Occurrence Risk Verdict (${sceneId}): ${status}`, {
@@ -185,6 +201,7 @@ export class ClearanceEvaluator {
       riskStatus: status,
       riskScore,
       derivedCanonicalStatus,
+      rightsCovered: rightsCoverage.isCovered,
     });
 
     return {
@@ -226,12 +243,23 @@ export class ClearanceEvaluator {
       }
     } else {
       // Baseline evaluation when no specific scene occurrences exist
+      const rightsCoverage = await rightsRepo.evaluateRightsCoverage(projectId, canonicalEntityId);
       const searchResult = await parallelSearchTool.searchTrademarkGrounding(entity.canonicalName);
+
       let status: ClearanceStatus = 'REVIEW_RECOMMENDED';
       let riskScore = 45;
       let rationale = `Grounding search confirmed active registration for ${entity.canonicalName}. Baseline category risk for ${entity.entityCategory}.`;
+      const contextFlags: string[] = ['TRADEMARK_ACTIVE'];
 
-      if (entity.entityCategory === 'ART_MUSIC' || entity.entityCategory === 'GRAPHIC_PROP') {
+      if (rightsCoverage.isCovered) {
+        status = 'NO_ISSUE_SURFACED';
+        riskScore = 5;
+        rationale = `${rightsCoverage.summaryText} Item is covered under active executed agreement.`;
+        contextFlags.push('CONTRACTUAL_RIGHTS_ACTIVE');
+        if (rightsCoverage.covenants.length > 0) {
+          rightsCoverage.covenants.forEach((c) => contextFlags.push(`COVENANT: ${c}`));
+        }
+      } else if (entity.entityCategory === 'ART_MUSIC' || entity.entityCategory === 'GRAPHIC_PROP') {
         status = 'ACTION_REQUIRED';
         riskScore = 80;
       } else if (entity.entityCategory === 'BRAND') {
@@ -246,7 +274,7 @@ export class ClearanceEvaluator {
         riskStatus: status,
         riskScore,
         legalRationale: rationale,
-        contextFlags: ['TRADEMARK_ACTIVE'],
+        contextFlags,
         citations: searchResult.citations,
         provenance: searchResult.provenance,
       });

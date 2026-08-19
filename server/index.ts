@@ -13,6 +13,8 @@ import { healthRouter } from './api/healthRoutes.js';
 import { fixtureRouter } from './api/fixtureRoutes.js';
 import { demoAuthMiddleware } from './middleware/demoAuthMiddleware.js';
 
+import { rightsRouter } from './api/rightsRoutes.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -36,6 +38,7 @@ app.use('/api', (req, res, next) => {
 app.use('/api', entityMutationRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api', clearanceRouter);
+app.use('/api', rightsRouter);
 app.use('/api', replacementRouter);
 app.use('/api', timelineRouter);
 app.use('/api', binderRouter);

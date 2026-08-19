@@ -88,6 +88,7 @@ export interface EntityRegistryTableProps {
   onRetryResearch?: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
   onOpenCounselReview?: (entityId: string) => void;
+  onOpenRightsModal?: (entityId: string, entityName: string) => void;
   onOpenComparison?: (entityId: string) => void;
   onViewOccurrences?: (entityId: string) => void;
   onEditItem?: (entity: CanonicalEntity) => void;
@@ -106,6 +107,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   onRetryResearch,
   onGenerateReplacement,
   onOpenCounselReview,
+  onOpenRightsModal,
   onOpenComparison,
   onViewOccurrences,
   onEditItem,
@@ -628,13 +630,24 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             {isEvaluating || isItemInActiveBatch ? 'Researching...' : '🔍 Ground'}
                           </button>
                         )}
+                        {onOpenRightsModal && (
+                          <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '4px 6px', color: '#34d399', borderColor: 'rgba(52, 211, 153, 0.4)' }}
+                            onClick={() => onOpenRightsModal(e.id, e.canonicalName)}
+                            disabled={isEvaluating || isItemInActiveBatch}
+                            title="Manage contractual rights, licenses, and covenants"
+                          >
+                            📜 Rights
+                          </button>
+                        )}
                         {onViewOccurrences && (
                           <button
                             className="btn-secondary"
-                            style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                            style={{ fontSize: '0.75rem', padding: '4px 6px' }}
                             onClick={() => onViewOccurrences(e.id)}
-                            disabled={isItemInActiveBatch}
-                            title="View scene occurrences and contextual clearance evaluation"
+                            disabled={isEvaluating || isItemInActiveBatch}
+                            title="View scene occurrences and evaluation details"
                           >
                             🎬 Occurrences
                           </button>

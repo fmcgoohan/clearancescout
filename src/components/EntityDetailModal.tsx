@@ -25,6 +25,7 @@ interface EntityDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenCounselReview?: (entityId: string, sceneId?: string) => void;
+  onOpenRightsModal?: (entityId: string, entityName: string) => void;
   onOccurrenceEvaluated?: () => void;
 }
 
@@ -34,6 +35,7 @@ export function EntityDetailModal({
   isOpen,
   onClose,
   onOpenCounselReview,
+  onOpenRightsModal,
   onOccurrenceEvaluated,
 }: EntityDetailModalProps) {
   const [occurrences, setOccurrences] = useState<OccurrenceItem[]>([]);
@@ -201,14 +203,28 @@ export function EntityDetailModal({
               Occurrence-level scene breakdown & contextual legal risk evaluation
             </p>
           </div>
-          <button
-            className="btn-secondary touch-target"
-            onClick={onClose}
-            aria-label="Close details modal"
-            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-          >
-            ✕
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {onOpenRightsModal && (
+              <button
+                className="btn-secondary touch-target"
+                onClick={() => {
+                  onOpenRightsModal(entityId, canonicalName);
+                  onClose();
+                }}
+                style={{ padding: '6px 12px', fontSize: '0.85rem', color: '#34d399', borderColor: 'rgba(52, 211, 153, 0.4)' }}
+              >
+                📜 Rights
+              </button>
+            )}
+            <button
+              className="btn-secondary touch-target"
+              onClick={onClose}
+              aria-label="Close details modal"
+              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Body */}
