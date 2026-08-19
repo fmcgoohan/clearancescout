@@ -1,8 +1,8 @@
-# Tasks: Production Clearance Operating Model (Phases 1, 2, 3, 4 & 5)
+# Tasks: Production Clearance Operating Model (Phases 1, 2, 3, 4, 5 & 6)
 
 **Feature**: `specs/016-production-clearance-model` | **Branch**: `016-production-clearance-model`  
 **Input**: Plan from [`specs/016-production-clearance-model/plan.md`](plan.md), Spec from [`specs/016-production-clearance-model/spec.md`](spec.md)  
-**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed) & Phase 5 (Active Target). Phases 6 through 10 are deliberately excluded from this task list.
+**Scope**: Phase 1 (Completed), Phase 2 (Completed), Phase 3 (Completed), Phase 4 (Completed), Phase 5 (Completed) & Phase 6 (Active Target). Phases 7 through 10 are deliberately excluded from this task list.
 
 ---
 
@@ -194,28 +194,76 @@
 
 ---
 
+## Phase 21: Phase 6 Setup (Action & Notification Repository)
+
+**Purpose**: Create `ClearanceActionItem`, `ClearanceNotification` schemas and `ActionNotificationRepo` for persistence and auto-resolution.
+
+- [ ] T045 [P] Create `ClearanceActionItem`, `ClearanceNotification` domain models, enums (`ClearanceActionType`, `DepartmentTarget`, `ActionPriority`, `ActionStatus`), and `ActionNotificationRepo` in `server/repositories/ActionNotificationRepo.ts` with CRUD, department filtering, and auto-resolution methods
+
+---
+
+## Phase 22: Phase 6 Foundational (Automated Action Dispatcher & REST Endpoints)
+
+**Purpose**: Implement automated department action routing, auto-resolution triggers, and REST endpoints.
+
+- [ ] T046 [P] Implement `server/workflows/actionDispatcher.ts` with automated department routing (`ART_DEPT`, `LEGAL_COUNSEL`, `LOCATIONS`, `PRODUCTION_MGMT`), state transition event listeners, and auto-resolution triggers
+- [ ] T047 [P] Implement Express router in `server/api/actionRoutes.ts` (`GET /projects/:id/actions`, `PATCH /projects/:id/actions/:actionId`, `GET /projects/:id/notifications`, `PATCH /projects/:id/notifications/:notifId/read`, `POST /projects/:id/actions/sync`) and mount in `server/index.ts`
+
+**Checkpoint**: Action dispatcher and API ready - UI integration and test suites can proceed in parallel.
+
+---
+
+## Phase 23: User Story 6 - Action & Notification Lists Derived from State Transitions (Priority: P6) 🎯 Phase 6 Target
+
+**Goal**: Automatically generate department-routed to-do action items and high-priority shoot block alerts upon clearance state transitions, and auto-resolve them upon mitigation.
+
+**Independent Test**: Evaluate an uncleared graphic prop or brand; verify department action is created. Trigger scene `RED`; verify production management alert. Attach replacement or override; verify action item transitions to `RESOLVED`.
+
+### Tests for User Story 6
+
+- [ ] T048 [P] [US6] Contract tests for action dispatch, department filtering, status updates, and auto-resolution in `tests/contract/test_action_notifications.test.ts`
+
+### Implementation for User Story 6
+
+- [ ] T049 [P] [US6] Create `src/components/ActionListModal.tsx` allowing department-filtered viewing (`Art Dept`, `Legal`, `Locations`, `Production Management`), status updates, and manual resolution
+- [ ] T050 [US6] Update `src/pages/WorkspacePage.tsx` to render an `📋 Actions (${count})` header trigger with active blocker badge and wire up action list modal and auto-refresh
+
+**Checkpoint**: Phase 6 core functionality complete. Department actions and notifications dispatch and auto-resolve smoothly.
+
+---
+
+## Phase 24: Phase 6 Polish & Cross-Cutting Concerns
+
+**Purpose**: End-to-end integration testing, quickstart validation, and full regression verification.
+
+- [ ] T051 [P] Implement end-to-end integration test in `tests/integration/action_workflow.test.ts` verifying script ingestion action generation, scene `RED` alert broadcasting, and multi-department auto-resolution
+- [ ] T052 Run quickstart validation scenarios defined in `specs/016-production-clearance-model/quickstart.md`
+- [ ] T053 Verify production build (`tsc && vite build`) and full Vitest test suite (`npm test`) across all test suites with 0 regressions
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
 graph TD
-    Phases1to4[Phases 1-4 Complete T001-T035] --> Phase17[Phase 17: SceneRepo.ts Extensions T036]
-    Phase17 --> Phase18_Engine[Phase 18: sceneReadinessEngine.ts T037]
-    Phase17 --> Phase18_Routes[Phase 18: sceneRoutes.ts T038]
-    Phase18_Engine --> US5_Tests[T039: Contract Tests]
-    Phase18_Routes --> US5_Tests
-    Phase18_Routes --> US5_UI_Viewer[T040: ScriptViewer Badges]
-    US5_UI_Viewer --> US5_UI_Workspace[T041: WorkspacePage Summary Banner]
-    US5_Tests --> Phase20[Phase 20: Polish & Integration]
-    US5_UI_Workspace --> Phase20
+    Phases1to5[Phases 1-5 Complete T001-T044] --> Phase21[Phase 21: ActionNotificationRepo.ts T045]
+    Phase21 --> Phase22_Dispatcher[Phase 22: actionDispatcher.ts T046]
+    Phase21 --> Phase22_Routes[Phase 22: actionRoutes.ts T047]
+    Phase22_Dispatcher --> US6_Tests[T048: Contract Tests]
+    Phase22_Routes --> US6_Tests
+    Phase22_Routes --> US6_UI_Modal[T049: ActionListModal.tsx]
+    US6_UI_Modal --> US6_UI_Workspace[T050: WorkspacePage Badge]
+    US6_Tests --> Phase24[Phase 24: Polish & Integration]
+    US6_UI_Workspace --> Phase24
 ```
 
 ---
 
 ## Parallel Execution Examples
 
-### User Story 5
-- `T037` (`sceneReadinessEngine.ts`) can run in parallel with `T038` (`server/api/sceneRoutes.ts`).
-- `T039` (`tests/contract/test_scene_readiness.test.ts`) can run in parallel with `T040` (`src/components/ScriptViewer.tsx`).
+### User Story 6
+- `T046` (`actionDispatcher.ts`) can run in parallel with `T047` (`server/api/actionRoutes.ts`).
+- `T048` (`tests/contract/test_action_notifications.test.ts`) can run in parallel with `T049` (`src/components/ActionListModal.tsx`).
 
 ### Polish Phase
-- `T042` (integration test in `tests/integration/scene_readiness_workflow.test.ts`) can run in parallel with `T043` (`quickstart.md`).
+- `T051` (integration test in `tests/integration/action_workflow.test.ts`) can run in parallel with `T052` (`quickstart.md`).
