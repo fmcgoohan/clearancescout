@@ -1,61 +1,55 @@
-# Research & Architectural Decisions: Production Clearance Operating Model (Phase 5)
+# Research & Architectural Decisions: Production Clearance Operating Model (Phase 6)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 5 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 6 Focus)  
 **Date**: 2026-08-19  
 **Status**: Completed  
 
 ---
 
-## 1. Deterministic Scene Readiness State Machine
+## 1. Automated Department Action Dispatching
 
 ### Context & Problem
-Film and television production schedules (1st AD call sheets, line producer budgeting, daily shooting schedules) are organized by **Scene**. Production crews need to know immediately whether a scene is legally greenlit to shoot without cross-referencing dozens of individual trademark or copyright reports.
-
-A deterministic, three-tier state machine is standard in studio clearance workflows:
-- **`RED`**: Critical clearance blocker. The scene cannot be shot as written without legal risk.
-- **`WORKING CLEAR`**: Pre-production or shoot permitted with interim assets (approved replacement card, temp clearance release, or minor covenants under active review).
-- **`FINAL CLEAR`**: 100% legally cleared for shooting, post-production, and worldwide distribution.
+In film and TV production, clearance issue spotting is useless unless routed to the specific department responsible for resolving it:
+- **Art Department (Prop Masters, Graphic Designers)**: Needs immediate notice when a graphic prop, label, or packaging needs a fictional replacement design card.
+- **Legal Counsel / Clearance Coordinators**: Needs to draft and execute releases for trademarked marks, sync licenses for copyrighted songs, and review rights of publicity.
+- **Locations Department**: Needs to secure filming permits or location agreements when private/proprietary buildings or landmarks appear in scene action.
+- **Production Management (Line Producers, 1st ADs)**: Needs instant alerts when a scene is `RED` (blocked from shooting) so call sheets and shooting schedules can be adjusted.
 
 ### Decision
-Implement `SceneReadinessEngine` in `server/workflows/sceneReadinessEngine.ts` utilizing deterministic boolean logic over occurrence clearance states, counsel overrides (Feature 003), contractual rights licenses (Phase 4), and fictional replacement cards (Feature 002).
+Implement `ActionDispatcher` in `server/workflows/actionDispatcher.ts` with deterministic rule-based routing:
 
 ```mermaid
-stateDiagram-v2
-    [*] --> RED: Initial Scene Ingestion (Uncleared Items)
-    [*] --> FINAL_CLEAR: Clean Scene (0 Items)
+graph TD
+    StateTransition[Clearance State Transition] --> Dispatcher[ActionDispatcher]
     
-    RED --> WORKING_CLEAR: Replacement Cards Attached / Temp Release
-    RED --> FINAL_CLEAR: All Items Overridden / Licensed
+    Dispatcher -->|GRAPHIC_PROP + ACTION_REQUIRED| ArtDept[Art Dept: Create Fictional Replacement Card]
+    Dispatcher -->|BRAND / MUSIC + ACTION_REQUIRED| Legal[Legal: Draft & Execute Release Agreement]
+    Dispatcher -->|PROPRIETARY_LOCATION + REVIEW| Locations[Locations: Secure Filming Permit]
+    Dispatcher -->|Scene RED| ProdMgmt[Production Mgmt: Critical Shoot Block Alert]
     
-    WORKING_CLEAR --> RED: License Revoked / New Blocker Added
-    WORKING_CLEAR --> FINAL_CLEAR: Counsel Signs Off / Executed Agreement
-    
-    FINAL_CLEAR --> RED: Scene Text Edited / New Blocker
+    Resolution[Replacement Attached / Signed Override / Rights License] --> AutoResolve[Action Auto-Resolved]
 ```
 
-### Deterministic Rule Table:
+### Department Action Mapping Matrix:
 
-| Item Clearance Status | Counsel Override | Contractual Rights | Replacement Card | Item Tier | Scene Readiness Impact |
-|:---|:---|:---|:---|:---:|:---:|
-| `ACTION_REQUIRED` | None | None / Expired | None | **BLOCKER** | Scene becomes **`RED`** |
-| `INSUFFICIENT_EVIDENCE` | None | None | None | **BLOCKER** | Scene becomes **`RED`** |
-| `ACTION_REQUIRED` | None | None | Approved Card Attached | **WORKING_CLEAR** | Contributes to **`WORKING CLEAR`** |
-| `REVIEW_RECOMMENDED` | None | None | None | **WORKING_CLEAR** | Contributes to **`WORKING CLEAR`** |
-| `ACTION_REQUIRED` | Signed Override (`NO_ISSUE_SURFACED`) | Any | Any | **FINAL_CLEAR** | Contributes to **`FINAL CLEAR`** |
-| Any | None | Active Perpetual (`NO_ISSUE_SURFACED`) | Any | **FINAL_CLEAR** | Contributes to **`FINAL CLEAR`** |
-| `NO_ISSUE_SURFACED` | None | Any | Any | **FINAL_CLEAR** | Contributes to **`FINAL CLEAR`** |
+| Trigger Event | Entity Category / State | Target Department | Action Type | Default Priority | Auto-Resolution Trigger |
+|:---|:---|:---|:---|:---:|:---|
+| Occurrence evaluated | `GRAPHIC_PROP` (`ACTION_REQUIRED`) | `ART_DEPT` | `ART_DEPT_REPLACEMENT` | `HIGH` | `REPLACEMENT_CARD_ATTACHED` |
+| Occurrence evaluated | `ART_MUSIC` (`ACTION_REQUIRED`) | `LEGAL_COUNSEL` | `LEGAL_COUNSEL_RELEASE` | `HIGH` | `RIGHTS_LICENSE_ATTACHED` or `COUNSEL_OVERRIDE` |
+| Occurrence evaluated | `BRAND` (`ACTION_REQUIRED`) | `LEGAL_COUNSEL` | `LEGAL_COUNSEL_RELEASE` | `HIGH` | `RIGHTS_LICENSE_ATTACHED` or `COUNSEL_OVERRIDE` |
+| Occurrence evaluated | `PROPRIETARY_LOCATION` (`REVIEW_RECOMMENDED`) | `LOCATIONS` | `LOCATIONS_PERMIT` | `MEDIUM` | `COUNSEL_OVERRIDE` |
+| Occurrence evaluated | `PUBLIC_FIGURE` (`REVIEW_RECOMMENDED`) | `LEGAL_COUNSEL` | `COUNSEL_OVERRIDE_REVIEW` | `MEDIUM` | `COUNSEL_OVERRIDE` |
+| Scene evaluated | `RED` | `PRODUCTION_MGMT` | `PRODUCTION_REVIEW` | `CRITICAL` | Scene becomes `WORKING_CLEAR` or `FINAL_CLEAR` |
 
 ---
 
-## 2. Occurrence-Level & Scene-Override Precedence
+## 2. Auto-Resolution Lifecycle
 
-In accordance with Feature 003 and Phase 2, overrides operate hierarchically:
-1. **Scene-Specific Occurrence Override** (Highest precedence)
-2. **Canonical Entity Override**
-3. **Contractual Rights License Coverage**
-4. **Automated Baseline Occurrence Clearance Assessment** (Lowest precedence)
-
-This ensures counsel decisions for a specific scene (e.g. allowing an incidental prop in Scene 2 while blocking Scene 4) directly inform that scene's readiness without polluting other scenes.
+When an action item's underlying blocker is addressed, the system automatically marks the action item as `RESOLVED`:
+1. If a replacement card is attached (`attachReplacementCard`), all open `ART_DEPT_REPLACEMENT` actions for that entity become `RESOLVED`.
+2. If a rights license is attached (`createRightsRecord`), all open `LEGAL_COUNSEL_RELEASE` actions for that entity become `RESOLVED`.
+3. If a signed counsel override is recorded (`recordOverride`), all open actions for that entity and scene become `RESOLVED`.
+4. If a scene transitions to `WORKING_CLEAR` or `FINAL_CLEAR`, all open `PRODUCTION_REVIEW` actions for that scene become `RESOLVED`.
 
 ---
 
@@ -63,6 +57,5 @@ This ensures counsel decisions for a specific scene (e.g. allowing an incidental
 
 | Approach | Assessment | Decision |
 |:---|:---|:---|
-| **LLM-generated Scene Status** | Non-deterministic, risking shooting halts due to LLM variance. | **Rejected**: Must follow the constitution's **Deterministic Calculation Pattern** in TypeScript code. |
-| **Binary (Clear / Uncleared)** | Too coarse; productions routinely shoot on "Working Clear" with temp replacement props while contracts are finalized. | **Rejected**: 3-state (`RED`, `WORKING CLEAR`, `FINAL CLEAR`) matches industry operating reality. |
-| **Compute On-the-Fly Only** | High latency when rendering call sheets and script views with hundreds of scenes. | **Rejected**: Store computed status on `SceneData` with on-demand and post-evaluation recalculation. |
+| **Manual Action Creation Only** | High risk of coordinators missing critical prop or legal releases in busy production schedules. | **Rejected**: State transitions must automatically generate actions. |
+| **Email / Slack Webhooks Only** | External dependencies fail in offline/test modes and create noise without in-app tracking. | **Rejected**: Implement robust in-app action repository and modal first, with notification log. |

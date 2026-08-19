@@ -1,72 +1,53 @@
-# Data Model: Production Clearance Operating Model (Phase 5)
+# Data Model: Production Clearance Operating Model (Phase 6)
 
-**Feature**: `specs/016-production-clearance-model` (Phase 5 Focus)  
+**Feature**: `specs/016-production-clearance-model` (Phase 6 Focus)  
 **Date**: 2026-08-19  
 **Status**: Completed  
 
 ---
 
-## 1. Scene Readiness Data Structures
+## 1. Action Items Domain Model
 
-### `SceneReadinessStatus`
+### `ClearanceActionType` & `DepartmentTarget`
 ```typescript
-export type SceneReadinessStatus = 'RED' | 'WORKING_CLEAR' | 'FINAL_CLEAR';
-export type ItemReadinessTier = 'BLOCKER' | 'WORKING_CLEAR' | 'FINAL_CLEAR';
+export type ClearanceActionType =
+  | 'ART_DEPT_REPLACEMENT'
+  | 'LEGAL_COUNSEL_RELEASE'
+  | 'LOCATIONS_PERMIT'
+  | 'PRODUCTION_REVIEW'
+  | 'COUNSEL_OVERRIDE_REVIEW';
+
+export type DepartmentTarget =
+  | 'ART_DEPT'
+  | 'LEGAL_COUNSEL'
+  | 'LOCATIONS'
+  | 'PRODUCTION_MGMT'
+  | 'CLEARANCE_TEAM';
+
+export type ActionPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type ActionStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'DISMISSED';
 ```
 
-### `SceneReadinessAssessment`
-```typescript
-export interface SceneItemReadinessDetail {
-  occurrenceId: string;
-  canonicalEntityId: string;
-  canonicalName: string;
-  clearanceStatus: ClearanceStatus;
-  effectiveStatus: ClearanceStatus;
-  rightsStatus: 'COVERED' | 'EXPIRED' | 'NONE';
-  hasReplacementCard: boolean;
-  hasSignedOverride: boolean;
-  readinessTier: ItemReadinessTier;
-  rationale: string;
-}
-
-export interface SceneReadinessAssessment {
-  sceneId: string;
-  sceneNumber: number;
-  heading: string;
-  status: SceneReadinessStatus;
-  evaluatedAt: string;
-  blockersCount: number;
-  workingClearCount: number;
-  finalClearCount: number;
-  totalOccurrences: number;
-  itemsBreakdown: SceneItemReadinessDetail[];
-  summaryText: string;
-  blockingRationale?: string;
-}
-```
-
----
-
-## 2. Extended `SceneData` Entity
-
-Stored in Firestore at `projects/{projectId}/scenes/{sceneId}`.
+### `ClearanceActionItem`
+Stored in Firestore at `projects/{projectId}/actions/{actionId}`.
 
 ```typescript
-export interface SceneData {
-  id: string;
+export interface ClearanceActionItem {
+  id: string;                      // e.g. 'act-a1b2c3d4'
   projectId: string;
-  sceneNumber: number;
-  heading: string;
-  locationType: 'INT' | 'EXT' | 'INT/EXT';
-  timeOfDay: 'DAY' | 'NIGHT' | 'DUSK' | 'DAWN' | 'OTHER';
-  rawText: string;
-  characterActionSummary: string;
-  
-  // Phase 5 Scene Readiness Extensions
-  readinessStatus?: SceneReadinessStatus;
-  readinessEvaluatedAt?: string;
-  readinessDetails?: SceneReadinessAssessment;
-
+  sceneId?: string;
+  sceneNumber?: number;
+  canonicalEntityId?: string;
+  canonicalName?: string;
+  occurrenceId?: string;
+  actionType: ClearanceActionType;
+  targetDepartment: DepartmentTarget;
+  title: string;
+  description: string;
+  priority: ActionPriority;
+  status: ActionStatus;
+  resolutionTrigger?: string;
+  resolvedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,18 +55,22 @@ export interface SceneData {
 
 ---
 
-## 3. Project-Level Summary Model
+## 2. Notification Model
 
-### `ProjectReadinessSummary`
+### `ClearanceNotification`
+Stored in Firestore at `projects/{projectId}/notifications/{notifId}`.
+
 ```typescript
-export interface ProjectReadinessSummary {
+export interface ClearanceNotification {
+  id: string;                      // e.g. 'notif-98765432'
   projectId: string;
-  totalScenes: number;
-  redScenesCount: number;
-  workingClearScenesCount: number;
-  finalClearScenesCount: number;
-  overallReadinessPercentage: number;
-  scenes: SceneReadinessAssessment[];
-  evaluatedAt: string;
+  sceneId?: string;
+  sceneNumber?: number;
+  targetDepartment: DepartmentTarget;
+  headline: string;
+  message: string;
+  severity: 'INFO' | 'WARNING' | 'ALERT' | 'CRITICAL';
+  isRead: boolean;
+  createdAt: string;
 }
 ```
