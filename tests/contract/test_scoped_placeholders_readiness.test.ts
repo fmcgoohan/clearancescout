@@ -112,4 +112,43 @@ Alex throws the hazardous AeroTech Prism Laptop that exploded with toxic sparks 
     expect(s2Final?.status).toBe('FINAL_CLEAR');
     expect(finalReadiness.redScenesCount).toBe(0);
   });
+
+  it('should enforce non-global / scoped-by-default when scope parameters are omitted from placeholder creation', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Scoped Default Test Project',
+        productionCompany: 'Strict Readiness Productions',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    const scriptText = `SCENE 1 - INT. ROOM - DAY
+Alex drinks Summit Cola on the sofa.
+
+SCENE 2 - EXT. PARK - DAY
+Alex drinks Summit Cola in the sun.`;
+
+    await request(app)
+      .post(`/api/projects/${projectId}/script`)
+      .send({ scriptText, format: 'PLAINTEXT' });
+
+    const entities = await entityRepo.getEntitiesByProject(projectId);
+    const cola = entities.find((e) => e.canonicalName.includes('Summit'));
+
+    // Create placeholder with NO scope parameters
+    const plRes = await request(app)
+      .post(`/api/projects/${projectId}/placeholders`)
+      .send({
+        canonicalEntityId: cola!.id,
+        suggestedName: 'Peak Soda Scoped Default',
+        placeholderTier: 'TEMP_APPROVED',
+      });
+
+    expect(plRes.status).toBe(201);
+    expect(plRes.body.isProjectWide).toBe(false); // Non-global by default
+    expect(plRes.body.scopeType).toBe('SELECTED_SCENES');
+    expect(plRes.body.sceneIds.length).toBe(1); // Targets only the first occurrence's scene
+  });
 });

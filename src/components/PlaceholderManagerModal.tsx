@@ -67,7 +67,10 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
   const [approvedRole, setApprovedRole] = useState('Production Clearance Lead');
 
   const [scopeType, setScopeType] = useState<'SELECTED_SCENES' | 'SINGLE_OCCURRENCE' | 'PROJECT_WIDE'>('SELECTED_SCENES');
-  const [sceneNumbersInput, setSceneNumbersInput] = useState<string>('1');
+  const [availableScenes, setAvailableScenes] = useState<Array<{ id: string; sceneNumber: number; heading: string }>>([]);
+  const [availableOccurrences, setAvailableOccurrences] = useState<Array<{ id: string; sceneId: string; sceneNumber: number; heading: string; scriptLineNumber?: number; excerptText?: string }>>([]);
+  const [selectedSceneIds, setSelectedSceneIds] = useState<string[]>([]);
+  const [selectedOccurrenceId, setSelectedOccurrenceId] = useState<string>('');
 
   // Category specific fields
   const [bpm, setBpm] = useState<string>('');
@@ -92,7 +95,42 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
   const fetchExisting = async () => {
     setIsLoading(true);
     try {
-      const res = await apiFetch(`/api/projects/${projectId}/entities/${entityId}/placeholder`);
+      const [res, scenesRes] = await Promise.all([
+        apiFetch(`/api/projects/${projectId}/entities/${entityId}/placeholder`),
+        apiFetch(`/api/projects/${projectId}/scenes`),
+      ]);
+
+      let scenesList: Array<{ id: string; sceneNumber: number; heading: string; occurrences?: any[] }> = [];
+      if (scenesRes.ok) {
+        scenesList = await scenesRes.json();
+        setAvailableScenes(scenesList.map((s) => ({ id: s.id, sceneNumber: s.sceneNumber, heading: s.heading })));
+
+        const occs: Array<{ id: string; sceneId: string; sceneNumber: number; heading: string; scriptLineNumber?: number; excerptText?: string }> = [];
+        scenesList.forEach((s) => {
+          if (Array.isArray(s.occurrences)) {
+            s.occurrences.forEach((occ: any) => {
+              if (occ.canonicalEntityId === entityId) {
+                occs.push({
+                  id: occ.id,
+                  sceneId: s.id,
+                  sceneNumber: s.sceneNumber,
+                  heading: s.heading,
+                  scriptLineNumber: occ.scriptLineNumber,
+                  excerptText: occ.excerptText,
+                });
+              }
+            });
+          }
+        });
+        setAvailableOccurrences(occs);
+        if (occs.length > 0) {
+          setSelectedOccurrenceId(occs[0].id);
+          setSelectedSceneIds(Array.from(new Set(occs.map((o) => o.sceneId))));
+        } else if (scenesList.length > 0) {
+          setSelectedSceneIds([scenesList[0].id]);
+        }
+      }
+
       if (res.ok) {
         const ph: any = await res.json();
         setExistingPlaceholder(ph);
@@ -105,7 +143,10 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
         setApprovedRole(ph.approvedRole || '');
         setScopeType(ph.isProjectWide ? 'PROJECT_WIDE' : ph.scopeType || 'SELECTED_SCENES');
         if (ph.sceneIds && ph.sceneIds.length > 0) {
-          setSceneNumbersInput(ph.sceneIds.join(', '));
+          setSelectedSceneIds(ph.sceneIds);
+        }
+        if (ph.occurrenceIds && ph.occurrenceIds.length > 0) {
+          setSelectedOccurrenceId(ph.occurrenceIds[0]);
         }
 
         if (ph.categoryDetails) {
@@ -129,7 +170,6 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
         setClearanceTier('TEMP_APPROVED');
         setCreativeRationale('');
         setScopeType('SELECTED_SCENES');
-        setSceneNumbersInput('1');
         setBpm('');
         setMusicalKey('');
         setMusicalStyle('');
@@ -173,8 +213,12 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
       }
 
       const sceneIds =
-        scopeType === 'SELECTED_SCENES' && sceneNumbersInput
-          ? sceneNumbersInput.split(',').map((s) => s.trim()).filter(Boolean)
+        scopeType === 'SELECTED_SCENES' && selectedSceneIds.length > 0
+          ? selectedSceneIds
+          : undefined;
+      const occurrenceIds =
+        scopeType === 'SINGLE_OCCURRENCE' && selectedOccurrenceId
+          ? [selectedOccurrenceId]
           : undefined;
       const isProjectWide = scopeType === 'PROJECT_WIDE';
 
@@ -189,6 +233,7 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
         approvedRole: approvedRole.trim(),
         scopeType,
         sceneIds,
+        occurrenceIds,
         isProjectWide,
         categoryDetails,
       };
@@ -427,7 +472,7 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
 
               {/* Placeholder Scope Configuration (Scoped by default) */}
               <div style={{ padding: '10px 12px', borderRadius: '6px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: scopeType === 'SELECTED_SCENES' ? '1fr 1fr' : '1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: scopeType === 'SELECTED_SCENES' || scopeType === 'SINGLE_OCCURRENCE' ? '1fr 1fr' : '1fr', gap: '12px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
                       Mitigation Scope *
@@ -454,13 +499,48 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
                   {scopeType === 'SELECTED_SCENES' && (
                     <div>
                       <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                        Target Scene Numbers (comma-separated)
+                        Target Scenes ({selectedSceneIds.length} selected)
                       </label>
-                      <input
-                        type="text"
-                        value={sceneNumbersInput}
-                        onChange={(e) => setSceneNumbersInput(e.target.value)}
-                        placeholder="e.g. 1, 2"
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '100px', overflowY: 'auto', padding: '6px', background: 'var(--bg-card)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                        {availableScenes.map((s) => {
+                          const isSelected = selectedSceneIds.includes(s.id);
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedSceneIds(selectedSceneIds.filter((id) => id !== s.id));
+                                } else {
+                                  setSelectedSceneIds([...selectedSceneIds, s.id]);
+                                }
+                              }}
+                              style={{
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                border: isSelected ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+                                background: isSelected ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
+                                color: isSelected ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Scene {s.sceneNumber}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {scopeType === 'SINGLE_OCCURRENCE' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                        Target Occurrence
+                      </label>
+                      <select
+                        value={selectedOccurrenceId}
+                        onChange={(e) => setSelectedOccurrenceId(e.target.value)}
                         style={{
                           width: '100%',
                           padding: '8px 12px',
@@ -470,7 +550,13 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
                           border: '1px solid var(--border-color)',
                           fontSize: '0.82rem',
                         }}
-                      />
+                      >
+                        {availableOccurrences.map((occ) => (
+                          <option key={occ.id} value={occ.id}>
+                            Scene {occ.sceneNumber} {occ.scriptLineNumber ? `(Line ${occ.scriptLineNumber})` : ''}: {occ.excerptText ? `"${occ.excerptText.slice(0, 30)}..."` : occ.heading}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   )}
                 </div>

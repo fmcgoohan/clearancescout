@@ -77,6 +77,35 @@ placeholderRouter.post('/projects/:id/placeholders', async (req: Request, res: R
       return res.status(404).json({ error: `Entity ${canonicalEntityId} not found.` });
     }
 
+    const occurrences = await entityRepo.getOccurrencesByEntity(projectId, canonicalEntityId);
+    const isExplicitProjectWide = isProjectWide === true || scopeType === 'PROJECT_WIDE';
+
+    let resolvedScopeType = scopeType;
+    let resolvedSceneIds = sceneIds ? [...sceneIds] : [];
+    let resolvedOccurrenceIds = occurrenceIds ? [...occurrenceIds] : [];
+
+    if (!resolvedScopeType) {
+      if (resolvedSceneIds.length > 0) {
+        resolvedScopeType = 'SELECTED_SCENES';
+      } else if (resolvedOccurrenceIds.length > 0) {
+        resolvedScopeType = 'SELECTED_OCCURRENCES';
+      } else if (isExplicitProjectWide) {
+        resolvedScopeType = 'PROJECT_WIDE';
+      } else {
+        // Scoped-by-default: target the scene of the entity's first occurrence
+        resolvedScopeType = 'SELECTED_SCENES';
+        if (occurrences.length > 0) {
+          resolvedSceneIds = [occurrences[0].sceneId];
+          resolvedOccurrenceIds = [occurrences[0].id];
+        }
+      }
+    } else if (resolvedScopeType === 'SELECTED_SCENES' && resolvedSceneIds.length === 0 && occurrences.length > 0) {
+      resolvedSceneIds = [occurrences[0].sceneId];
+    } else if (resolvedScopeType === 'SINGLE_OCCURRENCE' && resolvedOccurrenceIds.length === 0 && occurrences.length > 0) {
+      resolvedOccurrenceIds = [occurrences[0].id];
+      resolvedSceneIds = [occurrences[0].sceneId];
+    }
+
     const placeholder = await placeholderRepo.createPlaceholder(projectId, {
       canonicalEntityId,
       canonicalName: entity.canonicalName,
@@ -89,29 +118,17 @@ placeholderRouter.post('/projects/:id/placeholders', async (req: Request, res: R
       approvedRole: approvedRole?.trim(),
       approvalDate: approvalDate || new Date().toISOString(),
       categoryDetails,
-      scopeType:
-        scopeType ||
-        (sceneIds?.length
-          ? 'SELECTED_SCENES'
-          : occurrenceIds?.length
-          ? 'SELECTED_OCCURRENCES'
-          : isProjectWide === false
-          ? 'SINGLE_OCCURRENCE'
-          : 'PROJECT_WIDE'),
-      occurrenceIds: occurrenceIds || [],
-      sceneIds: sceneIds || [],
-      isProjectWide: Boolean(
-        isProjectWide ||
-          scopeType === 'PROJECT_WIDE' ||
-          (!scopeType && !sceneIds?.length && !occurrenceIds?.length && isProjectWide !== false)
-      ),
+      scopeType: resolvedScopeType,
+      occurrenceIds: resolvedOccurrenceIds,
+      sceneIds: resolvedSceneIds,
+      isProjectWide: Boolean(isExplicitProjectWide),
     });
 
-    // Auto-resolve pending action items for this entity
-    await actionNotificationRepo.resolveActionsForEntity(
+    // Auto-resolve pending action items strictly within the placeholder's scope
+    await actionNotificationRepo.resolveActionsForPlaceholder(
       projectId,
       canonicalEntityId,
-      `PLACEHOLDER_ATTACHED_${placeholder.clearanceTier}`
+      placeholder
     );
 
     timelineEmitter.emit(

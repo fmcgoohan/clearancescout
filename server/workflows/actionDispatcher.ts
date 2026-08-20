@@ -9,6 +9,7 @@ import { entityRepo, CanonicalEntityData, SceneEntityOccurrenceData } from '../r
 import { sceneRepo } from '../repositories/SceneRepo.js';
 import { overrideRepo } from '../repositories/OverrideRepo.js';
 import { rightsRepo } from '../repositories/RightsRepo.js';
+import { placeholderRepo } from '../repositories/PlaceholderRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { sceneReadinessEngine } from './sceneReadinessEngine.js';
 
@@ -163,10 +164,11 @@ export class ActionDispatcher {
     let actionsResolved = 0;
 
     for (const entity of entities) {
-      const [occurrences, overrides, rights] = await Promise.all([
+      const [occurrences, overrides, rights, placeholders] = await Promise.all([
         entityRepo.getOccurrencesByEntity(projectId, entity.id),
         overrideRepo.getOverridesByEntity(projectId, entity.id),
         rightsRepo.getRightsByEntity(projectId, entity.id),
+        placeholderRepo.getPlaceholdersByEntity(projectId, entity.id),
       ]);
 
       const hasActiveOverride = entity.isOverridden || overrides.some((o) => o.overrideStatus === 'NO_ISSUE_SURFACED' || o.overrideStatus === 'REVIEW_RECOMMENDED');
@@ -174,28 +176,73 @@ export class ActionDispatcher {
 
       for (const occ of occurrences) {
         if (occ.clearanceStatus === 'ACTION_REQUIRED' || occ.clearanceStatus === 'REVIEW_RECOMMENDED') {
-          // If entity has replacement card, active rights, or counsel override, resolve actions
-          if (entity.replacementCard) {
-            const resCount = await actionNotificationRepo.resolveActionsForEntity(
-              projectId,
-              entity.id,
-              'REPLACEMENT_CARD_ATTACHED'
+          // Check if covered by a scoped placeholder
+          const coveringPlaceholder = placeholders.find((ph) =>
+            placeholderRepo.isOccurrenceCovered(ph, occ.sceneId, occ.id)
+          );
+
+          if (coveringPlaceholder) {
+            const actions = await actionNotificationRepo.getActionsByProject(projectId, {
+              canonicalEntityId: entity.id,
+              sceneId: occ.sceneId,
+            });
+            const openActions = actions.filter(
+              (a) => (a.status === 'OPEN' || a.status === 'IN_PROGRESS') && (!a.occurrenceId || a.occurrenceId === occ.id)
             );
-            actionsResolved += resCount;
+            for (const act of openActions) {
+              await actionNotificationRepo.updateActionStatus(
+                projectId,
+                act.id,
+                'RESOLVED',
+                `PLACEHOLDER_ATTACHED_${coveringPlaceholder.clearanceTier}`
+              );
+              actionsResolved++;
+            }
+          } else if (entity.replacementCard) {
+            const actions = await actionNotificationRepo.getActionsByProject(projectId, {
+              canonicalEntityId: entity.id,
+              sceneId: occ.sceneId,
+            });
+            const openActions = actions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
+            for (const act of openActions) {
+              await actionNotificationRepo.updateActionStatus(
+                projectId,
+                act.id,
+                'RESOLVED',
+                'REPLACEMENT_CARD_ATTACHED'
+              );
+              actionsResolved++;
+            }
           } else if (hasActiveRights) {
-            const resCount = await actionNotificationRepo.resolveActionsForEntity(
-              projectId,
-              entity.id,
-              'RIGHTS_LICENSE_ATTACHED'
-            );
-            actionsResolved += resCount;
+            const actions = await actionNotificationRepo.getActionsByProject(projectId, {
+              canonicalEntityId: entity.id,
+              sceneId: occ.sceneId,
+            });
+            const openActions = actions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
+            for (const act of openActions) {
+              await actionNotificationRepo.updateActionStatus(
+                projectId,
+                act.id,
+                'RESOLVED',
+                'RIGHTS_LICENSE_ATTACHED'
+              );
+              actionsResolved++;
+            }
           } else if (hasActiveOverride) {
-            const resCount = await actionNotificationRepo.resolveActionsForEntity(
-              projectId,
-              entity.id,
-              'COUNSEL_OVERRIDE_RECORDED'
-            );
-            actionsResolved += resCount;
+            const actions = await actionNotificationRepo.getActionsByProject(projectId, {
+              canonicalEntityId: entity.id,
+              sceneId: occ.sceneId,
+            });
+            const openActions = actions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
+            for (const act of openActions) {
+              await actionNotificationRepo.updateActionStatus(
+                projectId,
+                act.id,
+                'RESOLVED',
+                'COUNSEL_OVERRIDE_RECORDED'
+              );
+              actionsResolved++;
+            }
           } else {
             const act = await this.dispatchOccurrenceAction(projectId, occ, entity);
             if (act) actionsGenerated++;

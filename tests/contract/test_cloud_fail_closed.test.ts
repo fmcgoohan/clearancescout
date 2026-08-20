@@ -99,4 +99,75 @@ describe('Contract: Feature 018 Fail-Closed CLOUD_MODE & Clean Zero-Hit Groundin
     expect(asm.citations[0].disputePrecedents).toBeUndefined(); // Never populated with synthetic precedents
     expect(asm.citations[0].registrationStatus).toBe('UNKNOWN'); // Kept unknown, not registered active
   });
+
+  it('should accurately reflect UNKNOWN registration status in context flags and legal rationales without claiming TRADEMARK_ACTIVE', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Unknown Reg Accuracy Project',
+        productionCompany: 'Strict Grounding Studio',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    // Create an entity and evaluate occurrence
+    const entity = await entityRepo.createCanonicalEntity({
+      projectId,
+      canonicalName: 'Summit Cola',
+      entityCategory: 'BRAND',
+      overallClearanceStatus: 'INSUFFICIENT_EVIDENCE',
+      description: 'Entrant fictional brand beverage',
+    });
+
+    const evalRes = await request(app)
+      .post(`/api/projects/${projectId}/clearance/evaluate`)
+      .send({ canonicalEntityIds: [entity.id] });
+
+    expect(evalRes.status).toBe(200);
+    const asm = evalRes.body.assessments[0];
+
+    // When registration status is UNKNOWN (from clean live/fixture search), contextFlags must NOT contain TRADEMARK_ACTIVE
+    if (asm.citations[0]?.registrationStatus === 'UNKNOWN') {
+      expect(asm.contextFlags).not.toContain('TRADEMARK_ACTIVE');
+      expect(asm.legalRationale).not.toContain('confirmed active registration');
+    }
+  });
+
+  it('should bypass all cached and persisted grounding on explicit research retry to perform fresh research', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Retry Grounding Project',
+        productionCompany: 'Live Retry Legal',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    const entity = await entityRepo.createCanonicalEntity({
+      projectId,
+      canonicalName: 'Summit Cola',
+      entityCategory: 'BRAND',
+      overallClearanceStatus: 'INSUFFICIENT_EVIDENCE',
+      description: 'Entrant fictional brand beverage',
+    });
+
+    // 1. Initial clearance evaluation
+    const evalRes = await request(app)
+      .post(`/api/projects/${projectId}/clearance/evaluate`)
+      .send({ canonicalEntityIds: [entity.id] });
+    expect(evalRes.status).toBe(200);
+    const initialAsmId = evalRes.body.assessments[0].id;
+
+    // Set entity status to INSUFFICIENT_EVIDENCE so retry is eligible
+    await entityRepo.updateCanonicalEntityStatus(projectId, entity.id, 'INSUFFICIENT_EVIDENCE');
+
+    // 2. Explicit research retry should bypass cache and persisted grounding
+    const retryRes = await request(app)
+      .post(`/api/projects/${projectId}/entities/${entity.id}/retry-research`);
+    expect(retryRes.status).toBe(200);
+    expect(retryRes.body.assessment).toBeDefined();
+    expect(retryRes.body.assessment.id).not.toBe(initialAsmId); // Fresh assessment created
+  });
 });

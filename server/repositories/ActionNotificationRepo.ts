@@ -174,6 +174,46 @@ export class ActionNotificationRepo {
     return count;
   }
 
+  async resolveActionsForPlaceholder(
+    projectId: string,
+    canonicalEntityId: string,
+    placeholder: {
+      isProjectWide?: boolean;
+      scopeType?: 'PROJECT_WIDE' | 'SELECTED_SCENES' | 'SINGLE_OCCURRENCE' | 'SELECTED_OCCURRENCES';
+      sceneIds?: string[];
+      occurrenceIds?: string[];
+      clearanceTier?: string;
+    }
+  ): Promise<number> {
+    const trigger = `PLACEHOLDER_ATTACHED_${placeholder.clearanceTier || 'TEMP_APPROVED'}`;
+    const actions = await this.getActionsByProject(projectId, { canonicalEntityId });
+    const openActions = actions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
+
+    let count = 0;
+    for (const act of openActions) {
+      const isProjectWide = placeholder.isProjectWide || placeholder.scopeType === 'PROJECT_WIDE';
+      if (isProjectWide) {
+        await this.updateActionStatus(projectId, act.id, 'RESOLVED', trigger);
+        count++;
+      } else if (
+        placeholder.scopeType === 'SELECTED_SCENES' &&
+        act.sceneId &&
+        placeholder.sceneIds?.includes(act.sceneId)
+      ) {
+        await this.updateActionStatus(projectId, act.id, 'RESOLVED', trigger);
+        count++;
+      } else if (
+        (placeholder.scopeType === 'SINGLE_OCCURRENCE' || placeholder.scopeType === 'SELECTED_OCCURRENCES') &&
+        act.occurrenceId &&
+        placeholder.occurrenceIds?.includes(act.occurrenceId)
+      ) {
+        await this.updateActionStatus(projectId, act.id, 'RESOLVED', trigger);
+        count++;
+      }
+    }
+    return count;
+  }
+
   async resolveActionsForScene(
     projectId: string,
     sceneId: string,

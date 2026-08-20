@@ -218,7 +218,7 @@ export class PlaceholderRepo {
       return false;
     }
     if (!placeholder.scopeType && !placeholder.occurrenceIds?.length && !placeholder.sceneIds?.length) {
-      return true;
+      return Boolean(placeholder.isProjectWide);
     }
     return false;
   }
