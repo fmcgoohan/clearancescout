@@ -252,11 +252,15 @@ Return valid JSON with these fields:
     // Step 4: Deterministic Occurrence Verdict Calculation
     const primaryCitation = searchResult.citations[0];
     const isRegisteredActive = primaryCitation?.registrationStatus === 'REGISTERED_ACTIVE';
+    // Structured search outcome evaluation (primary) with legacy citation-prose compatibility fallback
     const isZeroHit =
-      searchResult.searchOutcome === 'ZERO_RESULTS' ||
-      primaryCitation?.excerptSnippet?.includes('zero conflicting marks surfaced') ||
-      primaryCitation?.excerptSnippet?.includes('zero conflicting trademark') ||
-      (searchResult.provenance === 'PARALLEL_LIVE' && primaryCitation?.sourceUrl === 'https://parallel.ai/search' && primaryCitation?.excerptSnippet?.startsWith('Completed live search'));
+      searchResult.searchOutcome !== undefined
+        ? searchResult.searchOutcome === 'ZERO_RESULTS'
+        : Boolean(
+            primaryCitation?.excerptSnippet?.includes('zero conflicting marks surfaced') ||
+            primaryCitation?.excerptSnippet?.includes('zero conflicting trademark') ||
+            (searchResult.provenance === 'PARALLEL_LIVE' && primaryCitation?.sourceUrl === 'https://parallel.ai/search' && primaryCitation?.excerptSnippet?.startsWith('Completed live search'))
+          );
     const isLiveMatchUnknown =
       !isZeroHit && (primaryCitation?.registrationStatus === 'UNKNOWN' || !primaryCitation?.registrationStatus);
 
@@ -503,11 +507,15 @@ Return valid JSON with these fields:
 
       const primaryCitation = searchResult.citations[0];
       const isRegisteredActive = primaryCitation?.registrationStatus === 'REGISTERED_ACTIVE';
+      // Structured search outcome evaluation (primary) with legacy citation-prose compatibility fallback
       const isZeroHit =
-        searchResult.searchOutcome === 'ZERO_RESULTS' ||
-        primaryCitation?.excerptSnippet?.includes('zero conflicting marks surfaced') ||
-        primaryCitation?.excerptSnippet?.includes('zero conflicting trademark') ||
-        (searchResult.provenance === 'PARALLEL_LIVE' && primaryCitation?.sourceUrl === 'https://parallel.ai/search' && primaryCitation?.excerptSnippet?.startsWith('Completed live search'));
+        searchResult.searchOutcome !== undefined
+          ? searchResult.searchOutcome === 'ZERO_RESULTS'
+          : Boolean(
+              primaryCitation?.excerptSnippet?.includes('zero conflicting marks surfaced') ||
+              primaryCitation?.excerptSnippet?.includes('zero conflicting trademark') ||
+              (searchResult.provenance === 'PARALLEL_LIVE' && primaryCitation?.sourceUrl === 'https://parallel.ai/search' && primaryCitation?.excerptSnippet?.startsWith('Completed live search'))
+            );
       const isLiveMatchUnknown =
         !isZeroHit && (primaryCitation?.registrationStatus === 'UNKNOWN' || !primaryCitation?.registrationStatus);
 

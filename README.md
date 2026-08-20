@@ -28,9 +28,10 @@ ClearanceScout is an enterprise agentic platform designed for studio legal couns
 - *“Clear once, recognize everywhere”*: Canonical registry resolves entity occurrences across scenes.
 
 ### 2. Live Grounded Trademark & Case-Law Research
-- Grounded directly via the official `parallel-web` TypeScript SDK web search engine.
+- Grounded directly via the official `parallel-web` (`^1.3.0`) TypeScript SDK (direct backend integration, no MCP required).
+- Returns explicit structured `searchOutcome` metadata (`ZERO_RESULTS` | `MATCHES_FOUND` | `SERVICE_FALLBACK`) rather than relying on citation prose heuristics.
 - Retains exact source URLs, trademark owner details, registration statuses, and precedent snippets with verifiable provenance badges (`PARALLEL_LIVE` 🌐, `DEMO_FIXTURE` 📦, `FALLBACK_FIXTURE` ⚡, `MIXED` 🔀).
-- Strict anti-hallucination invariant: Never invents external web evidence.
+- Strict anti-hallucination invariant: Never invents external web evidence or claims `TRADEMARK_ACTIVE` when status is unconfirmed.
 
 ### 3. Production Projects & Multi-Type Management (`016 Phase 1`)
 - Studio project organization categorized by `projectType` (`Movie`, `TV Show`, `Commercial`).
@@ -103,7 +104,10 @@ ClearanceScout is an enterprise agentic platform designed for studio legal couns
 
 ### 22. Production Hardening & Live Evidence Integrity (`018`)
 - **`CLOUD_MODE` Fail-Closed Rule**: Unmitigated fallback fixtures and search failures in production runtime fail closed to `INSUFFICIENT_EVIDENCE` and scene status evaluates to `RED`.
-- **Zero-Hit `PARALLEL_LIVE` Precision**: Live search returning zero trademark hits is documented as completed live research without inventing fictional corporate owners or registration classifications.
+- **Structured Search Outcomes**: Parallel Search results return structured `searchOutcome` metadata (`ZERO_RESULTS` | `MATCHES_FOUND` | `SERVICE_FALLBACK`), isolating prose heuristics to legacy compatibility fallbacks.
+- **Zero-Hit `PARALLEL_LIVE` Precision**: Live search returning zero trademark hits is documented as completed live research with `ZERO_TRADEMARK_CONFLICTS_SURFACED` without inventing fictional corporate owners or registration classifications.
+- **Baseline BRAND Non-Auto-Clear**: Baseline / un-occurred brand evaluations never independently assign `NO_ISSUE_SURFACED` from absence of records; they evaluate as `REVIEW_RECOMMENDED`.
+- **`RETRY_RESEARCH` Action Routing**: Items with `INSUFFICIENT_EVIDENCE` dispatch a `RETRY_RESEARCH` action item for Legal Counsel and auto-resolve upon successful research retry.
 - **Gemini Structured Scene Context**: Gemini 3.6 Flash semantically interprets scene occurrence tone, prominence, and defamation risks while deterministic TypeScript logic maintains authoritative state ownership.
 - **Granular Scoped Placeholders**: Supports occurrence-level and scene-level replacement scoping, preventing placeholders from over-mitigating un-scoped occurrences.
 - **Strict `WORKING_CLEAR` Invariant**: `WORKING_CLEAR` requires affirmative interim mitigations; unmitigated `REVIEW_RECOMMENDED` occurrences remain blockers until authorized.
@@ -155,7 +159,7 @@ graph TD
 
 | Mode | Target | Description |
 |:---|:---|:---|
-| **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (121/121 tests pass). |
+| **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (131/131 tests pass). |
 | **`DEMO_MODE`** | Interactive Evaluation | Zero-configuration evaluation using synthetic datasets and bundled demo screenplay ("The Neon Horizon"). |
 | **`CLOUD_MODE`** | Production Runtime | Live Google Gemini 3.6 Flash and Parallel Search APIs. Fails visibly with diagnostics if credentials are missing. |
 
@@ -178,7 +182,7 @@ npm install
 ```bash
 npm test
 ```
-*Executes all 121 tests across 65 test files spanning contract and integration suites with 0 failures.*
+*Executes all 131 tests across 65 test files spanning contract and integration suites with 0 failures.*
 
 ### 3. Build & Run
 ```bash

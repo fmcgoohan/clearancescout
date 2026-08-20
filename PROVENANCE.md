@@ -24,7 +24,7 @@ ClearanceScout was engineered to solve one of the entertainment industry's most 
 |:---|:---|:---:|:---|
 | **Core Reasoning Agent** | Google `@google/genai` (`gemini-3.6-flash`) | `0.1.2` | Rapid semantic document understanding, multi-format script parsing, occurrence context extraction, and risk evaluation. |
 | **Concept Artwork Generator** | Google Imagen 3 / Gemini Image Generation | Latest | Generates era-authentic visual packaging and prop cards for cleared replacement marks. |
-| **Trademark Grounding Search** | Parallel Web SDK (`parallel-web`) | `^0.1.3` | Live, authoritative search across global USPTO, WIPO, and commercial brand registries. |
+| **Trademark Grounding Search** | Parallel Web SDK (`parallel-web`) | `^1.3.0` | Live, authoritative search across global USPTO, WIPO, and commercial brand registries (direct SDK integration, no MCP required). |
 | **Backend API & Event Broker** | Node.js / Express / TypeScript | `4.21.2` | High-throughput REST API with real-time SSE execution event streaming. |
 | **Frontend Workspace** | React 18 / Vite 5 / Vanilla CSS Design System | `18.3.1` | Responsive, accessible studio interface with script viewer, entity registry, and timeline drawer. |
 | **State Persistence** | Google Cloud Firestore | Latest | Cloud persistence with local in-memory fallback for deterministic test suites. |
@@ -33,7 +33,7 @@ ClearanceScout was engineered to solve one of the entertainment industry's most 
 
 ---
 
-## 3. Complete Architectural Progression & Feature History (001–017)
+## 3. Complete Architectural Progression & Feature History (001–018)
 
 ```mermaid
 timeline
@@ -55,6 +55,7 @@ timeline
     015 Quota Management : Project Live Quotas : Header Counter : Fail-Visible 429 Guards
     016 Production Operating Model : Project Types : Occurrence Unit : Entity Aliases : Rights Catalog : Scene Readiness : Action Queues : Placeholders : Live Self-Clearance : Dashboard : Extended Binder
     017 Judge-Ready Demo : 1-Click Ingest & Auto-Eval : Populated Dashboard & Binder : Production Workspace Rebrand
+    018 Production Hardening : Fail-Closed CLOUD_MODE : Structured Search Outcomes : Scoped Placeholders : RETRY_RESEARCH
 ```
 
 ### Feature 001: Script Workspace & Canonical Entity Registry
@@ -63,7 +64,7 @@ timeline
 - Implemented *"Clear once, recognize everywhere"* canonical entity deduplication.
 
 ### Feature 002: Live Grounded Research & Observable Action Timeline
-- Integrated `@parallel-web/sdk` as the primary live web and trademark research tool.
+- Integrated the official `parallel-web` npm SDK (`^1.3.0`) directly in TypeScript (no MCP server required) as the primary live web and trademark research tool.
 - Established 3-tier execution mode architecture: `TEST_MODE` (offline mocks), `DEMO_MODE` (deterministic fixtures), `CLOUD_MODE` (live cloud APIs with fail-visible outage handling).
 - Implemented Server-Sent Events (SSE) `timelineEmitter` with strict chain-of-thought privacy sanitization.
 
@@ -142,7 +143,10 @@ timeline
 
 ### Feature 018: Production Hardening & Live Evidence Integrity
 - **`CLOUD_MODE` Fail-Closed Evidence Invariant**: Unmitigated fallback fixtures, search provider failures, or missing credentials in production runtime strictly fail closed to `INSUFFICIENT_EVIDENCE` ($riskScore \ge 80$), evaluating scenes as `RED` blockers unless affirmatively mitigated by active contractual rights, signed counsel approval, or an approved scoped replacement.
-- **Zero-Hit `PARALLEL_LIVE` Precision**: Live searches returning zero conflicting marks are recorded as authentic `PARALLEL_LIVE` citations without synthesizing nonexistent corporate owners, fake registration numbers, or imaginary classifications (`registrationStatus: 'UNKNOWN'`).
+- **Explicit Structured Search Outcomes**: `ParallelSearchTool` returns structured `searchOutcome` metadata (`ZERO_RESULTS` | `MATCHES_FOUND` | `SERVICE_FALLBACK`) via direct `parallel-web` (`^1.3.0`) SDK integration (no MCP required), isolating citation-prose string matching to a legacy compatibility fallback.
+- **Zero-Hit `PARALLEL_LIVE` Precision**: Live searches returning zero conflicting marks are recorded as authentic `PARALLEL_LIVE` citations with `ZERO_TRADEMARK_CONFLICTS_SURFACED` without synthesizing nonexistent corporate owners, fake registration numbers, or imaginary classifications (`registrationStatus: 'UNKNOWN'`).
+- **Baseline BRAND Non-Auto-Clear**: Baseline / un-occurred brand evaluations never independently assign `NO_ISSUE_SURFACED` purely from absence of records; they evaluate as `REVIEW_RECOMMENDED`.
+- **`RETRY_RESEARCH` Action Routing & Resolution**: `INSUFFICIENT_EVIDENCE` items dispatch a `RETRY_RESEARCH` action item to Legal Counsel and automatically resolve upon successful research retry.
 - **Gemini Structured Scene Context**: Gemini 3.6 Flash semantically extracts scene occurrence prominence, modality, tone, endorsement implications, safety hazard depictions, and defamation risks into structured JSON, while deterministic TypeScript code owns mathematical risk calculations and state transitions. Canonical grounding research is cached and reused across occurrences of the same entity.
 - **Granular Scoped Placeholders**: Support for `SINGLE_OCCURRENCE`, `SELECTED_OCCURRENCES`, `SELECTED_SCENES`, and `PROJECT_WIDE` replacement scoping, ensuring on-set prop approvals do not over-mitigate unapproved scene occurrences.
 - **Strict `WORKING_CLEAR` Invariant**: Scene shooting readiness evaluates to `WORKING_CLEAR` only when every non-cleared occurrence has an affirmative interim mitigation basis (`TEMP_APPROVED` placeholder in scope, interim rights agreement, or signed counsel authorization). Unmitigated `REVIEW_RECOMMENDED` items remain `RED` blockers.
