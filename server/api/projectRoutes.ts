@@ -141,8 +141,33 @@ projectRouter.post('/:id/script', upload.single('script'), async (req: Request, 
       return res.status(400).json({ error: 'Script file or scriptText payload is required.' });
     }
 
+    if (format === 'PDF') {
+      const isRawBinary =
+        scriptText.startsWith('%PDF') &&
+        !scriptText.includes('INT.') &&
+        !scriptText.includes('EXT.') &&
+        !scriptText.includes('SCENE');
+      const printableWords = scriptText
+        .replace(/[^a-zA-Z0-9\s]/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 1);
+
+      if (isRawBinary || printableWords.length < 5) {
+        return res.status(400).json({
+          error:
+            'Unable to extract text from PDF. The document may be a scanned image or encrypted. Please provide a text-based PDF, Fountain, or Plaintext screenplay.',
+          code: 'PDF_EXTRACTION_FAILED',
+        });
+      }
+    }
+
     const result = await canonicalRegistryWorkflow.processScriptUpload(projectId, scriptText, format);
-    return res.json(result);
+    return res.json({
+      ...result,
+      scenesCount: result.scenesParsed,
+      entitiesCount: result.canonicalEntitiesExtracted,
+    });
   } catch (err) {
     next(err);
   }

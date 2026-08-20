@@ -74,7 +74,7 @@ export class SceneReadinessEngine {
       );
 
       const placeholder = await placeholderRepo.getPlaceholderByEntity(projectId, occ.canonicalEntityId);
-      const hasReplacementCard = Boolean(entity.replacementCard || placeholder);
+      const hasReplacementCard = Boolean(entity.replacementCard);
       const matchingOverride = overrides
         .filter((o) => o.canonicalEntityId === entity.id && (o.sceneId === sceneId || !o.sceneId))
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
@@ -86,6 +86,10 @@ export class SceneReadinessEngine {
       } else if (rightsCoverage.hasExpiringSoon) {
         rightsStatus = 'EXPIRED';
       }
+
+      const isPlaceholderCovering = placeholder
+        ? placeholderRepo.isOccurrenceCovered(placeholder, sceneId, occ.id)
+        : false;
 
       // Deterministic Item Readiness Classification
       let readinessTier: ItemReadinessTier = 'BLOCKER';
@@ -101,22 +105,22 @@ export class SceneReadinessEngine {
       } else if (rightsCoverage.isCovered) {
         readinessTier = 'FINAL_CLEAR';
         rationale = `Cleared via executed rights agreement (${rightsCoverage.summaryText}).`;
-      } else if (placeholder && placeholder.clearanceTier === 'FINAL_CLEARED') {
+      } else if (placeholder && placeholder.clearanceTier === 'FINAL_CLEARED' && isPlaceholderCovering) {
         readinessTier = 'FINAL_CLEAR';
         rationale = `Cleared via finalized replacement placeholder: ${placeholder.fictionalName} (${placeholder.assetCategory}).`;
-      } else if (placeholder && placeholder.clearanceTier === 'TEMP_APPROVED') {
+      } else if (placeholder && placeholder.clearanceTier === 'TEMP_APPROVED' && isPlaceholderCovering) {
         readinessTier = 'WORKING_CLEAR';
         rationale = `Working Clear: Temporary placeholder approved for on-set shooting: ${placeholder.fictionalName} (${placeholder.assetCategory}).`;
       } else if (hasReplacementCard) {
         readinessTier = 'WORKING_CLEAR';
         rationale = `Working Clear: Approved fictional replacement prop card attached (${entity.replacementCard?.fictionalBrandName}).`;
-      } else if (effectiveStatus === 'REVIEW_RECOMMENDED') {
+      } else if (hasSignedOverride && matchingOverride?.overrideStatus === 'REVIEW_RECOMMENDED') {
         readinessTier = 'WORKING_CLEAR';
-        rationale = `Working Clear: Moderate risk item under active counsel review / location release permit.`;
+        rationale = `Working Clear: Interim counsel authorization granted (${matchingOverride.rationale}).`;
       } else {
-        // ACTION_REQUIRED or INSUFFICIENT_EVIDENCE without replacement card or override
+        // ACTION_REQUIRED, INSUFFICIENT_EVIDENCE, or unmitigated REVIEW_RECOMMENDED
         readinessTier = 'BLOCKER';
-        rationale = `Clearance Blocker: ${effectiveStatus} requires replacement prop card, written release, or counsel override.`;
+        rationale = `Clearance Blocker: ${effectiveStatus} requires affirmative interim replacement prop card, written release, or counsel override.`;
       }
 
       itemsBreakdown.push({
@@ -138,6 +142,14 @@ export class SceneReadinessEngine {
     const workingClears = itemsBreakdown.filter((i) => i.readinessTier === 'WORKING_CLEAR');
     const finalClears = itemsBreakdown.filter((i) => i.readinessTier === 'FINAL_CLEAR');
 
+    const interimMitigations = workingClears.map((w) => ({
+      occurrenceId: w.occurrenceId,
+      entityName: w.canonicalName,
+      basis: w.hasSignedOverride ? 'COUNSEL_AUTHORIZATION' : 'TEMP_APPROVED_PLACEHOLDER',
+      referenceId: w.canonicalEntityId,
+      details: w.rationale,
+    }));
+
     let overallStatus: SceneReadinessStatus = 'FINAL_CLEAR';
     let summaryText = `All ${occurrences.length} clearance item(s) in Scene ${scene.sceneNumber} are fully cleared (Final Clear).`;
     let blockingRationale: string | undefined = undefined;
@@ -150,7 +162,7 @@ export class SceneReadinessEngine {
       summaryText = `${blockers.length} clearance blocker(s) prevent shooting Scene ${scene.sceneNumber}.`;
     } else if (workingClears.length > 0) {
       overallStatus = 'WORKING_CLEAR';
-      summaryText = `Scene ${scene.sceneNumber} is Working Clear with ${workingClears.length} interim replacement(s) / review item(s).`;
+      summaryText = `Scene ${scene.sceneNumber} is Working Clear with ${workingClears.length} interim replacement(s) / mitigation(s).`;
     }
 
     const assessment: SceneReadinessAssessment = {
@@ -164,6 +176,7 @@ export class SceneReadinessEngine {
       finalClearCount: finalClears.length,
       totalOccurrences: occurrences.length,
       itemsBreakdown,
+      interimMitigations,
       summaryText,
       blockingRationale,
     };

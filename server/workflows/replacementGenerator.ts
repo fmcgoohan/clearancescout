@@ -62,14 +62,15 @@ export class ReplacementGenerator {
       });
 
       // 2. Ground candidate in trademark & web clearance search
-      const searchResult: SearchResult = await parallelSearchTool.searchTrademarkGrounding(candidate.fictionalBrandName);
+      const activeMode = project?.executionMode || config.executionMode;
+      const searchResult: SearchResult = await parallelSearchTool.searchTrademarkGrounding(candidate.fictionalBrandName, activeMode);
 
       // 3. Evaluate candidate risk against evidence-driven clearance policy
       let status: ClearanceStatus = 'NO_ISSUE_SURFACED';
       let collisionReason: string | undefined = undefined;
 
-      // Fail-visible check in CLOUD_MODE (FR-009)
-      if (config.executionMode === 'CLOUD_MODE' && searchResult.provenance === 'FALLBACK_FIXTURE') {
+      // Fail-visible check in CLOUD_MODE (FR-001/FR-002)
+      if (activeMode === 'CLOUD_MODE' && searchResult.provenance === 'FALLBACK_FIXTURE') {
         status = 'INSUFFICIENT_EVIDENCE';
         collisionReason = `Live Parallel Search unavailable in CLOUD_MODE. Candidate clearance cannot be verified without live search connection.`;
       } else {

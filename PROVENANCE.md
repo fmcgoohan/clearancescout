@@ -4,7 +4,7 @@
 **License**: MIT  
 **Date Established**: August 2026  
 **Status**: Active Production Reference  
-**Verified Test Baseline**: 114 Tests Passing across 60 Suites (100% Pass Rate)
+**Verified Test Baseline**: 121 Tests Passing across 65 Suites (100% Pass Rate)
 
 ---
 
@@ -13,7 +13,7 @@
 ClearanceScout was engineered to solve one of the entertainment industry's most costly, manual, and legally hazardous workflows: **production script clearance, trademark risk assessment, and legal delivery binder management**. The architecture was built from the ground up to embody three fundamental engineering values:
 
 1. **Deterministic Rigor over LLM Fluff**: AI is used strictly for semantic comprehension, contextual spotting, and creative replacement generation. All mathematical metrics, scene readiness states, expiration day deltas, override precedence hierarchies, retry attempt limits, and binder integrity digests are computed deterministically in TypeScript.
-2. **Grounded Provenance over Hallucination**: No clearance risk verdict or trademark assertion is ever fabricated. Every finding is anchored to authentic external registry queries via the Parallel Search API (`@parallel-web/sdk`) with explicit provenance tracking (`PARALLEL_LIVE` 🌐, `DEMO_FIXTURE` 📦, `FALLBACK_FIXTURE` ⚡, `MIXED` 🔀).
+2. **Grounded Provenance over Hallucination**: No clearance risk verdict or trademark assertion is ever fabricated. Every finding is anchored to authentic external registry queries via the Parallel Search API (`parallel-web`) with explicit provenance tracking (`PARALLEL_LIVE` 🌐, `DEMO_FIXTURE` 📦, `FALLBACK_FIXTURE` ⚡, `MIXED` 🔀).
 3. **Chain-of-Thought Privacy & Human-in-the-Loop Governance**: While the platform maintains an Observable Action Timeline via Server-Sent Events, raw internal reasoning is never leaked. Production legal counsel retains authoritative override control at both global and scene-specific granularities.
 
 ---
@@ -24,7 +24,7 @@ ClearanceScout was engineered to solve one of the entertainment industry's most 
 |:---|:---|:---:|:---|
 | **Core Reasoning Agent** | Google `@google/genai` (`gemini-3.6-flash`) | `0.1.2` | Rapid semantic document understanding, multi-format script parsing, occurrence context extraction, and risk evaluation. |
 | **Concept Artwork Generator** | Google Imagen 3 / Gemini Image Generation | Latest | Generates era-authentic visual packaging and prop cards for cleared replacement marks. |
-| **Trademark Grounding Search** | Parallel Web SDK (`@parallel-web/sdk`) | `0.1.3` | Live, authoritative search across global USPTO, WIPO, and commercial brand registries. |
+| **Trademark Grounding Search** | Parallel Web SDK (`parallel-web`) | `^0.1.3` | Live, authoritative search across global USPTO, WIPO, and commercial brand registries. |
 | **Backend API & Event Broker** | Node.js / Express / TypeScript | `4.21.2` | High-throughput REST API with real-time SSE execution event streaming. |
 | **Frontend Workspace** | React 18 / Vite 5 / Vanilla CSS Design System | `18.3.1` | Responsive, accessible studio interface with script viewer, entity registry, and timeline drawer. |
 | **State Persistence** | Google Cloud Firestore | Latest | Cloud persistence with local in-memory fallback for deterministic test suites. |
@@ -140,6 +140,14 @@ timeline
 - **Populated Operations Dashboard & Extended Legal Binder**: Immediately populates executive KPIs, Shoot Readiness %, scene readiness distribution (`FINAL CLEAR`, `WORKING CLEAR`, `RED`), active blockers, upcoming rights expirations, active placeholders, department work queues, and verifiable 64-character SHA-256 integrity seal upon sample load.
 - **Production Workspace Rebranding**: Rebranded all user-facing interface copy from "MVP Workspace" / "ClearanceScout MVP" to "ClearanceScout Production Clearance Workspace" / "Production Clearance Studio".
 
+### Feature 018: Production Hardening & Live Evidence Integrity
+- **`CLOUD_MODE` Fail-Closed Evidence Invariant**: Unmitigated fallback fixtures, search provider failures, or missing credentials in production runtime strictly fail closed to `INSUFFICIENT_EVIDENCE` ($riskScore \ge 80$), evaluating scenes as `RED` blockers unless affirmatively mitigated by active contractual rights, signed counsel approval, or an approved scoped replacement.
+- **Zero-Hit `PARALLEL_LIVE` Precision**: Live searches returning zero conflicting marks are recorded as authentic `PARALLEL_LIVE` citations without synthesizing nonexistent corporate owners, fake registration numbers, or imaginary classifications (`registrationStatus: 'UNKNOWN'`).
+- **Gemini Structured Scene Context**: Gemini 3.6 Flash semantically extracts scene occurrence prominence, modality, tone, endorsement implications, safety hazard depictions, and defamation risks into structured JSON, while deterministic TypeScript code owns mathematical risk calculations and state transitions. Canonical grounding research is cached and reused across occurrences of the same entity.
+- **Granular Scoped Placeholders**: Support for `SINGLE_OCCURRENCE`, `SELECTED_OCCURRENCES`, `SELECTED_SCENES`, and `PROJECT_WIDE` replacement scoping, ensuring on-set prop approvals do not over-mitigate unapproved scene occurrences.
+- **Strict `WORKING_CLEAR` Invariant**: Scene shooting readiness evaluates to `WORKING_CLEAR` only when every non-cleared occurrence has an affirmative interim mitigation basis (`TEMP_APPROVED` placeholder in scope, interim rights agreement, or signed counsel authorization). Unmitigated `REVIEW_RECOMMENDED` items remain `RED` blockers.
+- **Genuine Ingestion Diagnostics & Cloud Demo Isolation**: Scanned or unparseable PDF uploads return structured `400 Bad Request` diagnostics with error code `PDF_EXTRACTION_FAILED`. Sample demo loading in `CLOUD_MODE` strictly creates un-evaluated scene occurrences without synthetic fixture seeding.
+
 ---
 
 ## 4. Fictional-Content & Anti-Hallucination Policy
@@ -153,8 +161,8 @@ ClearanceScout operates under a strict, non-negotiable fictional-content and evi
 
 ## 5. Verification & Test Attestation
 
-As of Feature 017, the entire ClearanceScout test suite passes with 100% success rate across all contract, unit, and integration tests:
-- **Contract Tests**: Verified endpoint schemas, SSE event taxonomies, health checks, counsel overrides, multi-format parsers, project types, occurrence evaluation, entity resolution, rights management, scene readiness, action queues, placeholders, evidence self-clearance, operations dashboard, extended binder export, and 1-click judge demo automation.
-- **Integration Tests**: Verified end-to-end script ingestion, candidate clearance loops, counsel overrides with scene isolation, batch research, offline replay, judge demo workflows, and auditable binder compilation.
-- **Test Baseline**: 114 tests passing across 60 test suites (100% pass rate).
+As of Feature 018, the entire ClearanceScout test suite passes with 100% success rate across all contract, unit, and integration tests:
+- **Contract Tests**: Verified endpoint schemas, SSE event taxonomies, health checks, counsel overrides, multi-format parsers, project types, occurrence evaluation, entity resolution, rights management, scene readiness, action queues, placeholders, evidence self-clearance, operations dashboard, extended binder export, 1-click judge demo automation, fail-closed cloud clearance, clean zero-hit citations, structured context interpretation, and scoped placeholders.
+- **Integration Tests**: Verified end-to-end script ingestion, candidate clearance loops, counsel overrides with scene isolation, batch research, offline replay, judge demo workflows, auditable binder compilation, and production hardening lifecycles.
+- **Test Baseline**: 121 tests passing across 65 test suites (100% pass rate).
 - **Build Verification**: Multi-stage production container and Vite production bundle compile with 0 errors across 49 modules.

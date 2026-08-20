@@ -10,6 +10,12 @@ export type PlaceholderAssetCategory =
 
 export type PlaceholderClearanceTier = 'TEMP_APPROVED' | 'FINAL_CLEARED';
 
+export type PlaceholderScopeType =
+  | 'SINGLE_OCCURRENCE'
+  | 'SELECTED_OCCURRENCES'
+  | 'SELECTED_SCENES'
+  | 'PROJECT_WIDE';
+
 export interface CategoryDetails {
   // Brand
   trademarkSearchNotes?: string;
@@ -53,6 +59,10 @@ export interface ReplacementPlaceholderData {
   approvalDate: string;
   expirationDate?: string;
   categoryDetails?: CategoryDetails;
+  scopeType?: PlaceholderScopeType;
+  occurrenceIds?: string[];
+  sceneIds?: string[];
+  isProjectWide?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -172,6 +182,35 @@ export class PlaceholderRepo {
 
     await docRef.delete();
     return true;
+  }
+
+  isOccurrenceCovered(
+    placeholder: ReplacementPlaceholderData,
+    sceneId: string,
+    occurrenceId?: string
+  ): boolean {
+    if (placeholder.isProjectWide || placeholder.scopeType === 'PROJECT_WIDE') {
+      return true;
+    }
+    if (
+      placeholder.scopeType === 'SINGLE_OCCURRENCE' ||
+      placeholder.scopeType === 'SELECTED_OCCURRENCES'
+    ) {
+      if (occurrenceId && placeholder.occurrenceIds && placeholder.occurrenceIds.includes(occurrenceId)) {
+        return true;
+      }
+      return false;
+    }
+    if (placeholder.scopeType === 'SELECTED_SCENES') {
+      if (sceneId && placeholder.sceneIds && placeholder.sceneIds.includes(sceneId)) {
+        return true;
+      }
+      return false;
+    }
+    if (!placeholder.scopeType && !placeholder.occurrenceIds?.length && !placeholder.sceneIds?.length) {
+      return true;
+    }
+    return false;
   }
 }
 

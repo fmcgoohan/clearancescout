@@ -8,8 +8,8 @@
 
 **Purpose**: Core data model and repository infrastructure required across all user stories.
 
-- [ ] T001 Update data models with `OccurrenceContextInterpretation` and scoped `ReplacementPlaceholderData` in `server/repositories/PlaceholderRepo.ts` and `server/workflows/clearanceEvaluator.ts`
-- [ ] T002 [P] Verify `parallel-web` dependency and ensure deterministic fixture support in `server/fixtures/recordReplayFixtures.ts`
+- [X] T001 Update data models with `OccurrenceContextInterpretation` and scoped `ReplacementPlaceholderData` in `server/repositories/PlaceholderRepo.ts` and `server/workflows/clearanceEvaluator.ts`
+- [X] T002 [P] Verify `parallel-web` dependency and ensure deterministic fixture support in `server/fixtures/recordReplayFixtures.ts`
 
 ---
 
@@ -22,11 +22,11 @@
 - Live searches returning zero hits are cited as `PARALLEL_LIVE` with zero fabricated registrant facts.
 
 ### Tests for User Story 1
-- [ ] T003 [P] [US1] Create contract test `tests/contract/test_cloud_fail_closed.test.ts` verifying fail-closed `INSUFFICIENT_EVIDENCE` for failed searches and clean zero-hit handling in `PARALLEL_LIVE`
+- [X] T003 [P] [US1] Create contract test `tests/contract/test_cloud_fail_closed.test.ts` verifying fail-closed `INSUFFICIENT_EVIDENCE` for failed searches and clean zero-hit handling in `PARALLEL_LIVE`
 
 ### Implementation for User Story 1
-- [ ] T004 [US1] Implement fail-closed `INSUFFICIENT_EVIDENCE` gating and clean zero-hit handling in `server/tools/parallelSearchTool.ts` and `server/workflows/clearanceEvaluator.ts`
-- [ ] T005 [US1] Propagate fail-closed rules to `server/workflows/batchResearchEngine.ts` and `server/workflows/replacementGenerator.ts` for candidate self-clearance
+- [X] T004 [US1] Implement fail-closed `INSUFFICIENT_EVIDENCE` gating and clean zero-hit handling in `server/tools/parallelSearchTool.ts` and `server/workflows/clearanceEvaluator.ts`
+- [X] T005 [US1] Propagate fail-closed rules to `server/workflows/batchResearchEngine.ts` and `server/workflows/replacementGenerator.ts` for candidate self-clearance
 
 **Checkpoint**: User Story 1 complete. In `CLOUD_MODE`, unmitigated search failures and fallback fixtures fail closed, and zero-hit searches record authentic research without hallucinations.
 
@@ -40,10 +40,10 @@
 - Evaluate an entity featured prominently in a dangerous/disparaging scene vs an incidental neutral scene; verify structured Gemini context output and differing deterministic clearance verdicts.
 
 ### Tests for User Story 2
-- [ ] T006 [P] [US2] Create contract test `tests/contract/test_occurrence_context_eval.test.ts` testing Gemini structured context interpretation and deterministic risk score / status calculation
+- [X] T006 [P] [US2] Create contract test `tests/contract/test_occurrence_context_eval.test.ts` testing Gemini structured context interpretation and deterministic risk score / status calculation
 
 ### Implementation for User Story 2
-- [ ] T007 [US2] Implement structured Gemini 3.6 Flash context interpretation (`prominence`, `modality`, `tone`, `endorsementImplication`, `safetyHazardDepiction`, `defamationRisk`) and canonical grounding reuse in `server/workflows/clearanceEvaluator.ts`
+- [X] T007 [US2] Implement structured Gemini 3.6 Flash context interpretation (`prominence`, `modality`, `tone`, `endorsementImplication`, `safetyHazardDepiction`, `defamationRisk`) and canonical grounding reuse in `server/workflows/clearanceEvaluator.ts`
 
 **Checkpoint**: User Story 2 complete. Gemini provides structured contextual analysis while deterministic TypeScript code strictly controls state transitions.
 
@@ -58,11 +58,11 @@
 - Verify a scene with unmitigated `REVIEW_RECOMMENDED` items evaluates to `RED` (blocker).
 
 ### Tests for User Story 3
-- [ ] T008 [P] [US3] Create contract test `tests/contract/test_scoped_placeholders_readiness.test.ts` testing granular placeholder scoping and strict `WORKING_CLEAR` requirements
+- [X] T008 [P] [US3] Create contract test `tests/contract/test_scoped_placeholders_readiness.test.ts` testing granular placeholder scoping and strict `WORKING_CLEAR` requirements
 
 ### Implementation for User Story 3
-- [ ] T009 [US3] Implement scoped placeholder creation and retrieval in `server/repositories/PlaceholderRepo.ts` and `server/api/placeholderRoutes.ts`
-- [ ] T010 [US3] Implement strict `WORKING_CLEAR` requirement in `server/workflows/sceneReadinessEngine.ts` requiring affirmative interim mitigations (`TEMP_APPROVED` placeholder in scope, temp rights, signed override) and treating unmitigated `REVIEW_RECOMMENDED` as `RED`
+- [X] T009 [US3] Implement scoped placeholder creation and retrieval in `server/repositories/PlaceholderRepo.ts` and `server/api/placeholderRoutes.ts`
+- [X] T010 [US3] Implement strict `WORKING_CLEAR` requirement in `server/workflows/sceneReadinessEngine.ts` requiring affirmative interim mitigations (`TEMP_APPROVED` placeholder in scope, temp rights, signed override) and treating unmitigated `REVIEW_RECOMMENDED` as `RED`
 
 **Checkpoint**: User Story 3 complete. Placeholders only mitigate occurrences within their explicit scope, and scene readiness requires auditable interim basis.
 
@@ -77,11 +77,11 @@
 - Load sample script in `CLOUD_MODE`: verify entities created in un-evaluated state with 0 synthetic rights or fake assessments.
 
 ### Tests for User Story 4
-- [ ] T011 [P] [US4] Create contract test `tests/contract/test_pdf_extraction_cloud_demo.test.ts` testing PDF text extraction with visible `400` failure and `CLOUD_MODE` demo boundary isolation
+- [X] T011 [P] [US4] Create contract test `tests/contract/test_pdf_extraction_cloud_demo.test.ts` testing PDF text extraction with visible `400` failure and `CLOUD_MODE` demo boundary isolation
 
 ### Implementation for User Story 4
-- [ ] T012 [US4] Implement genuine text extraction and visible `400` error diagnostics in `server/agents/ScriptParserAgent.ts` and `server/api/projectRoutes.ts`
-- [ ] T013 [US4] Implement `CLOUD_MODE` sample script loading in `server/workflows/demoAutomationWorkflow.ts` creating un-assessed scenes and canonical entities without synthetic fixture seeding
+- [X] T012 [US4] Implement genuine text extraction and visible `400` error diagnostics in `server/agents/ScriptParserAgent.ts` and `server/api/projectRoutes.ts`
+- [X] T013 [US4] Implement `CLOUD_MODE` sample script loading in `server/workflows/demoAutomationWorkflow.ts` creating un-assessed scenes and canonical entities without synthetic fixture seeding
 
 **Checkpoint**: User Story 4 complete. PDF uploads fail visibly on bad input, and `CLOUD_MODE` sample loading preserves real cloud operational boundaries.
 
@@ -91,8 +91,8 @@
 
 **Goal**: Full system regression verification, `parallel-web` npm verification, removal of unused MCP server claims, and documentation reconciliation.
 
-- [ ] T014 [P] [US5] Implement end-to-end integration test `tests/integration/production_hardening_workflow.test.ts` validating all 018 integrity guarantees end-to-end
-- [ ] T015 [US5] Reconcile `README.md` and `PROVENANCE.md` with `parallel-web`, remove any MCP server claims, update verified test counts, and verify full build (`npm run build`) and test suite (`npm test`) passing 100%
+- [X] T014 [P] [US5] Implement end-to-end integration test `tests/integration/production_hardening_workflow.test.ts` validating all 018 integrity guarantees end-to-end
+- [X] T015 [US5] Reconcile `README.md` and `PROVENANCE.md` with `parallel-web`, remove any MCP server claims, update verified test counts, and verify full build (`npm run build`) and test suite (`npm test`) passing 100%
 
 ---
 

@@ -28,15 +28,15 @@ export class DemoAutomationWorkflow {
    * attaches sample rights & placeholders, and computes scene readiness.
    */
   async loadDemoScreenplay(projectId: string, options: DemoScriptLoadOptions = {}) {
-    const liveCloud = config.executionMode === 'CLOUD_MODE';
-    const autoEvaluate = liveCloud ? false : options.autoEvaluate !== false;
-    const includeSampleRights = liveCloud ? false : options.includeSampleRights !== false;
-    const includeSamplePlaceholders = liveCloud ? false : options.includeSamplePlaceholders !== false;
-
     const project = await projectRepo.getProject(projectId);
     if (!project) {
       throw new Error(`Project ${projectId} not found`);
     }
+
+    const liveCloud = config.executionMode === 'CLOUD_MODE' || project.executionMode === 'CLOUD_MODE';
+    const autoEvaluate = liveCloud ? false : options.autoEvaluate !== false;
+    const includeSampleRights = liveCloud ? false : options.includeSampleRights !== false;
+    const includeSamplePlaceholders = liveCloud ? false : options.includeSamplePlaceholders !== false;
 
     // 1. Read demo screenplay text
     let scriptText = '';
@@ -110,6 +110,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             covenants: ['Permitted in foreground hero consumption for principal photography.'],
           });
           activeRightsCount++;
+          await clearanceEvaluator.evaluateEntityClearance(projectId, summitEntity.id);
         }
       }
 
@@ -130,9 +131,25 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             approvedBy: 'Alex Chen (Lead Designer)',
             approvedRole: 'ART_DEPARTMENT',
             approvalDate: new Date().toISOString().split('T')[0],
+            isProjectWide: true,
+            scopeType: 'PROJECT_WIDE',
           });
           activePlaceholdersCount++;
         }
+      }
+
+      // 6. Attach Sample Location Permit Override (Midtown Spire Tower)
+      const locationEntity = entities.find(
+        (e) => e.canonicalName.toLowerCase().includes('midtown') || e.canonicalName.toLowerCase().includes('spire')
+      );
+      if (locationEntity) {
+        const { overrideRepo } = await import('../repositories/OverrideRepo.js');
+        await overrideRepo.createOverride(projectId, {
+          canonicalEntityId: locationEntity.id,
+          status: 'NO_ISSUE_SURFACED',
+          rationale: 'Commercial location filming permit and architectural exterior release executed on file.',
+          counselName: 'Sarah Jenkins, Lead Production Counsel',
+        });
       }
 
       // 6. Re-evaluate Scene Shooting Readiness

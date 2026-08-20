@@ -106,8 +106,20 @@ ${normalizedText}`,
   }
 
   private parseScriptFallback(scriptText: string): ParsedScene[] {
-    // Regex splits on standard and Fountain sluglines (INT., EXT., INT/EXT., .LOCATION)
-    const rawScenes = scriptText.split(/(?=\n(?:\.?INT\b|\.?EXT\b|\.?INT\/EXT\b)\.?\s)/gi).filter(s => s.trim().length > 0);
+    // Regex splits on standard and Fountain sluglines (INT., EXT., INT/EXT., .LOCATION, SCENE N - INT)
+    const rawScenes = scriptText
+      .split(/(?=\n(?:SCENE\s+\d+[:\s\-]*)?(?:\.?INT\b|\.?EXT\b|\.?INT\/EXT\b)\.?\s)/gi)
+      .map((s) => s.trim())
+      .filter((s) => {
+        if (s.length === 0) return false;
+        const upper = s.toUpperCase();
+        return (
+          upper.startsWith('INT') ||
+          upper.startsWith('EXT') ||
+          upper.startsWith('SCENE') ||
+          upper.startsWith('.')
+        );
+      });
 
     // 5-category deterministic recognition patterns for demo & test suites
     const candidatePatterns: Array<{ name: string; category: EntityCategory; regex: RegExp }> = [

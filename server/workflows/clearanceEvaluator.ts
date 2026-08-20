@@ -1,5 +1,5 @@
 import { entityRepo, ClearanceStatus, CanonicalEntityData, SceneEntityOccurrenceData } from '../repositories/EntityRepo.js';
-import { assessmentRepo, ClearanceRiskAssessmentData } from '../repositories/AssessmentRepo.js';
+import { assessmentRepo, ClearanceRiskAssessmentData, OccurrenceContextInterpretation } from '../repositories/AssessmentRepo.js';
 import { projectRepo } from '../repositories/ProjectRepo.js';
 import { rightsRepo } from '../repositories/RightsRepo.js';
 import { actionDispatcher } from './actionDispatcher.js';
@@ -67,7 +67,7 @@ export class ClearanceEvaluator {
   async evaluateOccurrenceClearance(projectId: string, occurrenceId: string): Promise<OccurrenceEvaluationResult> {
     const occLookup = await entityRepo.getOccurrenceById(projectId, occurrenceId);
     if (!occLookup) {
-      throw new Error(`Occurrence ${occurrenceId} not found in project ${projectId}`);
+      throw new Error(`Occurrence ${occurrenceId} not found`);
     }
 
     const { occurrence, sceneId } = occLookup;
@@ -78,7 +78,8 @@ export class ClearanceEvaluator {
 
     // Live Quota Enforcement
     const project = await projectRepo.getProject(projectId);
-    if (project?.executionMode === 'CLOUD_MODE') {
+    const activeMode = project?.executionMode || config.executionMode;
+    if (activeMode === 'CLOUD_MODE') {
       const quotaResult = await projectRepo.consumeLiveQuota(projectId, 1);
       if (!quotaResult.success) {
         const err: any = new Error(
@@ -90,8 +91,8 @@ export class ClearanceEvaluator {
       }
     }
 
-    // Step 1: Grounding Search
-    const searchResult = await parallelSearchTool.searchTrademarkGrounding(entity.canonicalName);
+    // Step 1: Grounding Search (passes activeMode)
+    const searchResult = await parallelSearchTool.searchTrademarkGrounding(entity.canonicalName, activeMode);
 
     timelineEmitter.emit(projectId, 'TOOL_CALL', `Grounding Research for Scene Occurrence: ${entity.canonicalName}`, {
       occurrenceId,
@@ -103,7 +104,7 @@ export class ClearanceEvaluator {
     // Step 2: Contractual Rights & Restrictions Evaluation (Phase 4)
     const rightsCoverage = await rightsRepo.evaluateRightsCoverage(projectId, entity.id, occurrenceId);
 
-    // Step 3: Scene Action Context Analysis
+    // Step 3: Structured Occurrence Context Interpretation (Gemini / Deterministic)
     const defamatoryKeywords = ['dangerous', 'toxic', 'poisonous', 'faulty', 'exploded', 'stole', 'illegal', 'scam', 'killed', 'disaster', 'counterfeit', 'weapon'];
     const sceneContextText = `${occurrence.excerptText || ''} ${occurrence.usageContext || ''}`.toLowerCase();
 
@@ -114,13 +115,77 @@ export class ClearanceEvaluator {
       }
     });
 
-    // Step 4: Occurrence Verdict Calculation
+    const isForeground = sceneContextText.includes('hero') || sceneContextText.includes('foreground') || sceneContextText.includes('holds') || sceneContextText.includes('sips');
+    const isDialogue = sceneContextText.includes('dialogue') || sceneContextText.includes('says') || sceneContextText.includes('speaks');
+
+    let occurrenceContext: OccurrenceContextInterpretation = {
+      prominence: isForeground ? 'HERO_FOREGROUND' : 'BACKGROUND_INCIDENTAL',
+      modality: isDialogue ? 'DIALOGUE_MENTION' : 'VISUAL_PROP',
+      tone: isDefamatory ? 'DISPARAGING' : 'NEUTRAL',
+      endorsementImplication: isForeground,
+      safetyHazardDepiction: isDefamatory,
+      defamationRisk: isDefamatory,
+      extractedContextSnippet: occurrence.excerptText || occurrence.usageContext || '',
+    };
+
+    if (this.ai && (activeMode === 'CLOUD_MODE' || config.geminiApiKey)) {
+      try {
+        const prompt = `You are an expert entertainment clearance supervisor. Analyze this screenplay entity occurrence for clearance risks:
+Entity: ${entity.canonicalName}
+Category: ${entity.entityCategory}
+Scene Excerpt: "${occurrence.excerptText || ''}"
+Usage Description: "${occurrence.usageContext || ''}"
+
+Return valid JSON with these fields:
+- prominence: "HERO_FOREGROUND" or "BACKGROUND_INCIDENTAL"
+- modality: "VISUAL_PROP", "DIALOGUE_MENTION", or "BOTH"
+- tone: "FAVORABLE", "NEUTRAL", or "DISPARAGING"
+- endorsementImplication: boolean
+- safetyHazardDepiction: boolean
+- defamationRisk: boolean
+- extractedContextSnippet: string`;
+
+        const geminiRes = await this.ai.models.generateContent({
+          model: 'gemini-3.6-flash',
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+          },
+        });
+
+        const parsed = JSON.parse(geminiRes.text || '{}');
+        if (parsed.prominence && parsed.tone) {
+          occurrenceContext = {
+            prominence: parsed.prominence === 'HERO_FOREGROUND' ? 'HERO_FOREGROUND' : 'BACKGROUND_INCIDENTAL',
+            modality: parsed.modality || occurrenceContext.modality,
+            tone: parsed.tone === 'DISPARAGING' ? 'DISPARAGING' : parsed.tone === 'FAVORABLE' ? 'FAVORABLE' : 'NEUTRAL',
+            endorsementImplication: Boolean(parsed.endorsementImplication),
+            safetyHazardDepiction: Boolean(parsed.safetyHazardDepiction),
+            defamationRisk: Boolean(parsed.defamationRisk),
+            extractedContextSnippet: parsed.extractedContextSnippet || occurrence.excerptText || '',
+          };
+          if (occurrenceContext.defamationRisk || occurrenceContext.tone === 'DISPARAGING') {
+            isDefamatory = true;
+          }
+        }
+      } catch (err) {
+        console.warn('[ClearanceEvaluator] Gemini occurrence interpretation fallback:', err);
+      }
+    }
+
+    // Step 4: Deterministic Occurrence Verdict Calculation
     let status: ClearanceStatus = 'REVIEW_RECOMMENDED';
     let riskScore = 45;
     let rationale = `Grounding search confirmed active registration for ${entity.canonicalName}. Category: ${entity.entityCategory}. Usage in ${sceneId} is neutral to moderate risk.`;
     const contextFlags: string[] = ['TRADEMARK_ACTIVE'];
 
-    if (rightsCoverage.isCovered) {
+    // CLOUD_MODE Fail-Closed Invariant: Unmitigated fallback fixtures fail closed to INSUFFICIENT_EVIDENCE
+    if (activeMode === 'CLOUD_MODE' && searchResult.provenance === 'FALLBACK_FIXTURE' && !rightsCoverage.isCovered) {
+      status = 'INSUFFICIENT_EVIDENCE';
+      riskScore = 95;
+      rationale = `Live Parallel Search unavailable in CLOUD_MODE for "${entity.canonicalName}". Evaluated as INSUFFICIENT_EVIDENCE under fail-closed production policy.`;
+      contextFlags.push('EVIDENCE_INSUFFICIENT', 'FALLBACK_RESEARCH_ACTIVE');
+    } else if (rightsCoverage.isCovered) {
       // Contractual Rights cover this usage
       status = 'NO_ISSUE_SURFACED';
       riskScore = 5;
@@ -132,11 +197,16 @@ export class ClearanceEvaluator {
       if (rightsCoverage.hasExpiringSoon && rightsCoverage.expirationWarning) {
         contextFlags.push('LICENSE_EXPIRING_SOON');
       }
-    } else if (isDefamatory) {
+    } else if (isDefamatory || occurrenceContext.tone === 'DISPARAGING' || occurrenceContext.defamationRisk) {
       status = 'ACTION_REQUIRED';
       riskScore = 90;
       rationale = `High tarnishment / disparagement risk in ${sceneId}: "${entity.canonicalName}" is depicted in negative scene context ("${occurrence.excerptText}"). Replacement or counsel release required.`;
       contextFlags.push('DEFAMATION_RISK', 'UNAUTHORIZED_USAGE');
+    } else if (occurrenceContext.safetyHazardDepiction && occurrenceContext.prominence === 'HERO_FOREGROUND') {
+      status = 'ACTION_REQUIRED';
+      riskScore = 85;
+      rationale = `Safety hazard depiction risk in ${sceneId}: "${entity.canonicalName}" is featured in an unsafe product context. Replacement recommended.`;
+      contextFlags.push('SAFETY_HAZARD_RISK', 'UNAUTHORIZED_USAGE');
     } else if (entity.entityCategory === 'ART_MUSIC') {
       status = 'ACTION_REQUIRED';
       riskScore = 85;
@@ -162,6 +232,11 @@ export class ClearanceEvaluator {
       riskScore = 80;
       rationale = `High brand protection enforcement mark in ${sceneId}: ${entity.canonicalName}. Written clearance release required.`;
       contextFlags.push('FAMOUS_MARK_PROTECTION', 'CLEARANCE_RELEASE_REQUIRED');
+    } else if (searchResult.citations[0]?.registrationStatus === 'UNKNOWN') {
+      status = 'NO_ISSUE_SURFACED';
+      riskScore = 15;
+      rationale = `Live search surfaced zero conflicting trademark registrations for ${entity.canonicalName}. Incidental usage in ${sceneId} is clear.`;
+      contextFlags.push('ZERO_TRADEMARK_CONFLICTS_SURFACED');
     } else {
       status = 'NO_ISSUE_SURFACED';
       riskScore = 15;
@@ -188,6 +263,7 @@ export class ClearanceEvaluator {
       legalRationale: rationale,
       contextFlags,
       citations: searchResult.citations,
+      occurrenceContext,
       provenance: searchResult.provenance,
     });
 
@@ -195,7 +271,7 @@ export class ClearanceEvaluator {
     const derivedCanonicalStatus = await entityRepo.computeDerivedCanonicalStatus(projectId, entity.id);
 
     // Step 8: Dispatch Department Action Items (Phase 6)
-    if (status === 'ACTION_REQUIRED' || status === 'REVIEW_RECOMMENDED') {
+    if (status === 'ACTION_REQUIRED' || status === 'REVIEW_RECOMMENDED' || status === 'INSUFFICIENT_EVIDENCE') {
       try {
         await actionDispatcher.dispatchOccurrenceAction(projectId, updatedOcc || occurrence, entity);
       } catch (err) {
@@ -224,7 +300,8 @@ export class ClearanceEvaluator {
 
   async evaluateEntityClearance(projectId: string, canonicalEntityId: string): Promise<ClearanceRiskAssessmentData> {
     const project = await projectRepo.getProject(projectId);
-    if (project?.executionMode === 'CLOUD_MODE') {
+    const activeMode = project?.executionMode || config.executionMode;
+    if (activeMode === 'CLOUD_MODE') {
       const quotaResult = await projectRepo.consumeLiveQuota(projectId, 1);
       if (!quotaResult.success) {
         const err: any = new Error(
@@ -254,14 +331,19 @@ export class ClearanceEvaluator {
     } else {
       // Baseline evaluation when no specific scene occurrences exist
       const rightsCoverage = await rightsRepo.evaluateRightsCoverage(projectId, canonicalEntityId);
-      const searchResult = await parallelSearchTool.searchTrademarkGrounding(entity.canonicalName);
+      const searchResult = await parallelSearchTool.searchTrademarkGrounding(entity.canonicalName, activeMode);
 
       let status: ClearanceStatus = 'REVIEW_RECOMMENDED';
       let riskScore = 45;
       let rationale = `Grounding search confirmed active registration for ${entity.canonicalName}. Baseline category risk for ${entity.entityCategory}.`;
       const contextFlags: string[] = ['TRADEMARK_ACTIVE'];
 
-      if (rightsCoverage.isCovered) {
+      if (activeMode === 'CLOUD_MODE' && searchResult.provenance === 'FALLBACK_FIXTURE' && !rightsCoverage.isCovered) {
+        status = 'INSUFFICIENT_EVIDENCE';
+        riskScore = 95;
+        rationale = `Live Parallel Search unavailable in CLOUD_MODE for "${entity.canonicalName}". Evaluated as INSUFFICIENT_EVIDENCE under fail-closed production policy.`;
+        contextFlags.push('EVIDENCE_INSUFFICIENT', 'FALLBACK_RESEARCH_ACTIVE');
+      } else if (rightsCoverage.isCovered) {
         status = 'NO_ISSUE_SURFACED';
         riskScore = 5;
         rationale = `${rightsCoverage.summaryText} Item is covered under active executed agreement.`;

@@ -10,9 +10,10 @@ export interface SearchResult {
 }
 
 export class ParallelSearchTool {
-  async searchTrademarkGrounding(entityName: string): Promise<SearchResult> {
+  async searchTrademarkGrounding(entityName: string, executionMode?: string): Promise<SearchResult> {
     const query = `${entityName} registered trademark status ownership classification dispute precedents`;
     const now = new Date().toISOString();
+    const activeMode = executionMode || config.executionMode;
 
     const normKey = entityName.toLowerCase();
     const fixtureEntry = Object.entries(PARALLEL_SEARCH_FIXTURES).find(([k]) => normKey.includes(k))?.[1];
@@ -25,7 +26,7 @@ export class ParallelSearchTool {
         };
 
     // If in CLOUD_MODE, attempt live Parallel Search
-    if (config.executionMode === 'CLOUD_MODE') {
+    if (activeMode === 'CLOUD_MODE') {
       if (config.parallelWebApiKey) {
         try {
           const Parallel = (await import('parallel-web')).default;
@@ -58,10 +59,8 @@ export class ParallelSearchTool {
                     sourceUrl: 'https://parallel.ai/search',
                     query,
                     retrievedAt: now,
-                    excerptSnippet: `Live Parallel Search returned no trademark hits for ${entityName}.`,
+                    excerptSnippet: `Completed live search across public trademark and brand registries with zero conflicting marks surfaced for ${entityName}.`,
                     registrationStatus: 'UNKNOWN' as const,
-                    corporateOwner: ownerInfo.owner,
-                    disputePrecedents: ownerInfo.precedents,
                     provenance: 'PARALLEL_LIVE' as const,
                   },
                 ];

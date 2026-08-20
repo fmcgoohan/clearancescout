@@ -6,7 +6,7 @@
 [![Runtime](https://img.shields.io/badge/Model-Gemini%203.6%20Flash-4285F4)](https://deepmind.google/technologies/gemini/)
 [![Grounding](https://img.shields.io/badge/Grounding-Parallel%20Web%20API-06B6D4)](https://parallel.ai)
 [![Deployment](https://img.shields.io/badge/Platform-Google%20Cloud%20Run-34A853)](https://cloud.google.com/run)
-[![Tests](https://img.shields.io/badge/Tests-114%20Passing%20(60%20Suites)-34D399)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-121%20Passing%20(65%20Suites)-34D399)](tests/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-34A853)](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
 
 **Live demo (CLOUD_MODE):** [https://clearance-scout-n3tcx4jcbq-uc.a.run.app](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
@@ -100,7 +100,14 @@ ClearanceScout is an enterprise agentic platform designed for studio legal couns
 ### 21. Judge-Ready 1-Click Demo & Production Workspace Rebrand (`017`)
 - Single-click demo loading (`POST /api/projects/:id/script/demo`) ingesting *"The Neon Horizon"*, auto-running deterministic batch evaluations with `DEMO_FIXTURE` (📦) provenance, attaching active beverage rights (`Summit Beverage Group LLC`) and approved fictional placeholders (`NovaTech Zenith`), and computing scene readiness without requiring external API keys.
 - Immediately populates the Operations Dashboard and Legal Clearance Binder with realistic multi-scene metrics, department queues, and verifiable 64-character SHA-256 integrity seal.
-- Complete UI rebranding from "MVP Workspace" to "Production Clearance Workspace" / "Production Clearance Studio".
+
+### 22. Production Hardening & Live Evidence Integrity (`018`)
+- **`CLOUD_MODE` Fail-Closed Rule**: Unmitigated fallback fixtures and search failures in production runtime fail closed to `INSUFFICIENT_EVIDENCE` and scene status evaluates to `RED`.
+- **Zero-Hit `PARALLEL_LIVE` Precision**: Live search returning zero trademark hits is documented as completed live research without inventing fictional corporate owners or registration classifications.
+- **Gemini Structured Scene Context**: Gemini 3.6 Flash semantically interprets scene occurrence tone, prominence, and defamation risks while deterministic TypeScript logic maintains authoritative state ownership.
+- **Granular Scoped Placeholders**: Supports occurrence-level and scene-level replacement scoping, preventing placeholders from over-mitigating un-scoped occurrences.
+- **Strict `WORKING_CLEAR` Invariant**: `WORKING_CLEAR` requires affirmative interim mitigations; unmitigated `REVIEW_RECOMMENDED` occurrences remain blockers until authorized.
+- **Genuine Ingestion Diagnostics**: Scanned or unparseable PDF uploads return structured `400 Bad Request` diagnostics with code `PDF_EXTRACTION_FAILED`.
 
 ---
 
@@ -148,7 +155,7 @@ graph TD
 
 | Mode | Target | Description |
 |:---|:---|:---|
-| **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (114/114 tests pass). |
+| **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (121/121 tests pass). |
 | **`DEMO_MODE`** | Interactive Evaluation | Zero-configuration evaluation using synthetic datasets and bundled demo screenplay ("The Neon Horizon"). |
 | **`CLOUD_MODE`** | Production Runtime | Live Google Gemini 3.6 Flash and Parallel Search APIs. Fails visibly with diagnostics if credentials are missing. |
 
@@ -171,7 +178,7 @@ npm install
 ```bash
 npm test
 ```
-*Executes all 114 tests across 60 test files spanning contract and integration suites with 0 failures.*
+*Executes all 121 tests across 65 test files spanning contract and integration suites with 0 failures.*
 
 ### 3. Build & Run
 ```bash

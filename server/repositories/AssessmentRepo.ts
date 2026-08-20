@@ -16,6 +16,16 @@ export interface ClearanceCitation {
   provenance?: ProvenanceType;
 }
 
+export interface OccurrenceContextInterpretation {
+  prominence: 'HERO_FOREGROUND' | 'BACKGROUND_INCIDENTAL';
+  modality: 'VISUAL_PROP' | 'DIALOGUE_MENTION' | 'BOTH';
+  tone: 'FAVORABLE' | 'NEUTRAL' | 'DISPARAGING';
+  endorsementImplication: boolean;
+  safetyHazardDepiction: boolean;
+  defamationRisk: boolean;
+  extractedContextSnippet?: string;
+}
+
 export interface ClearanceRiskAssessmentData {
   id: string;
   occurrenceId: string;
@@ -26,6 +36,7 @@ export interface ClearanceRiskAssessmentData {
   legalRationale: string;
   contextFlags: string[];
   citations: ClearanceCitation[];
+  occurrenceContext?: OccurrenceContextInterpretation;
   provenance?: ProvenanceType;
   evaluatedAt: string;
   disclaimer: string;

@@ -50,17 +50,26 @@ placeholderRouter.post('/projects/:id/placeholders', async (req: Request, res: R
       canonicalEntityId,
       assetCategory,
       fictionalName,
+      suggestedName,
       description,
       clearanceTier,
+      placeholderTier,
       creativeRationale,
+      rationale,
+      visualDescription,
       approvedBy,
       approvedRole,
       approvalDate,
       categoryDetails,
+      scopeType,
+      occurrenceIds,
+      sceneIds,
+      isProjectWide,
     } = req.body;
 
-    if (!canonicalEntityId || !fictionalName) {
-      return res.status(400).json({ error: 'canonicalEntityId and fictionalName are required.' });
+    const resolvedName = fictionalName || suggestedName;
+    if (!canonicalEntityId || !resolvedName) {
+      return res.status(400).json({ error: 'canonicalEntityId and fictionalName/suggestedName are required.' });
     }
 
     const entity = await entityRepo.getEntityById(projectId, canonicalEntityId);
@@ -72,14 +81,30 @@ placeholderRouter.post('/projects/:id/placeholders', async (req: Request, res: R
       canonicalEntityId,
       canonicalName: entity.canonicalName,
       assetCategory: assetCategory || (entity.entityCategory as any) || 'BRAND',
-      fictionalName: fictionalName.trim(),
-      description: description?.trim() || '',
-      clearanceTier: clearanceTier || 'TEMP_APPROVED',
-      creativeRationale: creativeRationale?.trim() || 'Fictional replacement asset',
+      fictionalName: resolvedName.trim(),
+      description: description?.trim() || visualDescription?.trim() || '',
+      clearanceTier: clearanceTier || placeholderTier || 'TEMP_APPROVED',
+      creativeRationale: creativeRationale?.trim() || rationale?.trim() || 'Fictional replacement asset',
       approvedBy: approvedBy?.trim() || 'Production Clearance Team',
       approvedRole: approvedRole?.trim(),
       approvalDate: approvalDate || new Date().toISOString(),
       categoryDetails,
+      scopeType:
+        scopeType ||
+        (sceneIds?.length
+          ? 'SELECTED_SCENES'
+          : occurrenceIds?.length
+          ? 'SELECTED_OCCURRENCES'
+          : isProjectWide === false
+          ? 'SINGLE_OCCURRENCE'
+          : 'PROJECT_WIDE'),
+      occurrenceIds: occurrenceIds || [],
+      sceneIds: sceneIds || [],
+      isProjectWide: Boolean(
+        isProjectWide ||
+          scopeType === 'PROJECT_WIDE' ||
+          (!scopeType && !sceneIds?.length && !occurrenceIds?.length && isProjectWide !== false)
+      ),
     });
 
     // Auto-resolve pending action items for this entity

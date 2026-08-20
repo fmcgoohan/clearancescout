@@ -29,6 +29,13 @@ export interface SceneReadinessAssessment {
   finalClearCount: number;
   totalOccurrences: number;
   itemsBreakdown: SceneItemReadinessDetail[];
+  interimMitigations?: Array<{
+    occurrenceId: string;
+    entityName: string;
+    basis: string;
+    referenceId: string;
+    details: string;
+  }>;
   summaryText: string;
   blockingRationale?: string;
 }
