@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import crypto from 'crypto';
 import { projectRepo } from '../repositories/ProjectRepo.js';
 import { sceneRepo } from '../repositories/SceneRepo.js';
 import { entityRepo } from '../repositories/EntityRepo.js';
@@ -8,8 +9,18 @@ import { demoAutomationWorkflow } from '../workflows/demoAutomationWorkflow.js';
 import { config } from '../config.js';
 import { extractTextFromPdfBuffer } from '../agents/ScriptParserAgent.js';
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB Max
+});
+
 export const projectRouter = Router();
+
+// Middleware helper to accept 'file' or 'script' field
+const scriptUploadMiddleware = upload.fields([
+  { name: 'file', maxCount: 1 },
+  { name: 'script', maxCount: 1 },
+]);
 
 // List All Projects
 projectRouter.get('/', async (_req: Request, res: Response, next) => {
@@ -116,8 +127,7 @@ projectRouter.get('/:id', async (req: Request, res: Response, next) => {
   }
 });
 
-// Upload & Parse Script
-projectRouter.post('/:id/script', upload.single('script'), async (req: Request, res: Response, next) => {
+const handleScriptUpload = async (req: Request, res: Response, next: any) => {
   try {
     const projectId = req.params.id;
     const project = await projectRepo.getProject(projectId);
@@ -126,17 +136,29 @@ projectRouter.post('/:id/script', upload.single('script'), async (req: Request, 
     }
 
     let scriptText = '';
+    let filename = 'screenplay.txt';
     let format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = req.body.format || 'PLAINTEXT';
 
-    if (req.file) {
-      const origName = req.file.originalname.toLowerCase();
-      if (origName.endsWith('.fountain')) {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const uploadedFile = (files?.['file']?.[0] || files?.['script']?.[0] || req.file) as Express.Multer.File | undefined;
+
+    if (uploadedFile) {
+      filename = uploadedFile.originalname;
+      if (uploadedFile.size === 0 || uploadedFile.buffer.length === 0) {
+        return res.status(400).json({
+          error: 'Uploaded screenplay file is empty (0 bytes).',
+          code: 'EMPTY_FILE',
+        });
+      }
+
+      const origLower = filename.toLowerCase();
+      if (origLower.endsWith('.fountain')) {
         format = 'FOUNTAIN';
-        scriptText = req.file.buffer.toString('utf-8');
-      } else if (origName.endsWith('.pdf') || req.file.mimetype === 'application/pdf') {
+        scriptText = uploadedFile.buffer.toString('utf-8');
+      } else if (origLower.endsWith('.pdf') || uploadedFile.mimetype === 'application/pdf') {
         format = 'PDF';
         try {
-          scriptText = extractTextFromPdfBuffer(req.file.buffer);
+          scriptText = extractTextFromPdfBuffer(uploadedFile.buffer);
         } catch (err: any) {
           return res.status(400).json({
             error:
@@ -145,11 +167,24 @@ projectRouter.post('/:id/script', upload.single('script'), async (req: Request, 
             code: err.code || 'PDF_EXTRACTION_FAILED',
           });
         }
+      } else if (origLower.endsWith('.txt') || origLower.endsWith('.text') || uploadedFile.mimetype.startsWith('text/')) {
+        format = 'PLAINTEXT';
+        scriptText = uploadedFile.buffer.toString('utf-8');
       } else {
-        scriptText = req.file.buffer.toString('utf-8');
+        return res.status(400).json({
+          error: `Unsupported file format '${filename}'. Supported formats: .fountain, .txt, .pdf`,
+          code: 'UNSUPPORTED_FORMAT',
+        });
       }
     } else if (req.body.scriptText) {
       scriptText = req.body.scriptText;
+      filename = req.body.filename || 'manual_input.txt';
+      if (!scriptText.trim()) {
+        return res.status(400).json({
+          error: 'Provided screenplay text is empty.',
+          code: 'EMPTY_FILE',
+        });
+      }
       if (format === 'PDF' && scriptText.startsWith('%PDF')) {
         try {
           scriptText = extractTextFromPdfBuffer(Buffer.from(scriptText, 'latin1'));
@@ -161,19 +196,51 @@ projectRouter.post('/:id/script', upload.single('script'), async (req: Request, 
         }
       }
     } else {
-      return res.status(400).json({ error: 'Script file or scriptText payload is required.' });
+      return res.status(400).json({
+        error: 'Screenplay file or scriptText payload is required.',
+        code: 'MISSING_PAYLOAD',
+      });
     }
 
+    if (!scriptText.trim()) {
+      return res.status(400).json({
+        error: 'Extracted screenplay text is empty.',
+        code: 'EMPTY_FILE',
+      });
+    }
+
+    const checksumSha256 = crypto.createHash('sha256').update(scriptText).digest('hex');
     const result = await canonicalRegistryWorkflow.processScriptUpload(projectId, scriptText, format);
+
     return res.json({
-      ...result,
+      success: true,
+      projectId,
+      filename,
+      format,
+      draftVersion: 1,
+      characterCount: scriptText.length,
+      scenesParsed: result.scenesParsed,
       scenesCount: result.scenesParsed,
+      canonicalEntitiesExtracted: result.canonicalEntitiesExtracted,
       entitiesCount: result.canonicalEntitiesExtracted,
+      entities: result.entities,
+      checksumSha256,
+      uploadedAt: new Date().toISOString(),
     });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        error: 'Screenplay file exceeds maximum allowed size of 25MB.',
+        code: 'FILE_TOO_LARGE',
+      });
+    }
     next(err);
   }
-});
+};
+
+// Upload & Parse Script Endpoints (Support both /:id/script/upload and /:id/script)
+projectRouter.post('/:id/script/upload', scriptUploadMiddleware, handleScriptUpload);
+projectRouter.post('/:id/script', scriptUploadMiddleware, handleScriptUpload);
 
 // 1-Click Demo Screenplay Ingestion & Auto-Evaluation (Feature 017)
 projectRouter.post('/:id/script/demo', async (req: Request, res: Response, next) => {

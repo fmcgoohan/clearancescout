@@ -126,8 +126,8 @@ export class ScriptParserAgent {
   }
 
   /**
-   * Parse screenplay text across Plaintext, Fountain, or extracted PDF format.
-   */
+    * Parse screenplay text across Plaintext, Fountain, or extracted PDF format.
+    */
   async parseScriptText(scriptText: string, format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = 'PLAINTEXT'): Promise<ParsedScene[]> {
     // Normalize Fountain or raw text comments
     const normalizedText = this.preprocessScript(scriptText, format);
@@ -135,6 +135,43 @@ export class ScriptParserAgent {
     // If in TEST_MODE, DEMO_MODE, or if no API key is set, use deterministic parsing engine
     if (config.executionMode !== 'CLOUD_MODE' || !this.ai) {
       return this.parseScriptFallback(normalizedText);
+    }
+
+    // In CLOUD_MODE: Execute authentic Gemini extraction with windowed chunking for large scripts
+    const rawScenes = this.splitIntoRawScenes(normalizedText);
+    const CHUNK_SIZE = 12;
+
+    if (rawScenes.length <= CHUNK_SIZE) {
+      return await this.parseChunkWithGemini(normalizedText, 1);
+    }
+
+    // Process large scripts in sequential windowed chunks
+    const allParsedScenes: ParsedScene[] = [];
+    for (let i = 0; i < rawScenes.length; i += CHUNK_SIZE) {
+      const chunkScenes = rawScenes.slice(i, i + CHUNK_SIZE);
+      const chunkText = chunkScenes.join('\n\n');
+      const startSceneNum = i + 1;
+      try {
+        const parsedChunk = await this.parseChunkWithGemini(chunkText, startSceneNum);
+        allParsedScenes.push(...parsedChunk);
+      } catch (err: any) {
+        console.error(`[ScriptParserAgent Error] Failed parsing scene chunk ${Math.floor(i / CHUNK_SIZE) + 1}:`, err);
+        const parseErr: any = new Error(`Live AI screenplay parsing failed during scene extraction chunk ${Math.floor(i / CHUNK_SIZE) + 1}: ${err.message || 'Model rate limit or network error'}`);
+        parseErr.code = 'PARSING_FAILED';
+        parseErr.status = 502;
+        throw parseErr;
+      }
+    }
+
+    return allParsedScenes;
+  }
+
+  private async parseChunkWithGemini(chunkText: string, startSceneNumber: number): Promise<ParsedScene[]> {
+    if (!this.ai) {
+      const err: any = new Error('Gemini AI client not initialized in CLOUD_MODE');
+      err.code = 'PARSING_FAILED';
+      err.status = 500;
+      throw err;
     }
 
     try {
@@ -145,28 +182,28 @@ export class ScriptParserAgent {
             role: 'user',
             parts: [
               {
-                text: `You are a script parser agent for ClearanceScout. Parse the following screenplay text into structured scenes. 
-Extract all candidate items across these 5 core clearance categories:
+                text: `You are an expert script clearance parser agent for ClearanceScout. Parse the following screenplay text into structured scenes, starting with scene number ${startSceneNumber}.
+Extract all candidate clearance items across these 5 core clearance categories:
 1. "BRAND": Trademarks, consumer products, logos, automotive, electronics
 2. "ART_MUSIC": Copyrighted songs, music lyrics, paintings, sculpture, literature
 3. "PUBLIC_FIGURE": Living real-world celebrities, political figures, public figures
 4. "PROPRIETARY_LOCATION": Trademarked landmarks, private venues, stadiums, amusement parks
 5. "GRAPHIC_PROP": Branded props, warning labels, t-shirt slogans, graphic signs
 
-Return JSON array of scenes matching this schema:
+Return a valid JSON array of scenes matching this schema:
 [
   {
-    "sceneNumber": 1,
+    "sceneNumber": ${startSceneNumber},
     "heading": "INT. GARAGE - DAY",
     "locationType": "INT",
     "timeOfDay": "DAY",
     "rawText": "Scene text excerpt...",
-    "characterActionSummary": "Alex fixes a Porsche and drinks Coca-Cola.",
+    "characterActionSummary": "Alex fixes a vehicle and drinks a soda.",
     "entities": [
       {
-        "name": "Coca-Cola",
+        "name": "Exact Brand / Item Name",
         "category": "BRAND",
-        "excerptText": "drinks a cold Coca-Cola",
+        "excerptText": "drinks a cold Soda",
         "lineNumber": 2,
         "usageContext": "Character drinks beverage while working"
       }
@@ -174,8 +211,8 @@ Return JSON array of scenes matching this schema:
   }
 ]
 
-Script:
-${normalizedText}`,
+Screenplay Chunk:
+${chunkText}`,
               },
             ],
           },
@@ -185,11 +222,34 @@ ${normalizedText}`,
       const responseText = response.text || '[]';
       const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (err) {
-      console.warn('Gemini parsing error, falling back to deterministic parser:', err);
-      return this.parseScriptFallback(normalizedText);
+      if (!Array.isArray(parsed)) {
+        throw new Error('Model returned invalid non-array JSON structure');
+      }
+      return parsed;
+    } catch (err: any) {
+      // In CLOUD_MODE, strictly fail visibly without silent fallback to synthetic demo recognizers (FR-005)
+      const parseErr: any = new Error(`Live AI screenplay parsing failed: ${err.message || 'Gemini 3.6 Flash extraction error'}`);
+      parseErr.code = 'PARSING_FAILED';
+      parseErr.status = 502;
+      throw parseErr;
     }
+  }
+
+  private splitIntoRawScenes(scriptText: string): string[] {
+    const raw = scriptText
+      .split(/(?=\n(?:SCENE\s+\d+[:\s\-]*)?(?:\.?INT\b|\.?EXT\b|\.?INT\/EXT\b)\.?\s)/gi)
+      .map((s) => s.trim())
+      .filter((s) => {
+        if (s.length === 0) return false;
+        const upper = s.toUpperCase();
+        return (
+          upper.startsWith('INT') ||
+          upper.startsWith('EXT') ||
+          upper.startsWith('SCENE') ||
+          upper.startsWith('.')
+        );
+      });
+    return raw.length > 0 ? raw : [scriptText];
   }
 
   private preprocessScript(rawText: string, format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF'): string {

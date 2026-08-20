@@ -8,6 +8,7 @@ import { RightsModal } from '../components/RightsModal';
 import { ActionListModal } from '../components/ActionListModal';
 import { PlaceholderManagerModal } from '../components/PlaceholderManagerModal';
 import { ProductionDashboardModal } from '../components/ProductionDashboardModal';
+import { ScriptUploadModal } from '../components/ScriptUploadModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
 import { apiFetch } from '../utils/apiClient.js';
 
@@ -39,6 +40,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [overrides, setOverrides] = useState<CounselOverrideItem[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [scriptFormat, setScriptFormat] = useState<'PLAINTEXT' | 'FOUNTAIN' | 'PDF'>('PLAINTEXT');
 
   // Edit / Add modal state
@@ -387,11 +389,15 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
           <button
             className="btn-primary touch-target"
-            aria-label="Ingest screenplay text into workspace"
-            onClick={() => handleParseScript(defaultFictionalDemoScript, scriptFormat)}
-            disabled={isUploading}
+            aria-label="Upload Screenplay File (.fountain, .txt, .pdf)"
+            onClick={() => setIsUploadModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
           >
-            {isUploading ? 'Parsing...' : 'Ingest Screenplay'}
+            📁 Upload Screenplay
           </button>
 
           <button
@@ -662,6 +668,16 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         }}
         onMitigateOverride={(canonicalEntityId) => {
           onOpenCounselReview(canonicalEntityId);
+        }}
+      />
+
+      {/* Screenplay Multipart File-Picker & Upload Modal (Feature 019) */}
+      <ScriptUploadModal
+        projectId={projectId}
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUploadSuccess={() => {
+          fetchWorkspaceData();
         }}
       />
     </div>
