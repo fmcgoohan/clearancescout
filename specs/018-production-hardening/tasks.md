@@ -176,3 +176,13 @@ flowchart TD
 - [X] T032 [HIGH] [US2] Visibly tag deterministic context fallback (`CONTEXT_DETERMINISTIC_FALLBACK`) in occurrence assessments when Gemini API invocation fails, without fabricating evidence or leaking raw chain-of-thought per Constitution I, Constitution V, FR-004, and US2/AC2 (partial)
 - [X] T033 [MEDIUM] [US5] Reconcile and synchronize documentation in `README.md` and `PROVENANCE.md` with complete runtime invariants, search citation types, and exact test metrics per FR-014, FR-015, and SC-006 (partial)
 - [X] T034 [MEDIUM] [US5] Add rigorous contract regression tests specifically exercising the four runtime cases (unknown vs zero-hit citations, multi-occurrence retry cascade, scoped action sync for rights/overrides, and tagged Gemini fallback) per FR-014, FR-015, and SC-006 (partial)
+
+---
+
+## Phase 10: Convergence
+
+- [ ] T035 [HIGH] [US1] Prohibit baseline/no-occurrence BRAND evaluation from independently assigning NO_ISSUE_SURFACED purely from zero-hit or unknown live evidence in `server/workflows/clearanceEvaluator.ts` per FR-003, Constitution II, and US1/AC2 (contradicts)
+- [ ] T036 [HIGH] [US1] Add explicit structured search outcome metadata (`searchOutcome: 'ZERO_RESULTS' | 'MATCHES_FOUND' | 'SERVICE_FALLBACK'`) to `SearchResult` in `server/tools/parallelSearchTool.ts` rather than inferring zero hits from citation prose per FR-003 and Constitution II (partial)
+- [ ] T037 [HIGH] [US3] Add missing INSUFFICIENT_EVIDENCE status handling to retry-research legal action item creation/dispatch in `server/workflows/actionDispatcher.ts` and `server/workflows/clearanceEvaluator.ts` per FR-005, FR-008, and US1/AC3 (partial)
+- [ ] T038 [MEDIUM] [US5] Reconcile README.md and PROVENANCE.md with complete runtime invariants, structured search outcome types, and exact test suite metrics per FR-014, FR-015, and SC-006 (partial)
+- [ ] T039 [MEDIUM] [US5] Strengthen contract tests to rigorously exercise evaluator boundaries with genuine provider semantics (structured search outcomes, zero-hit non-auto-clear baseline, and retry action dispatch) per FR-003, FR-014, and SC-006 (partial)
