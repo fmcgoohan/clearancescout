@@ -171,15 +171,23 @@ export class ActionDispatcher {
         placeholderRepo.getPlaceholdersByEntity(projectId, entity.id),
       ]);
 
-      const hasActiveOverride = entity.isOverridden || overrides.some((o) => o.overrideStatus === 'NO_ISSUE_SURFACED' || o.overrideStatus === 'REVIEW_RECOMMENDED');
-      const hasActiveRights = rights.some((r) => r.status === 'ACTIVE');
-
       for (const occ of occurrences) {
         if (occ.clearanceStatus === 'ACTION_REQUIRED' || occ.clearanceStatus === 'REVIEW_RECOMMENDED') {
-          // Check if covered by a scoped placeholder
+          // 1. Check if covered by a scoped placeholder
           const coveringPlaceholder = placeholders.find((ph) =>
             placeholderRepo.isOccurrenceCovered(ph, occ.sceneId, occ.id)
           );
+
+          // 2. Check if covered by an active scoped rights agreement
+          const rightsCoverage = await rightsRepo.evaluateRightsCoverage(projectId, entity.id, occ.id);
+
+          // 3. Check if covered by an active scoped counsel override
+          const coveringOverride = overrides.find(
+            (o) =>
+              (o.overrideStatus === 'NO_ISSUE_SURFACED' || o.overrideStatus === 'REVIEW_RECOMMENDED') &&
+              (!o.sceneId || o.sceneId === occ.sceneId)
+          );
+          const hasCoveringOverride = Boolean(coveringOverride) || (entity.isOverridden && !overrides.some((o) => o.sceneId && o.sceneId !== occ.sceneId));
 
           if (coveringPlaceholder) {
             const actions = await actionNotificationRepo.getActionsByProject(projectId, {
@@ -203,7 +211,9 @@ export class ActionDispatcher {
               canonicalEntityId: entity.id,
               sceneId: occ.sceneId,
             });
-            const openActions = actions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
+            const openActions = actions.filter(
+              (a) => (a.status === 'OPEN' || a.status === 'IN_PROGRESS') && (!a.occurrenceId || a.occurrenceId === occ.id)
+            );
             for (const act of openActions) {
               await actionNotificationRepo.updateActionStatus(
                 projectId,
@@ -213,12 +223,14 @@ export class ActionDispatcher {
               );
               actionsResolved++;
             }
-          } else if (hasActiveRights) {
+          } else if (rightsCoverage.isCovered) {
             const actions = await actionNotificationRepo.getActionsByProject(projectId, {
               canonicalEntityId: entity.id,
               sceneId: occ.sceneId,
             });
-            const openActions = actions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
+            const openActions = actions.filter(
+              (a) => (a.status === 'OPEN' || a.status === 'IN_PROGRESS') && (!a.occurrenceId || a.occurrenceId === occ.id)
+            );
             for (const act of openActions) {
               await actionNotificationRepo.updateActionStatus(
                 projectId,
@@ -228,12 +240,14 @@ export class ActionDispatcher {
               );
               actionsResolved++;
             }
-          } else if (hasActiveOverride) {
+          } else if (hasCoveringOverride) {
             const actions = await actionNotificationRepo.getActionsByProject(projectId, {
               canonicalEntityId: entity.id,
               sceneId: occ.sceneId,
             });
-            const openActions = actions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
+            const openActions = actions.filter(
+              (a) => (a.status === 'OPEN' || a.status === 'IN_PROGRESS') && (!a.occurrenceId || a.occurrenceId === occ.id)
+            );
             for (const act of openActions) {
               await actionNotificationRepo.updateActionStatus(
                 projectId,

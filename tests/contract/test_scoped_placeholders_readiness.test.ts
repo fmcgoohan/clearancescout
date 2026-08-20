@@ -151,4 +151,67 @@ Alex drinks Summit Cola in the sun.`;
     expect(plRes.body.scopeType).toBe('SELECTED_SCENES');
     expect(plRes.body.sceneIds.length).toBe(1); // Targets only the first occurrence's scene
   });
+
+  it('should resolve action items strictly for the targeted scene when a scene-scoped counsel override is submitted', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Scoped Override Action Sync Project',
+        productionCompany: 'Strict Action Productions',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    const scriptText = `SCENE 1 - INT. HALL - DAY
+The Titan Industrial Hazard Placard is on the wall.
+
+SCENE 2 - EXT. DOCK - NIGHT
+The Titan Industrial Hazard Placard is on the gate.`;
+
+    await request(app)
+      .post(`/api/projects/${projectId}/script`)
+      .send({ scriptText, format: 'PLAINTEXT' });
+
+    const scenesRes = await request(app).get(`/api/projects/${projectId}/scenes`);
+    const scenes = scenesRes.body;
+    const scene1 = scenes[0];
+    const scene2 = scenes[1];
+
+    const entities = await entityRepo.getEntitiesByProject(projectId);
+    const prop = entities.find((e) => e.canonicalName.includes('Titan'));
+
+    // Evaluate occurrences to dispatch actions for both scenes
+    const occsRes = await request(app).get(`/api/projects/${projectId}/entities/${prop!.id}/occurrences`);
+    await request(app).post(`/api/projects/${projectId}/occurrences/${occsRes.body.occurrences[0].id}/evaluate`);
+    await request(app).post(`/api/projects/${projectId}/occurrences/${occsRes.body.occurrences[1].id}/evaluate`);
+
+    // Verify open actions exist for both scene 1 and scene 2
+    const s1Actions = await request(app).get(`/api/projects/${projectId}/actions?sceneId=${scene1.id}`);
+    const s2Actions = await request(app).get(`/api/projects/${projectId}/actions?sceneId=${scene2.id}`);
+    expect(s1Actions.body.length).toBeGreaterThanOrEqual(1);
+    expect(s2Actions.body.length).toBeGreaterThanOrEqual(1);
+
+    // Submit counsel override strictly scoped to Scene 1
+    const overrideRes = await request(app)
+      .post(`/api/projects/${projectId}/entities/${prop!.id}/override`)
+      .send({
+        counselName: 'Sarah Jenkins, Esq.',
+        counselRole: 'Senior Legal Counsel',
+        overrideStatus: 'NO_ISSUE_SURFACED',
+        sceneId: scene1.id,
+        rationale: 'Authorized fair use graphic appearance for scene 1 interior only',
+      });
+    expect(overrideRes.status).toBe(200);
+
+    // Sync project actions
+    await request(app).post(`/api/projects/${projectId}/actions/sync`);
+
+    // Scene 1 actions should be RESOLVED, while Scene 2 actions remain OPEN
+    const updatedS1Actions = await request(app).get(`/api/projects/${projectId}/actions?sceneId=${scene1.id}`);
+    const updatedS2Actions = await request(app).get(`/api/projects/${projectId}/actions?sceneId=${scene2.id}`);
+
+    expect(updatedS1Actions.body.every((a: any) => a.status === 'RESOLVED')).toBe(true);
+    expect(updatedS2Actions.body.some((a: any) => a.status === 'OPEN' || a.status === 'IN_PROGRESS')).toBe(true);
+  });
 });

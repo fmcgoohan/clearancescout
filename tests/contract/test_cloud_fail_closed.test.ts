@@ -170,4 +170,138 @@ describe('Contract: Feature 018 Fail-Closed CLOUD_MODE & Clean Zero-Hit Groundin
     expect(retryRes.body.assessment).toBeDefined();
     expect(retryRes.body.assessment.id).not.toBe(initialAsmId); // Fresh assessment created
   });
+
+  it('should distinguish live hits with unknown registration from true zero-hit live searches in context flags', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Citation Distinction Project',
+        productionCompany: 'Strict Citation Studio',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    // 1. Zero-hit assessment creation
+    const zeroHitAsm = await assessmentRepo.createAssessment({
+      occurrenceId: 'occ-zero-hit',
+      canonicalEntityId: 'ent-zero-hit',
+      sceneId: 'scene-1',
+      riskStatus: 'REVIEW_RECOMMENDED',
+      riskScore: 45,
+      legalRationale: 'Completed live search surfaced zero conflicting trademark registrations.',
+      contextFlags: ['ZERO_TRADEMARK_CONFLICTS_SURFACED', 'UNREGISTERED_HERO_REVIEW'],
+      provenance: 'PARALLEL_LIVE',
+      citations: [
+        {
+          id: 'cit-zero-1',
+          sourceUrl: 'https://parallel.ai/search',
+          query: 'Fictional NonExistent AlphaMark 9999',
+          retrievedAt: new Date().toISOString(),
+          excerptSnippet: 'Completed live search across public trademark and brand registries with zero conflicting marks surfaced for Fictional NonExistent AlphaMark 9999.',
+          registrationStatus: 'UNKNOWN',
+          provenance: 'PARALLEL_LIVE',
+        },
+      ],
+    });
+
+    expect(zeroHitAsm.contextFlags).toContain('ZERO_TRADEMARK_CONFLICTS_SURFACED');
+    expect(zeroHitAsm.contextFlags).not.toContain('LIVE_MATCH_STATUS_UNKNOWN');
+
+    // 2. Live hit with unknown status
+    const liveMatchUnknownAsm = await assessmentRepo.createAssessment({
+      occurrenceId: 'occ-live-unknown',
+      canonicalEntityId: 'ent-live-unknown',
+      sceneId: 'scene-1',
+      riskStatus: 'REVIEW_RECOMMENDED',
+      riskScore: 55,
+      legalRationale: 'Live search surfaced public reference(s) with unconfirmed registration status.',
+      contextFlags: ['LIVE_MATCH_STATUS_UNKNOWN', 'TRADEMARK_STATUS_UNKNOWN'],
+      provenance: 'PARALLEL_LIVE',
+      citations: [
+        {
+          id: 'cit-live-unknown-1',
+          sourceUrl: 'https://example.com/mark',
+          query: 'Some Unconfirmed Mark',
+          retrievedAt: new Date().toISOString(),
+          excerptSnippet: 'Public web catalog listing for Some Unconfirmed Mark.',
+          registrationStatus: 'UNKNOWN',
+          provenance: 'PARALLEL_LIVE',
+        },
+      ],
+    });
+
+    expect(liveMatchUnknownAsm.contextFlags).toContain('LIVE_MATCH_STATUS_UNKNOWN');
+    expect(liveMatchUnknownAsm.contextFlags).toContain('TRADEMARK_STATUS_UNKNOWN');
+    expect(liveMatchUnknownAsm.contextFlags).not.toContain('ZERO_TRADEMARK_CONFLICTS_SURFACED');
+  });
+
+  it('should cascade entity research retry across all occurrences of that entity using one fresh search', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Cascade Retry Project',
+        productionCompany: 'Live Retry Legal',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    const scriptText = `SCENE 1 - INT. OFFICE - DAY
+Alex drinks Summit Cola at the desk.
+
+SCENE 2 - EXT. PATIO - NIGHT
+Alex sips Summit Cola under the neon sign.`;
+
+    await request(app)
+      .post(`/api/projects/${projectId}/script`)
+      .send({ scriptText, format: 'PLAINTEXT' });
+
+    const entities = await entityRepo.getEntitiesByProject(projectId);
+    const cola = entities.find((e) => e.canonicalName.includes('Summit'));
+    expect(cola).toBeDefined();
+
+    // Set entity status to INSUFFICIENT_EVIDENCE so retry is permitted
+    await entityRepo.updateCanonicalEntityStatus(projectId, cola!.id, 'INSUFFICIENT_EVIDENCE');
+
+    // Trigger retry
+    const retryRes = await request(app)
+      .post(`/api/projects/${projectId}/entities/${cola!.id}/retry-research`);
+    expect(retryRes.status).toBe(200);
+
+    const occsRes = await request(app).get(`/api/projects/${projectId}/entities/${cola!.id}/occurrences`);
+    expect(occsRes.body.occurrences.length).toBe(2);
+    // Both occurrences were refreshed
+    expect(occsRes.body.occurrences[0].clearanceStatus).toBeDefined();
+    expect(occsRes.body.occurrences[1].clearanceStatus).toBeDefined();
+  });
+
+  it('should visibly tag CONTEXT_DETERMINISTIC_FALLBACK in contextFlags when Gemini is unavailable', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Deterministic Fallback Tag Project',
+        productionCompany: 'Strict Rule Legal',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    const scriptText = `SCENE 1 - INT. LAB - DAY
+Alex uses the AeroTech Prism Laptop on the bench.`;
+
+    await request(app)
+      .post(`/api/projects/${projectId}/script`)
+      .send({ scriptText, format: 'PLAINTEXT' });
+
+    const entities = await entityRepo.getEntitiesByProject(projectId);
+    const laptop = entities.find((e) => e.canonicalName.includes('AeroTech'));
+    const occsRes = await request(app).get(`/api/projects/${projectId}/entities/${laptop!.id}/occurrences`);
+    const occId = occsRes.body.occurrences[0].id;
+
+    const evalRes = await request(app).post(`/api/projects/${projectId}/occurrences/${occId}/evaluate`);
+    expect(evalRes.status).toBe(200);
+    // In test environment without live Gemini credentials, must include CONTEXT_DETERMINISTIC_FALLBACK
+    expect(evalRes.body.assessment.contextFlags).toContain('CONTEXT_DETERMINISTIC_FALLBACK');
+  });
 });

@@ -175,7 +175,8 @@ export class ClearanceEvaluator {
       extractedContextSnippet: occurrence.excerptText || occurrence.usageContext || '',
     };
 
-    if (this.ai && (activeMode === 'CLOUD_MODE' || config.geminiApiKey)) {
+    let isGeminiFallback = false;
+    if (this.ai) {
       try {
         const prompt = `You are an expert entertainment clearance supervisor. Analyze this screenplay entity occurrence for clearance risks:
 Entity: ${entity.canonicalName}
@@ -214,23 +215,44 @@ Return valid JSON with these fields:
           if (occurrenceContext.defamationRisk || occurrenceContext.tone === 'DISPARAGING') {
             isDefamatory = true;
           }
+        } else {
+          isGeminiFallback = true;
         }
       } catch (err) {
+        isGeminiFallback = true;
         console.warn('[ClearanceEvaluator] Gemini occurrence interpretation fallback:', err);
       }
+    } else {
+      isGeminiFallback = true;
     }
 
     // Step 4: Deterministic Occurrence Verdict Calculation
     const primaryCitation = searchResult.citations[0];
     const isRegisteredActive = primaryCitation?.registrationStatus === 'REGISTERED_ACTIVE';
-    const isUnknownRegistration = primaryCitation?.registrationStatus === 'UNKNOWN' || !primaryCitation?.registrationStatus;
+    const isZeroHit =
+      primaryCitation?.excerptSnippet?.includes('zero conflicting marks surfaced') ||
+      primaryCitation?.excerptSnippet?.includes('zero conflicting trademark') ||
+      (searchResult.provenance === 'PARALLEL_LIVE' && primaryCitation?.sourceUrl === 'https://parallel.ai/search' && primaryCitation?.excerptSnippet?.startsWith('Completed live search'));
+    const isLiveMatchUnknown =
+      !isZeroHit && (primaryCitation?.registrationStatus === 'UNKNOWN' || !primaryCitation?.registrationStatus);
 
     let status: ClearanceStatus = 'REVIEW_RECOMMENDED';
     let riskScore = 45;
     let rationale = isRegisteredActive
       ? `Grounding search confirmed active registration for ${entity.canonicalName}. Category: ${entity.entityCategory}. Usage in ${sceneId} is neutral to moderate risk.`
-      : `Grounding search found no confirmed active registration records for ${entity.canonicalName}. Category: ${entity.entityCategory}. Review recommended to confirm unregistered rights.`;
-    const contextFlags: string[] = isRegisteredActive ? ['TRADEMARK_ACTIVE'] : ['TRADEMARK_STATUS_UNKNOWN'];
+      : isZeroHit
+      ? `Completed live search surfaced zero conflicting trademark registrations for ${entity.canonicalName}. Category: ${entity.entityCategory}. Review recommended to confirm unregistered common law rights.`
+      : `Live search surfaced public reference(s) for ${entity.canonicalName}, but registration status is unconfirmed. Category: ${entity.entityCategory}. Review recommended to confirm active trademark protections.`;
+
+    const contextFlags: string[] = isRegisteredActive
+      ? ['TRADEMARK_ACTIVE']
+      : isZeroHit
+      ? ['ZERO_TRADEMARK_CONFLICTS_SURFACED', 'UNREGISTERED_HERO_REVIEW']
+      : ['LIVE_MATCH_STATUS_UNKNOWN', 'TRADEMARK_STATUS_UNKNOWN'];
+
+    if (isGeminiFallback) {
+      contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+    }
 
     // CLOUD_MODE Fail-Closed Invariant: Unmitigated fallback fixtures fail closed to INSUFFICIENT_EVIDENCE
     if (activeMode === 'CLOUD_MODE' && searchResult.provenance === 'FALLBACK_FIXTURE' && !rightsCoverage.isCovered) {
@@ -239,6 +261,9 @@ Return valid JSON with these fields:
       rationale = `Live Parallel Search unavailable in CLOUD_MODE for "${entity.canonicalName}". Evaluated as INSUFFICIENT_EVIDENCE under fail-closed production policy.`;
       contextFlags.length = 0;
       contextFlags.push('EVIDENCE_INSUFFICIENT', 'FALLBACK_RESEARCH_ACTIVE');
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+      }
     } else if (rightsCoverage.isCovered) {
       // Contractual Rights cover this usage
       status = 'NO_ISSUE_SURFACED';
@@ -252,61 +277,105 @@ Return valid JSON with these fields:
       if (rightsCoverage.hasExpiringSoon && rightsCoverage.expirationWarning) {
         contextFlags.push('LICENSE_EXPIRING_SOON');
       }
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+      }
     } else if (isDefamatory || occurrenceContext.tone === 'DISPARAGING' || occurrenceContext.defamationRisk) {
       status = 'ACTION_REQUIRED';
       riskScore = 90;
       rationale = `High tarnishment / disparagement risk in ${sceneId}: "${entity.canonicalName}" is depicted in negative scene context ("${occurrence.excerptText}"). Replacement or counsel release required.`;
       contextFlags.length = 0;
       contextFlags.push('DEFAMATION_RISK', 'UNAUTHORIZED_USAGE');
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+      }
     } else if (occurrenceContext.safetyHazardDepiction && occurrenceContext.prominence === 'HERO_FOREGROUND') {
       status = 'ACTION_REQUIRED';
       riskScore = 85;
       rationale = `Safety hazard depiction risk in ${sceneId}: "${entity.canonicalName}" is featured in an unsafe product context. Replacement recommended.`;
       contextFlags.length = 0;
       contextFlags.push('SAFETY_HAZARD_RISK', 'UNAUTHORIZED_USAGE');
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+      }
     } else if (entity.entityCategory === 'ART_MUSIC') {
       status = 'ACTION_REQUIRED';
       riskScore = 85;
       rationale = `Copyrighted musical work in ${sceneId}: "${entity.canonicalName}". Synchronization license required prior to broadcast/distribution.`;
       contextFlags.length = 0;
       contextFlags.push('MUSIC_SYNC_LICENSE_REQUIRED', 'COPYRIGHT_PROTECTION');
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+      }
     } else if (entity.entityCategory === 'PUBLIC_FIGURE') {
       status = 'REVIEW_RECOMMENDED';
       riskScore = 65;
       rationale = `Living public figure depicted in ${sceneId}: "${entity.canonicalName}". Right of publicity review recommended.`;
       contextFlags.length = 0;
       contextFlags.push('RIGHT_OF_PUBLICITY_REVIEW');
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+      }
     } else if (entity.entityCategory === 'PROPRIETARY_LOCATION') {
       status = 'REVIEW_RECOMMENDED';
       riskScore = 55;
       rationale = `Proprietary location in ${sceneId}: "${entity.canonicalName}". Location release / filming permit required.`;
       contextFlags.length = 0;
       contextFlags.push('LOCATION_RELEASE_REQUIRED');
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+      }
     } else if (entity.entityCategory === 'GRAPHIC_PROP') {
       status = 'ACTION_REQUIRED';
       riskScore = 75;
       rationale = `Proprietary graphic text in ${sceneId}: "${entity.canonicalName}". Fictionalized non-infringing prop packaging card recommended.`;
       contextFlags.length = 0;
       contextFlags.push('GRAPHIC_CLEARANCE_REQUIRED');
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+      }
     } else if (entity.canonicalName.toLowerCase().includes('coca-cola') || entity.canonicalName.toLowerCase().includes('porsche')) {
       status = 'ACTION_REQUIRED';
       riskScore = 80;
       rationale = `High brand protection enforcement mark in ${sceneId}: ${entity.canonicalName}. Written clearance release required.`;
       contextFlags.length = 0;
       contextFlags.push('FAMOUS_MARK_PROTECTION', 'CLEARANCE_RELEASE_REQUIRED');
-    } else if (isUnknownRegistration) {
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+      }
+    } else if (isZeroHit) {
       if (occurrenceContext.prominence === 'HERO_FOREGROUND' || occurrenceContext.endorsementImplication) {
         status = 'REVIEW_RECOMMENDED';
         riskScore = 45;
-        rationale = `Live search surfaced zero conflicting trademark registrations for "${entity.canonicalName}". Review recommended to confirm unregistered usage in hero context before shooting.`;
+        rationale = `Completed live search surfaced zero conflicting trademark registrations for "${entity.canonicalName}". Review recommended to confirm unregistered usage in hero context before shooting.`;
         contextFlags.length = 0;
         contextFlags.push('ZERO_TRADEMARK_CONFLICTS_SURFACED', 'UNREGISTERED_HERO_REVIEW');
       } else {
         status = 'NO_ISSUE_SURFACED';
         riskScore = 15;
-        rationale = `Live search surfaced zero conflicting trademark registrations for "${entity.canonicalName}". Incidental background usage in ${sceneId} is clear.`;
+        rationale = `Completed live search surfaced zero conflicting trademark registrations for "${entity.canonicalName}". Incidental background usage in ${sceneId} is clear.`;
         contextFlags.length = 0;
         contextFlags.push('ZERO_TRADEMARK_CONFLICTS_SURFACED', 'INCIDENTAL_USAGE_CLEAR');
+      }
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
+      }
+    } else if (isLiveMatchUnknown) {
+      if (occurrenceContext.prominence === 'HERO_FOREGROUND' || occurrenceContext.endorsementImplication) {
+        status = 'REVIEW_RECOMMENDED';
+        riskScore = 55;
+        rationale = `Live search surfaced public reference(s) for "${entity.canonicalName}", but registration status is unconfirmed. Review recommended to confirm active trademark protections.`;
+        contextFlags.length = 0;
+        contextFlags.push('LIVE_MATCH_STATUS_UNKNOWN', 'TRADEMARK_STATUS_UNKNOWN', 'UNREGISTERED_HERO_REVIEW');
+      } else {
+        status = 'NO_ISSUE_SURFACED';
+        riskScore = 20;
+        rationale = `Live search surfaced public reference(s) for "${entity.canonicalName}" with unconfirmed registration status. Incidental background usage in ${sceneId} presents low exposure.`;
+        contextFlags.length = 0;
+        contextFlags.push('LIVE_MATCH_STATUS_UNKNOWN', 'TRADEMARK_STATUS_UNKNOWN', 'INCIDENTAL_USAGE_CLEAR');
+      }
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
       }
     } else {
       status = 'NO_ISSUE_SURFACED';
@@ -315,6 +384,9 @@ Return valid JSON with these fields:
       if (!isRegisteredActive) {
         contextFlags.length = 0;
         contextFlags.push('TRADEMARK_STATUS_UNKNOWN', 'INCIDENTAL_USAGE_CLEAR');
+      }
+      if (isGeminiFallback) {
+        contextFlags.push('CONTEXT_DETERMINISTIC_FALLBACK');
       }
     }
 
@@ -392,9 +464,13 @@ Return valid JSON with these fields:
     let latestAssessment: ClearanceRiskAssessmentData | null = null;
 
     if (occurrences.length > 0) {
+      let isFirst = true;
       for (const occ of occurrences) {
-        const res = await this.evaluateOccurrenceClearance(projectId, occ.id, bypassCache);
+        // If bypassCache is true, force fresh search on the first occurrence only; subsequent occurrences reuse the freshly cached search
+        const forceFresh = bypassCache && isFirst;
+        const res = await this.evaluateOccurrenceClearance(projectId, occ.id, forceFresh);
         latestAssessment = res.assessment;
+        isFirst = false;
       }
     } else {
       // Baseline evaluation when no specific scene occurrences exist
@@ -403,13 +479,26 @@ Return valid JSON with these fields:
 
       const primaryCitation = searchResult.citations[0];
       const isRegisteredActive = primaryCitation?.registrationStatus === 'REGISTERED_ACTIVE';
+      const isZeroHit =
+        primaryCitation?.excerptSnippet?.includes('zero conflicting marks surfaced') ||
+        primaryCitation?.excerptSnippet?.includes('zero conflicting trademark') ||
+        (searchResult.provenance === 'PARALLEL_LIVE' && primaryCitation?.sourceUrl === 'https://parallel.ai/search' && primaryCitation?.excerptSnippet?.startsWith('Completed live search'));
+      const isLiveMatchUnknown =
+        !isZeroHit && (primaryCitation?.registrationStatus === 'UNKNOWN' || !primaryCitation?.registrationStatus);
 
       let status: ClearanceStatus = 'REVIEW_RECOMMENDED';
       let riskScore = 45;
       let rationale = isRegisteredActive
         ? `Grounding search confirmed active registration for ${entity.canonicalName}. Baseline category risk for ${entity.entityCategory}.`
-        : `Grounding search found no confirmed active registration records for ${entity.canonicalName}. Baseline category risk for ${entity.entityCategory}.`;
-      const contextFlags: string[] = isRegisteredActive ? ['TRADEMARK_ACTIVE'] : ['TRADEMARK_STATUS_UNKNOWN'];
+        : isZeroHit
+        ? `Completed live search surfaced zero conflicting trademark registrations for ${entity.canonicalName}. Baseline category risk for ${entity.entityCategory}.`
+        : `Live search surfaced public reference(s) for ${entity.canonicalName} with unconfirmed registration status. Baseline category risk for ${entity.entityCategory}.`;
+
+      const contextFlags: string[] = isRegisteredActive
+        ? ['TRADEMARK_ACTIVE']
+        : isZeroHit
+        ? ['ZERO_TRADEMARK_CONFLICTS_SURFACED']
+        : ['LIVE_MATCH_STATUS_UNKNOWN', 'TRADEMARK_STATUS_UNKNOWN'];
 
       if (activeMode === 'CLOUD_MODE' && searchResult.provenance === 'FALLBACK_FIXTURE' && !rightsCoverage.isCovered) {
         status = 'INSUFFICIENT_EVIDENCE';
