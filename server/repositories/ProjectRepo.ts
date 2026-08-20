@@ -81,33 +81,36 @@ export class ProjectRepo {
   }
 
   async consumeLiveQuota(projectId: string, count: number = 1): Promise<{ success: boolean; quota: ProjectQuotaStatus }> {
-    const project = await this.getProject(projectId);
-    if (!project) {
-      throw new Error(`Project ${projectId} not found`);
-    }
+    return await this.db.runTransaction(async (transaction: any) => {
+      const docRef = await this.db.doc(`projects/${projectId}`);
+      const snap = await transaction.get(docRef);
+      if (!snap.exists) {
+        throw new Error(`Project ${projectId} not found`);
+      }
 
-    const limit = project.liveQuotaLimit !== undefined ? project.liveQuotaLimit : 25;
-    const currentUsed = project.liveQuotaUsed !== undefined ? project.liveQuotaUsed : 0;
-    const remaining = Math.max(0, limit - currentUsed);
+      const data = snap.data() as ProjectData;
+      const limit = data.liveQuotaLimit !== undefined ? data.liveQuotaLimit : 25;
+      const currentUsed = data.liveQuotaUsed !== undefined ? data.liveQuotaUsed : 0;
+      const remaining = Math.max(0, limit - currentUsed);
 
-    if (remaining < count) {
+      if (remaining < count) {
+        return {
+          success: false,
+          quota: { limit, used: currentUsed, remaining },
+        };
+      }
+
+      const newUsed = currentUsed + count;
+      await transaction.update(docRef, {
+        liveQuotaUsed: newUsed,
+        updatedAt: new Date().toISOString(),
+      });
+
       return {
-        success: false,
-        quota: { limit, used: currentUsed, remaining },
+        success: true,
+        quota: { limit, used: newUsed, remaining: Math.max(0, limit - newUsed) },
       };
-    }
-
-    const newUsed = currentUsed + count;
-    const docRef = await this.db.doc(`projects/${projectId}`);
-    await docRef.update({
-      liveQuotaUsed: newUsed,
-      updatedAt: new Date().toISOString(),
     });
-
-    return {
-      success: true,
-      quota: { limit, used: newUsed, remaining: Math.max(0, limit - newUsed) },
-    };
   }
 }
 

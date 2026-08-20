@@ -60,6 +60,7 @@ export interface ReplacementPlaceholderData {
   expirationDate?: string;
   categoryDetails?: CategoryDetails;
   scopeType?: PlaceholderScopeType;
+  scope?: PlaceholderScopeType;
   occurrenceIds?: string[];
   sceneIds?: string[];
   isProjectWide?: boolean;
@@ -199,28 +200,26 @@ export class PlaceholderRepo {
     sceneId: string,
     occurrenceId?: string
   ): boolean {
-    if (placeholder.isProjectWide || placeholder.scopeType === 'PROJECT_WIDE') {
+    const rawScope = (placeholder as any).scope || placeholder.scopeType;
+    if (placeholder.isProjectWide || rawScope === 'PROJECT_WIDE' || (!rawScope && !placeholder.occurrenceIds?.length && !placeholder.sceneIds?.length)) {
       return true;
     }
     if (
-      placeholder.scopeType === 'SINGLE_OCCURRENCE' ||
-      placeholder.scopeType === 'SELECTED_OCCURRENCES'
+      rawScope === 'SINGLE_OCCURRENCE' ||
+      rawScope === 'SELECTED_OCCURRENCES'
     ) {
       if (occurrenceId && placeholder.occurrenceIds && placeholder.occurrenceIds.includes(occurrenceId)) {
         return true;
       }
       return false;
     }
-    if (placeholder.scopeType === 'SELECTED_SCENES') {
+    if (rawScope === 'SELECTED_SCENES') {
       if (sceneId && placeholder.sceneIds && placeholder.sceneIds.includes(sceneId)) {
         return true;
       }
       return false;
     }
-    if (!placeholder.scopeType && !placeholder.occurrenceIds?.length && !placeholder.sceneIds?.length) {
-      return Boolean(placeholder.isProjectWide);
-    }
-    return false;
+    return true;
   }
 }
 

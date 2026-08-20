@@ -128,6 +128,17 @@ export class SceneRepo {
     const scene = await this.getSceneById(projectId, sceneId);
     return scene?.readinessDetails || null;
   }
+
+  async deleteScenesByProject(projectId: string): Promise<number> {
+    const colRef = await this.db.collection(`projects/${projectId}/scenes`);
+    const snap = await colRef.get();
+    let count = 0;
+    for (const doc of snap.docs) {
+      await colRef.doc(doc.id).delete();
+      count++;
+    }
+    return count;
+  }
 }
 
 export const sceneRepo = new SceneRepo();

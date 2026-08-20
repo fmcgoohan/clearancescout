@@ -80,25 +80,60 @@ class InMemoryStore {
       }),
     };
   }
+
+  async runTransaction(updateFunction: (transaction: any) => Promise<any>): Promise<any> {
+    const tx = {
+      get: async (docRef: any) => await docRef.get(),
+      set: async (docRef: any, data: any) => await docRef.set(data),
+      update: async (docRef: any, data: any) => await docRef.update(data),
+      delete: async (docRef: any) => await docRef.delete(),
+    };
+    return await updateFunction(tx);
+  }
 }
 
 let dbInstance: any;
 
 export function getDb(): any {
   if (!dbInstance) {
-    if (config.executionMode === 'CLOUD_MODE' && process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    const isCloudMode = config.executionMode === 'CLOUD_MODE';
+    const hasGcpProject = !!(process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+
+    if (isCloudMode && (hasGcpProject || process.env.NODE_ENV === 'production')) {
       try {
-        dbInstance = new Firestore();
+        const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT || undefined;
+        dbInstance = new Firestore({ projectId });
       } catch (err) {
-        console.warn('Firestore initialization fallback to in-memory store:', err);
-        dbInstance = new InMemoryStore();
+        console.error('[FirestoreClient Error] Failed to initialize Google Cloud Firestore via ADC:', err);
+        throw err;
       }
     } else {
-      // In TEST_MODE, DEMO_MODE, or local dev without GCP credentials, use in-memory store
+      // In TEST_MODE, DEMO_MODE, or local test suite, use in-memory store
       dbInstance = new InMemoryStore();
     }
   }
   return dbInstance;
+}
+
+export function resetDb(): void {
+  dbInstance = new InMemoryStore();
+}
+
+export async function verifyFirestoreConnectivity(): Promise<{ connected: boolean; error?: string }> {
+  try {
+    const db = getDb();
+    if (db instanceof Firestore) {
+      // Execute a lightweight read to verify ADC credentials and project reachability
+      const testCol = db.collection('_health_check');
+      await testCol.limit(1).get();
+    }
+    return { connected: true };
+  } catch (err: any) {
+    return {
+      connected: false,
+      error: err.message || 'Failed to connect to Google Cloud Firestore via ADC',
+    };
+  }
 }
 
 export const getFirestoreClient = getDb;

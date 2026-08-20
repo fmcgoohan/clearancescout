@@ -28,6 +28,7 @@ export interface OccurrenceContextInterpretation {
 
 export interface ClearanceRiskAssessmentData {
   id: string;
+  projectId?: string;
   occurrenceId: string;
   canonicalEntityId: string;
   sceneId: string;
@@ -45,24 +46,38 @@ export interface ClearanceRiskAssessmentData {
 export class AssessmentRepo {
   private db = getDb();
 
-  async createAssessment(input: Omit<ClearanceRiskAssessmentData, 'id' | 'evaluatedAt' | 'disclaimer'>): Promise<ClearanceRiskAssessmentData> {
+  async createAssessment(
+    projectIdOrInput: string | Omit<ClearanceRiskAssessmentData, 'id' | 'evaluatedAt' | 'disclaimer'>,
+    maybeInput?: Omit<ClearanceRiskAssessmentData, 'id' | 'evaluatedAt' | 'disclaimer'>
+  ): Promise<ClearanceRiskAssessmentData> {
+    const projectId = typeof projectIdOrInput === 'string' ? projectIdOrInput : (projectIdOrInput.projectId || 'default-project');
+    const input = typeof projectIdOrInput === 'string' ? maybeInput! : projectIdOrInput;
     const id = `asm-${uuidv4().slice(0, 8)}`;
     const assessment: ClearanceRiskAssessmentData = {
       id,
+      projectId,
       ...input,
       evaluatedAt: new Date().toISOString(),
       disclaimer: 'ClearanceScout provides workflow issue-spotting and clearance risk categorization. It does not render formal legal advice.',
     };
 
-    const docRef = await this.db.doc(`projects/${input.canonicalEntityId}/assessments/${id}`);
+    const docRef = await this.db.doc(`projects/${projectId}/entities/${input.canonicalEntityId}/assessments/${id}`);
     await docRef.set(assessment);
+    const directRef = await this.db.doc(`projects/${projectId}/assessments/${id}`);
+    await directRef.set(assessment);
     return assessment;
   }
 
   async getAssessmentsByEntity(projectId: string, canonicalEntityId: string): Promise<ClearanceRiskAssessmentData[]> {
-    const colRef = await this.db.collection(`projects/${canonicalEntityId}/assessments`);
+    const colRef = await this.db.collection(`projects/${projectId}/entities/${canonicalEntityId}/assessments`);
     const snap = await colRef.get();
-    return snap.docs.map((d: any) => d.data() as ClearanceRiskAssessmentData);
+    if (snap.docs && snap.docs.length > 0) {
+      return snap.docs.map((d: any) => d.data() as ClearanceRiskAssessmentData);
+    }
+    // Backward compatibility for legacy paths
+    const legacyCol = await this.db.collection(`projects/${canonicalEntityId}/assessments`);
+    const legacySnap = await legacyCol.get();
+    return legacySnap.docs.map((d: any) => d.data() as ClearanceRiskAssessmentData);
   }
 }
 
