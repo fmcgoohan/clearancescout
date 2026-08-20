@@ -6,7 +6,7 @@
 [![Runtime](https://img.shields.io/badge/Model-Gemini%203.6%20Flash-4285F4)](https://deepmind.google/technologies/gemini/)
 [![Grounding](https://img.shields.io/badge/Grounding-Parallel%20Web%20API-06B6D4)](https://parallel.ai)
 [![Deployment](https://img.shields.io/badge/Platform-Google%20Cloud%20Run-34A853)](https://cloud.google.com/run)
-[![Tests](https://img.shields.io/badge/Tests-156%20Passing%20(74%20Suites)-34D399)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-160%20Passing%20(74%20Suites)-34D399)](tests/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-34A853)](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
 
 **Live demo (CLOUD_MODE):** [https://clearance-scout-n3tcx4jcbq-uc.a.run.app](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)

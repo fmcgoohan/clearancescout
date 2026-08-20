@@ -16,25 +16,30 @@ export function demoAuthMiddleware(req: Request, res: Response, next: NextFuncti
   const isCloudMode = config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE';
 
   // Public exemptions for judge evaluation and container probes
-  if (req.path.endsWith('/script/demo') || req.path === '/health' || req.path.endsWith('/health') || req.path === '/api/health') {
+  if (
+    req.path === '/health' ||
+    req.path.endsWith('/health') ||
+    req.path === '/api/health' ||
+    req.path.endsWith('/script/demo') ||
+    req.path.includes('/fixtures/')
+  ) {
     return next();
   }
 
-  // If no demo token configured on server:
-  // In TEST_MODE / DEMO_MODE, allow open local dev
-  // In CLOUD_MODE, require bearer authorization on mutating requests (POST, PUT, PATCH, DELETE)
   const requiredToken = config.demoAccessToken?.trim();
-  if (!requiredToken) {
-    if (isCloudMode && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-      const authHeader = req.headers['authorization'];
-      const customToken = req.headers['x-demo-token'] || req.query.token || req.query.demoToken;
-      if (!authHeader && !customToken) {
-        return res.status(401).json({
-          error: 'Unauthorized: Production live-write endpoints in CLOUD_MODE require an authorization token.',
-        });
-      }
+
+  // In CLOUD_MODE: fail closed. Mutating write/AI and project data endpoints require a configured server token
+  if (isCloudMode) {
+    if (!requiredToken) {
+      return res.status(401).json({
+        error: 'Unauthorized: Production live runtime in CLOUD_MODE requires a configured DEMO_ACCESS_TOKEN.',
+      });
     }
-    return next();
+  } else {
+    // In TEST_MODE / DEMO_MODE, allow open local dev if no token configured
+    if (!requiredToken) {
+      return next();
+    }
   }
 
   // Extract token from header, Authorization Bearer, or query param

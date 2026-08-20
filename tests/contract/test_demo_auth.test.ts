@@ -113,4 +113,111 @@ describe('Contract Test: Demo Access Token Protection', () => {
     expect(fixtureRes.status).toBe(200);
     expect(fixtureRes.body.title).toBe('The Neon Horizon');
   });
+
+  describe('Feature 019: CLOUD_MODE Production Auth & Data Protection', () => {
+    const originalExecutionMode = config.executionMode;
+    const originalEnvMode = process.env.EXECUTION_MODE;
+
+    afterEach(() => {
+      config.executionMode = originalExecutionMode;
+      config.demoAccessToken = originalToken;
+      if (originalEnvMode === undefined) {
+        delete process.env.EXECUTION_MODE;
+      } else {
+        process.env.EXECUTION_MODE = originalEnvMode;
+      }
+    });
+
+    it('fails closed in CLOUD_MODE with 401 when DEMO_ACCESS_TOKEN is unset for both POST and GET project endpoints', async () => {
+      config.executionMode = 'CLOUD_MODE';
+      process.env.EXECUTION_MODE = 'CLOUD_MODE';
+      config.demoAccessToken = undefined;
+
+      // 1. POST /api/projects fails closed with 401
+      const postRes = await request(app)
+        .post('/api/projects')
+        .send({
+          title: 'Cloud Mode Unconfigured Token Test',
+          productionCompany: 'Test Studio',
+        });
+
+      expect(postRes.status).toBe(401);
+      expect(postRes.body.error).toContain('CLOUD_MODE requires a configured DEMO_ACCESS_TOKEN');
+
+      // 2. GET /api/projects/:id fails closed with 401
+      const getRes = await request(app).get('/api/projects/proj-12345');
+      expect(getRes.status).toBe(401);
+      expect(getRes.body.error).toContain('CLOUD_MODE requires a configured DEMO_ACCESS_TOKEN');
+    });
+
+    it('rejects random Bearer token with 401 in CLOUD_MODE when a token is configured', async () => {
+      config.executionMode = 'CLOUD_MODE';
+      process.env.EXECUTION_MODE = 'CLOUD_MODE';
+      config.demoAccessToken = 'valid-production-secret-999';
+
+      const res = await request(app)
+        .post('/api/projects')
+        .set('Authorization', 'Bearer invalid-random-token-888')
+        .send({
+          title: 'Tampered Request',
+          productionCompany: 'Test Studio',
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error).toContain('Invalid or missing demo access token');
+    });
+
+    it('allows GET /api/projects/:id when valid token is supplied in CLOUD_MODE', async () => {
+      config.executionMode = 'CLOUD_MODE';
+      process.env.EXECUTION_MODE = 'CLOUD_MODE';
+      config.demoAccessToken = 'valid-production-secret-999';
+
+      // First create a project using the valid token
+      const createRes = await request(app)
+        .post('/api/projects')
+        .set('Authorization', 'Bearer valid-production-secret-999')
+        .send({
+          title: 'Cloud Authorized Project',
+          productionCompany: 'Authorized Studio',
+        });
+
+      expect(createRes.status).toBe(201);
+      const projectId = createRes.body.id;
+
+      // GET with valid token succeeds
+      const getRes = await request(app)
+        .get(`/api/projects/${projectId}`)
+        .set('Authorization', 'Bearer valid-production-secret-999');
+
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.title).toBe('Cloud Authorized Project');
+    });
+
+    it('keeps GET /api/health and POST /api/projects/:id/script/demo public in CLOUD_MODE', async () => {
+      config.executionMode = 'CLOUD_MODE';
+      process.env.EXECUTION_MODE = 'CLOUD_MODE';
+      config.demoAccessToken = 'valid-production-secret-999';
+
+      // Health is public and reachable without requiring demo token (does not return 401)
+      const healthRes = await request(app).get('/api/health');
+      expect([200, 503]).toContain(healthRes.status);
+      expect(healthRes.body.executionMode).toBe('CLOUD_MODE');
+
+      // Create a project using valid authorization
+      const projRes = await request(app)
+        .post('/api/projects')
+        .set('Authorization', 'Bearer valid-production-secret-999')
+        .send({
+          title: 'Judge Demo Project',
+          productionCompany: 'Judge Review Co',
+        });
+      expect(projRes.status).toBe(201);
+      const projectId = projRes.body.id;
+
+      // Demo script load endpoint is public for judges (no token provided) -> reaches handler without 401 Unauthorized
+      const demoRes = await request(app).post(`/api/projects/${projectId}/script/demo`);
+      expect(demoRes.status).not.toBe(401);
+      expect([200, 502]).toContain(demoRes.status);
+    });
+  });
 });

@@ -31,9 +31,12 @@ app.use(express.json());
 app.use('/api', healthRouter);
 app.use('/api', fixtureRouter);
 
-// Apply Demo Auth Middleware to all mutating write and research endpoints
+// Apply Demo Auth Middleware:
+// - Mutating write and research endpoints in all modes
+// - In CLOUD_MODE, protect uploaded project/script/entity data on GET as well
 app.use('/api', (req, res, next) => {
-  if (['POST', 'PATCH', 'DELETE', 'PUT'].includes(req.method)) {
+  const isCloudMode = config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE';
+  if (['POST', 'PATCH', 'DELETE', 'PUT'].includes(req.method) || isCloudMode) {
     return demoAuthMiddleware(req, res, next);
   }
   return next();

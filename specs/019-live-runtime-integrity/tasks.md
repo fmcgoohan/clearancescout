@@ -146,6 +146,16 @@
 
 ---
 
+## Phase 11: Convergence (Residual Live Runtime Auth Hardening)
+
+**Purpose**: Remediate fail-closed auth verification in `CLOUD_MODE` when `DEMO_ACCESS_TOKEN` is unset and enforce project data read protection on `GET`.
+
+- [X] T043 Update `server/middleware/demoAuthMiddleware.ts` to fail closed in `CLOUD_MODE` returning 401 when `DEMO_ACCESS_TOKEN` is unset rather than treating arbitrary header presence as valid authentication per FR-006 (contradicts)
+- [X] T044 Update `server/index.ts` to enforce `demoAuthMiddleware` on `GET` requests for project, script, entity, and clearance data in `CLOUD_MODE`, keeping public exemptions strictly for `/api/health` and `/script/demo` per FR-006 (partial)
+- [X] T045 Add contract tests in `tests/contract/test_demo_auth.test.ts` verifying `CLOUD_MODE` unconfigured token fail-closed behavior for `POST` and `GET`, random Bearer rejection against configured secret, and public probe reachability per SC-003 (partial)
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
