@@ -120,6 +120,16 @@ export class PlaceholderRepo {
     return snap.docs[0].data() as ReplacementPlaceholderData;
   }
 
+  async getPlaceholdersByEntity(
+    projectId: string,
+    canonicalEntityId: string
+  ): Promise<ReplacementPlaceholderData[]> {
+    const col = await this.getCollection(projectId);
+    const snap = await col.where('canonicalEntityId', '==', canonicalEntityId).get();
+    if (!snap || snap.empty || !snap.docs) return [];
+    return snap.docs.map((doc: any) => doc.data() as ReplacementPlaceholderData);
+  }
+
   async getPlaceholdersByProject(
     projectId: string,
     filter?: PlaceholderFilter

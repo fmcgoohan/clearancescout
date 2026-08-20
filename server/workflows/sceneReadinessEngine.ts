@@ -73,7 +73,10 @@ export class SceneReadinessEngine {
         occ.id
       );
 
-      const placeholder = await placeholderRepo.getPlaceholderByEntity(projectId, occ.canonicalEntityId);
+      const entityPlaceholders = await placeholderRepo.getPlaceholdersByEntity(projectId, occ.canonicalEntityId);
+      const placeholder = entityPlaceholders.find((p) =>
+        placeholderRepo.isOccurrenceCovered(p, sceneId, occ.id)
+      ) || null;
       const hasReplacementCard = Boolean(entity.replacementCard);
       const matchingOverride = overrides
         .filter((o) => o.canonicalEntityId === entity.id && (o.sceneId === sceneId || !o.sceneId))
@@ -87,9 +90,7 @@ export class SceneReadinessEngine {
         rightsStatus = 'EXPIRED';
       }
 
-      const isPlaceholderCovering = placeholder
-        ? placeholderRepo.isOccurrenceCovered(placeholder, sceneId, occ.id)
-        : false;
+      const isPlaceholderCovering = Boolean(placeholder);
 
       // Deterministic Item Readiness Classification
       let readinessTier: ItemReadinessTier = 'BLOCKER';

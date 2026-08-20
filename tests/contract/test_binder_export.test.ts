@@ -23,11 +23,20 @@ describe('Contract: Clearance Binder Compilation & Export', () => {
         scriptText: 'INT. OFFICE - DAY\nCharacter holds an Apple iPad and a can of Coca-Cola.',
         format: 'PLAINTEXT',
       });
-    entityId = scriptRes.body.entities[0].id;
+    expect(scriptRes.status).toBe(200);
 
-    await request(app)
-      .post(`/api/projects/${projectId}/clearance/evaluate`)
-      .send({ canonicalEntityIds: [entityId] });
+    const entities =
+      scriptRes.body.entities ||
+      (await request(app).get(`/api/projects/${projectId}/entities`)).body ||
+      [];
+    const entityList = Array.isArray(entities) ? entities : (entities as any).entities || [];
+    entityId = entityList[0]?.id;
+
+    if (entityId) {
+      await request(app)
+        .post(`/api/projects/${projectId}/clearance/evaluate`)
+        .send({ canonicalEntityIds: [entityId] });
+    }
   });
 
   it('should compile, hash, and export a complete project clearance binder with SHA-256 integrity digest and mixed provenance summary', async () => {

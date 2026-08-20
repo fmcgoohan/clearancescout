@@ -37,6 +37,25 @@ describe('Contract: Feature 018 PDF Extraction Integrity & CLOUD_MODE Demo Bound
     expect(validPdfRes.status).toBe(200);
     expect(validPdfRes.body.scenesCount).toBeGreaterThanOrEqual(1);
     expect(validPdfRes.body.entitiesCount).toBeGreaterThanOrEqual(1);
+
+    // 3. Upload authentic binary PDF file fixture via multipart/form-data to a dedicated project
+    const pdfProjRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Binary PDF Ingestion Project',
+        productionCompany: 'Studio Legal',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const pdfProjId = pdfProjRes.body.id;
+
+    const binaryUploadRes = await request(app)
+      .post(`/api/projects/${pdfProjId}/script`)
+      .attach('script', 'tests/fixtures/sample_script.pdf');
+
+    expect(binaryUploadRes.status).toBe(200);
+    expect(binaryUploadRes.body.scenesCount).toBe(2);
+    expect(binaryUploadRes.body.entitiesCount).toBeGreaterThanOrEqual(2);
   });
 
   it('should isolate CLOUD_MODE demo ingestion from synthetic fixture assessments', async () => {

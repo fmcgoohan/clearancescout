@@ -6,6 +6,7 @@ import { entityRepo } from '../repositories/EntityRepo.js';
 import { canonicalRegistryWorkflow } from '../workflows/canonicalRegistryWorkflow.js';
 import { demoAutomationWorkflow } from '../workflows/demoAutomationWorkflow.js';
 import { config } from '../config.js';
+import { extractTextFromPdfBuffer } from '../agents/ScriptParserAgent.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 export const projectRouter = Router();
@@ -131,35 +132,36 @@ projectRouter.post('/:id/script', upload.single('script'), async (req: Request, 
       const origName = req.file.originalname.toLowerCase();
       if (origName.endsWith('.fountain')) {
         format = 'FOUNTAIN';
-      } else if (origName.endsWith('.pdf')) {
+        scriptText = req.file.buffer.toString('utf-8');
+      } else if (origName.endsWith('.pdf') || req.file.mimetype === 'application/pdf') {
         format = 'PDF';
+        try {
+          scriptText = extractTextFromPdfBuffer(req.file.buffer);
+        } catch (err: any) {
+          return res.status(400).json({
+            error:
+              err.message ||
+              'Unable to extract text from PDF. The document may be a scanned image or encrypted. Please provide a text-based PDF, Fountain, or Plaintext screenplay.',
+            code: err.code || 'PDF_EXTRACTION_FAILED',
+          });
+        }
+      } else {
+        scriptText = req.file.buffer.toString('utf-8');
       }
-      scriptText = req.file.buffer.toString('utf-8');
     } else if (req.body.scriptText) {
       scriptText = req.body.scriptText;
+      if (format === 'PDF' && scriptText.startsWith('%PDF')) {
+        try {
+          scriptText = extractTextFromPdfBuffer(Buffer.from(scriptText, 'latin1'));
+        } catch (err: any) {
+          return res.status(400).json({
+            error: err.message || 'Unable to extract text from PDF.',
+            code: err.code || 'PDF_EXTRACTION_FAILED',
+          });
+        }
+      }
     } else {
       return res.status(400).json({ error: 'Script file or scriptText payload is required.' });
-    }
-
-    if (format === 'PDF') {
-      const isRawBinary =
-        scriptText.startsWith('%PDF') &&
-        !scriptText.includes('INT.') &&
-        !scriptText.includes('EXT.') &&
-        !scriptText.includes('SCENE');
-      const printableWords = scriptText
-        .replace(/[^a-zA-Z0-9\s]/g, ' ')
-        .trim()
-        .split(/\s+/)
-        .filter((w) => w.length > 1);
-
-      if (isRawBinary || printableWords.length < 5) {
-        return res.status(400).json({
-          error:
-            'Unable to extract text from PDF. The document may be a scanned image or encrypted. Please provide a text-based PDF, Fountain, or Plaintext screenplay.',
-          code: 'PDF_EXTRACTION_FAILED',
-        });
-      }
     }
 
     const result = await canonicalRegistryWorkflow.processScriptUpload(projectId, scriptText, format);

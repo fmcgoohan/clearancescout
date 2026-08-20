@@ -75,18 +75,18 @@ describe('Contract: Feature 018 Fail-Closed CLOUD_MODE & Clean Zero-Hit Groundin
       occurrenceId: `occ-${entity.id}`,
       canonicalEntityId: entity.id,
       sceneId: 'scene-1',
-      riskStatus: 'NO_ISSUE_SURFACED',
-      riskScore: 10,
-      legalRationale: 'Live research completed with zero conflicting marks found.',
-      contextFlags: ['ZERO_TRADEMARK_CONFLICTS_SURFACED'],
+      riskStatus: 'REVIEW_RECOMMENDED',
+      riskScore: 45,
+      legalRationale: 'Completed live search across public trademark registries with zero conflicting marks surfaced.',
+      contextFlags: ['ZERO_TRADEMARK_CONFLICTS_SURFACED', 'UNREGISTERED_HERO_REVIEW'],
       provenance: 'PARALLEL_LIVE',
       citations: [
         {
           id: 'cit-live-1',
-          sourceUrl: 'https://parallel.api/search?q=Fictional+NonExistent+AlphaMark+9999',
+          sourceUrl: 'https://parallel.ai/search',
           query: 'Fictional NonExistent AlphaMark 9999',
           retrievedAt: new Date().toISOString(),
-          excerptSnippet: 'Completed live search across public trademark and brand registries with zero conflicting marks surfaced.',
+          excerptSnippet: 'Completed live search across public trademark and brand registries with zero conflicting marks surfaced for Fictional NonExistent AlphaMark 9999.',
           registrationStatus: 'UNKNOWN',
           provenance: 'PARALLEL_LIVE',
         },
@@ -95,7 +95,8 @@ describe('Contract: Feature 018 Fail-Closed CLOUD_MODE & Clean Zero-Hit Groundin
 
     expect(asm.provenance).toBe('PARALLEL_LIVE');
     expect(asm.citations[0].provenance).toBe('PARALLEL_LIVE');
-    expect(asm.citations[0].corporateOwner).toBeUndefined(); // Zero synthetic owner
-    expect(asm.citations[0].registrationStatus).toBe('UNKNOWN'); // Not claiming active registered
+    expect(asm.citations[0].corporateOwner).toBeUndefined(); // Never populated with synthetic owner
+    expect(asm.citations[0].disputePrecedents).toBeUndefined(); // Never populated with synthetic precedents
+    expect(asm.citations[0].registrationStatus).toBe('UNKNOWN'); // Kept unknown, not registered active
   });
 });

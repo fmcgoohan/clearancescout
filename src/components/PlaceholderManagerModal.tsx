@@ -66,6 +66,9 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
   const [approvedBy, setApprovedBy] = useState('Clearance Coordinator');
   const [approvedRole, setApprovedRole] = useState('Production Clearance Lead');
 
+  const [scopeType, setScopeType] = useState<'SELECTED_SCENES' | 'SINGLE_OCCURRENCE' | 'PROJECT_WIDE'>('SELECTED_SCENES');
+  const [sceneNumbersInput, setSceneNumbersInput] = useState<string>('1');
+
   // Category specific fields
   const [bpm, setBpm] = useState<string>('');
   const [musicalKey, setMusicalKey] = useState<string>('');
@@ -91,7 +94,7 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
     try {
       const res = await apiFetch(`/api/projects/${projectId}/entities/${entityId}/placeholder`);
       if (res.ok) {
-        const ph: ReplacementPlaceholderData = await res.json();
+        const ph: any = await res.json();
         setExistingPlaceholder(ph);
         setAssetCategory(ph.assetCategory);
         setFictionalName(ph.fictionalName);
@@ -100,6 +103,10 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
         setCreativeRationale(ph.creativeRationale || '');
         setApprovedBy(ph.approvedBy || '');
         setApprovedRole(ph.approvedRole || '');
+        setScopeType(ph.isProjectWide ? 'PROJECT_WIDE' : ph.scopeType || 'SELECTED_SCENES');
+        if (ph.sceneIds && ph.sceneIds.length > 0) {
+          setSceneNumbersInput(ph.sceneIds.join(', '));
+        }
 
         if (ph.categoryDetails) {
           setBpm(ph.categoryDetails.bpm ? String(ph.categoryDetails.bpm) : '');
@@ -121,6 +128,8 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
         setDescription('');
         setClearanceTier('TEMP_APPROVED');
         setCreativeRationale('');
+        setScopeType('SELECTED_SCENES');
+        setSceneNumbersInput('1');
         setBpm('');
         setMusicalKey('');
         setMusicalStyle('');
@@ -163,6 +172,12 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
         if (packagingDimensions) categoryDetails.packagingDimensions = packagingDimensions;
       }
 
+      const sceneIds =
+        scopeType === 'SELECTED_SCENES' && sceneNumbersInput
+          ? sceneNumbersInput.split(',').map((s) => s.trim()).filter(Boolean)
+          : undefined;
+      const isProjectWide = scopeType === 'PROJECT_WIDE';
+
       const payload = {
         canonicalEntityId: entityId,
         assetCategory,
@@ -172,6 +187,9 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
         creativeRationale: creativeRationale.trim() || 'Fictional replacement asset',
         approvedBy: approvedBy.trim() || 'Clearance Team',
         approvedRole: approvedRole.trim(),
+        scopeType,
+        sceneIds,
+        isProjectWide,
         categoryDetails,
       };
 
@@ -404,6 +422,57 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
                     <option value="TEMP_APPROVED">🟡 TEMP_APPROVED (On-Set Shooting)</option>
                     <option value="FINAL_CLEARED">🟢 FINAL_CLEARED (Picture Lock & Distribution)</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Placeholder Scope Configuration (Scoped by default) */}
+              <div style={{ padding: '10px 12px', borderRadius: '6px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: scopeType === 'SELECTED_SCENES' ? '1fr 1fr' : '1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                      Mitigation Scope *
+                    </label>
+                    <select
+                      value={scopeType}
+                      onChange={(e) => setScopeType(e.target.value as any)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        background: 'var(--bg-card)',
+                        color: 'var(--text-main)',
+                        border: '1px solid var(--border-color)',
+                        fontSize: '0.82rem',
+                      }}
+                    >
+                      <option value="SELECTED_SCENES">🎯 Selected Scene(s) Scope (Default)</option>
+                      <option value="SINGLE_OCCURRENCE">📍 Single Occurrence Scope</option>
+                      <option value="PROJECT_WIDE">🌐 Project-Wide Scope (All Scenes)</option>
+                    </select>
+                  </div>
+
+                  {scopeType === 'SELECTED_SCENES' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                        Target Scene Numbers (comma-separated)
+                      </label>
+                      <input
+                        type="text"
+                        value={sceneNumbersInput}
+                        onChange={(e) => setSceneNumbersInput(e.target.value)}
+                        placeholder="e.g. 1, 2"
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          background: 'var(--bg-card)',
+                          color: 'var(--text-main)',
+                          border: '1px solid var(--border-color)',
+                          fontSize: '0.82rem',
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

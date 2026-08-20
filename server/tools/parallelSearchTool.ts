@@ -48,9 +48,7 @@ export class ParallelSearchTool {
                   retrievedAt: now,
                   excerptSnippet:
                     (r.excerpts && r.excerpts[0]) || r.title || `Live search result for ${entityName}`,
-                  registrationStatus: 'REGISTERED_ACTIVE' as const,
-                  corporateOwner: ownerInfo.owner,
-                  disputePrecedents: ownerInfo.precedents,
+                  registrationStatus: 'UNKNOWN' as const,
                   provenance: 'PARALLEL_LIVE' as const,
                 }))
               : [

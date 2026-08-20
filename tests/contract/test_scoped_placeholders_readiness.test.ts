@@ -83,5 +83,33 @@ Alex throws the hazardous AeroTech Prism Laptop that exploded with toxic sparks 
 
     // Scene 2 does NOT have a placeholder covering it -> RED
     expect(assessedScene2?.status).toBe('RED');
+
+    // 6. Create a SECOND distinct placeholder for Scene 2 with FINAL_CLEARED tier
+    const pl2Res = await request(app)
+      .post(`/api/projects/${projectId}/placeholders`)
+      .send({
+        canonicalEntityId: laptop!.id,
+        suggestedName: 'QuantumCore Laptop Final',
+        placeholderTier: 'FINAL_CLEARED',
+        visualDescription: 'Custom 3D-printed prop',
+        rationale: 'Permanent prop clearance for rooftop scene',
+        scopeType: 'SELECTED_SCENES',
+        sceneIds: [scene2.id],
+        isProjectWide: false,
+      });
+
+    expect(pl2Res.status).toBe(201);
+
+    // 7. Verify both placeholders coexist: Scene 1 is WORKING_CLEAR and Scene 2 is now FINAL_CLEAR
+    const allPlaceholders = await request(app).get(`/api/projects/${projectId}/placeholders`);
+    expect(allPlaceholders.body.length).toBe(2);
+
+    const finalReadiness = await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
+    const s1Final = finalReadiness.scenes.find((s) => s.sceneId === scene1.id);
+    const s2Final = finalReadiness.scenes.find((s) => s.sceneId === scene2.id);
+
+    expect(s1Final?.status).toBe('WORKING_CLEAR');
+    expect(s2Final?.status).toBe('FINAL_CLEAR');
+    expect(finalReadiness.redScenesCount).toBe(0);
   });
 });

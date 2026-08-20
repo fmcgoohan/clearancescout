@@ -3,7 +3,7 @@ import { assessmentRepo, ClearanceRiskAssessmentData, OccurrenceContextInterpret
 import { projectRepo } from '../repositories/ProjectRepo.js';
 import { rightsRepo } from '../repositories/RightsRepo.js';
 import { actionDispatcher } from './actionDispatcher.js';
-import { parallelSearchTool } from '../tools/parallelSearchTool.js';
+import { parallelSearchTool, SearchResult } from '../tools/parallelSearchTool.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
@@ -23,6 +23,7 @@ export interface OccurrenceEvaluationResult {
 
 export class ClearanceEvaluator {
   private ai: GoogleGenAI | null = null;
+  private groundingCache: Map<string, SearchResult> = new Map();
 
   constructor() {
     if (config.geminiApiKey) {
@@ -30,11 +31,62 @@ export class ClearanceEvaluator {
     }
   }
 
+  invalidateGroundingCache(projectId: string, canonicalEntityId?: string): void {
+    if (canonicalEntityId) {
+      this.groundingCache.delete(`${projectId}:${canonicalEntityId}`);
+    } else {
+      this.groundingCache.clear();
+    }
+  }
+
+  async getOrFetchGroundingSearch(
+    projectId: string,
+    entity: CanonicalEntityData,
+    activeMode: string
+  ): Promise<SearchResult> {
+    const cacheKey = `${projectId}:${entity.id}`;
+    if (this.groundingCache.has(cacheKey)) {
+      return this.groundingCache.get(cacheKey)!;
+    }
+
+    const existingAssessments = await assessmentRepo.getAssessmentsByEntity(projectId, entity.id);
+    if (existingAssessments.length > 0 && existingAssessments[0].citations?.length > 0) {
+      const first = existingAssessments[0];
+      const result: SearchResult = {
+        query: first.citations[0]?.query || entity.canonicalName,
+        citations: first.citations,
+        provenance: first.provenance || (activeMode === 'CLOUD_MODE' ? 'PARALLEL_LIVE' : 'DEMO_FIXTURE'),
+      };
+      this.groundingCache.set(cacheKey, result);
+      return result;
+    }
+
+    // First time researching this entity: consume 1 live quota point in CLOUD_MODE
+    if (activeMode === 'CLOUD_MODE') {
+      const quotaResult = await projectRepo.consumeLiveQuota(projectId, 1);
+      if (!quotaResult.success) {
+        const err: any = new Error(
+          `Live research quota exceeded for this project (${quotaResult.quota.remaining}/${quotaResult.quota.limit} remaining).`
+        );
+        err.status = 429;
+        err.quota = quotaResult.quota;
+        throw err;
+      }
+    }
+
+    const searchResult = await parallelSearchTool.searchTrademarkGrounding(entity.canonicalName, activeMode);
+    this.groundingCache.set(cacheKey, searchResult);
+    return searchResult;
+  }
+
   async retryEntityResearch(projectId: string, canonicalEntityId: string): Promise<ResearchRetryResult> {
     const entity = await entityRepo.getEntityById(projectId, canonicalEntityId);
     if (!entity) {
       throw new Error(`Canonical entity ${canonicalEntityId} not found in project ${projectId}`);
     }
+
+    // Invalidate cache for retry
+    this.invalidateGroundingCache(projectId, canonicalEntityId);
 
     // Eligibility Gating: Retry is permitted only for INSUFFICIENT_EVIDENCE, un-evaluated items, or overridden entities needing evidence refresh
     if (!entity.isOverridden && entity.overallClearanceStatus !== 'INSUFFICIENT_EVIDENCE') {
@@ -76,23 +128,11 @@ export class ClearanceEvaluator {
       throw new Error(`Canonical entity ${occurrence.canonicalEntityId} not found`);
     }
 
-    // Live Quota Enforcement
     const project = await projectRepo.getProject(projectId);
     const activeMode = project?.executionMode || config.executionMode;
-    if (activeMode === 'CLOUD_MODE') {
-      const quotaResult = await projectRepo.consumeLiveQuota(projectId, 1);
-      if (!quotaResult.success) {
-        const err: any = new Error(
-          `Live research quota exceeded for this project (${quotaResult.quota.remaining}/${quotaResult.quota.limit} remaining).`
-        );
-        err.status = 429;
-        err.quota = quotaResult.quota;
-        throw err;
-      }
-    }
 
-    // Step 1: Grounding Search (passes activeMode)
-    const searchResult = await parallelSearchTool.searchTrademarkGrounding(entity.canonicalName, activeMode);
+    // Step 1: Grounding Search (reused & cached per canonical entity)
+    const searchResult = await this.getOrFetchGroundingSearch(projectId, entity, activeMode);
 
     timelineEmitter.emit(projectId, 'TOOL_CALL', `Grounding Research for Scene Occurrence: ${entity.canonicalName}`, {
       occurrenceId,
@@ -233,10 +273,17 @@ Return valid JSON with these fields:
       rationale = `High brand protection enforcement mark in ${sceneId}: ${entity.canonicalName}. Written clearance release required.`;
       contextFlags.push('FAMOUS_MARK_PROTECTION', 'CLEARANCE_RELEASE_REQUIRED');
     } else if (searchResult.citations[0]?.registrationStatus === 'UNKNOWN') {
-      status = 'NO_ISSUE_SURFACED';
-      riskScore = 15;
-      rationale = `Live search surfaced zero conflicting trademark registrations for ${entity.canonicalName}. Incidental usage in ${sceneId} is clear.`;
-      contextFlags.push('ZERO_TRADEMARK_CONFLICTS_SURFACED');
+      if (occurrenceContext.prominence === 'HERO_FOREGROUND' || occurrenceContext.endorsementImplication) {
+        status = 'REVIEW_RECOMMENDED';
+        riskScore = 45;
+        rationale = `Live search surfaced zero conflicting trademark registrations for "${entity.canonicalName}". Review recommended to confirm unregistered usage in hero context before shooting.`;
+        contextFlags.push('ZERO_TRADEMARK_CONFLICTS_SURFACED', 'UNREGISTERED_HERO_REVIEW');
+      } else {
+        status = 'NO_ISSUE_SURFACED';
+        riskScore = 15;
+        rationale = `Live search surfaced zero conflicting trademark registrations for "${entity.canonicalName}". Incidental background usage in ${sceneId} is clear.`;
+        contextFlags.push('ZERO_TRADEMARK_CONFLICTS_SURFACED', 'INCIDENTAL_USAGE_CLEAR');
+      }
     } else {
       status = 'NO_ISSUE_SURFACED';
       riskScore = 15;
@@ -301,17 +348,6 @@ Return valid JSON with these fields:
   async evaluateEntityClearance(projectId: string, canonicalEntityId: string): Promise<ClearanceRiskAssessmentData> {
     const project = await projectRepo.getProject(projectId);
     const activeMode = project?.executionMode || config.executionMode;
-    if (activeMode === 'CLOUD_MODE') {
-      const quotaResult = await projectRepo.consumeLiveQuota(projectId, 1);
-      if (!quotaResult.success) {
-        const err: any = new Error(
-          `Live research quota exceeded for this project (${quotaResult.quota.remaining}/${quotaResult.quota.limit} remaining).`
-        );
-        err.status = 429;
-        err.quota = quotaResult.quota;
-        throw err;
-      }
-    }
 
     const entity = await entityRepo.getEntityById(projectId, canonicalEntityId);
     if (!entity) {
@@ -331,7 +367,7 @@ Return valid JSON with these fields:
     } else {
       // Baseline evaluation when no specific scene occurrences exist
       const rightsCoverage = await rightsRepo.evaluateRightsCoverage(projectId, canonicalEntityId);
-      const searchResult = await parallelSearchTool.searchTrademarkGrounding(entity.canonicalName, activeMode);
+      const searchResult = await this.getOrFetchGroundingSearch(projectId, entity, activeMode);
 
       let status: ClearanceStatus = 'REVIEW_RECOMMENDED';
       let riskScore = 45;
