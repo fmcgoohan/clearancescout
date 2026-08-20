@@ -44,6 +44,10 @@ export interface CanonicalEntityData {
   parentEntityName?: string;
   relationshipType?: EntityRelationshipType;
 
+  // Versioning & Invalidation (Feature 019)
+  groundingCacheVersion?: number;
+  isStale?: boolean;
+
   // Counsel Overrides & Cards
   isOverridden?: boolean;
   latestOverride?: {
@@ -474,6 +478,38 @@ export class EntityRepo {
     return updated;
   }
 
+  async deleteOccurrencesByProject(projectId: string): Promise<number> {
+    let deletedCount = 0;
+    if (typeof this.db.listCollectionNames === 'function') {
+      const colNames: string[] = this.db.listCollectionNames();
+      const occCols = colNames.filter(
+        (name) => name.startsWith(`projects/${projectId}/scenes/`) && name.endsWith('/occurrences')
+      );
+      for (const colName of occCols) {
+        const col = await this.db.collection(colName);
+        const snap = await col.get();
+        for (const doc of snap.docs) {
+          await col.doc(doc.id).delete();
+          deletedCount++;
+        }
+      }
+      return deletedCount;
+    }
+
+    const scenesCol = await this.db.collection(`projects/${projectId}/scenes`);
+    const scenesSnap = await scenesCol.get();
+
+    for (const sceneDoc of scenesSnap.docs) {
+      const occCol = await this.db.collection(`projects/${projectId}/scenes/${sceneDoc.id}/occurrences`);
+      const occSnap = await occCol.get();
+      for (const occDoc of occSnap.docs) {
+        await occCol.doc(occDoc.id).delete();
+        deletedCount++;
+      }
+    }
+    return deletedCount;
+  }
+
   async computeDerivedCanonicalStatus(projectId: string, canonicalEntityId: string): Promise<ClearanceStatus> {
     const occurrences = await this.getOccurrencesByEntity(projectId, canonicalEntityId);
     
@@ -485,22 +521,15 @@ export class EntityRepo {
       return entity?.overallClearanceStatus || 'INSUFFICIENT_EVIDENCE';
     }
 
-    // Filter to evaluated occurrences or occurrences with scene overrides
-    const evaluatedOccurrences = occurrences.filter(
-      (occ) => occ.evaluatedAt || overrides.some((o: any) => o.sceneId === occ.sceneId)
-    );
-
-    const targetOccurrences = evaluatedOccurrences.length > 0 ? evaluatedOccurrences : occurrences;
-
-    // Determine effective status for each occurrence taking into account scene overrides (Feature 003)
+    // Determine effective status across all occurrences (FR-012 invariant)
     let maxSeverity = 0;
     let derivedStatus: ClearanceStatus = 'NO_ISSUE_SURFACED';
 
-    for (const occ of targetOccurrences) {
+    for (const occ of occurrences) {
       // Check for scene-specific override
       const sceneOvr = overrides.find((o: any) => o.sceneId === occ.sceneId);
       const effectiveOccStatus: ClearanceStatus = sceneOvr?.overrideStatus || occ.clearanceStatus || 'INSUFFICIENT_EVIDENCE';
-      const severity = STATUS_SEVERITY_RANK[effectiveOccStatus] || 1;
+      const severity = STATUS_SEVERITY_RANK[effectiveOccStatus] || 2;
 
       if (severity > maxSeverity) {
         maxSeverity = severity;

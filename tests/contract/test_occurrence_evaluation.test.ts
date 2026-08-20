@@ -52,7 +52,8 @@ describe('Contract: Occurrence-Level Evaluation & Canonical Roll-up (Feature 016
       .send({});
     expect(eval1Res.status).toBe(200);
     expect(eval1Res.body.clearanceStatus).toBe('NO_ISSUE_SURFACED');
-    expect(eval1Res.body.derivedCanonicalStatus).toBe('NO_ISSUE_SURFACED');
+    // Unresolved occ2 holds canonical status at INSUFFICIENT_EVIDENCE (Feature 019 FR-012)
+    expect(eval1Res.body.derivedCanonicalStatus).toBe('INSUFFICIENT_EVIDENCE');
 
     // 6. Evaluate Occurrence 2 -> Expect ACTION_REQUIRED and derived canonical status rolls up to ACTION_REQUIRED
     const eval2Res = await request(app)

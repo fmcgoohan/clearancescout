@@ -14,9 +14,9 @@ export interface SearchResult {
 
 export class ParallelSearchTool {
   async searchTrademarkGrounding(entityName: string, executionMode?: string): Promise<SearchResult> {
+    const activeMode = config.executionMode === 'CLOUD_MODE' ? 'CLOUD_MODE' : (executionMode || config.executionMode);
     const query = `${entityName} registered trademark status ownership classification dispute precedents`;
     const now = new Date().toISOString();
-    const activeMode = executionMode || config.executionMode;
 
     const normKey = entityName.toLowerCase();
     const fixtureEntry = Object.entries(PARALLEL_SEARCH_FIXTURES).find(([k]) => normKey.includes(k))?.[1];

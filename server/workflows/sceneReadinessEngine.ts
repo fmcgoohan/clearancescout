@@ -77,7 +77,12 @@ export class SceneReadinessEngine {
       const placeholder = entityPlaceholders.find((p) =>
         placeholderRepo.isOccurrenceCovered(p, sceneId, occ.id)
       ) || null;
-      const hasReplacementCard = Boolean(entity.replacementCard);
+      const hasReplacementCard = Boolean(
+        entity.replacementCard &&
+        entity.replacementCard.status === 'APPROVED' &&
+        entity.replacementCard.clearanceStatus === 'NO_ISSUE_SURFACED' &&
+        entity.replacementCard.selfClearanceResult !== 'REJECTED'
+      );
       const matchingOverride = overrides
         .filter((o) => o.canonicalEntityId === entity.id && (o.sceneId === sceneId || !o.sceneId))
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
@@ -90,7 +95,7 @@ export class SceneReadinessEngine {
         rightsStatus = 'EXPIRED';
       }
 
-      const isPlaceholderCovering = Boolean(placeholder);
+      const isPlaceholderCovering = Boolean(placeholder && placeholder.clearanceTier);
 
       // Deterministic Item Readiness Classification
       let readinessTier: ItemReadinessTier = 'BLOCKER';
@@ -119,7 +124,7 @@ export class SceneReadinessEngine {
         readinessTier = 'WORKING_CLEAR';
         rationale = `Working Clear: Interim counsel authorization granted (${matchingOverride.rationale}).`;
       } else {
-        // ACTION_REQUIRED, INSUFFICIENT_EVIDENCE, or unmitigated REVIEW_RECOMMENDED
+        // ACTION_REQUIRED, INSUFFICIENT_EVIDENCE, or unmitigated REVIEW_RECOMMENDED (including FAILED/REJECTED replacements)
         readinessTier = 'BLOCKER';
         rationale = `Clearance Blocker: ${effectiveStatus} requires affirmative interim replacement prop card, written release, or counsel override.`;
       }

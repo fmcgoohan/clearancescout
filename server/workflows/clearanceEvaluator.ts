@@ -159,7 +159,7 @@ export class ClearanceEvaluator {
     }
 
     const project = await projectRepo.getProject(projectId);
-    const activeMode = project?.executionMode || config.executionMode;
+    const activeMode = config.executionMode === 'CLOUD_MODE' ? 'CLOUD_MODE' : (project?.executionMode || config.executionMode);
 
     // Step 1: Grounding Search (reused & cached per canonical entity, unless bypassing)
     const searchResult = await this.getOrFetchGroundingSearch(projectId, entity, activeMode, bypassCache);
@@ -429,7 +429,7 @@ Return valid JSON with these fields:
     });
 
     // Step 6: Persist Assessment Record
-    const assessment = await assessmentRepo.createAssessment({
+    const assessment = await assessmentRepo.createAssessment(projectId, {
       occurrenceId,
       canonicalEntityId: entity.id,
       sceneId,
@@ -479,7 +479,7 @@ Return valid JSON with these fields:
     bypassCache: boolean = false
   ): Promise<ClearanceRiskAssessmentData> {
     const project = await projectRepo.getProject(projectId);
-    const activeMode = project?.executionMode || config.executionMode;
+    const activeMode = config.executionMode === 'CLOUD_MODE' ? 'CLOUD_MODE' : (project?.executionMode || config.executionMode);
 
     const entity = await entityRepo.getEntityById(projectId, canonicalEntityId);
     if (!entity) {
@@ -567,7 +567,7 @@ Return valid JSON with these fields:
         }
       }
 
-      latestAssessment = await assessmentRepo.createAssessment({
+      latestAssessment = await assessmentRepo.createAssessment(projectId, {
         occurrenceId: `occ-${canonicalEntityId}`,
         canonicalEntityId,
         sceneId: 'scene-general',

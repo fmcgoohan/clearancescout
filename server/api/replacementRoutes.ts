@@ -54,6 +54,7 @@ replacementRouter.post('/projects/:id/replacements', async (req: Request, res: R
       designBrief: visualDescription || creativeRationale || 'Prop replacement',
       nonInfringementRationale: creativeRationale || 'Custom created prop',
       clearanceStatus: 'NO_ISSUE_SURFACED',
+      selfClearanceResult: status === 'PROPOSED' ? 'ESCALATED_TO_COUNSEL' : 'ACCEPTED',
       status: status || 'APPROVED',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

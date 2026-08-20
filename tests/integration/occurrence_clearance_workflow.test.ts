@@ -54,7 +54,8 @@ describe('Integration: Occurrence Clearance Workflow (Feature 016 Phase 2)', () 
     expect(eval1Res.status).toBe(200);
     expect(eval1Res.body.clearanceStatus).toBe('NO_ISSUE_SURFACED');
     expect(eval1Res.body.riskScore).toBe(15);
-    expect(eval1Res.body.derivedCanonicalStatus).toBe('NO_ISSUE_SURFACED');
+    // Unresolved occ2 holds canonical status at INSUFFICIENT_EVIDENCE (Feature 019 FR-012)
+    expect(eval1Res.body.derivedCanonicalStatus).toBe('INSUFFICIENT_EVIDENCE');
 
     // 6. Evaluate Occurrence 2 individually
     const eval2Res = await request(app)

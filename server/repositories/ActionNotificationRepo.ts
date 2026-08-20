@@ -34,6 +34,7 @@ export interface ClearanceActionItem {
   priority: ActionPriority;
   status: ActionStatus;
   resolutionTrigger?: string;
+  resolutionReason?: string;
   resolvedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -90,6 +91,23 @@ export class ActionNotificationRepo {
     const col = await this.getActionsCollection(projectId);
     await col.doc(id).set(actionItem);
     return actionItem;
+  }
+
+  async createAction(
+    projectIdOrInput: string | any,
+    maybeInput?: any
+  ): Promise<ClearanceActionItem> {
+    const projectId = typeof projectIdOrInput === 'string' ? projectIdOrInput : projectIdOrInput.projectId;
+    const input = typeof projectIdOrInput === 'string' ? maybeInput : projectIdOrInput;
+    return await this.createActionItem(projectId, {
+      title: input.title || `Action for ${input.entityName || 'IP Item'}`,
+      targetDepartment: input.targetDepartment || input.department || 'LEGAL_COUNSEL',
+      actionType: input.actionType || 'PRODUCTION_REVIEW',
+      priority: input.priority || 'HIGH',
+      description: input.description || 'Action item',
+      status: input.status || 'OPEN',
+      ...input,
+    });
   }
 
   async getActionById(projectId: string, actionId: string): Promise<ClearanceActionItem | null> {
@@ -151,6 +169,7 @@ export class ActionNotificationRepo {
       ...current,
       status,
       resolutionTrigger: resolutionTrigger || current.resolutionTrigger,
+      resolutionReason: resolutionTrigger || current.resolutionReason || current.resolutionTrigger,
       resolvedAt: status === 'RESOLVED' ? now : current.resolvedAt,
       updatedAt: now,
     };

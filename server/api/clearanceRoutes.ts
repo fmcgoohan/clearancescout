@@ -11,19 +11,22 @@ export const clearanceRouter = Router();
 clearanceRouter.post('/projects/:id/clearance/evaluate', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = req.params.id;
-    const { canonicalEntityIds } = req.body;
+    const entityIds = req.body.canonicalEntityIds || (req.body.canonicalEntityId ? [req.body.canonicalEntityId] : []);
 
-    if (!canonicalEntityIds || !Array.isArray(canonicalEntityIds) || canonicalEntityIds.length === 0) {
-      return res.status(400).json({ error: 'canonicalEntityIds array is required.' });
+    if (!Array.isArray(entityIds) || entityIds.length === 0) {
+      return res.status(400).json({ error: 'canonicalEntityIds array or canonicalEntityId is required.' });
     }
 
     const assessments = [];
-    for (const entityId of canonicalEntityIds) {
+    for (const entityId of entityIds) {
       const asm = await clearanceEvaluator.evaluateEntityClearance(projectId, entityId);
       assessments.push(asm);
     }
 
-    return res.json({ assessments });
+    return res.json({
+      assessments,
+      assessment: assessments[0],
+    });
   } catch (err: any) {
     if (err.status) {
       return res.status(err.status).json({ error: err.message, quota: err.quota });

@@ -1,8 +1,10 @@
 import { projectRepo } from '../repositories/ProjectRepo.js';
 import { sceneRepo, SceneData } from '../repositories/SceneRepo.js';
 import { entityRepo, CanonicalEntityData } from '../repositories/EntityRepo.js';
+import { actionNotificationRepo } from '../repositories/ActionNotificationRepo.js';
 import { scriptParserAgent, ParsedScene } from '../agents/ScriptParserAgent.js';
 import { entityResolutionEngine } from './entityResolutionEngine.js';
+import { clearanceEvaluator } from './clearanceEvaluator.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 
 export interface WorkflowResult {
@@ -29,6 +31,33 @@ export class CanonicalRegistryWorkflow {
     timelineEmitter.emit(projectId, 'DOCUMENT_QUERY', 'Scenes Extracted', {
       count: parsedScenes.length,
     });
+
+    // Clean Screenplay Draft Replacement & Orphan Cleanup (Feature 019 FR-011)
+    const existingScenes = await sceneRepo.getScenesByProject(projectId);
+    if (existingScenes.length > 0) {
+      await entityRepo.deleteOccurrencesByProject(projectId);
+      await sceneRepo.deleteScenesByProject(projectId);
+
+      // Cancel orphaned action items from previous draft
+      try {
+        const openActions = await actionNotificationRepo.getActionsByProject(projectId);
+        for (const act of openActions) {
+          if (act.status === 'OPEN' || act.status === 'IN_PROGRESS') {
+            await actionNotificationRepo.updateActionStatus(projectId, act.id, 'RESOLVED', 'SCRIPT_REVISION_SUPERSEDED');
+          }
+        }
+      } catch (err) {
+        console.warn('Draft replacement action cleanup warning:', err);
+      }
+
+      // Invalidate grounding caches
+      clearanceEvaluator.invalidateGroundingCache(projectId);
+
+      timelineEmitter.emit(projectId, 'STATE_TRANSITION', `Screenplay Draft Replaced (${existingScenes.length} scenes superseded)`, {
+        supersededScenesCount: existingScenes.length,
+        newScenesCount: parsedScenes.length,
+      });
+    }
 
     const createdScenes: SceneData[] = [];
 
