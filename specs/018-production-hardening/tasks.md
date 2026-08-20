@@ -165,3 +165,14 @@ flowchart TD
 - [X] T026 [HIGH] [US3] Refactor action item resolution in `server/workflows/actionDispatcher.ts` to resolve tasks strictly within the created placeholder's explicit scope per FR-008 and US3/AC2 (partial)
 - [X] T027 [HIGH] [US2] Explicitly define Gemini-failure behavior (fail closed or deterministic fallback without fabricating evidence; never leak CoT) in `server/workflows/clearanceEvaluator.ts` and `server/agents/ScriptParserAgent.ts` per Constitution I, Constitution V, FR-004, and US2/AC2 (partial)
 - [X] T028 [MEDIUM] [US5] Add boundary regression tests covering T022-T027 and reconcile `README.md` and `PROVENANCE.md` per FR-014, FR-015, and SC-006 (partial)
+
+---
+
+## Phase 9: Convergence
+
+- [ ] T029 [HIGH] [US1] Distinguish live hits with unknown registration status from true zero-hit live searches in `server/workflows/clearanceEvaluator.ts` and `server/tools/parallelSearchTool.ts` per Constitution II, FR-003, and US1/AC2 (partial)
+- [ ] T030 [HIGH] [US1] Ensure explicit entity research retry forces exactly one fresh canonical search, bypasses cache, and cascades the fresh assessment across all scene occurrences of that entity in `server/workflows/clearanceEvaluator.ts` per FR-005, FR-006, and US1/AC3 (partial)
+- [ ] T031 [HIGH] [US3] Refactor `syncProjectActions` in `server/workflows/actionDispatcher.ts` to strictly enforce occurrence/scene boundaries for contractual rights and counsel overrides per FR-008, Constitution III, and US3/AC2 (partial)
+- [ ] T032 [HIGH] [US2] Visibly tag deterministic context fallback (`CONTEXT_DETERMINISTIC_FALLBACK`) in occurrence assessments when Gemini API invocation fails, without fabricating evidence or leaking raw chain-of-thought per Constitution I, Constitution V, FR-004, and US2/AC2 (partial)
+- [ ] T033 [MEDIUM] [US5] Reconcile and synchronize documentation in `README.md` and `PROVENANCE.md` with complete runtime invariants, search citation types, and exact test metrics per FR-014, FR-015, and SC-006 (partial)
+- [ ] T034 [MEDIUM] [US5] Add rigorous contract regression tests specifically exercising the four runtime cases (unknown vs zero-hit citations, multi-occurrence retry cascade, scoped action sync for rights/overrides, and tagged Gemini fallback) per FR-014, FR-015, and SC-006 (partial)
