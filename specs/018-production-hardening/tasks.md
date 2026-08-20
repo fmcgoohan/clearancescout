@@ -153,3 +153,15 @@ flowchart TD
 - [X] T019 [HIGH] [US3] Enhance `PlaceholderRepo.ts`, `sceneReadinessEngine.ts`, and `PlaceholderManagerModal.tsx` to support multiple scoped placeholders per entity and scoped-by-default creation per FR-007, FR-008, and US3/AC1 (partial)
 - [X] T020 [MEDIUM] [US4] Implement genuine PDF text stream extraction with an authentic binary PDF test fixture in `server/agents/ScriptParserAgent.ts` or cleanly remove PDF support across API/UI/README per FR-011 and US4/AC1 (partial)
 - [X] T021 [MEDIUM] [US5] Upgrade test suites to rigorously validate citation purity, multi-occurrence quota reuse, multi-placeholder scoping, and PDF boundaries, and finalize README reconciliation per FR-014, FR-015, and SC-006 (partial)
+
+---
+
+## Phase 8: Convergence
+
+- [ ] T022 [HIGH] [US1] Ensure risk rationales and context flags accurately reflect live registration status without asserting TRADEMARK_ACTIVE when registration is unknown in `server/workflows/clearanceEvaluator.ts` per Constitution II, FR-003, and US1/AC2 (partial)
+- [ ] T023 [HIGH] [US1] Enforce that explicit research retry bypasses all in-memory cache and persisted grounding records to perform fresh live research in `server/workflows/clearanceEvaluator.ts` per FR-005, FR-006, and US1/AC3 (partial)
+- [ ] T024 [HIGH] [US3] Update `PlaceholderManagerModal.tsx` to load and submit real scene IDs (`scene.id`) and occurrence IDs rather than only scene numbers per FR-007 and US3/AC1 (partial)
+- [ ] T025 [HIGH] [US3] Enforce non-global / scoped-by-default behavior in `server/api/placeholderRoutes.ts` and `PlaceholderRepo.ts` when scope parameters are omitted per FR-007 and US3/AC1 (partial)
+- [ ] T026 [HIGH] [US3] Refactor action item resolution in `server/workflows/actionDispatcher.ts` to resolve tasks strictly within the created placeholder's explicit scope per FR-008 and US3/AC2 (partial)
+- [ ] T027 [HIGH] [US2] Explicitly define Gemini-failure behavior (fail closed or deterministic fallback without fabricating evidence; never leak CoT) in `server/workflows/clearanceEvaluator.ts` and `server/agents/ScriptParserAgent.ts` per Constitution I, Constitution V, FR-004, and US2/AC2 (partial)
+- [ ] T028 [MEDIUM] [US5] Add boundary regression tests covering T022-T027 and reconcile `README.md` and `PROVENANCE.md` per FR-014, FR-015, and SC-006 (partial)
