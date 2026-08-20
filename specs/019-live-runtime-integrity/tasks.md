@@ -130,6 +130,22 @@
 
 ---
 
+## Phase 10: Convergence (Live Runtime & Real-Script Integrity Remediations)
+
+**Purpose**: Remediate remaining gaps in fail-closed collision checks, server mode authority, Firestore persistence verification, endpoint auth, grounding invalidation, chunk overlap, and live-path test coverage.
+
+- [X] T034 Enforce fail-closed collision checks in `server/agents/ReplacementAgent.ts` so exceptions and missing live AI in `CLOUD_MODE` return `INSUFFICIENT_EVIDENCE` and never fall through to demo knownCollisions auto-clear per FR-008 (contradicts)
+- [X] T035 Enforce authoritative server `CLOUD_MODE` precedence for quota reservation and search grounding in `server/workflows/replacementGenerator.ts` preventing persisted project `DEMO_MODE` from bypassing quota per FR-004 (contradicts)
+- [X] T036 Update `server/repositories/firestoreClient.ts` to strictly instantiate authentic Google Cloud Firestore via ADC in `CLOUD_MODE` and report disconnected if in-memory fallback is attempted per FR-005 (contradicts)
+- [X] T037 Guard all mutating endpoints (`POST`, `PUT`, `PATCH`, `DELETE`) and live write routes in `server/middleware/authMiddleware.ts` and `server/middleware/demoAuthMiddleware.ts` when running in `CLOUD_MODE` per FR-006 (partial)
+- [X] T038 Implement automatic `groundingCacheVersion` increment and grounding cache invalidation in `server/repositories/EntityRepo.ts` and `server/workflows/clearanceEvaluator.ts` on entity property updates per FR-013 (missing)
+- [X] T039 Implement 1-scene overlap buffer in windowed chunk parsing within `server/agents/ScriptParserAgent.ts` per FR-003 (partial)
+- [X] T040 Enforce fail-visible `PARSING_FAILED` exception in `server/agents/ScriptParserAgent.ts` when `!this.ai` in `CLOUD_MODE` without silent demo fallback per FR-004 (contradicts)
+- [X] T041 Strengthen live-path contract and integration tests in `tests/contract/` and `tests/integration/` to verify server `CLOUD_MODE` authority, collision fail-closed, replacement readiness gating, grounding cache invalidation, and Firestore ADC persistence per SC-001, SC-002, SC-003 (partial)
+- [X] T042 Standardize `server/repositories/AssessmentRepo.ts` paths to project-scoped subcollections only, removing legacy path dual-writes per FR-005 (partial)
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

@@ -47,7 +47,7 @@ export class ClearanceEvaluator {
     bypassCache: boolean = false
   ): Promise<SearchResult> {
     const cacheKey = `${projectId}:${entity.id}`;
-    if (!bypassCache) {
+    if (!bypassCache && !entity.isStale) {
       if (this.groundingCache.has(cacheKey)) {
         return this.groundingCache.get(cacheKey)!;
       }
@@ -55,21 +55,23 @@ export class ClearanceEvaluator {
       const existingAssessments = await assessmentRepo.getAssessmentsByEntity(projectId, entity.id);
       if (existingAssessments.length > 0 && existingAssessments[0].citations?.length > 0) {
         const first = existingAssessments[0];
-        const isZero = first.contextFlags?.includes('ZERO_TRADEMARK_CONFLICTS_SURFACED');
-        const outcome = first.provenance === 'FALLBACK_FIXTURE'
-          ? 'SERVICE_FALLBACK'
-          : isZero
-          ? 'ZERO_RESULTS'
-          : 'MATCHES_FOUND';
+        if (first.citations.some((c) => c.query?.toLowerCase() === entity.canonicalName.toLowerCase())) {
+          const isZero = first.contextFlags?.includes('ZERO_TRADEMARK_CONFLICTS_SURFACED');
+          const outcome = first.provenance === 'FALLBACK_FIXTURE'
+            ? 'SERVICE_FALLBACK'
+            : isZero
+            ? 'ZERO_RESULTS'
+            : 'MATCHES_FOUND';
 
-        const result: SearchResult = {
-          query: first.citations[0]?.query || entity.canonicalName,
-          citations: first.citations,
-          provenance: first.provenance || (activeMode === 'CLOUD_MODE' ? 'PARALLEL_LIVE' : 'DEMO_FIXTURE'),
-          searchOutcome: outcome,
-        };
-        this.groundingCache.set(cacheKey, result);
-        return result;
+          const result: SearchResult = {
+            query: first.citations[0]?.query || entity.canonicalName,
+            citations: first.citations,
+            provenance: first.provenance || (activeMode === 'CLOUD_MODE' ? 'PARALLEL_LIVE' : 'DEMO_FIXTURE'),
+            searchOutcome: outcome,
+          };
+          this.groundingCache.set(cacheKey, result);
+          return result;
+        }
       }
     }
 

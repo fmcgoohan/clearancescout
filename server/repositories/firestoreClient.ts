@@ -96,10 +96,9 @@ let dbInstance: any;
 
 export function getDb(): any {
   if (!dbInstance) {
-    const isCloudMode = config.executionMode === 'CLOUD_MODE';
-    const hasGcpProject = !!(process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+    const isCloudMode = config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE';
 
-    if (isCloudMode && (hasGcpProject || process.env.NODE_ENV === 'production')) {
+    if (isCloudMode) {
       try {
         const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT || undefined;
         dbInstance = new Firestore({ projectId });
@@ -121,12 +120,21 @@ export function resetDb(): void {
 
 export async function verifyFirestoreConnectivity(): Promise<{ connected: boolean; error?: string }> {
   try {
+    const isCloudMode = config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE';
     const db = getDb();
-    if (db instanceof Firestore) {
+
+    if (isCloudMode) {
+      if (!(db instanceof Firestore)) {
+        return {
+          connected: false,
+          error: 'CLOUD_MODE requires authentic Google Cloud Firestore instance via ADC; in-memory store is prohibited in live runtime.',
+        };
+      }
       // Execute a lightweight read to verify ADC credentials and project reachability
       const testCol = db.collection('_health_check');
       await testCol.limit(1).get();
     }
+
     return { connected: true };
   } catch (err: any) {
     return {

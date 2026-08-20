@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { entityRepo, EntityCategory, EntityRelationshipType } from '../repositories/EntityRepo.js';
 import { entityResolutionEngine } from '../workflows/entityResolutionEngine.js';
+import { clearanceEvaluator } from '../workflows/clearanceEvaluator.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 
 export const entityMutationRouter = Router();
@@ -277,6 +278,10 @@ entityMutationRouter.patch('/projects/:id/entities/:entityId', async (req: Reque
 
     if (!result) {
       return res.status(404).json({ error: `Entity ${entityId} not found.` });
+    }
+
+    if (result.assessmentInvalidated) {
+      clearanceEvaluator.invalidateGroundingCache(projectId, entityId);
     }
 
     if (usageContext && sceneId) {

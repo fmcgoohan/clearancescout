@@ -14,7 +14,8 @@ export class ReplacementGenerator {
     eraAesthetic: string = 'Modern Cinematic'
   ): Promise<ReplacementCardData> {
     const project = await projectRepo.getProject(projectId);
-    if (project?.executionMode === 'CLOUD_MODE') {
+    const isCloudMode = config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE' || project?.executionMode === 'CLOUD_MODE';
+    if (isCloudMode) {
       const quotaResult = await projectRepo.consumeLiveQuota(projectId, 1);
       if (!quotaResult.success) {
         const err: any = new Error(
@@ -62,7 +63,9 @@ export class ReplacementGenerator {
       });
 
       // 2. Ground candidate in trademark & web clearance search
-      const activeMode = project?.executionMode || config.executionMode;
+      const activeMode = (config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE')
+        ? 'CLOUD_MODE'
+        : (project?.executionMode || config.executionMode);
       const searchResult: SearchResult = await parallelSearchTool.searchTrademarkGrounding(candidate.fictionalBrandName, activeMode);
 
       // 3. Evaluate candidate risk against evidence-driven clearance policy

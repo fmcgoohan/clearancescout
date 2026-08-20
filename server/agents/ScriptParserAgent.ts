@@ -132,34 +132,57 @@ export class ScriptParserAgent {
     // Normalize Fountain or raw text comments
     const normalizedText = this.preprocessScript(scriptText, format);
 
-    // If in TEST_MODE, DEMO_MODE, or if no API key is set, use deterministic parsing engine
-    if (config.executionMode !== 'CLOUD_MODE' || !this.ai) {
+    const isCloudMode = config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE';
+    if (isCloudMode && !this.ai) {
+      const parseErr: any = new Error('Live AI screenplay parser unavailable in CLOUD_MODE: GEMINI_API_KEY is not configured.');
+      parseErr.code = 'PARSING_FAILED';
+      parseErr.status = 502;
+      throw parseErr;
+    }
+
+    // If in TEST_MODE or DEMO_MODE, use deterministic parsing engine
+    if (!isCloudMode) {
       return this.parseScriptFallback(normalizedText);
     }
 
     // In CLOUD_MODE: Execute authentic Gemini extraction with windowed chunking for large scripts
     const rawScenes = this.splitIntoRawScenes(normalizedText);
-    const CHUNK_SIZE = 12;
+    const CHUNK_SIZE = 10;
+    const OVERLAP = 1;
 
     if (rawScenes.length <= CHUNK_SIZE) {
       return await this.parseChunkWithGemini(normalizedText, 1);
     }
 
-    // Process large scripts in sequential windowed chunks
+    // Process large scripts in sequential windowed chunks with 1-scene overlap buffer
     const allParsedScenes: ParsedScene[] = [];
-    for (let i = 0; i < rawScenes.length; i += CHUNK_SIZE) {
-      const chunkScenes = rawScenes.slice(i, i + CHUNK_SIZE);
+    const processedSceneNumbers = new Set<number>();
+
+    const step = Math.max(1, CHUNK_SIZE - OVERLAP);
+    for (let i = 0; i < rawScenes.length; i += step) {
+      const chunkEnd = Math.min(i + CHUNK_SIZE, rawScenes.length);
+      const chunkScenes = rawScenes.slice(i, chunkEnd);
       const chunkText = chunkScenes.join('\n\n');
       const startSceneNum = i + 1;
+
       try {
         const parsedChunk = await this.parseChunkWithGemini(chunkText, startSceneNum);
-        allParsedScenes.push(...parsedChunk);
+        for (const scene of parsedChunk) {
+          if (!processedSceneNumbers.has(scene.sceneNumber)) {
+            processedSceneNumbers.add(scene.sceneNumber);
+            allParsedScenes.push(scene);
+          }
+        }
       } catch (err: any) {
-        console.error(`[ScriptParserAgent Error] Failed parsing scene chunk ${Math.floor(i / CHUNK_SIZE) + 1}:`, err);
-        const parseErr: any = new Error(`Live AI screenplay parsing failed during scene extraction chunk ${Math.floor(i / CHUNK_SIZE) + 1}: ${err.message || 'Model rate limit or network error'}`);
+        console.error(`[ScriptParserAgent Error] Failed parsing scene chunk ${Math.floor(i / step) + 1}:`, err);
+        const parseErr: any = new Error(`Live AI screenplay parsing failed during scene extraction chunk ${Math.floor(i / step) + 1}: ${err.message || 'Model rate limit or network error'}`);
         parseErr.code = 'PARSING_FAILED';
         parseErr.status = 502;
         throw parseErr;
+      }
+
+      if (chunkEnd >= rawScenes.length) {
+        break;
       }
     }
 

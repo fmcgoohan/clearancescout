@@ -311,9 +311,20 @@ If collision detected, set "hasCollision": true, "status": "ACTION_REQUIRED", an
         }
 
         return { clearanceStatus: 'NO_ISSUE_SURFACED' };
-      } catch (err) {
-        console.warn('Gemini collision evaluation fallback:', err);
+      } catch (err: any) {
+        console.warn('Gemini collision evaluation failed in CLOUD_MODE:', err);
+        if (config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE') {
+          return {
+            clearanceStatus: 'INSUFFICIENT_EVIDENCE',
+            collisionRationale: `Live collision evaluation failed in CLOUD_MODE for '${candidateName}': ${err?.message || 'Model error'}. Failing closed to prevent unverified auto-clearance.`,
+          };
+        }
       }
+    } else if (config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE') {
+      return {
+        clearanceStatus: 'INSUFFICIENT_EVIDENCE',
+        collisionRationale: `Live collision evaluation unavailable in CLOUD_MODE for '${candidateName}': Gemini client not initialized. Failing closed.`,
+      };
     }
 
     // Deterministic collision checks for test and demo suites

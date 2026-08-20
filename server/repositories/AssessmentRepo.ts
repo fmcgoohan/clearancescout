@@ -63,21 +63,13 @@ export class AssessmentRepo {
 
     const docRef = await this.db.doc(`projects/${projectId}/entities/${input.canonicalEntityId}/assessments/${id}`);
     await docRef.set(assessment);
-    const directRef = await this.db.doc(`projects/${projectId}/assessments/${id}`);
-    await directRef.set(assessment);
     return assessment;
   }
 
   async getAssessmentsByEntity(projectId: string, canonicalEntityId: string): Promise<ClearanceRiskAssessmentData[]> {
     const colRef = await this.db.collection(`projects/${projectId}/entities/${canonicalEntityId}/assessments`);
     const snap = await colRef.get();
-    if (snap.docs && snap.docs.length > 0) {
-      return snap.docs.map((d: any) => d.data() as ClearanceRiskAssessmentData);
-    }
-    // Backward compatibility for legacy paths
-    const legacyCol = await this.db.collection(`projects/${canonicalEntityId}/assessments`);
-    const legacySnap = await legacyCol.get();
-    return legacySnap.docs.map((d: any) => d.data() as ClearanceRiskAssessmentData);
+    return snap.docs.map((d: any) => d.data() as ClearanceRiskAssessmentData);
   }
 }
 

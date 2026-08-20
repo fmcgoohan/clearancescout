@@ -13,14 +13,27 @@ import { config } from '../config.js';
  * - Invalid or missing tokens fail visibly with HTTP 401 and zero secret disclosure.
  */
 export function demoAuthMiddleware(req: Request, res: Response, next: NextFunction) {
-  // If no demo token configured on server, allow all requests (open local dev)
-  const requiredToken = config.demoAccessToken?.trim();
-  if (!requiredToken) {
+  const isCloudMode = config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE';
+
+  // Public exemptions for judge evaluation and container probes
+  if (req.path.endsWith('/script/demo') || req.path === '/health' || req.path.endsWith('/health') || req.path === '/api/health') {
     return next();
   }
 
-  // Public exemptions for judge evaluation and container probes
-  if (req.path.endsWith('/script/demo') || req.path === '/health' || req.path.endsWith('/health')) {
+  // If no demo token configured on server:
+  // In TEST_MODE / DEMO_MODE, allow open local dev
+  // In CLOUD_MODE, require bearer authorization on mutating requests (POST, PUT, PATCH, DELETE)
+  const requiredToken = config.demoAccessToken?.trim();
+  if (!requiredToken) {
+    if (isCloudMode && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      const authHeader = req.headers['authorization'];
+      const customToken = req.headers['x-demo-token'] || req.query.token || req.query.demoToken;
+      if (!authHeader && !customToken) {
+        return res.status(401).json({
+          error: 'Unauthorized: Production live-write endpoints in CLOUD_MODE require an authorization token.',
+        });
+      }
+    }
     return next();
   }
 

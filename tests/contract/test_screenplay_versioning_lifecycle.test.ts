@@ -63,7 +63,7 @@ describe('Feature 019: Screenplay Draft Replacement & Cache Invalidation Lifecyc
     expect(updatedAct?.resolutionReason).toBe('SCRIPT_REVISION_SUPERSEDED');
   });
 
-  it('invalidates grounding search cache on entity name / metadata updates', async () => {
+  it('invalidates grounding search cache and updates groundingCacheVersion on entity name / metadata updates', async () => {
     const ent = await entityRepo.createCanonicalEntity({
       projectId,
       canonicalName: 'Original Brand Name',
@@ -73,8 +73,22 @@ describe('Feature 019: Screenplay Draft Replacement & Cache Invalidation Lifecyc
       groundingCacheVersion: 1,
     });
 
-    clearanceEvaluator.invalidateGroundingCache(projectId, ent.id);
-    // Verified cache invalidate method executes cleanly without errors
-    expect(ent.groundingCacheVersion).toBe(1);
+    // Update entity canonical name
+    const updateResult = await entityRepo.updateCanonicalEntity(projectId, ent.id, {
+      canonicalName: 'New Renamed Brand',
+    });
+
+    expect(updateResult?.assessmentInvalidated).toBe(true);
+    expect(updateResult?.entity.groundingCacheVersion).toBe(2);
+    expect(updateResult?.entity.isStale).toBe(true);
+    expect(updateResult?.entity.overallClearanceStatus).toBe('INSUFFICIENT_EVIDENCE');
+
+    // Run clearance evaluation on renamed entity
+    const newAsm = await clearanceEvaluator.evaluateEntityClearance(projectId, ent.id);
+    expect(newAsm).toBeDefined();
+
+    // Verify entity isStale flag is reset after fresh evaluation
+    const refreshed = await entityRepo.getEntityById(projectId, ent.id);
+    expect(refreshed?.isStale).toBe(false);
   });
 });

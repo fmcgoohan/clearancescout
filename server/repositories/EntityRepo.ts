@@ -156,6 +156,8 @@ export class EntityRepo {
       (updates.entityCategory && updates.entityCategory !== data.entityCategory)
     ) {
       assessmentInvalidated = true;
+      data.groundingCacheVersion = (data.groundingCacheVersion || 0) + 1;
+      data.isStale = true;
       // Invalidate automated risk status iff counsel has not explicitly overridden
       if (!data.isOverridden) {
         data.overallClearanceStatus = 'INSUFFICIENT_EVIDENCE';
@@ -339,6 +341,7 @@ export class EntityRepo {
         return data;
       }
       data.overallClearanceStatus = status;
+      data.isStale = false;
       data.updatedAt = new Date().toISOString();
       await docRef.set(data);
       return data;
