@@ -3,10 +3,13 @@ import { ClearanceCitation, ProvenanceType } from '../repositories/AssessmentRep
 import { PARALLEL_SEARCH_FIXTURES } from '../fixtures/recordReplayFixtures.js';
 import { v4 as uuidv4 } from 'uuid';
 
+export type SearchOutcomeType = 'ZERO_RESULTS' | 'MATCHES_FOUND' | 'SERVICE_FALLBACK';
+
 export interface SearchResult {
   query: string;
   citations: ClearanceCitation[];
   provenance: ProvenanceType;
+  searchOutcome: SearchOutcomeType;
 }
 
 export class ParallelSearchTool {
@@ -39,6 +42,7 @@ export class ParallelSearchTool {
           });
 
           const liveHits = res.results || [];
+          const isZeroResults = liveHits.length === 0;
           const citations: ClearanceCitation[] =
             liveHits.length > 0
               ? liveHits.slice(0, 3).map((r) => ({
@@ -63,7 +67,12 @@ export class ParallelSearchTool {
                   },
                 ];
 
-          return { query, citations, provenance: 'PARALLEL_LIVE' };
+          return {
+            query,
+            citations,
+            provenance: 'PARALLEL_LIVE',
+            searchOutcome: isZeroResults ? 'ZERO_RESULTS' : 'MATCHES_FOUND',
+          };
         } catch (err) {
           console.warn('[ParallelSearchTool] Live search failed, using visible FALLBACK_FIXTURE:', err);
         }
@@ -75,6 +84,7 @@ export class ParallelSearchTool {
       return {
         query,
         provenance: 'FALLBACK_FIXTURE',
+        searchOutcome: 'SERVICE_FALLBACK',
         citations: [
           {
             id: `cit-${uuidv4().slice(0, 8)}`,
@@ -93,9 +103,14 @@ export class ParallelSearchTool {
 
     // DEMO_MODE / TEST_MODE Synthetic Benchmark Dataset from recordReplayFixtures
     if (fixtureEntry) {
+      const isZeroResults =
+        fixtureEntry.registrationStatus === 'UNKNOWN' &&
+        (fixtureEntry.excerptSnippet.includes('zero conflicting') || fixtureEntry.excerptSnippet.includes('zero registered'));
+
       return {
         query,
         provenance: 'DEMO_FIXTURE',
+        searchOutcome: isZeroResults ? 'ZERO_RESULTS' : 'MATCHES_FOUND',
         citations: [
           {
             id: `cit-${uuidv4().slice(0, 8)}`,
@@ -126,6 +141,7 @@ export class ParallelSearchTool {
     return {
       query,
       provenance: 'DEMO_FIXTURE',
+      searchOutcome: 'MATCHES_FOUND',
       citations: [
         {
           id: `cit-${uuidv4().slice(0, 8)}`,

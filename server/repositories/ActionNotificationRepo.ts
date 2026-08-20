@@ -6,7 +6,8 @@ export type ClearanceActionType =
   | 'LEGAL_COUNSEL_RELEASE'
   | 'LOCATIONS_PERMIT'
   | 'PRODUCTION_REVIEW'
-  | 'COUNSEL_OVERRIDE_REVIEW';
+  | 'COUNSEL_OVERRIDE_REVIEW'
+  | 'RETRY_RESEARCH';
 
 export type DepartmentTarget =
   | 'ART_DEPT'

@@ -1,5 +1,6 @@
 import { entityRepo, ClearanceStatus, CanonicalEntityData, SceneEntityOccurrenceData } from '../repositories/EntityRepo.js';
 import { assessmentRepo, ClearanceRiskAssessmentData, OccurrenceContextInterpretation } from '../repositories/AssessmentRepo.js';
+import { actionNotificationRepo } from '../repositories/ActionNotificationRepo.js';
 import { projectRepo } from '../repositories/ProjectRepo.js';
 import { rightsRepo } from '../repositories/RightsRepo.js';
 import { actionDispatcher } from './actionDispatcher.js';
@@ -54,10 +55,18 @@ export class ClearanceEvaluator {
       const existingAssessments = await assessmentRepo.getAssessmentsByEntity(projectId, entity.id);
       if (existingAssessments.length > 0 && existingAssessments[0].citations?.length > 0) {
         const first = existingAssessments[0];
+        const isZero = first.contextFlags?.includes('ZERO_TRADEMARK_CONFLICTS_SURFACED');
+        const outcome = first.provenance === 'FALLBACK_FIXTURE'
+          ? 'SERVICE_FALLBACK'
+          : isZero
+          ? 'ZERO_RESULTS'
+          : 'MATCHES_FOUND';
+
         const result: SearchResult = {
           query: first.citations[0]?.query || entity.canonicalName,
           citations: first.citations,
           provenance: first.provenance || (activeMode === 'CLOUD_MODE' ? 'PARALLEL_LIVE' : 'DEMO_FIXTURE'),
+          searchOutcome: outcome,
         };
         this.groundingCache.set(cacheKey, result);
         return result;
@@ -111,6 +120,20 @@ export class ClearanceEvaluator {
     // Execute targeted research evaluation bypassing existing grounding
     const assessment = await this.evaluateEntityClearance(projectId, canonicalEntityId, true);
     const updatedEntity = (await entityRepo.getEntityById(projectId, canonicalEntityId)) || entity;
+
+    // Auto-resolve open RETRY_RESEARCH action items for this entity upon retry
+    try {
+      const openActions = await actionNotificationRepo.getActionsByProject(projectId, {
+        canonicalEntityId,
+      });
+      for (const act of openActions) {
+        if (act.actionType === 'RETRY_RESEARCH' && (act.status === 'OPEN' || act.status === 'IN_PROGRESS')) {
+          await actionNotificationRepo.updateActionStatus(projectId, act.id, 'RESOLVED', 'RESEARCH_RETRY_COMPLETED');
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to resolve retry actions:', err);
+    }
 
     return {
       entity: updatedEntity,
@@ -230,6 +253,7 @@ Return valid JSON with these fields:
     const primaryCitation = searchResult.citations[0];
     const isRegisteredActive = primaryCitation?.registrationStatus === 'REGISTERED_ACTIVE';
     const isZeroHit =
+      searchResult.searchOutcome === 'ZERO_RESULTS' ||
       primaryCitation?.excerptSnippet?.includes('zero conflicting marks surfaced') ||
       primaryCitation?.excerptSnippet?.includes('zero conflicting trademark') ||
       (searchResult.provenance === 'PARALLEL_LIVE' && primaryCitation?.sourceUrl === 'https://parallel.ai/search' && primaryCitation?.excerptSnippet?.startsWith('Completed live search'));
@@ -480,6 +504,7 @@ Return valid JSON with these fields:
       const primaryCitation = searchResult.citations[0];
       const isRegisteredActive = primaryCitation?.registrationStatus === 'REGISTERED_ACTIVE';
       const isZeroHit =
+        searchResult.searchOutcome === 'ZERO_RESULTS' ||
         primaryCitation?.excerptSnippet?.includes('zero conflicting marks surfaced') ||
         primaryCitation?.excerptSnippet?.includes('zero conflicting trademark') ||
         (searchResult.provenance === 'PARALLEL_LIVE' && primaryCitation?.sourceUrl === 'https://parallel.ai/search' && primaryCitation?.excerptSnippet?.startsWith('Completed live search'));
@@ -491,8 +516,8 @@ Return valid JSON with these fields:
       let rationale = isRegisteredActive
         ? `Grounding search confirmed active registration for ${entity.canonicalName}. Baseline category risk for ${entity.entityCategory}.`
         : isZeroHit
-        ? `Completed live search surfaced zero conflicting trademark registrations for ${entity.canonicalName}. Baseline category risk for ${entity.entityCategory}.`
-        : `Live search surfaced public reference(s) for ${entity.canonicalName} with unconfirmed registration status. Baseline category risk for ${entity.entityCategory}.`;
+        ? `Completed live search surfaced zero conflicting trademark registrations for ${entity.canonicalName}. Baseline category risk for ${entity.entityCategory}. Review recommended to confirm unregistered common law rights.`
+        : `Live search surfaced public reference(s) for ${entity.canonicalName} with unconfirmed registration status. Baseline category risk for ${entity.entityCategory}. Review recommended to confirm active trademark protections.`;
 
       const contextFlags: string[] = isRegisteredActive
         ? ['TRADEMARK_ACTIVE']
@@ -519,8 +544,19 @@ Return valid JSON with these fields:
         status = 'ACTION_REQUIRED';
         riskScore = 80;
       } else if (entity.entityCategory === 'BRAND') {
-        status = 'NO_ISSUE_SURFACED';
-        riskScore = 15;
+        // Invariant (FR-003): Baseline BRAND evaluation with zero-hit or unknown registration MUST NOT independently assign NO_ISSUE_SURFACED!
+        // It must evaluate as REVIEW_RECOMMENDED unless affirmatively covered by contractual rights.
+        if (isRegisteredActive) {
+          status = 'ACTION_REQUIRED';
+          riskScore = 80;
+          rationale = `Grounding search confirmed active registration for ${entity.canonicalName}. Clearance license or replacement required.`;
+        } else {
+          status = 'REVIEW_RECOMMENDED';
+          riskScore = 45;
+          rationale = isZeroHit
+            ? `Completed live search surfaced zero conflicting trademark registrations for ${entity.canonicalName}. Review recommended to confirm unregistered common law rights.`
+            : `Live search surfaced public reference(s) for ${entity.canonicalName} with unconfirmed registration status. Review recommended to confirm active trademark protections.`;
+        }
       }
 
       latestAssessment = await assessmentRepo.createAssessment({

@@ -34,7 +34,13 @@ export class ActionDispatcher {
     let description = '';
     let priority: ActionPriority = 'MEDIUM';
 
-    if (occurrence.clearanceStatus === 'ACTION_REQUIRED') {
+    if (occurrence.clearanceStatus === 'INSUFFICIENT_EVIDENCE') {
+      actionType = 'RETRY_RESEARCH';
+      targetDepartment = 'LEGAL_COUNSEL';
+      title = `Retry Legal Research: ${entity.canonicalName}`;
+      description = `Insufficient evidence surfaced for ${entity.canonicalName} in Scene ${occurrence.sceneId}. Live research retry required.`;
+      priority = 'HIGH';
+    } else if (occurrence.clearanceStatus === 'ACTION_REQUIRED') {
       if (entity.entityCategory === 'GRAPHIC_PROP') {
         actionType = 'ART_DEPT_REPLACEMENT';
         targetDepartment = 'ART_DEPT';
@@ -172,7 +178,7 @@ export class ActionDispatcher {
       ]);
 
       for (const occ of occurrences) {
-        if (occ.clearanceStatus === 'ACTION_REQUIRED' || occ.clearanceStatus === 'REVIEW_RECOMMENDED') {
+        if (occ.clearanceStatus === 'ACTION_REQUIRED' || occ.clearanceStatus === 'REVIEW_RECOMMENDED' || occ.clearanceStatus === 'INSUFFICIENT_EVIDENCE') {
           // 1. Check if covered by a scoped placeholder
           const coveringPlaceholder = placeholders.find((ph) =>
             placeholderRepo.isOccurrenceCovered(ph, occ.sceneId, occ.id)

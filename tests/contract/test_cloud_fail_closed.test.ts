@@ -3,6 +3,8 @@ import request from 'supertest';
 import { app } from '../../server/index.js';
 import { entityRepo } from '../../server/repositories/EntityRepo.js';
 import { assessmentRepo } from '../../server/repositories/AssessmentRepo.js';
+import { sceneRepo } from '../../server/repositories/SceneRepo.js';
+import { parallelSearchTool } from '../../server/tools/parallelSearchTool.js';
 
 describe('Contract: Feature 018 Fail-Closed CLOUD_MODE & Clean Zero-Hit Grounding', () => {
   it('should fail closed to INSUFFICIENT_EVIDENCE in CLOUD_MODE when search fails or returns fallback fixtures', async () => {
@@ -303,5 +305,109 @@ Alex uses the AeroTech Prism Laptop on the bench.`;
     expect(evalRes.status).toBe(200);
     // In test environment without live Gemini credentials, must include CONTEXT_DETERMINISTIC_FALLBACK
     expect(evalRes.body.assessment.contextFlags).toContain('CONTEXT_DETERMINISTIC_FALLBACK');
+  });
+
+  it('should include structured searchOutcome on ParallelSearchTool results and prohibit baseline BRAND from assigning NO_ISSUE_SURFACED', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Structured Provider Semantics Project',
+        productionCompany: 'Strict Semantics Legal',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    // 1. Verify ParallelSearchTool returns explicit searchOutcome
+    const searchRes = await parallelSearchTool.searchTrademarkGrounding('Apex Mountain Gear', 'DEMO_MODE');
+    expect(searchRes.searchOutcome).toBeDefined();
+    expect(['ZERO_RESULTS', 'MATCHES_FOUND', 'SERVICE_FALLBACK']).toContain(searchRes.searchOutcome);
+
+    // 2. Baseline BRAND entity with no scene occurrences
+    const brandEntity = await entityRepo.createCanonicalEntity({
+      projectId,
+      canonicalName: 'Apex Mountain Gear',
+      entityCategory: 'BRAND',
+      overallClearanceStatus: 'INSUFFICIENT_EVIDENCE',
+      description: 'Fictional mountain gear brand',
+    });
+
+    const evalRes = await request(app)
+      .post(`/api/projects/${projectId}/clearance/evaluate`)
+      .send({ canonicalEntityIds: [brandEntity.id] });
+    expect(evalRes.status).toBe(200);
+    const asm = evalRes.body.assessments[0];
+
+    // Invariant (FR-003): Baseline BRAND must NOT independently assign NO_ISSUE_SURFACED without contractual rights
+    expect(asm.riskStatus).not.toBe('NO_ISSUE_SURFACED');
+    expect(['REVIEW_RECOMMENDED', 'ACTION_REQUIRED']).toContain(asm.riskStatus);
+  });
+
+  it('should dispatch RETRY_RESEARCH action for INSUFFICIENT_EVIDENCE and auto-resolve upon research retry', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Retry Action Lifecycle Project',
+        productionCompany: 'Strict Workflow Legal',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    const scene = await sceneRepo.createScene({
+      projectId,
+      sceneNumber: 1,
+      heading: 'INT. OFFICE - DAY',
+      locationType: 'INT',
+      timeOfDay: 'DAY',
+      rawText: 'Alex examines the item on the table.',
+      characterActionSummary: 'Alex examines the item',
+    });
+
+    const artifact = await entityRepo.createCanonicalEntity({
+      projectId,
+      canonicalName: 'Summit Cola',
+      entityCategory: 'BRAND',
+      overallClearanceStatus: 'INSUFFICIENT_EVIDENCE',
+      description: 'Entrant fictional brand beverage',
+    });
+
+    const occ = await entityRepo.createOccurrence(projectId, {
+      sceneId: scene.id,
+      canonicalEntityId: artifact.id,
+      scriptLineNumber: 1,
+      excerptText: 'Alex examines the item on the table.',
+      usageContext: 'Background prop mention',
+      clearanceStatus: 'INSUFFICIENT_EVIDENCE',
+    });
+
+    // Set occurrence clearance status to INSUFFICIENT_EVIDENCE
+    await entityRepo.updateOccurrenceEvaluation(projectId, scene.id, occ.id, {
+      clearanceStatus: 'INSUFFICIENT_EVIDENCE',
+      riskScore: 95,
+      riskRationale: 'Insufficient evidence surfaced.',
+      contextFlags: ['EVIDENCE_INSUFFICIENT'],
+      evaluatedAt: new Date().toISOString(),
+    });
+    await entityRepo.updateCanonicalEntityStatus(projectId, artifact!.id, 'INSUFFICIENT_EVIDENCE');
+
+    // Sync project actions to dispatch RETRY_RESEARCH
+    await request(app).post(`/api/projects/${projectId}/actions/sync`);
+
+    const actionsRes = await request(app).get(`/api/projects/${projectId}/actions?canonicalEntityId=${artifact!.id}`);
+    const retryAction = actionsRes.body.find((a: any) => a.actionType === 'RETRY_RESEARCH');
+    expect(retryAction).toBeDefined();
+    expect(retryAction.status).toBe('OPEN');
+
+    // Trigger explicit research retry
+    const retryRes = await request(app)
+      .post(`/api/projects/${projectId}/entities/${artifact!.id}/retry-research`);
+    expect(retryRes.status).toBe(200);
+
+    // Verify RETRY_RESEARCH action item was auto-resolved
+    const updatedActionsRes = await request(app).get(`/api/projects/${projectId}/actions?canonicalEntityId=${artifact!.id}`);
+    const resolvedRetryAction = updatedActionsRes.body.find((a: any) => a.id === retryAction.id);
+    expect(resolvedRetryAction.status).toBe('RESOLVED');
+    expect(resolvedRetryAction.resolutionTrigger).toBe('RESEARCH_RETRY_COMPLETED');
   });
 });
