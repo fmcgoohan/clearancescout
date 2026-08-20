@@ -6,7 +6,7 @@
 [![Runtime](https://img.shields.io/badge/Model-Gemini%203.6%20Flash-4285F4)](https://deepmind.google/technologies/gemini/)
 [![Grounding](https://img.shields.io/badge/Grounding-Parallel%20Web%20API-06B6D4)](https://parallel.ai)
 [![Deployment](https://img.shields.io/badge/Platform-Google%20Cloud%20Run-34A853)](https://cloud.google.com/run)
-[![Tests](https://img.shields.io/badge/Tests-131%20Passing%20(65%20Suites)-34D399)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-152%20Passing%20(74%20Suites)-34D399)](tests/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-34A853)](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
 
 **Live demo (CLOUD_MODE):** [https://clearance-scout-n3tcx4jcbq-uc.a.run.app](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
@@ -113,6 +113,19 @@ ClearanceScout is an enterprise agentic platform designed for studio legal couns
 - **Strict `WORKING_CLEAR` Invariant**: `WORKING_CLEAR` requires affirmative interim mitigations; unmitigated `REVIEW_RECOMMENDED` occurrences remain blockers until authorized.
 - **Genuine Ingestion Diagnostics**: Scanned or unparseable PDF uploads return structured `400 Bad Request` diagnostics with code `PDF_EXTRACTION_FAILED`.
 
+### 23. Live Runtime & Real-Script Integrity (`019`)
+- **Native File Picker & Multipart Upload**: Native dialog and drag-and-drop file ingestion supporting `.fountain`, `.txt`, and `.pdf` files up to 25MB with visible error banners and SHA-256 checksums.
+- **Windowed Chunk Parsing**: Robust multi-scene chunking with 1-scene overlap buffers allowing seamless ingestion of 120+ page feature-length screenplays without LLM context overflows.
+- **Authoritative Server `CLOUD_MODE` Precedence**: Server runtime execution mode is globally authoritative; client headers and persisted project flags cannot force demo fallbacks or override live AI evaluators.
+- **Strict Model Error Visibility**: In `CLOUD_MODE`, Gemini parser exceptions fail visibly with structured diagnostic code `PARSING_FAILED` rather than silently leaking demo recognizers.
+- **Google Cloud Firestore ADC Persistence**: Production runtime connects directly to Google Cloud Firestore via Application Default Credentials (ADC), failing health probes (`503 Service Unavailable`) if the database is unreachable.
+- **Protected Public Endpoints**: Mutating endpoints (`/upload`, `/replacements`, `/overrides`, `/rights`, `/actions`) are guarded with Bearer authentication while preserving public access for health checks and demo exploration.
+- **Fail-Closed Replacement Candidate Gate**: Gemini replacement candidate generation and collision checks fail closed on model exceptions, excluding failed/proposed replacements from interim mitigations.
+- **Strict Interim Mitigation Gating**: `WORKING_CLEAR` interim scene mitigation strictly requires placeholders in `TEMP_APPROVED` or `FINAL_CLEARED` tiers, or replacement cards with status `APPROVED` and `selfClearanceResult: ACCEPTED`.
+- **Atomic 25-Call Live Quota Accounting**: Enforces atomic Firestore transaction boundaries so project live research quotas strictly honor the 25-call allocation under high concurrency.
+- **Worst-Case Canonical Status Roll-Up**: Derived canonical entity status factors in all active occurrences across the script, preventing `NO_ISSUE_SURFACED` if any occurrence is non-cleared or unresolved (`INSUFFICIENT_EVIDENCE`).
+- **Grounding Cache Invalidation & Clean Screenplay Draft Replacement**: Entity edits immediately invalidate grounding caches; screenplay re-uploads execute an atomic replacement transaction that purges old scenes, re-indexes occurrences, and auto-supersedes orphaned action items (`SCRIPT_REVISION_SUPERSEDED`).
+
 ---
 
 ## 🏛️ System Architecture
@@ -159,7 +172,7 @@ graph TD
 
 | Mode | Target | Description |
 |:---|:---|:---|
-| **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (131/131 tests pass). |
+| **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (152/152 tests pass). |
 | **`DEMO_MODE`** | Interactive Evaluation | Zero-configuration evaluation using synthetic datasets and bundled demo screenplay ("The Neon Horizon"). |
 | **`CLOUD_MODE`** | Production Runtime | Live Google Gemini 3.6 Flash and Parallel Search APIs. Fails visibly with diagnostics if credentials are missing. |
 
@@ -182,7 +195,7 @@ npm install
 ```bash
 npm test
 ```
-*Executes all 131 tests across 65 test files spanning contract and integration suites with 0 failures.*
+*Executes all 152 tests across 74 test files spanning contract and integration suites with 0 failures.*
 
 ### 3. Build & Run
 ```bash

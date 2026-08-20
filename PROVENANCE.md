@@ -4,7 +4,7 @@
 **License**: MIT  
 **Date Established**: August 2026  
 **Status**: Active Production Reference  
-**Verified Test Baseline**: 131 Tests Passing across 65 Suites (100% Pass Rate)
+**Verified Test Baseline**: 152 Tests Passing across 74 Suites (100% Pass Rate)
 
 ---
 
@@ -33,7 +33,7 @@ ClearanceScout was engineered to solve one of the entertainment industry's most 
 
 ---
 
-## 3. Complete Architectural Progression & Feature History (001–018)
+## 3. Complete Architectural Progression & Feature History (001–019)
 
 ```mermaid
 timeline
@@ -56,6 +56,7 @@ timeline
     016 Production Operating Model : Project Types : Occurrence Unit : Entity Aliases : Rights Catalog : Scene Readiness : Action Queues : Placeholders : Live Self-Clearance : Dashboard : Extended Binder
     017 Judge-Ready Demo : 1-Click Ingest & Auto-Eval : Populated Dashboard & Binder : Production Workspace Rebrand
     018 Production Hardening : Fail-Closed CLOUD_MODE : Structured Search Outcomes : Scoped Placeholders : RETRY_RESEARCH
+    019 Live Runtime Integrity : Multipart File Upload : Windowed Chunk Parsing : Server CLOUD_MODE Precedence : Firestore ADC : Atomic 25-Call Quota : Draft Versioning
 ```
 
 ### Feature 001: Script Workspace & Canonical Entity Registry
@@ -152,6 +153,19 @@ timeline
 - **Strict `WORKING_CLEAR` Invariant**: Scene shooting readiness evaluates to `WORKING_CLEAR` only when every non-cleared occurrence has an affirmative interim mitigation basis (`TEMP_APPROVED` placeholder in scope, interim rights agreement, or signed counsel authorization). Unmitigated `REVIEW_RECOMMENDED` items remain `RED` blockers.
 - **Genuine Ingestion Diagnostics & Cloud Demo Isolation**: Scanned or unparseable PDF uploads return structured `400 Bad Request` diagnostics with error code `PDF_EXTRACTION_FAILED`. Sample demo loading in `CLOUD_MODE` strictly creates un-evaluated scene occurrences without synthetic fixture seeding.
 
+### Feature 019: Live Runtime & Real-Script Integrity
+- **Native File Picker & Multipart Upload Handling**: Native browser file picker and drag-and-drop file upload zone supporting `.fountain`, `.txt`, and `.pdf` screenplays up to 25MB (`POST /api/projects/:id/script/upload` and `/script`) with SHA-256 integrity checksums and visible diagnostic error banners (`EMPTY_FILE`, `FILE_TOO_LARGE`, `UNSUPPORTED_FORMAT`, `PDF_EXTRACTION_FAILED`).
+- **Windowed Chunk Script Ingestion**: Scalable scene partitioning with 1-scene overlap buffers in `ScriptParserAgent.ts`, enabling processing of 120+ page scripts without prompt truncation or LLM context window overflows.
+- **Authoritative Server Runtime Mode**: `process.env.EXECUTION_MODE` (`CLOUD_MODE`) is globally authoritative across all backend workflows. Client request headers and persisted project-level mode flags are prohibited from overriding live AI extraction or Parallel Search execution.
+- **Strict Error Propagation (`PARSING_FAILED`)**: In `CLOUD_MODE`, Gemini parser exceptions propagate as structured diagnostic errors (`PARSING_FAILED`), completely eliminating silent fallback to synthetic demo recognizers.
+- **Google Cloud Firestore ADC Persistence**: Production Cloud Run runtime initializes Google Cloud Firestore via Application Default Credentials (ADC) with live connectivity health verification (`verifyFirestoreConnectivity()`) and transactional support (`db.runTransaction()`). If Firestore is unreachable in `CLOUD_MODE`, the startup health probe returns `503 Service Unavailable`.
+- **Public Endpoint Security**: `authMiddleware` protects mutating and AI generation endpoints (`/upload`, `/replacements`, `/overrides`, `/rights`, `/actions`) with Bearer token authentication while preserving open access for health checks and demo exploration.
+- **Fail-Closed Replacement Candidate Gate**: Gemini replacement generation and collision checks fail closed on model exceptions, assigning `FAILED` status and `ESCALATED_TO_COUNSEL` without auto-clearing replacements.
+- **Strict Interim Mitigation Gating**: Scene shooting readiness strictly excludes unapproved replacement cards from interim mitigations. `WORKING_CLEAR` requires `TEMP_APPROVED` or `FINAL_CLEARED` placeholders or replacement cards with status `APPROVED` and `selfClearanceResult: ACCEPTED`.
+- **Atomic 25-Call Live Quota Accounting**: Enforces atomic Firestore transaction boundaries so project live research quotas strictly honor the 25-call allocation under high concurrency.
+- **Worst-Case Canonical Status Roll-Up**: Derived canonical entity status factors in all active occurrences across the script, preventing `NO_ISSUE_SURFACED` if any occurrence is non-cleared or unresolved (`INSUFFICIENT_EVIDENCE`).
+- **Grounding Cache Invalidation & Clean Screenplay Draft Replacement**: Entity edits immediately invalidate grounding caches; screenplay re-uploads execute an atomic replacement transaction that purges old scenes, re-indexes occurrences, and auto-supersedes orphaned action items (`SCRIPT_REVISION_SUPERSEDED`).
+
 ---
 
 ## 4. Fictional-Content & Anti-Hallucination Policy
@@ -165,8 +179,8 @@ ClearanceScout operates under a strict, non-negotiable fictional-content and evi
 
 ## 5. Verification & Test Attestation
 
-As of Feature 018, the entire ClearanceScout test suite passes with 100% success rate across all contract, unit, and integration tests:
-- **Contract Tests**: Verified endpoint schemas, SSE event taxonomies, health checks, counsel overrides, multi-format parsers, project types, occurrence evaluation, entity resolution, rights management, scene readiness, action queues, placeholders, evidence self-clearance, operations dashboard, extended binder export, 1-click judge demo automation, fail-closed cloud clearance, clean zero-hit citations, structured context interpretation, and scoped placeholders.
-- **Integration Tests**: Verified end-to-end script ingestion, candidate clearance loops, counsel overrides with scene isolation, batch research, offline replay, judge demo workflows, auditable binder compilation, and production hardening lifecycles.
-- **Test Baseline**: 131 tests passing across 65 test suites (100% pass rate).
-- **Build Verification**: Multi-stage production container and Vite production bundle compile with 0 errors across 49 modules.
+As of Feature 019, the entire ClearanceScout test suite passes with 100% success rate across all contract, unit, and integration tests:
+- **Contract Tests**: Verified endpoint schemas, SSE event taxonomies, health checks, counsel overrides, multi-format parsers, project types, occurrence evaluation, entity resolution, rights management, scene readiness, action queues, placeholders, evidence self-clearance, operations dashboard, extended binder export, 1-click judge demo automation, fail-closed cloud clearance, clean zero-hit citations, structured context interpretation, scoped placeholders, multipart file upload, chunked ingestion, server runtime authority, Firestore ADC persistence, replacement readiness blockers, atomic quota accounting, canonical rollup integrity, and screenplay versioning lifecycle.
+- **Integration Tests**: Verified end-to-end script ingestion, candidate clearance loops, counsel overrides with scene isolation, batch research, offline replay, judge demo workflows, auditable binder compilation, production hardening lifecycles, and live runtime integrity workflows.
+- **Test Baseline**: 152 tests passing across 74 test suites (100% pass rate).
+- **Build Verification**: Multi-stage production container and Vite production bundle compile with 0 errors across 50 modules.

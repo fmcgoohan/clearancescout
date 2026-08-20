@@ -8,9 +8,9 @@
 
 **Purpose**: Establish core data types, subcollection path schemas, and error taxonomy for live runtime integrity.
 
-- [ ] T001 Define screenplay upload, chunk ingestion job, and draft versioning interfaces in `server/types/screenplayTypes.ts`
-- [ ] T002 [P] Define atomic quota ledger, reservation result, and quota transaction interfaces in `server/types/quotaTypes.ts`
-- [ ] T003 [P] Add `groundingCacheVersion` and cache invalidation metadata to `CanonicalEntityData` in `server/repositories/EntityRepo.ts`
+- [X] T001 Define screenplay upload, chunk ingestion job, and draft versioning interfaces in `server/types/screenplayTypes.ts`
+- [X] T002 [P] Define atomic quota ledger, reservation result, and quota transaction interfaces in `server/types/quotaTypes.ts`
+- [X] T003 [P] Add `groundingCacheVersion` and cache invalidation metadata to `CanonicalEntityData` in `server/repositories/EntityRepo.ts`
 
 ---
 
@@ -18,10 +18,10 @@
 
 **Purpose**: Core cloud persistence, server mode authority, and route protection infrastructure that MUST be completed before user stories.
 
-- [ ] T004 Standardize Firestore subcollection path resolution across `server/repositories/firestoreClient.ts`, `server/repositories/AssessmentRepo.ts`, `server/repositories/PlaceholderRepo.ts`, and `server/repositories/EntityRepo.ts`
-- [ ] T005 [P] Implement Firestore ADC initialization with active startup connectivity check and fail-closed health verification (`503 Service Unavailable` if unreachable in `CLOUD_MODE`) in `server/repositories/firestoreClient.ts` and `server/index.ts`
-- [ ] T006 [P] Enforce authoritative server `EXECUTION_MODE=CLOUD_MODE` precedence over client headers and persisted project flags in `server/config.ts` and `server/workflows/clearanceEvaluator.ts`
-- [ ] T007 [P] Enhance Bearer token route protection middleware in `server/middleware/authMiddleware.ts` to guard all script uploads, batch research, replacement generation, counsel overrides, and rights mutations on public Cloud Run deployments
+- [X] T004 Standardize Firestore subcollection path resolution across `server/repositories/firestoreClient.ts`, `server/repositories/AssessmentRepo.ts`, `server/repositories/PlaceholderRepo.ts`, and `server/repositories/EntityRepo.ts`
+- [X] T005 [P] Implement Firestore ADC initialization with active startup connectivity check and fail-closed health verification (`503 Service Unavailable` if unreachable in `CLOUD_MODE`) in `server/repositories/firestoreClient.ts` and `server/index.ts`
+- [X] T006 [P] Enforce authoritative server `EXECUTION_MODE=CLOUD_MODE` precedence over client headers and persisted project flags in `server/config.ts` and `server/workflows/clearanceEvaluator.ts`
+- [X] T007 [P] Enhance Bearer token route protection middleware in `server/middleware/authMiddleware.ts` to guard all script uploads, batch research, replacement generation, counsel overrides, and rights mutations on public Cloud Run deployments
 
 ---
 
@@ -32,14 +32,14 @@
 **Independent Test**: Upload genuine `.fountain` and `.pdf` screenplays via the native UI dialog. Verify chunked extraction without truncation, and verify unparseable/corrupted PDFs fail visibly with `PDF_EXTRACTION_FAILED`.
 
 ### Tests for User Story 1
-- [ ] T008 [P] [US1] Create contract test for multipart upload validation, format filters, and error diagnostics in `tests/contract/test_file_upload_multipart.test.ts`
-- [ ] T009 [P] [US1] Create contract test for chunked/windowed scene extraction with overlap buffers in `tests/contract/test_chunked_script_ingestion.test.ts`
+- [X] T008 [P] [US1] Create contract test for multipart upload validation, format filters, and error diagnostics in `tests/contract/test_file_upload_multipart.test.ts`
+- [X] T009 [P] [US1] Create contract test for chunked/windowed scene extraction with overlap buffers in `tests/contract/test_chunked_script_ingestion.test.ts`
 
 ### Implementation for User Story 1
-- [ ] T010 [US1] Implement `multer` and `pdf-parse` multipart upload handling with format/size validation in `server/api/routes.ts`
-- [ ] T011 [US1] Implement windowed chunking scene parser with 1-scene overlap buffers in `server/agents/ScriptParserAgent.ts`
-- [ ] T012 [US1] Implement native file picker, drag-and-drop upload zone, progress bar, and visible error alert banners in `src/components/ScriptUploadModal.tsx`
-- [ ] T013 [US1] Integrate script upload handler with project workspace state and real-time SSE progress in `src/pages/ProjectWorkspace.tsx`
+- [X] T010 [US1] Implement `multer` and `pdf-parse` multipart upload handling with format/size validation in `server/api/routes.ts`
+- [X] T011 [US1] Implement windowed chunking scene parser with 1-scene overlap buffers in `server/agents/ScriptParserAgent.ts`
+- [X] T012 [US1] Implement native file picker, drag-and-drop upload zone, progress bar, and visible error alert banners in `src/components/ScriptUploadModal.tsx`
+- [X] T013 [US1] Integrate script upload handler with project workspace state and real-time SSE progress in `src/pages/ProjectWorkspace.tsx`
 
 ---
 
@@ -50,11 +50,11 @@
 **Independent Test**: Run in `CLOUD_MODE`, ingest an un-indexed real script containing custom brand marks, and verify all detected entities come from live AI extraction with 0 synthetic demo fallback leakage.
 
 ### Tests for User Story 2
-- [ ] T014 [P] [US2] Create contract test verifying server `CLOUD_MODE` authority and fail-visible parsing errors (`PARSING_FAILED`) in `tests/contract/test_cloud_runtime_authority.test.ts`
+- [X] T014 [P] [US2] Create contract test verifying server `CLOUD_MODE` authority and fail-visible parsing errors (`PARSING_FAILED`) in `tests/contract/test_cloud_runtime_authority.test.ts`
 
 ### Implementation for User Story 2
-- [ ] T015 [US2] Remove silent fallback to synthetic demo recognizers (`extractEntitiesFromTextFallback`) in `server/agents/ScriptParserAgent.ts` when running in `CLOUD_MODE`
-- [ ] T016 [US2] Enforce live model extraction error propagation with structured diagnostic codes (`PARSING_FAILED`) in `server/agents/ScriptParserAgent.ts` and `server/api/routes.ts`
+- [X] T015 [US2] Remove silent fallback to synthetic demo recognizers (`extractEntitiesFromTextFallback`) in `server/agents/ScriptParserAgent.ts` when running in `CLOUD_MODE`
+- [X] T016 [US2] Enforce live model extraction error propagation with structured diagnostic codes (`PARSING_FAILED`) in `server/agents/ScriptParserAgent.ts` and `server/api/routes.ts`
 
 ---
 
@@ -65,11 +65,11 @@
 **Independent Test**: Verify Firestore ADC initialization on container startup, verify health endpoint returns 503 if Firestore is offline, and verify unauthenticated write requests to protected endpoints return 401.
 
 ### Tests for User Story 3
-- [ ] T017 [P] [US3] Create contract test for Firestore ADC health verification and public endpoint route protection in `tests/contract/test_firestore_adc_persistence.test.ts`
+- [X] T017 [P] [US3] Create contract test for Firestore ADC health verification and public endpoint route protection in `tests/contract/test_firestore_adc_persistence.test.ts`
 
 ### Implementation for User Story 3
-- [ ] T018 [US3] Wire Firestore ADC connection and fail-closed readiness probe into `GET /api/health` in `server/index.ts`
-- [ ] T019 [US3] Apply `authMiddleware` across all write and AI mutation endpoints in `server/api/routes.ts` while preserving public exemptions for health checks and demo viewing
+- [X] T018 [US3] Wire Firestore ADC connection and fail-closed readiness probe into `GET /api/health` in `server/index.ts`
+- [X] T019 [US3] Apply `authMiddleware` across all write and AI mutation endpoints in `server/api/routes.ts` while preserving public exemptions for health checks and demo viewing
 
 ---
 
@@ -80,12 +80,12 @@
 **Independent Test**: Trigger replacement generation with forced collision/model error; verify replacement is marked `FAILED`/`TEMP_REJECTED`, provides 0 mitigation, and the scene evaluates to `RED` blocker.
 
 ### Tests for User Story 4
-- [ ] T020 [P] [US4] Create contract test for fail-closed collision checks and failed replacement blocker scene readiness in `tests/contract/test_replacement_readiness_blocker.test.ts`
+- [X] T020 [P] [US4] Create contract test for fail-closed collision checks and failed replacement blocker scene readiness in `tests/contract/test_replacement_readiness_blocker.test.ts`
 
 ### Implementation for User Story 4
-- [ ] T021 [US4] Implement fail-closed error handling for Gemini collision check and candidate verification in `server/workflows/replacementGenerator.ts`
-- [ ] T022 [US4] Update `server/workflows/sceneReadinessEngine.ts` to strictly exclude `FAILED` and `TEMP_REJECTED` placeholders from interim mitigations, evaluating occurrences as `BLOCKER` and scenes as `RED`
-- [ ] T023 [US4] Surface failed replacement blockers and open `ART_DEPT_REPLACEMENT` actions in `src/components/OperationsDashboard.tsx` and `src/components/LegalClearanceBinder.tsx`
+- [X] T021 [US4] Implement fail-closed error handling for Gemini collision check and candidate verification in `server/workflows/replacementGenerator.ts`
+- [X] T022 [US4] Update `server/workflows/sceneReadinessEngine.ts` to strictly exclude `FAILED` and `TEMP_REJECTED` placeholders from interim mitigations, evaluating occurrences as `BLOCKER` and scenes as `RED`
+- [X] T023 [US4] Surface failed replacement blockers and open `ART_DEPT_REPLACEMENT` actions in `src/components/OperationsDashboard.tsx` and `src/components/LegalClearanceBinder.tsx`
 
 ---
 
@@ -96,12 +96,12 @@
 **Independent Test**: Execute 30 concurrent live research calls against a 25-call quota and verify exactly 25 succeed and 5 return 429. Verify an entity with one cleared occurrence and one unresolved occurrence displays `INSUFFICIENT_EVIDENCE` (never `NO_ISSUE_SURFACED`).
 
 ### Tests for User Story 5
-- [ ] T024 [P] [US5] Create contract test for atomic live quota deduction and concurrent boundary exhaustion in `tests/contract/test_atomic_quota_accounting.test.ts`
-- [ ] T025 [P] [US5] Create contract test for worst-case canonical status roll-up with unresolved occurrences in `tests/contract/test_canonical_rollup_integrity.test.ts`
+- [X] T024 [P] [US5] Create contract test for atomic live quota deduction and concurrent boundary exhaustion in `tests/contract/test_atomic_quota_accounting.test.ts`
+- [X] T025 [P] [US5] Create contract test for worst-case canonical status roll-up with unresolved occurrences in `tests/contract/test_canonical_rollup_integrity.test.ts`
 
 ### Implementation for User Story 5
-- [ ] T026 [US5] Implement atomic Firestore transaction quota deduction in `server/repositories/ProjectRepo.ts` -> `consumeLiveQuota`
-- [ ] T027 [US5] Update `server/repositories/EntityRepo.ts` -> `computeDerivedCanonicalStatus` to strictly roll up worst-case status across all scene occurrences, prohibiting `NO_ISSUE_SURFACED` if any active occurrence is non-cleared
+- [X] T026 [US5] Implement atomic Firestore transaction quota deduction in `server/repositories/ProjectRepo.ts` -> `consumeLiveQuota`
+- [X] T027 [US5] Update `server/repositories/EntityRepo.ts` -> `computeDerivedCanonicalStatus` to strictly roll up worst-case status across all scene occurrences, prohibiting `NO_ISSUE_SURFACED` if any active occurrence is non-cleared
 
 ---
 
@@ -112,11 +112,11 @@
 **Independent Test**: Edit an entity canonical name and verify grounding cache is invalidated and fresh search is triggered. Re-upload a modified screenplay draft and verify existing scenes are replaced without duplicates.
 
 ### Tests for User Story 6
-- [ ] T028 [P] [US6] Create contract test for entity edit cache invalidation and screenplay draft replacement in `tests/contract/test_screenplay_versioning_lifecycle.test.ts`
+- [X] T028 [P] [US6] Create contract test for entity edit cache invalidation and screenplay draft replacement in `tests/contract/test_screenplay_versioning_lifecycle.test.ts`
 
 ### Implementation for User Story 6
-- [ ] T029 [US6] Implement cache invalidation and `groundingCacheVersion` increment on entity updates in `server/repositories/EntityRepo.ts` and `server/workflows/clearanceEvaluator.ts`
-- [ ] T030 [US6] Implement screenplay draft replacement transaction (scene purge, occurrence re-indexing, orphaned action cancellation) in `server/repositories/SceneRepo.ts` and `server/api/routes.ts`
+- [X] T029 [US6] Implement cache invalidation and `groundingCacheVersion` increment on entity updates in `server/repositories/EntityRepo.ts` and `server/workflows/clearanceEvaluator.ts`
+- [X] T030 [US6] Implement screenplay draft replacement transaction (scene purge, occurrence re-indexing, orphaned action cancellation) in `server/repositories/SceneRepo.ts` and `server/api/routes.ts`
 
 ---
 
@@ -124,9 +124,9 @@
 
 **Purpose**: End-to-end integration lifecycle test, documentation synchronization, and container build verification.
 
-- [ ] T031 [P] Create full end-to-end live runtime integrity integration test exercising upload, chunking, live research, replacement fail-closed, quota boundary, and draft re-upload in `tests/integration/test_live_runtime_integrity_workflow.test.ts`
-- [ ] T032 [P] Update `README.md` and `PROVENANCE.md` with Feature 019 runtime integrity architecture, multipart upload contract, and updated test suite metrics
-- [ ] T033 Execute full test suite (`npm test`) and multi-stage container build (`npm run build`) to verify 100% pass rate with 0 errors
+- [X] T031 [P] Create full end-to-end live runtime integrity integration test exercising upload, chunking, live research, replacement fail-closed, quota boundary, and draft re-upload in `tests/integration/test_live_runtime_integrity_workflow.test.ts`
+- [X] T032 [P] Update `README.md` and `PROVENANCE.md` with Feature 019 runtime integrity architecture, multipart upload contract, and updated test suite metrics
+- [X] T033 Execute full test suite (`npm test`) and multi-stage container build (`npm run build`) to verify 100% pass rate with 0 errors
 
 ---
 
