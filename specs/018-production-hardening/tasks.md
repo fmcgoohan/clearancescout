@@ -142,3 +142,14 @@ flowchart TD
 2. Add Phase 4 (`T008`–`T010`): Scoped placeholders & tight `WORKING_CLEAR`.
 3. Add Phase 5 (`T011`–`T013`): PDF extraction diagnostics & cloud demo boundaries.
 4. Finalize Phase 6 (`T014`–`T015`): End-to-end integration test, docs reconciliation, and 100% passing test baseline.
+
+---
+
+## Phase 7: Convergence
+
+- [ ] T017 [CRITICAL] [US1] Ensure live Parallel Search citations are never populated with synthetic fixture owners, statuses, or precedent data in `server/tools/parallelSearchTool.ts` per Constitution II and FR-003 (contradicts)
+- [ ] T016 [HIGH] [US1] Enforce that PARALLEL_LIVE zero-hit completed research does not independently assign NO_ISSUE_SURFACED and evaluates category/context rules per FR-003 and US1/AC2 (partial)
+- [ ] T018 [HIGH] [US2] Implement canonical research caching and single quota consumption per entity across multiple scene occurrences in `server/workflows/clearanceEvaluator.ts` per FR-006, US2/AC3, and Constitution V (partial)
+- [ ] T019 [HIGH] [US3] Enhance `PlaceholderRepo.ts`, `sceneReadinessEngine.ts`, and `PlaceholderManagerModal.tsx` to support multiple scoped placeholders per entity and scoped-by-default creation per FR-007, FR-008, and US3/AC1 (partial)
+- [ ] T020 [MEDIUM] [US4] Implement genuine PDF text stream extraction with an authentic binary PDF test fixture in `server/agents/ScriptParserAgent.ts` or cleanly remove PDF support across API/UI/README per FR-011 and US4/AC1 (partial)
+- [ ] T021 [MEDIUM] [US5] Upgrade test suites to rigorously validate citation purity, multi-occurrence quota reuse, multi-placeholder scoping, and PDF boundaries, and finalize README reconciliation per FR-014, FR-015, and SC-006 (partial)
