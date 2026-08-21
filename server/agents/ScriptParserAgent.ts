@@ -153,67 +153,110 @@ export class ScriptParserAgent {
       return this.parseScriptFallback(normalizedText);
     }
 
-    // In CLOUD_MODE: Execute authentic Gemini extraction with windowed chunking for large scripts
+    // In CLOUD_MODE:
+    // 1. Split scenes locally and construct scene shells instantly (0ms)
     const rawScenes = this.splitIntoRawScenes(normalizedText);
-    const CHUNK_SIZE = 40;
-    const OVERLAP = 1;
+    const scenesToProcess = rawScenes.length > 0 ? rawScenes : [normalizedText];
+    const sceneShells: ParsedScene[] = scenesToProcess.map((str, idx) =>
+      this.buildSceneShell(str, idx)
+    );
 
-    if (rawScenes.length <= CHUNK_SIZE) {
-      return await this.parseChunkWithGemini(normalizedText, 1);
-    }
+    // 2. Chunk scenes for compact entity-only extraction (CHUNK_SIZE = 25 scenes)
+    const CHUNK_SIZE = 25;
+    const chunkSpecs: Array<{ startSceneNum: number; endSceneNum: number; text: string }> = [];
 
-    // Build chunk specifications
-    const chunkSpecs: Array<{ chunkScenes: string[]; startSceneNum: number }> = [];
-    const step = Math.max(1, CHUNK_SIZE - OVERLAP);
-    for (let i = 0; i < rawScenes.length; i += step) {
-      const chunkEnd = Math.min(i + CHUNK_SIZE, rawScenes.length);
+    for (let i = 0; i < sceneShells.length; i += CHUNK_SIZE) {
+      const chunkEnd = Math.min(i + CHUNK_SIZE, sceneShells.length);
+      const chunkScenes = sceneShells.slice(i, chunkEnd);
+      const formattedChunkText = chunkScenes
+        .map((s) => `--- SCENE ${s.sceneNumber}: ${s.heading} ---\n${s.rawText}`)
+        .join('\n\n');
+
       chunkSpecs.push({
-        chunkScenes: rawScenes.slice(i, chunkEnd),
         startSceneNum: i + 1,
+        endSceneNum: chunkEnd,
+        text: formattedChunkText,
       });
-      if (chunkEnd >= rawScenes.length) {
-        break;
-      }
     }
 
-    // Process chunks with bounded sequential cadence to prevent Gemini 503 concurrency spikes
-    const allParsedScenes: ParsedScene[] = [];
-    const processedSceneNumbers = new Set<number>();
+    // 3. Bounded parallel entity extraction (concurrency 2, not 3) to prevent 503 rate limits
+    const BATCH_CONCURRENCY = 2;
+    for (let b = 0; b < chunkSpecs.length; b += BATCH_CONCURRENCY) {
+      const batch = chunkSpecs.slice(b, b + BATCH_CONCURRENCY);
+      const batchEntities = await Promise.all(
+        batch.map((chunk, idx) =>
+          this.extractEntitiesWithGemini(chunk.text, chunk.startSceneNum, chunk.endSceneNum).catch((err: any) => {
+            const chunkIdx = b + idx + 1;
+            console.error(`[ScriptParserAgent Error] Failed extracting entities for chunk ${chunkIdx}:`, err);
+            const parseErr: any = new Error(
+              `Live AI screenplay parsing failed during scene extraction chunk ${chunkIdx}: ${err.message || 'Model rate limit or network error'}`
+            );
+            parseErr.code = 'PARSING_FAILED';
+            parseErr.status = 502;
+            throw parseErr;
+          })
+        )
+      );
 
-    for (let c = 0; c < chunkSpecs.length; c++) {
-      const item = chunkSpecs[c];
-      try {
-        const parsedChunk = await this.parseChunkWithGemini(
-          item.chunkScenes.join('\n\n'),
-          item.startSceneNum
-        );
-        for (const scene of parsedChunk) {
-          if (!processedSceneNumbers.has(scene.sceneNumber)) {
-            processedSceneNumbers.add(scene.sceneNumber);
-            allParsedScenes.push(scene);
+      // Attach extracted entities directly onto local scene shells
+      for (const entities of batchEntities) {
+        for (const ent of entities) {
+          const targetScene = sceneShells.find((s) => s.sceneNumber === ent.sceneNumber) || sceneShells[0];
+          if (targetScene) {
+            const exists = targetScene.entities.some(
+              (e) => e.name.toLowerCase() === ent.name.toLowerCase() && e.lineNumber === ent.lineNumber
+            );
+            if (!exists) {
+              targetScene.entities.push({
+                name: ent.name,
+                category: ent.category,
+                excerptText: ent.excerptText || ent.name,
+                lineNumber: ent.lineNumber || 1,
+                usageContext: ent.usageContext || `Scene ${targetScene.sceneNumber}: ${ent.name}`,
+              });
+            }
           }
         }
-      } catch (err: any) {
-        const chunkIdx = c + 1;
-        console.error(`[ScriptParserAgent Error] Failed parsing scene chunk ${chunkIdx}:`, err);
-        const parseErr: any = new Error(
-          `Live AI screenplay parsing failed during scene extraction chunk ${chunkIdx}: ${err.message || 'Model rate limit or network error'}`
-        );
-        parseErr.code = 'PARSING_FAILED';
-        parseErr.status = 502;
-        throw parseErr;
       }
     }
 
-    allParsedScenes.sort((a, b) => a.sceneNumber - b.sceneNumber);
-    return allParsedScenes;
+    return sceneShells;
   }
 
-  private async parseChunkWithGemini(
+  private buildSceneShell(sceneStr: string, index: number): ParsedScene {
+    const lines = sceneStr.trim().split('\n');
+    let heading = lines[0]?.trim() || `SCENE ${index + 1}`;
+    if (heading.startsWith('.')) heading = heading.slice(1).trim();
+
+    const upperHeading = heading.toUpperCase();
+    const locationType: 'INT' | 'EXT' | 'INT/EXT' = upperHeading.startsWith('EXT')
+      ? 'EXT'
+      : upperHeading.startsWith('INT/EXT')
+      ? 'INT/EXT'
+      : 'INT';
+    const timeOfDay = upperHeading.includes('NIGHT')
+      ? 'NIGHT'
+      : upperHeading.includes('DUSK')
+      ? 'DUSK'
+      : 'DAY';
+
+    return {
+      sceneNumber: index + 1,
+      heading,
+      locationType,
+      timeOfDay,
+      rawText: sceneStr.trim(),
+      characterActionSummary: lines.slice(1, 4).join(' ').trim(),
+      entities: [],
+    };
+  }
+
+  private async extractEntitiesWithGemini(
     chunkText: string,
     startSceneNumber: number,
+    endSceneNumber: number,
     retryCount = 0
-  ): Promise<ParsedScene[]> {
+  ): Promise<Array<ParsedEntityOccurrence & { sceneNumber: number }>> {
     if (!this.ai && config.geminiApiKey) {
       this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
     }
@@ -226,9 +269,9 @@ export class ScriptParserAgent {
     }
 
     try {
-      // Set bounded timeout on individual chunk generation call
+      // 40-second timeout per entity extraction chunk
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Gemini API call timed out after 45 seconds')), 45000)
+        setTimeout(() => reject(new Error('Gemini API call timed out after 40 seconds')), 40000)
       );
 
       const callPromise = this.ai.models.generateContent({
@@ -238,36 +281,28 @@ export class ScriptParserAgent {
             role: 'user',
             parts: [
               {
-                text: `You are an expert script clearance parser agent for ClearanceScout. Parse the following screenplay text into structured scenes, starting with scene number ${startSceneNumber}.
-Extract all candidate clearance items across these 5 core clearance categories:
+                text: `You are an expert script clearance parser agent for ClearanceScout.
+Extract all candidate clearance items across these 5 categories from the screenplay text below (Scenes ${startSceneNumber} to ${endSceneNumber}):
 1. "BRAND": Trademarks, consumer products, logos, automotive, electronics
 2. "ART_MUSIC": Copyrighted songs, music lyrics, paintings, sculpture, literature
 3. "PUBLIC_FIGURE": Living real-world celebrities, political figures, public figures
 4. "PROPRIETARY_LOCATION": Trademarked landmarks, private venues, stadiums, amusement parks
 5. "GRAPHIC_PROP": Branded props, warning labels, t-shirt slogans, graphic signs
 
-Return a valid JSON array of scenes matching this schema:
+Return a valid JSON array of extracted entity occurrences with their corresponding sceneNumber:
 [
   {
     "sceneNumber": ${startSceneNumber},
-    "heading": "INT. GARAGE - DAY",
-    "locationType": "INT",
-    "timeOfDay": "DAY",
-    "rawText": "Scene text excerpt...",
-    "characterActionSummary": "Alex fixes a vehicle and drinks a soda.",
-    "entities": [
-      {
-        "name": "Exact Brand / Item Name",
-        "category": "BRAND",
-        "excerptText": "drinks a cold Soda",
-        "lineNumber": 2,
-        "usageContext": "Character drinks beverage while working"
-      }
-    ]
+    "name": "Exact Brand / Item Name",
+    "category": "BRAND",
+    "excerptText": "Character drinks a cold Soda",
+    "lineNumber": 2,
+    "usageContext": "Character drinks beverage while working"
   }
 ]
+If no clearance entities appear in a scene, omit that scene. Return only the JSON array.
 
-Screenplay Chunk:
+Screenplay Text:
 ${chunkText}`,
               },
             ],
@@ -285,7 +320,18 @@ ${chunkText}`,
       if (!Array.isArray(parsed)) {
         throw new Error('Model returned invalid non-array JSON structure');
       }
-      return parsed;
+
+      const validCategories = ['BRAND', 'ART_MUSIC', 'PUBLIC_FIGURE', 'PROPRIETARY_LOCATION', 'GRAPHIC_PROP'];
+      return parsed
+        .map((item: any) => ({
+          sceneNumber: Number(item.sceneNumber) || startSceneNumber,
+          name: String(item.name || '').trim(),
+          category: (validCategories.includes(item.category) ? item.category : 'BRAND') as EntityCategory,
+          excerptText: String(item.excerptText || item.name || '').trim(),
+          lineNumber: Number(item.lineNumber) || 1,
+          usageContext: String(item.usageContext || `Scene ${item.sceneNumber || startSceneNumber}: ${item.name}`).trim(),
+        }))
+        .filter((item: any) => item.name.length > 0);
     } catch (err: any) {
       const errMsg = err.message || '';
       const isTransient =
@@ -298,10 +344,10 @@ ${chunkText}`,
       if (isTransient && retryCount < 3) {
         const delayMs = (retryCount + 1) * 2000;
         console.warn(
-          `[ScriptParserAgent] Transient error on chunk at scene ${startSceneNumber} (attempt ${retryCount + 1}), retrying in ${delayMs}ms...`
+          `[ScriptParserAgent] Transient error on entity extraction for scenes ${startSceneNumber}-${endSceneNumber} (attempt ${retryCount + 1}), retrying in ${delayMs}ms...`
         );
         await new Promise((r) => setTimeout(r, delayMs));
-        return this.parseChunkWithGemini(chunkText, startSceneNumber, retryCount + 1);
+        return this.extractEntitiesWithGemini(chunkText, startSceneNumber, endSceneNumber, retryCount + 1);
       }
 
       // In CLOUD_MODE, strictly fail visibly without silent fallback to synthetic demo recognizers (FR-005)

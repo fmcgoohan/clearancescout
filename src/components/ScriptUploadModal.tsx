@@ -10,6 +10,8 @@ interface ScriptUploadModalProps {
 
 type UploadPhase = 'IDLE' | 'UPLOADING' | 'PARSING' | 'FINALIZING' | 'SUCCESS';
 
+export const UPLOAD_TIMEOUT_MS = 270000;
+
 export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   projectId,
   isOpen,
@@ -144,22 +146,22 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
 
-    // Dynamic progress interpolation
+    // Honest progress interpolation (advances steadily up to 75% without fake 90% stalls)
     progressIntervalRef.current = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev < 30) return prev + 5;
-        if (prev < 65) return prev + 2;
-        if (prev < 90) return prev + 1;
+        if (prev < 55) return prev + 2;
+        if (prev < 75) return prev + 1;
         return prev;
       });
-    }, 1200);
+    }, 1500);
 
     // Switch phase to PARSING after brief upload simulation
     setTimeout(() => {
       setUploadPhase((current) => (current === 'UPLOADING' ? 'PARSING' : current));
     }, 1500);
 
-    // Enforce 180-second client-side timeout to avoid indefinite hangs on large scripts
+    // Enforce 270-second client-side timeout aligned with Cloud Run 300s
     timeoutIdRef.current = setTimeout(() => {
       if (abortControllerRef.current === controller) {
         controller.abort();
@@ -168,10 +170,10 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         setUploadPhase('IDLE');
         setErrorCode('TIMEOUT_ERROR');
         setErrorMessage(
-          'Screenplay upload and parsing timed out after 3 minutes. The script may be unusually large or the AI parsing model is experiencing high demand. Please try again.'
+          'Screenplay upload and parsing timed out after 4.5 minutes. The script may be unusually large or the AI parsing model is experiencing high demand. Please try again.'
         );
       }
-    }, 180000);
+    }, UPLOAD_TIMEOUT_MS);
 
     try {
       let res: Response;

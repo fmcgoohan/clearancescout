@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import { WorkspacePage } from '../../src/pages/WorkspacePage.js';
-import { ScriptUploadModal } from '../../src/components/ScriptUploadModal.js';
+import { ScriptUploadModal, UPLOAD_TIMEOUT_MS } from '../../src/components/ScriptUploadModal.js';
 
 describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger', () => {
   beforeEach(() => {
@@ -238,5 +238,35 @@ describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger'
       expect(alert).toBeDefined();
       expect(alert.textContent).toContain('Upload cancelled by user');
     });
+  });
+
+  it('guarantees client timeout constant UPLOAD_TIMEOUT_MS is at least 270000ms (aligned with Cloud Run 300s)', () => {
+    expect(UPLOAD_TIMEOUT_MS).toBeGreaterThanOrEqual(270000);
+  });
+
+  it('accepts both .fountain and .fountain.txt files without rejecting or triggering format errors', () => {
+    const { getByRole, queryByRole } = render(
+      React.createElement(ScriptUploadModal, {
+        projectId: 'proj-fountain-test',
+        isOpen: true,
+        onClose: () => {},
+        onUploadSuccess: () => {},
+      })
+    );
+
+    const dialog = getByRole('dialog');
+    const fileInput = dialog.querySelector('input[type="file"]') as HTMLInputElement;
+
+    // 1. .fountain format
+    const fountainFile = new File(['INT. CASTLE - DAY\nKING enters.'], 'Draft.fountain', { type: 'text/plain' });
+    fireEvent.change(fileInput, { target: { files: [fountainFile] } });
+    expect(queryByRole('alert')).toBeNull();
+    expect(dialog.textContent).toContain('Draft.fountain');
+
+    // 2. .fountain.txt format
+    const compoundFountainFile = new File(['INT. CASTLE - NIGHT\nKING sleeps.'], 'Draft.fountain.txt', { type: 'text/plain' });
+    fireEvent.change(fileInput, { target: { files: [compoundFountainFile] } });
+    expect(queryByRole('alert')).toBeNull();
+    expect(dialog.textContent).toContain('Draft.fountain.txt');
   });
 });
