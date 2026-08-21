@@ -159,6 +159,8 @@ export function RightsModal({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <div
       role="dialog"

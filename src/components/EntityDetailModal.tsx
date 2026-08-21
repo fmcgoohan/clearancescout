@@ -121,6 +121,8 @@ export function EntityDetailModal({
 
   const canonicalBadge = getStatusBadge(derivedStatus);
 
+  if (!isOpen) return null;
+
   return (
     <div
       role="dialog"
