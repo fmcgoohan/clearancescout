@@ -149,66 +149,156 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="upload-modal-title"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1400,
+        padding: '16px',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isUploading) onClose();
+      }}
+    >
+      <div
+        className="glass-panel modal-responsive"
+        style={{
+          width: '640px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          overflow: 'hidden',
+          borderRadius: '12px',
+          border: '1px solid var(--border-color)',
+        }}
+      >
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+        <div
+          style={{
+            padding: '20px 24px',
+            borderBottom: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'rgba(0, 0, 0, 0.25)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                background: 'rgba(6, 182, 212, 0.15)',
+                border: '1px solid var(--accent-cyan)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.2rem',
+              }}
+            >
+              📄
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-100">Upload Screenplay Draft</h3>
-              <p className="text-xs text-slate-400">Ingest real .fountain, .txt, or text-based .pdf scripts (up to 25MB)</p>
+              <h3 id="upload-modal-title" style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
+                Upload Screenplay Draft
+              </h3>
+              <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                Ingest real .fountain, .txt, or text-based .pdf scripts (up to 25MB)
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
             disabled={isUploading}
-            className="text-slate-400 hover:text-slate-200 transition-colors"
+            aria-label="Close upload dialog"
+            className="btn-secondary touch-target"
+            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            ✕
           </button>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex border-b border-slate-800 bg-slate-950/30 px-6 pt-3 space-x-6">
+        <div
+          style={{
+            display: 'flex',
+            borderBottom: '1px solid var(--border-color)',
+            background: 'rgba(0, 0, 0, 0.15)',
+            padding: '0 24px',
+            gap: '24px',
+          }}
+        >
           <button
+            type="button"
             onClick={() => { setActiveTab('FILE'); setErrorMessage(null); }}
-            className={`pb-3 text-xs font-medium border-b-2 transition-colors ${
-              activeTab === 'FILE'
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-slate-400 hover:text-slate-300'
-            }`}
+            style={{
+              padding: '12px 4px',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              background: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'FILE' ? '2px solid var(--accent-cyan)' : '2px solid transparent',
+              color: activeTab === 'FILE' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
           >
-            Upload File (.fountain, .txt, .pdf)
+            📁 Upload File (.fountain, .txt, .pdf)
           </button>
           <button
+            type="button"
             onClick={() => { setActiveTab('PASTE'); setErrorMessage(null); }}
-            className={`pb-3 text-xs font-medium border-b-2 transition-colors ${
-              activeTab === 'PASTE'
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-slate-400 hover:text-slate-300'
-            }`}
+            style={{
+              padding: '12px 4px',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              background: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'PASTE' ? '2px solid var(--accent-cyan)' : '2px solid transparent',
+              color: activeTab === 'PASTE' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
           >
-            Paste Screenplay Text
+            ✍️ Paste Screenplay Text
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-4">
+        <div style={{ padding: '24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Error Banner */}
           {errorMessage && (
-            <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-lg flex items-start space-x-3 text-red-200 text-xs">
-              <svg className="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div
+              role="alert"
+              style={{
+                padding: '12px 16px',
+                background: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(239, 68, 68, 0.5)',
+                borderRadius: '8px',
+                color: '#f87171',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+              }}
+            >
+              <span style={{ fontSize: '1rem', lineHeight: 1 }}>⚠️</span>
               <div>
-                <span className="font-semibold">{errorCode ? `[${errorCode}] ` : ''}</span>
+                <strong style={{ display: 'inline-block', marginRight: '4px' }}>
+                  {errorCode ? `[${errorCode}] ` : ''}
+                </strong>
                 {errorMessage}
               </div>
             </div>
@@ -222,45 +312,78 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                  isDragging
-                    ? 'border-indigo-500 bg-indigo-500/10'
+                style={{
+                  border: isDragging
+                    ? '2px dashed var(--accent-cyan)'
                     : selectedFile
-                    ? 'border-emerald-500/50 bg-emerald-950/20'
-                    : 'border-slate-700 hover:border-slate-600 bg-slate-950/40 hover:bg-slate-950/60'
-                }`}
+                    ? '2px solid rgba(52, 211, 153, 0.6)'
+                    : '2px dashed var(--border-color)',
+                  backgroundColor: isDragging
+                    ? 'rgba(6, 182, 212, 0.1)'
+                    : selectedFile
+                    ? 'rgba(16, 185, 129, 0.1)'
+                    : 'rgba(0, 0, 0, 0.3)',
+                  borderRadius: '12px',
+                  padding: '36px 20px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
               >
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept=".fountain,.txt,.text,.pdf"
                   onChange={handleFileChange}
-                  className="hidden"
+                  style={{ display: 'none' }}
                 />
 
                 {selectedFile ? (
-                  <div className="flex flex-col items-center space-y-2">
-                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <div
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        background: 'rgba(52, 211, 153, 0.2)',
+                        border: '1px solid rgba(52, 211, 153, 0.4)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.4rem',
+                        color: 'var(--status-no-issue)',
+                      }}
+                    >
+                      ✓
                     </div>
-                    <div className="text-sm font-medium text-slate-100">{selectedFile.name}</div>
-                    <div className="text-xs text-slate-400">
-                      {(selectedFile.size / 1024).toFixed(1)} KB • Click to change file
+                    <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                      {selectedFile.name}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      {(selectedFile.size / 1024).toFixed(1)} KB • Click or drop another file to change
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center space-y-2">
-                    <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <div
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.4rem',
+                      }}
+                    >
+                      📁
                     </div>
-                    <div className="text-sm font-medium text-slate-200">
-                      Drag and drop screenplay file here, or <span className="text-indigo-400 underline">browse</span>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-main)' }}>
+                      Drag & drop screenplay file here, or <span style={{ color: 'var(--accent-cyan)', textDecoration: 'underline' }}>browse</span>
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       Supports .fountain, .txt, and text-based .pdf up to 25MB
                     </div>
                   </div>
@@ -268,20 +391,28 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               </div>
             </div>
           ) : (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-slate-300">Format</label>
-                <div className="flex space-x-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  Screenplay Format
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   {(['FOUNTAIN', 'PLAINTEXT'] as const).map((fmt) => (
                     <button
                       key={fmt}
                       type="button"
                       onClick={() => setPastedFormat(fmt)}
-                      className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
-                        pastedFormat === fmt
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                      }`}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        borderRadius: '6px',
+                        border: '1px solid',
+                        borderColor: pastedFormat === fmt ? 'var(--accent-cyan)' : 'var(--border-color)',
+                        background: pastedFormat === fmt ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                        color: pastedFormat === fmt ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                      }}
                     >
                       {fmt}
                     </button>
@@ -292,22 +423,48 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                 value={pastedText}
                 onChange={(e) => setPastedText(e.target.value)}
                 placeholder="Paste screenplay text with standard scene headings (INT. / EXT.)..."
-                className="w-full h-48 bg-slate-950/80 border border-slate-700 rounded-lg p-3 font-mono text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                style={{
+                  width: '100%',
+                  height: '200px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  fontFamily: 'monospace',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                  resize: 'vertical',
+                  boxSizing: 'border-box',
+                }}
               />
             </div>
           )}
 
           {/* Upload & Parsing Progress Bar */}
           {isUploading && (
-            <div className="space-y-1.5 pt-2">
-              <div className="flex justify-between text-xs text-slate-400">
+            <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                 <span>Parsing Scenes & Extracting Clearance IP...</span>
                 <span>{uploadProgress}%</span>
               </div>
-              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+              <div
+                style={{
+                  width: '100%',
+                  height: '8px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '4px',
+                  overflow: 'hidden',
+                }}
+              >
                 <div
-                  className="bg-indigo-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
+                  style={{
+                    height: '100%',
+                    width: `${uploadProgress}%`,
+                    background: 'linear-gradient(90deg, var(--accent-cyan), var(--accent-blue))',
+                    borderRadius: '4px',
+                    transition: 'width 0.3s ease',
+                  }}
                 />
               </div>
             </div>
@@ -315,12 +472,23 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end space-x-3">
+        <div
+          style={{
+            padding: '16px 24px',
+            borderTop: '1px solid var(--border-color)',
+            background: 'rgba(0, 0, 0, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: '12px',
+          }}
+        >
           <button
             type="button"
             onClick={onClose}
             disabled={isUploading}
-            className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors"
+            className="btn-secondary touch-target"
+            style={{ fontSize: '0.85rem' }}
           >
             Cancel
           </button>
@@ -328,18 +496,17 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim())}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors flex items-center space-x-2"
+            className="btn-primary touch-target"
+            style={{
+              fontSize: '0.85rem',
+              opacity: isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim()) ? 0.5 : 1,
+              cursor: isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim()) ? 'not-allowed' : 'pointer',
+            }}
           >
             {isUploading ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                <span>Processing Screenplay...</span>
-              </>
+              <span>⏳ Processing Screenplay...</span>
             ) : (
-              <span>Upload & Ingest Draft</span>
+              <span>📤 Upload & Ingest Draft</span>
             )}
           </button>
         </div>
