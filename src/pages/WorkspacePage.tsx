@@ -409,7 +409,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
           <button
             className="btn-secondary touch-target"
-            aria-label="Open Department Action & Notification Center"
+            aria-label={`Open Department Action & Notification Center (${openActionsCount} Open Actions)`}
             onClick={() => setIsActionModalOpen(true)}
             style={{
               display: 'flex',
@@ -419,7 +419,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               color: openActionsCount > 0 ? '#f87171' : 'var(--text-main)',
             }}
           >
-            📋 Actions ({openActionsCount})
+            📋 Open Actions ({openActionsCount})
           </button>
 
           <button

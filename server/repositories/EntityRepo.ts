@@ -400,7 +400,9 @@ export class EntityRepo {
     const occurrences = await this.getAllOccurrences(projectId);
     const enriched = entities.map((ent: CanonicalEntityData) => {
       const occCount = occurrences.filter((o) => o.canonicalEntityId === ent.id).length;
-      const isActive = occCount > 0 || ent.origin === 'MANUALLY_ADDED' || ent.origin === 'USER_EDITED';
+      // Invariant: AUTO_EXTRACTED and USER_EDITED entities MUST have >= 1 active occurrence on an existing current-draft scene.
+      // MANUALLY_ADDED items remain active as operator-documented entries; USER_EDITED and AUTO_EXTRACTED with 0 occurrences are HISTORICAL_ONLY.
+      const isActive = occCount > 0 || ent.origin === 'MANUALLY_ADDED';
       const isHistorical = !isActive;
       return {
         ...ent,
@@ -450,48 +452,54 @@ export class EntityRepo {
     const occurrences = await this.getAllOccurrences(projectId);
 
     for (const group of grouped) {
-      if (group.length <= 1) continue;
+      if (group.length > 1) {
+        // Sort group: prefer entities with counsel overrides, manually added/edited origins, or longest name
+        group.sort((a, b) => {
+          if (a.isOverridden && !b.isOverridden) return -1;
+          if (!a.isOverridden && b.isOverridden) return 1;
+          if (a.origin !== 'AUTO_EXTRACTED' && b.origin === 'AUTO_EXTRACTED') return -1;
+          if (a.origin === 'AUTO_EXTRACTED' && b.origin !== 'AUTO_EXTRACTED') return 1;
+          return b.canonicalName.length - a.canonicalName.length;
+        });
 
-      group.sort((a, b) => {
-        if (a.isOverridden && !b.isOverridden) return -1;
-        if (!a.isOverridden && b.isOverridden) return 1;
-        if (a.replacementCard && !b.replacementCard) return -1;
-        if (!a.replacementCard && b.replacementCard) return 1;
-        if (a.origin === 'MANUALLY_ADDED' && b.origin !== 'MANUALLY_ADDED') return -1;
-        if (a.origin !== 'MANUALLY_ADDED' && b.origin === 'MANUALLY_ADDED') return 1;
-        return b.canonicalName.length - a.canonicalName.length;
-      });
+        const primary = group[0];
+        const secondaries = group.slice(1);
 
-      const primary = group[0];
-      const secondaries = group.slice(1);
-      const allAliases = new Set<string>(primary.aliases || []);
-
-      for (const sec of secondaries) {
-        allAliases.add(sec.canonicalName);
-        (sec.aliases || []).forEach((a) => allAliases.add(a));
-
-        const secOccurrences = occurrences.filter((o) => o.canonicalEntityId === sec.id);
-        for (const occ of secOccurrences) {
-          const occDocRef = await this.db.doc(`projects/${projectId}/scenes/${occ.sceneId}/occurrences/${occ.id}`);
-          await occDocRef.set({ ...occ, canonicalEntityId: primary.id });
+        const allAliases = new Set<string>(primary.aliases || []);
+        for (const sec of secondaries) {
+          allAliases.add(sec.canonicalName);
+          (sec.aliases || []).forEach((al) => allAliases.add(al));
         }
+        allAliases.delete(primary.canonicalName);
 
-        const secDocRef = await this.db.doc(`projects/${projectId}/entities/${sec.id}`);
-        await secDocRef.delete();
-        reconciledCount++;
+        // Update primary document with merged aliases
+        primary.aliases = Array.from(allAliases);
+        primary.updatedAt = new Date().toISOString();
+        const primaryRef = await this.db.doc(`projects/${projectId}/entities/${primary.id}`);
+        await primaryRef.set(primary);
+
+        // Re-point all occurrences from secondary entities to primary entity
+        for (const sec of secondaries) {
+          const secOccurrences = occurrences.filter((o) => o.canonicalEntityId === sec.id);
+          for (const occ of secOccurrences) {
+            const occRef = await this.db.doc(`projects/${projectId}/scenes/${occ.sceneId}/occurrences/${occ.id}`);
+            occ.canonicalEntityId = primary.id;
+            await occRef.set(occ);
+          }
+
+          // Delete the redundant duplicate canonical entity
+          const secRef = await this.db.doc(`projects/${projectId}/entities/${sec.id}`);
+          await secRef.delete();
+          reconciledCount++;
+        }
       }
-
-      allAliases.delete(primary.canonicalName);
-      primary.aliases = Array.from(allAliases);
-      primary.updatedAt = new Date().toISOString();
-
-      const primaryDocRef = await this.db.doc(`projects/${projectId}/entities/${primary.id}`);
-      await primaryDocRef.set(primary);
     }
 
-    const remaining = await this.getEntitiesByProject(projectId, { includeArchived: true });
+    const remaining = await this.getEntitiesByProject(projectId);
     return { reconciledCount, remainingEntities: remaining };
   }
+
+  // --- Occurrence Methods (Scene-scoped) ---
 
   async createOccurrence(projectId: string, input: Omit<SceneEntityOccurrenceData, 'id'>): Promise<SceneEntityOccurrenceData> {
     const id = `occ-${uuidv4().slice(0, 8)}`;
