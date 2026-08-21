@@ -23,7 +23,16 @@ export function useTimelineSSE(projectId: string | null) {
         return { events: [] };
       })
       .then((data) => {
-        if (data.events) setEvents(data.events);
+        if (data.events && Array.isArray(data.events)) {
+          setEvents((prev) => {
+            const map = new Map<string, TimelineEvent>();
+            prev.forEach((e) => map.set(e.id, e));
+            data.events.forEach((e: TimelineEvent) => map.set(e.id, e));
+            return Array.from(map.values()).sort(
+              (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            );
+          });
+        }
       })
       .catch((err) => console.error('Error fetching timeline history:', err));
 
@@ -38,7 +47,12 @@ export function useTimelineSSE(projectId: string | null) {
     eventSource.addEventListener('timeline_event', (e: MessageEvent) => {
       try {
         const eventData = JSON.parse(e.data) as TimelineEvent;
-        setEvents((prev) => [...prev, eventData]);
+        setEvents((prev) => {
+          if (prev.some((item) => item.id === eventData.id)) {
+            return prev;
+          }
+          return [...prev, eventData];
+        });
       } catch (err) {
         console.error('Error parsing SSE event:', err);
       }

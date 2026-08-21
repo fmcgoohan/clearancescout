@@ -44,12 +44,14 @@ export class SceneReadinessEngine {
 
       await sceneRepo.updateSceneReadiness(projectId, sceneId, cleanAssessment);
 
-      timelineEmitter.emit(projectId, 'STATE_TRANSITION', `Scene ${scene.sceneNumber} Readiness: FINAL_CLEAR`, {
-        sceneId,
-        sceneNumber: scene.sceneNumber,
-        readinessStatus: 'FINAL_CLEAR',
-        totalOccurrences: 0,
-      });
+      if (scene.readinessStatus !== 'FINAL_CLEAR') {
+        timelineEmitter.emit(projectId, 'STATE_TRANSITION', `Scene ${scene.sceneNumber} Readiness: FINAL_CLEAR`, {
+          sceneId,
+          sceneNumber: scene.sceneNumber,
+          readinessStatus: 'FINAL_CLEAR',
+          totalOccurrences: 0,
+        });
+      }
 
       return cleanAssessment;
     }
@@ -189,19 +191,21 @@ export class SceneReadinessEngine {
 
     await sceneRepo.updateSceneReadiness(projectId, sceneId, assessment);
 
-    timelineEmitter.emit(
-      projectId,
-      'STATE_TRANSITION',
-      `Scene ${scene.sceneNumber} Readiness: ${overallStatus}`,
-      {
-        sceneId,
-        sceneNumber: scene.sceneNumber,
-        readinessStatus: overallStatus,
-        blockersCount: blockers.length,
-        workingClearCount: workingClears.length,
-        finalClearCount: finalClears.length,
-      }
-    );
+    if (scene.readinessStatus !== overallStatus) {
+      timelineEmitter.emit(
+        projectId,
+        'STATE_TRANSITION',
+        `Scene ${scene.sceneNumber} Readiness: ${overallStatus}`,
+        {
+          sceneId,
+          sceneNumber: scene.sceneNumber,
+          readinessStatus: overallStatus,
+          blockersCount: blockers.length,
+          workingClearCount: workingClears.length,
+          finalClearCount: finalClears.length,
+        }
+      );
+    }
 
     return assessment;
   }
