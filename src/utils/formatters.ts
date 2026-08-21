@@ -20,7 +20,7 @@ export function formatStatus(status: string | undefined | null): string {
     case 'NO_ISSUE_SURFACED':
       return 'Cleared';
     case 'SCRIPT_REVISION_SUPERSEDED':
-      return 'Superseded Draft';
+      return 'Superseded by New Script Revision';
     case 'RESOLVED':
       return 'Resolved';
     case 'OPEN':

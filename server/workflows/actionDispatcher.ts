@@ -28,6 +28,10 @@ export class ActionDispatcher {
       status: 'OPEN',
     });
 
+    const scene = await sceneRepo.getSceneById(projectId, occurrence.sceneId);
+    const sceneNumber = scene?.sceneNumber;
+    const sceneLabel = sceneNumber ? (scene?.heading ? `Scene ${sceneNumber} (${scene.heading})` : `Scene ${sceneNumber}`) : occurrence.sceneId;
+
     let actionType: ClearanceActionType | null = null;
     let targetDepartment: DepartmentTarget = 'LEGAL_COUNSEL';
     let title = '';
@@ -38,32 +42,32 @@ export class ActionDispatcher {
       actionType = 'RETRY_RESEARCH';
       targetDepartment = 'LEGAL_COUNSEL';
       title = `Retry Legal Research: ${entity.canonicalName}`;
-      description = `Insufficient evidence surfaced for ${entity.canonicalName} in Scene ${occurrence.sceneId}. Live research retry required.`;
+      description = `Insufficient evidence surfaced for ${entity.canonicalName} in ${sceneLabel}. Live research retry required.`;
       priority = 'HIGH';
     } else if (occurrence.clearanceStatus === 'ACTION_REQUIRED') {
       if (entity.entityCategory === 'GRAPHIC_PROP') {
         actionType = 'ART_DEPT_REPLACEMENT';
         targetDepartment = 'ART_DEPT';
         title = `Create Fictional Prop Graphic: ${entity.canonicalName}`;
-        description = `Proprietary graphic in Scene ${occurrence.sceneId} requires fictionalized non-infringing prop packaging/warning card.`;
+        description = `Proprietary graphic in ${sceneLabel} requires fictionalized non-infringing prop packaging/warning card.`;
         priority = 'HIGH';
       } else if (entity.entityCategory === 'ART_MUSIC') {
         actionType = 'LEGAL_COUNSEL_RELEASE';
         targetDepartment = 'LEGAL_COUNSEL';
         title = `Secure Music Synchronization License: ${entity.canonicalName}`;
-        description = `Copyrighted musical work in Scene ${occurrence.sceneId} requires written synchronization license.`;
+        description = `Copyrighted musical work in ${sceneLabel} requires written synchronization license.`;
         priority = 'HIGH';
       } else if (entity.entityCategory === 'BRAND') {
         actionType = 'LEGAL_COUNSEL_RELEASE';
         targetDepartment = 'LEGAL_COUNSEL';
         title = `Draft Trademark Clearance Release: ${entity.canonicalName}`;
-        description = `Prominent brand mark in Scene ${occurrence.sceneId} requires written trademark clearance release.`;
+        description = `Prominent brand mark in ${sceneLabel} requires written trademark clearance release.`;
         priority = 'HIGH';
       } else {
         actionType = 'LEGAL_COUNSEL_RELEASE';
         targetDepartment = 'LEGAL_COUNSEL';
         title = `Clearance Release Required: ${entity.canonicalName}`;
-        description = `Action required for ${entity.canonicalName} in Scene ${occurrence.sceneId}.`;
+        description = `Action required for ${entity.canonicalName} in ${sceneLabel}.`;
         priority = 'HIGH';
       }
     } else if (occurrence.clearanceStatus === 'REVIEW_RECOMMENDED') {
@@ -71,13 +75,13 @@ export class ActionDispatcher {
         actionType = 'LOCATIONS_PERMIT';
         targetDepartment = 'LOCATIONS';
         title = `Secure Location Filming Permit: ${entity.canonicalName}`;
-        description = `Proprietary location in Scene ${occurrence.sceneId} requires location release or filming permit.`;
+        description = `Proprietary location in ${sceneLabel} requires location release or filming permit.`;
         priority = 'MEDIUM';
       } else if (entity.entityCategory === 'PUBLIC_FIGURE') {
         actionType = 'COUNSEL_OVERRIDE_REVIEW';
         targetDepartment = 'LEGAL_COUNSEL';
         title = `Review Right of Publicity: ${entity.canonicalName}`;
-        description = `Living public figure depicted in Scene ${occurrence.sceneId} requires legal counsel review.`;
+        description = `Living public figure depicted in ${sceneLabel} requires legal counsel review.`;
         priority = 'MEDIUM';
       }
     }
@@ -92,6 +96,7 @@ export class ActionDispatcher {
 
     const createdAction = await actionNotificationRepo.createActionItem(projectId, {
       sceneId: occurrence.sceneId,
+      sceneNumber,
       canonicalEntityId: entity.id,
       canonicalName: entity.canonicalName,
       occurrenceId: occurrence.id,

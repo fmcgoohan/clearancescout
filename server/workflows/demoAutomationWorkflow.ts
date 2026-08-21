@@ -67,7 +67,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     }
 
     // 2. Parse & Ingest Screenplay
-    const ingestResult = await canonicalRegistryWorkflow.processScriptUpload(projectId, scriptText, 'PLAINTEXT');
+    const ingestResult = await canonicalRegistryWorkflow.processScriptUpload(projectId, scriptText, 'PLAINTEXT', { isBundledDemo: true });
 
     let evaluationsCount = 0;
     let activeRightsCount = 0;

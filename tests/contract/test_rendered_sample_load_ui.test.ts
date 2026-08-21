@@ -1,64 +1,86 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { render, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
+import { render, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { WorkspacePage } from '../../src/pages/WorkspacePage.js';
 import { ScriptUploadModal } from '../../src/components/ScriptUploadModal.js';
 import { pluralize, formatStatus, formatCategory, formatDepartment, formatPriority } from '../../src/utils/formatters.js';
 
-describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth, Taxonomy & Accessible Toast (T058)', () => {
+describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth, Staged Replacement & Action Regeneration (T058, T064)', () => {
+  const sampleEntities = [
+    { id: 'ent-1', canonicalName: 'AeroTech Prism Laptop', entityCategory: 'BRAND', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
+    { id: 'ent-2', canonicalName: 'Summit Cola', entityCategory: 'BRAND', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
+    { id: 'ent-3', canonicalName: 'Elena Vance', entityCategory: 'PUBLIC_FIGURE', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
+    { id: 'ent-4', canonicalName: 'Nocturne of the Wild', entityCategory: 'ART_MUSIC', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
+    { id: 'ent-5', canonicalName: 'Veloce GT', entityCategory: 'BRAND', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
+    { id: 'ent-6', canonicalName: 'Midtown Spire Tower', entityCategory: 'PROPRIETARY_LOCATION', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
+    { id: 'ent-7', canonicalName: 'Titan Industrial Hazard Placard', entityCategory: 'GRAPHIC_PROP', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
+  ];
+
+  const sampleScenes = [
+    { id: 'scene-1', sceneNumber: 1, heading: 'INT. PENTHOUSE WORKSPACE - NIGHT', readinessStatus: 'RED', rawText: 'ALEX taps his AeroTech Prism Laptop and drinks Summit Cola. Elena Vance speaks on screen. Nocturne of the Wild plays.' },
+    { id: 'scene-2', sceneNumber: 2, heading: 'EXT. MIDTOWN SPIRE TOWER - NIGHT', readinessStatus: 'RED', rawText: 'JORDAN drives a Veloce GT beneath Midtown Spire Tower.' },
+    { id: 'scene-3', sceneNumber: 3, heading: 'INT. INDUSTRIAL SUB-LEVEL - NIGHT', readinessStatus: 'RED', rawText: 'A yellow Titan Industrial Hazard Placard flashes on the bulkhead.' },
+  ];
+
   beforeEach(() => {
     vi.useRealTimers();
-    global.fetch = vi.fn().mockImplementation((url: string, opts?: any) => {
-      if (url.includes('/api/projects/proj-sample-qa/snapshot') || url.includes('/api/projects/proj-sample-qa/entities')) {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/overrides')) {
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: async () => [
-            { id: 'ent-1', canonicalName: 'AeroTech Prism Laptop', entityCategory: 'BRAND', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
-            { id: 'ent-2', canonicalName: 'Summit Cola', entityCategory: 'BRAND', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
-            { id: 'ent-3', canonicalName: 'Elena Vance', entityCategory: 'PUBLIC_FIGURE', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
-            { id: 'ent-4', canonicalName: 'Nocturne of the Wild', entityCategory: 'ART_MUSIC', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
-            { id: 'ent-5', canonicalName: 'Veloce GT', entityCategory: 'BRAND', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
-            { id: 'ent-6', canonicalName: 'Midtown Spire Tower', entityCategory: 'PROPRIETARY_LOCATION', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
-            { id: 'ent-7', canonicalName: 'Titan Industrial Hazard Placard', entityCategory: 'GRAPHIC_PROP', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
-          ],
-          text: async () => '',
+          json: async () => ({ overrides: [] }),
+        });
+      }
+      if (url.includes('/api/projects/proj-sample-qa/snapshot')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            project: { id: 'proj-sample-qa', title: 'Sample QA', totalActiveEntities: 7 },
+            scenes: sampleScenes,
+            entities: sampleEntities,
+            readiness: { totalScenes: 3, redScenesCount: 3, workingClearScenesCount: 0, finalClearScenesCount: 0, overallReadinessPercentage: 0, scenes: [] },
+            actionsSummary: { totalActions: 2, openActions: 2, criticalActions: 0 },
+          }),
+        });
+      }
+      if (url.includes('/api/projects/proj-sample-qa/entities')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => sampleEntities,
+        });
+      }
+      if (url.includes('/api/projects/proj-sample-qa/scenes/readiness') || url.includes('/readiness')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({ totalScenes: 3, redScenesCount: 3, workingClearScenesCount: 0, finalClearScenesCount: 0, overallReadinessPercentage: 0, scenes: [] }),
         });
       }
       if (url.includes('/api/projects/proj-sample-qa/scenes')) {
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: async () => [
-            { id: 'scene-1', sceneNumber: 1, heading: 'INT. PENTHOUSE WORKSPACE - NIGHT', readinessStatus: 'RED' },
-            { id: 'scene-2', sceneNumber: 2, heading: 'EXT. MIDTOWN SPIRE TOWER - NIGHT', readinessStatus: 'RED' },
-            { id: 'scene-3', sceneNumber: 3, heading: 'INT. INDUSTRIAL SUB-LEVEL - NIGHT', readinessStatus: 'RED' },
-          ],
-          text: async () => '',
+          json: async () => sampleScenes,
         });
       }
       if (url.includes('/api/projects/proj-sample-qa/actions')) {
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: async () => [],
-          text: async () => '',
-        });
-      }
-      if (url.includes('/api/projects/proj-sample-qa/readiness')) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => ({ totalScenes: 3, redScenesCount: 3, workingClearScenesCount: 0, finalClearScenesCount: 0 }),
-          text: async () => '',
+          json: async () => [
+            { id: 'act-1', canonicalEntityId: 'ent-7', title: 'Create Fictional Prop Graphic', status: 'OPEN', targetDepartment: 'ART_DEPT', priority: 'HIGH', description: 'Action in Scene 3' },
+            { id: 'act-2', canonicalEntityId: 'ent-4', title: 'Secure Music License', status: 'OPEN', targetDepartment: 'LEGAL_COUNSEL', priority: 'HIGH', description: 'Action in Scene 1' },
+          ],
         });
       }
       return Promise.resolve({
         ok: true,
         status: 200,
         json: async () => ({}),
-        text: async () => '',
       });
     });
   });
@@ -81,7 +103,7 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
     expect(formatStatus('ACTION_REQUIRED')).toBe('Action Required');
     expect(formatStatus('REVIEW_RECOMMENDED')).toBe('Review Recommended');
     expect(formatStatus('NO_ISSUE_SURFACED')).toBe('Cleared');
-    expect(formatStatus('SCRIPT_REVISION_SUPERSEDED')).toBe('Superseded Draft');
+    expect(formatStatus('SCRIPT_REVISION_SUPERSEDED')).toBe('Superseded by New Script Revision');
 
     expect(formatCategory('BRAND')).toBe('Brand');
     expect(formatCategory('ART_MUSIC')).toBe('Art & Music');
@@ -147,21 +169,9 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
             scenesParsed: 3,
             canonicalEntitiesExtracted: 7,
             snapshot: {
-              scenes: [
-                { id: 'scene-1', sceneNumber: 1, heading: 'INT. PENTHOUSE WORKSPACE - NIGHT' },
-                { id: 'scene-2', sceneNumber: 2, heading: 'EXT. MIDTOWN SPIRE TOWER - NIGHT' },
-                { id: 'scene-3', sceneNumber: 3, heading: 'INT. INDUSTRIAL SUB-LEVEL - NIGHT' },
-              ],
-              entities: [
-                { id: 'ent-1', canonicalName: 'AeroTech Prism Laptop', occurrencesCount: 1, activeInCurrentDraft: true },
-                { id: 'ent-2', canonicalName: 'Summit Cola', occurrencesCount: 1, activeInCurrentDraft: true },
-                { id: 'ent-3', canonicalName: 'Elena Vance', occurrencesCount: 1, activeInCurrentDraft: true },
-                { id: 'ent-4', canonicalName: 'Nocturne of the Wild', occurrencesCount: 1, activeInCurrentDraft: true },
-                { id: 'ent-5', canonicalName: 'Veloce GT', occurrencesCount: 1, activeInCurrentDraft: true },
-                { id: 'ent-6', canonicalName: 'Midtown Spire Tower', occurrencesCount: 1, activeInCurrentDraft: true },
-                { id: 'ent-7', canonicalName: 'Titan Industrial Hazard Placard', occurrencesCount: 1, activeInCurrentDraft: true },
-              ],
-              actionsSummary: { totalActions: 0, openActions: 0, criticalActions: 0 },
+              scenes: sampleScenes,
+              entities: sampleEntities,
+              actionsSummary: { totalActions: 2, openActions: 2, criticalActions: 0 },
             },
           }),
         });
@@ -215,8 +225,8 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
     expect(cancelBtn.hasAttribute('disabled')).toBe(false);
   });
 
-  it('proves rendered WorkspacePage maintains 100% count agreement with all 7 entities and accessible toast', async () => {
-    const { getByText, queryByText } = render(
+  it('proves rendered WorkspacePage maintains 100% count agreement with all 7 entities in both script highlighter and registry on initial load and after replace', async () => {
+    const { getByText, queryByText, getAllByText } = render(
       React.createElement(WorkspacePage, {
         projectId: 'proj-sample-qa',
         onEvaluateClearance: () => {},
@@ -230,17 +240,17 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
 
     await waitFor(() => {
       // 1. All 7 active fictional entities are present in rendered table
-      expect(getByText('AeroTech Prism Laptop')).toBeDefined();
-      expect(getByText('Summit Cola')).toBeDefined();
-      expect(getByText('Elena Vance')).toBeDefined();
-      expect(getByText('Nocturne of the Wild')).toBeDefined();
-      expect(getByText('Veloce GT')).toBeDefined();
-      expect(getByText('Midtown Spire Tower')).toBeDefined();
-      expect(getByText('Titan Industrial Hazard Placard')).toBeDefined();
+      expect(getAllByText('AeroTech Prism Laptop').length).toBeGreaterThanOrEqual(1);
+      expect(getAllByText('Summit Cola').length).toBeGreaterThanOrEqual(1);
+      expect(getAllByText('Elena Vance').length).toBeGreaterThanOrEqual(1);
+      expect(getAllByText('Nocturne of the Wild').length).toBeGreaterThanOrEqual(1);
+      expect(getAllByText('Veloce GT').length).toBeGreaterThanOrEqual(1);
+      expect(getAllByText('Midtown Spire Tower').length).toBeGreaterThanOrEqual(1);
+      expect(getAllByText('Titan Industrial Hazard Placard').length).toBeGreaterThanOrEqual(1);
     });
 
-    // 2. Open Actions indicator is rendered with exact 0 count
-    expect(getByText('📋 Open Actions (0)')).toBeDefined();
+    // 2. Open Actions indicator is rendered with exact 2 count
+    expect(getByText('📋 Open Actions (2)')).toBeDefined();
 
     // 3. Stale / legacy entities are strictly absent from rendered table
     expect(queryByText('Bob Hope')).toBeNull();

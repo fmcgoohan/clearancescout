@@ -284,25 +284,54 @@ export class EntityResolutionEngine {
     };
   }
 
-  isGenericMatch(name1: string, name2: string): boolean {
+  isGenericMatch(name1: string, name2: string, category1?: string, category2?: string): boolean {
+    if (category1 && category2 && category1 !== category2) {
+      return false;
+    }
+
     const n1 = this.normalize(name1);
     const n2 = this.normalize(name2);
     if (n1 === n2) return true;
 
+    // Check parenthetical and delimiter expansions
     const t1 = this.extractCandidateTokens(name1);
     const t2 = this.extractCandidateTokens(name2);
-    for (const token1 of t1) {
-      for (const token2 of t2) {
-        if (this.normalize(token1) === this.normalize(token2)) return true;
+    if (t1.length > 1 || t2.length > 1) {
+      for (const token1 of t1) {
+        for (const token2 of t2) {
+          if (this.normalize(token1) === this.normalize(token2)) return true;
+        }
       }
     }
 
-    const a1 = this.extractAcronym(name1);
-    const a2 = this.extractAcronym(name2);
-    const words1 = name1.trim().split(/\s+/).length;
-    const words2 = name2.trim().split(/\s+/).length;
-    if (a1.length >= 2 && a1 === a2 && (words1 > 1 || words2 > 1)) {
-      return true;
+    // Acronym equivalence: EXACTLY ONE must be an acronym (single token, uppercase/dotted letters, <= 6 chars)
+    // and the other must be a multi-word phrase matching those initials.
+    const clean1 = name1.replace(/[\.,\-_'"`()\[\]\{\}\/\\!@#$%^&*+=:;?<>~]/g, ' ').trim();
+    const clean2 = name2.replace(/[\.,\-_'"`()\[\]\{\}\/\\!@#$%^&*+=:;?<>~]/g, ' ').trim();
+    const words1 = clean1.split(/\s+/).filter(Boolean);
+    const words2 = clean2.split(/\s+/).filter(Boolean);
+
+    const isAcronym1 =
+      (words1.length === 1 && /^[A-Za-z0-9]{2,6}$/.test(name1.replace(/[^A-Za-z0-9]/g, ''))) ||
+      (words1.length >= 2 && words1.length <= 6 && words1.every((w) => w.length === 1));
+
+    const isAcronym2 =
+      (words2.length === 1 && /^[A-Za-z0-9]{2,6}$/.test(name2.replace(/[^A-Za-z0-9]/g, ''))) ||
+      (words2.length >= 2 && words2.length <= 6 && words2.every((w) => w.length === 1));
+
+    const isMultiWord1 = words1.length > 1 && !words1.every((w) => w.length === 1);
+    const isMultiWord2 = words2.length > 1 && !words2.every((w) => w.length === 1);
+
+    if (isAcronym1 && isMultiWord2) {
+      const a1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const a2 = this.extractAcronym(name2);
+      if (a1 === a2) return true;
+    }
+
+    if (isAcronym2 && isMultiWord1) {
+      const a2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const a1 = this.extractAcronym(name1);
+      if (a1 === a2) return true;
     }
 
     return false;

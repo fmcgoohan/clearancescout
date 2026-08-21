@@ -50,7 +50,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
   const [actions, setActions] = useState<ClearanceActionItem[]>([]);
   const [notifications, setNotifications] = useState<ClearanceNotification[]>([]);
   const [activeTab, setActiveTab] = useState<'ALL' | 'ART_DEPT' | 'LEGAL_COUNSEL' | 'LOCATIONS' | 'PRODUCTION_MGMT' | 'NOTIFICATIONS'>('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'RESOLVED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'RESOLVED'>('OPEN');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
@@ -469,7 +469,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                   </div>
                   {act.resolutionTrigger && (
                     <div style={{ fontSize: '0.72rem', color: '#34d399', marginTop: '4px' }}>
-                      Resolved via: {act.resolutionTrigger}
+                      Resolved via: {formatStatus(act.resolutionTrigger)}
                     </div>
                   )}
                 </div>

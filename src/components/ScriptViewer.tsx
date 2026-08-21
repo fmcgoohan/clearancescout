@@ -1,5 +1,6 @@
 import React from 'react';
 import { CanonicalEntity } from './EntityRegistryTable';
+import { pluralize } from '../utils/formatters.js';
 
 export interface Scene {
   id: string;
@@ -185,7 +186,7 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
     <div className="glass-panel" style={{ padding: '20px', height: '600px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <h3 style={{ fontSize: '1rem', color: 'var(--accent-cyan)' }}>
-          Screenplay Breakdown & Visual Highlighter ({scenes.length} Scenes)
+          Screenplay Breakdown & Visual Highlighter ({pluralize(scenes.length, 'Scene')})
         </h3>
         <div style={{ display: 'flex', gap: '8px', fontSize: '0.7rem' }}>
           <span style={{ color: '#34d399' }}>● Cleared</span>

@@ -129,12 +129,28 @@ export class SceneRepo {
     return scene?.readinessDetails || null;
   }
 
+  async deleteScene(projectId: string, sceneId: string): Promise<boolean> {
+    const docRef = await this.db.doc(`projects/${projectId}/scenes/${sceneId}`);
+    const snap = await docRef.get();
+    if (!snap.exists) return false;
+
+    // Delete subcollection occurrences
+    const occCol = await this.db.collection(`projects/${projectId}/scenes/${sceneId}/occurrences`);
+    const occSnap = await occCol.get();
+    for (const occDoc of occSnap.docs) {
+      await occCol.doc(occDoc.id).delete();
+    }
+
+    await docRef.delete();
+    return true;
+  }
+
   async deleteScenesByProject(projectId: string): Promise<number> {
     const colRef = await this.db.collection(`projects/${projectId}/scenes`);
     const snap = await colRef.get();
     let count = 0;
     for (const doc of snap.docs) {
-      await colRef.doc(doc.id).delete();
+      await this.deleteScene(projectId, doc.id);
       count++;
     }
     return count;

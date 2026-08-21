@@ -440,7 +440,7 @@ export class EntityRepo {
       for (let j = i + 1; j < entities.length; j++) {
         const e2 = entities[j];
         if (visited.has(e2.id)) continue;
-        if (entityResolutionEngine.isGenericMatch(e1.canonicalName, e2.canonicalName)) {
+        if (entityResolutionEngine.isGenericMatch(e1.canonicalName, e2.canonicalName, e1.entityCategory, e2.entityCategory)) {
           group.push(e2);
           visited.add(e2.id);
         }

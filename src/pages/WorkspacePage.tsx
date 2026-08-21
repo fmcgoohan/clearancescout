@@ -506,7 +506,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
-              🎬 Scene Shooting Readiness ({pluralize(readinessSummary.totalScenes, 'Scene')}):
+              🎬 Scene Shooting Readiness ({pluralize(readinessSummary?.totalScenes ?? scenes.length, 'Scene')}):
             </span>
             <span
               style={{
