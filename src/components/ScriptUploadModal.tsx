@@ -159,7 +159,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       setUploadPhase((current) => (current === 'UPLOADING' ? 'PARSING' : current));
     }, 1500);
 
-    // Enforce 90-second client-side timeout to avoid indefinite hangs
+    // Enforce 180-second client-side timeout to avoid indefinite hangs on large scripts
     timeoutIdRef.current = setTimeout(() => {
       if (abortControllerRef.current === controller) {
         controller.abort();
@@ -168,10 +168,10 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         setUploadPhase('IDLE');
         setErrorCode('TIMEOUT_ERROR');
         setErrorMessage(
-          'Screenplay upload and parsing timed out after 90 seconds. The script may be unusually large or the AI parsing model is experiencing high demand. Please try again.'
+          'Screenplay upload and parsing timed out after 3 minutes. The script may be unusually large or the AI parsing model is experiencing high demand. Please try again.'
         );
       }
-    }, 90000);
+    }, 180000);
 
     try {
       let res: Response;

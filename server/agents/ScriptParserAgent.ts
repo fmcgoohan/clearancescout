@@ -155,7 +155,7 @@ export class ScriptParserAgent {
 
     // In CLOUD_MODE: Execute authentic Gemini extraction with windowed chunking for large scripts
     const rawScenes = this.splitIntoRawScenes(normalizedText);
-    const CHUNK_SIZE = 12;
+    const CHUNK_SIZE = 40;
     const OVERLAP = 1;
 
     if (rawScenes.length <= CHUNK_SIZE) {
@@ -176,35 +176,32 @@ export class ScriptParserAgent {
       }
     }
 
-    // Process chunks in bounded parallel batches of 3 for fast throughput
+    // Process chunks with bounded sequential cadence to prevent Gemini 503 concurrency spikes
     const allParsedScenes: ParsedScene[] = [];
     const processedSceneNumbers = new Set<number>();
-    const BATCH_CONCURRENCY = 3;
 
-    for (let b = 0; b < chunkSpecs.length; b += BATCH_CONCURRENCY) {
-      const batch = chunkSpecs.slice(b, b + BATCH_CONCURRENCY);
-      const batchResults = await Promise.all(
-        batch.map((item, idx) =>
-          this.parseChunkWithGemini(item.chunkScenes.join('\n\n'), item.startSceneNum).catch((err: any) => {
-            const chunkIdx = b + idx + 1;
-            console.error(`[ScriptParserAgent Error] Failed parsing scene chunk ${chunkIdx}:`, err);
-            const parseErr: any = new Error(
-              `Live AI screenplay parsing failed during scene extraction chunk ${chunkIdx}: ${err.message || 'Model rate limit or network error'}`
-            );
-            parseErr.code = 'PARSING_FAILED';
-            parseErr.status = 502;
-            throw parseErr;
-          })
-        )
-      );
-
-      for (const parsedChunk of batchResults) {
+    for (let c = 0; c < chunkSpecs.length; c++) {
+      const item = chunkSpecs[c];
+      try {
+        const parsedChunk = await this.parseChunkWithGemini(
+          item.chunkScenes.join('\n\n'),
+          item.startSceneNum
+        );
         for (const scene of parsedChunk) {
           if (!processedSceneNumbers.has(scene.sceneNumber)) {
             processedSceneNumbers.add(scene.sceneNumber);
             allParsedScenes.push(scene);
           }
         }
+      } catch (err: any) {
+        const chunkIdx = c + 1;
+        console.error(`[ScriptParserAgent Error] Failed parsing scene chunk ${chunkIdx}:`, err);
+        const parseErr: any = new Error(
+          `Live AI screenplay parsing failed during scene extraction chunk ${chunkIdx}: ${err.message || 'Model rate limit or network error'}`
+        );
+        parseErr.code = 'PARSING_FAILED';
+        parseErr.status = 502;
+        throw parseErr;
       }
     }
 
@@ -231,7 +228,7 @@ export class ScriptParserAgent {
     try {
       // Set bounded timeout on individual chunk generation call
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Gemini API call timed out after 35 seconds')), 35000)
+        setTimeout(() => reject(new Error('Gemini API call timed out after 45 seconds')), 45000)
       );
 
       const callPromise = this.ai.models.generateContent({
@@ -276,6 +273,9 @@ ${chunkText}`,
             ],
           },
         ],
+        config: {
+          responseMimeType: 'application/json',
+        },
       });
 
       const response: any = await Promise.race([callPromise, timeoutPromise]);
@@ -295,11 +295,12 @@ ${chunkText}`,
         errMsg.includes('Resource has been exhausted') ||
         errMsg.includes('timed out');
 
-      if (isTransient && retryCount < 2) {
+      if (isTransient && retryCount < 3) {
+        const delayMs = (retryCount + 1) * 2000;
         console.warn(
-          `[ScriptParserAgent] Transient error on chunk at scene ${startSceneNumber} (attempt ${retryCount + 1}), retrying in ${(retryCount + 1) * 1500}ms...`
+          `[ScriptParserAgent] Transient error on chunk at scene ${startSceneNumber} (attempt ${retryCount + 1}), retrying in ${delayMs}ms...`
         );
-        await new Promise((r) => setTimeout(r, (retryCount + 1) * 1500));
+        await new Promise((r) => setTimeout(r, delayMs));
         return this.parseChunkWithGemini(chunkText, startSceneNumber, retryCount + 1);
       }
 
