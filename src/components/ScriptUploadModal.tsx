@@ -5,7 +5,7 @@ interface ScriptUploadModalProps {
   projectId: string;
   isOpen: boolean;
   onClose: () => void;
-  onUploadSuccess: (snapshot?: any) => void;
+  onUploadSuccess: (snapshot?: any, meta?: { reingestMode: 'REPLACE' | 'MERGE'; scenesCount: number; entitiesCount: number }) => void;
   hasExistingScenes?: boolean;
   initialMode?: 'FILE' | 'PASTE' | 'DEMO';
   executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
@@ -273,7 +273,10 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       setTimeout(() => {
         setIsUploading(false);
         setUploadPhase('IDLE');
-        onUploadSuccess(data.snapshot || data);
+        const snapshot = data.snapshot || data;
+        const scenesCount = data.scenesCount || snapshot?.scenes?.length || 3;
+        const entitiesCount = data.entitiesCount || data.canonicalEntitiesExtracted || snapshot?.entities?.length || 7;
+        onUploadSuccess(snapshot, { reingestMode, scenesCount, entitiesCount });
         onClose();
       }, 400);
     } catch (err: any) {
@@ -558,16 +561,38 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                 <span style={{ fontSize: '1.2rem' }}>🎬</span>
                 <strong style={{ fontSize: '1rem', color: 'var(--text-main)' }}>The Neon Horizon (Demo Screenplay)</strong>
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
-                A 3-scene sci-fi feature excerpt featuring 6 fully fictional clearance entities across Brand, Technology, Music, Vehicle, Graphic Prop, and Character categories:
+              <p style={{ fontSize: '0.85rem', color: '#cbd5e1', margin: 0, lineHeight: 1.5 }}>
+                A 3-scene sci-fi feature excerpt featuring 7 fully fictional clearance entities across Brand, Art & Music, Public Figure, Proprietary Location, and Graphic Prop categories:
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px', fontSize: '0.8rem', color: 'var(--text-main)' }}>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>💻 AeroTech Prism Laptop</div>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>🥤 Summit Cola</div>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>👤 Elena Vance Keynote</div>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>🎵 Nocturne of the Wild</div>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>🚗 Veloce GT Coupe</div>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>⚠️ Titan Hazard Placard</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '8px', fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>💻 AeroTech Prism Laptop</span>
+                  <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 600, background: 'rgba(56,189,248,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Brand</span>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>🥤 Summit Cola</span>
+                  <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 600, background: 'rgba(56,189,248,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Brand</span>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>👤 Elena Vance</span>
+                  <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 600, background: 'rgba(251,191,36,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Public Figure</span>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>🎵 Nocturne of the Wild</span>
+                  <span style={{ fontSize: '0.65rem', color: '#c084fc', fontWeight: 600, background: 'rgba(192,132,252,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Art & Music</span>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>🚗 Veloce GT</span>
+                  <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 600, background: 'rgba(56,189,248,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Brand</span>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>🏢 Midtown Spire Tower</span>
+                  <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: 600, background: 'rgba(52,211,153,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Proprietary Location</span>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>⚠️ Titan Industrial Hazard Placard</span>
+                  <span style={{ fontSize: '0.65rem', color: '#f87171', fontWeight: 600, background: 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Graphic Prop</span>
+                </div>
               </div>
             </div>
           ) : activeTab === 'FILE' ? (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-
 import { BatchResearchProgress } from '../hooks/useBatchResearch.js';
+import { pluralize, formatStatus, formatCategory } from '../utils/formatters.js';
 
 export type ClearanceStatusType = 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
 
@@ -139,23 +139,6 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
     return `badge badge-${status}`;
   };
 
-  const formatStatus = (status: string) => {
-    switch (status) {
-      case 'INSUFFICIENT_EVIDENCE':
-        return 'Research Required';
-      case 'NO_ISSUE_SURFACED':
-        return 'Cleared';
-      case 'REVIEW_RECOMMENDED':
-        return 'Review Recommended';
-      case 'ACTION_REQUIRED':
-        return 'Action Required';
-      case 'SCRIPT_REVISION_SUPERSEDED':
-        return 'Superseded Draft';
-      default:
-        return status ? status.replace(/_/g, ' ') : 'Pending';
-    }
-  };
-
   const getCategoryColor = (cat: string) => {
     switch (cat) {
       case 'BRAND':
@@ -249,8 +232,8 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
               </button>
             )}
           </div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            {filteredEntities.length} of {entities.length} Entities Displayed
+          <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
+            {filteredEntities.length} of {pluralize(entities.length, 'Entity', 'Entities')} Displayed
           </span>
         </div>
 

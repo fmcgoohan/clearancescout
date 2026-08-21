@@ -169,6 +169,21 @@
 
 ---
 
+## Phase 12: Convergence (Round-3 UX Polish, Taxonomy Alignment & Accessible Density)
+
+**Purpose**: Execute final small UX/copy pass: derive preview entities (7 items) from actual bundled sample, align preview badges to clearance product taxonomy, centralize global pluralization and enum formatting, consolidate duplicate binder export triggers, add accessible post-ingest aria-live toast, and enhance dashboard density, contrast, and sticky headers.
+
+- [X] T051 [HIGH] Align bundled demo preview list and count to exact 7 entities (*AeroTech Prism Laptop*, *Summit Cola*, *Elena Vance*, *Nocturne of the Wild*, *Veloce GT*, *Midtown Spire Tower*, *Titan Industrial Hazard Placard*) derived from single source of truth in `ScriptUploadModal.tsx` per FR-001, FR-017 (partial)
+- [X] T052 [MEDIUM] Align demo preview category badges to 5 official clearance product taxonomies (`Brand`, `Art & Music`, `Public Figure`, `Proprietary Location`, `Graphic Prop`) per FR-017 (partial)
+- [X] T053 [MEDIUM] Create central shared pluralization and enum formatting helpers in `src/utils/formatters.ts` and apply globally across `App.tsx`, `WorkspacePage.tsx`, `EntityRegistryTable.tsx`, and `ActionListModal.tsx` per FR-020, FR-022 (partial)
+- [X] T054 [MEDIUM] Consolidate duplicate "Export Clearance Binder" action triggers by keeping the primary header trigger with SHA-256 digest export and removing redundant duplicate from workspace toolbar per FR-024 (partial)
+- [X] T055 [HIGH] Implement brief accessible auto-dismissing `aria-live="polite"` toast notification after script ingestion showing actual scene and entity counts and distinguishing Replace vs Merge per FR-002, FR-004 (missing)
+- [X] T056 [HIGH] Optimize Production Dashboard modal density by grouping blocker cards by scene with compact layout, preserving Placeholder / Add Rights / Override actions and adding sticky header during modal scrolling per FR-015, FR-016 (partial)
+- [X] T057 [MEDIUM] Enhance text contrast on small muted labels (`#94a3b8` / `#cbd5e1`), ensure keyboard focus outline compliance, and accessible screen reader announcements per FR-018, FR-021 (partial)
+- [X] T058 [HIGH] Execute rendered browser and contract regression suite verifying 7-entity preview truth, taxonomy, pluralization, enum formatting, sticky dashboard, and accessible toast per SC-001..SC-008 (missing)
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid

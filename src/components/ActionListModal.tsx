@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
+import { pluralize, formatStatus, formatDepartment, formatPriority } from '../utils/formatters.js';
 
 export interface ClearanceActionItem {
   id: string;
@@ -216,7 +217,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                 fontWeight: 600,
               }}
             >
-              {openCount} Open Action{openCount !== 1 ? 's' : ''}
+              {pluralize(openCount, 'Open Action')}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -404,7 +405,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                             : '#38bdf8',
                       }}
                     >
-                      {act.priority}
+                      {formatPriority(act.priority)}
                     </span>
                     <span
                       style={{
@@ -415,7 +416,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                         color: 'var(--text-muted)',
                       }}
                     >
-                      {act.targetDepartment}
+                      {formatDepartment(act.targetDepartment)}
                     </span>
                     {act.status === 'RESOLVED' && (
                       <span
@@ -428,7 +429,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                           fontWeight: 600,
                         }}
                       >
-                        ✓ RESOLVED
+                        ✓ {formatStatus(act.status)}
                       </span>
                     )}
                     {act.status === 'IN_PROGRESS' && (
@@ -442,7 +443,21 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                           fontWeight: 600,
                         }}
                       >
-                        IN PROGRESS
+                        {formatStatus(act.status)}
+                      </span>
+                    )}
+                    {act.status === 'OPEN' && (
+                      <span
+                        style={{
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          color: '#f87171',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {formatStatus(act.status)}
                       </span>
                     )}
                   </div>

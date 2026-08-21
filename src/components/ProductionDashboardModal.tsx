@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
+import { pluralize, formatStatus, formatCategory } from '../utils/formatters.js';
 
 export interface ProductionDashboardKPIs {
   totalScenes: number;
@@ -156,38 +157,41 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
           overflow: 'hidden',
         }}
       >
-        {/* Header */}
+        {/* Sticky Header */}
         <div
           style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 20,
             padding: '20px 24px',
             borderBottom: '1px solid var(--border-color, #2d3142)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'rgba(255, 255, 255, 0.02)',
+            background: 'var(--bg-secondary, #181926)',
           }}
         >
           <div>
             <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-main, #cad3f5)' }}>
               📊 Production Clearance Operations Dashboard
             </h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted, #a5adcb)' }}>
+            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#cbd5e1' }}>
               Executive cockpit: Shooting readiness, critical blockers, rights expirations, and active department work queues.
             </p>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
-              className="btn-secondary"
+              className="btn-secondary touch-target"
               onClick={fetchDashboard}
-              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+              style={{ padding: '6px 12px', fontSize: '0.8rem', minHeight: '34px' }}
               disabled={isLoading}
             >
               🔄 Refresh
             </button>
             <button
-              className="btn-secondary"
+              className="btn-secondary touch-target"
               onClick={onClose}
-              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+              style={{ padding: '6px 12px', fontSize: '0.8rem', minHeight: '34px' }}
             >
               ✕ Close
             </button>
@@ -413,67 +417,102 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                     ✓ No active shoot blockers! All scenes are cleared or covered by placeholders/rights.
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {data.shootBlockers.map((blk) => (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {/* Group by Scene */}
+                    {Object.entries(
+                      data.shootBlockers.reduce((acc, blk) => {
+                        const key = `Scene ${blk.sceneNumber}: ${blk.heading}`;
+                        if (!acc[key]) acc[key] = [];
+                        acc[key].push(blk);
+                        return acc;
+                      }, {} as Record<string, BlockerItemDetail[]>)
+                    ).map(([sceneHeading, blockers]) => (
                       <div
-                        key={blk.occurrenceId}
+                        key={sceneHeading}
                         style={{
-                          background: 'rgba(0, 0, 0, 0.2)',
-                          border: '1px solid rgba(237, 135, 150, 0.3)',
-                          borderRadius: '6px',
-                          padding: '12px',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          gap: '12px',
-                          flexWrap: 'wrap',
+                          background: 'rgba(0, 0, 0, 0.25)',
+                          border: '1px solid rgba(237, 135, 150, 0.25)',
+                          borderRadius: '8px',
+                          padding: '12px 14px',
                         }}
                       >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.85rem' }}>
-                              {blk.canonicalName}
-                            </span>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                              Scene {blk.sceneNumber}: {blk.heading}
-                            </span>
-                            <span className="badge badge-ACTION_REQUIRED" style={{ fontSize: '0.65rem' }}>
-                              {blk.clearanceStatus}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: '#ed8796', marginTop: '4px' }}>
-                            {blk.riskRationale}
-                          </div>
+                        <div
+                          style={{
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            color: '#ed8796',
+                            marginBottom: '8px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <span>🎬 {sceneHeading}</span>
+                          <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
+                            {pluralize(blockers.length, 'Blocker')}
+                          </span>
                         </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {blockers.map((blk) => (
+                            <div
+                              key={blk.occurrenceId}
+                              style={{
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                border: '1px solid rgba(255, 255, 255, 0.07)',
+                                borderRadius: '6px',
+                                padding: '10px 12px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: '12px',
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <div style={{ flex: 1, minWidth: '220px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.85rem' }}>
+                                    {blk.canonicalName}
+                                  </span>
+                                  <span className="badge badge-ACTION_REQUIRED" style={{ fontSize: '0.65rem' }}>
+                                    {formatStatus(blk.clearanceStatus)}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#fca5a5', marginTop: '4px', lineHeight: 1.4 }}>
+                                  {blk.riskRationale}
+                                </div>
+                              </div>
 
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          {onMitigatePlaceholder && (
-                            <button
-                              className="btn-secondary"
-                              onClick={() => onMitigatePlaceholder(blk.canonicalEntityId)}
-                              style={{ fontSize: '0.7rem', padding: '4px 8px' }}
-                            >
-                              🎨 Placeholder
-                            </button>
-                          )}
-                          {onMitigateRights && (
-                            <button
-                              className="btn-secondary"
-                              onClick={() => onMitigateRights(blk.canonicalEntityId)}
-                              style={{ fontSize: '0.7rem', padding: '4px 8px' }}
-                            >
-                              📜 Add Rights
-                            </button>
-                          )}
-                          {onMitigateOverride && (
-                            <button
-                              className="btn-secondary"
-                              onClick={() => onMitigateOverride(blk.canonicalEntityId)}
-                              style={{ fontSize: '0.7rem', padding: '4px 8px' }}
-                            >
-                              ⚖️ Override
-                            </button>
-                          )}
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                {onMitigatePlaceholder && (
+                                  <button
+                                    className="btn-secondary touch-target"
+                                    onClick={() => onMitigatePlaceholder(blk.canonicalEntityId)}
+                                    style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#eed49f', color: '#eed49f', minHeight: '30px' }}
+                                  >
+                                    🎨 Placeholder
+                                  </button>
+                                )}
+                                {onMitigateRights && (
+                                  <button
+                                    className="btn-secondary touch-target"
+                                    onClick={() => onMitigateRights(blk.canonicalEntityId)}
+                                    style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#91d7e3', color: '#91d7e3', minHeight: '30px' }}
+                                  >
+                                    📜 Add Rights
+                                  </button>
+                                )}
+                                {onMitigateOverride && (
+                                  <button
+                                    className="btn-secondary touch-target"
+                                    onClick={() => onMitigateOverride(blk.canonicalEntityId)}
+                                    style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#f87171', color: '#f87171', minHeight: '30px' }}
+                                  >
+                                    ⚖️ Override
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}

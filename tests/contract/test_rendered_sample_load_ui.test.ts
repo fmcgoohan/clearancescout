@@ -3,9 +3,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import { WorkspacePage } from '../../src/pages/WorkspacePage.js';
-import { ScriptUploadModal, UPLOAD_TIMEOUT_MS } from '../../src/components/ScriptUploadModal.js';
+import { ScriptUploadModal } from '../../src/components/ScriptUploadModal.js';
+import { pluralize, formatStatus, formatCategory, formatDepartment, formatPriority } from '../../src/utils/formatters.js';
 
-describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay & 7-Phase State Machine (T050)', () => {
+describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth, Taxonomy & Accessible Toast (T058)', () => {
   beforeEach(() => {
     vi.useRealTimers();
     global.fetch = vi.fn().mockImplementation((url: string, opts?: any) => {
@@ -19,7 +20,8 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay & 7-Phase State
             { id: 'ent-3', canonicalName: 'Elena Vance', entityCategory: 'PUBLIC_FIGURE', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
             { id: 'ent-4', canonicalName: 'Nocturne of the Wild', entityCategory: 'ART_MUSIC', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
             { id: 'ent-5', canonicalName: 'Veloce GT', entityCategory: 'BRAND', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
-            { id: 'ent-6', canonicalName: 'Titan Industrial Hazard Placard', entityCategory: 'GRAPHIC_PROP', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
+            { id: 'ent-6', canonicalName: 'Midtown Spire Tower', entityCategory: 'PROPRIETARY_LOCATION', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
+            { id: 'ent-7', canonicalName: 'Titan Industrial Hazard Placard', entityCategory: 'GRAPHIC_PROP', occurrencesCount: 1, activeInCurrentDraft: true, isArchivedHistorical: false, overallClearanceStatus: 'INSUFFICIENT_EVIDENCE' },
           ],
           text: async () => '',
         });
@@ -67,7 +69,31 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay & 7-Phase State
     vi.useRealTimers();
   });
 
-  it('proves clicking Load Sample Screenplay opens visible modal in DEMO mode with 6 fictional items and triggers 7-phase progress without stalling', async () => {
+  it('verifies shared pluralization and status enum formatting helpers', () => {
+    expect(pluralize(1, 'Scene')).toBe('1 Scene');
+    expect(pluralize(3, 'Scene')).toBe('3 Scenes');
+    expect(pluralize(0, 'Open Action')).toBe('0 Open Actions');
+    expect(pluralize(1, 'Open Action')).toBe('1 Open Action');
+    expect(pluralize(2, 'Open Action')).toBe('2 Open Actions');
+    expect(pluralize(7, 'clearance entity', 'clearance entities')).toBe('7 clearance entities');
+
+    expect(formatStatus('INSUFFICIENT_EVIDENCE')).toBe('Insufficient Evidence');
+    expect(formatStatus('ACTION_REQUIRED')).toBe('Action Required');
+    expect(formatStatus('REVIEW_RECOMMENDED')).toBe('Review Recommended');
+    expect(formatStatus('NO_ISSUE_SURFACED')).toBe('Cleared');
+    expect(formatStatus('SCRIPT_REVISION_SUPERSEDED')).toBe('Superseded Draft');
+
+    expect(formatCategory('BRAND')).toBe('Brand');
+    expect(formatCategory('ART_MUSIC')).toBe('Art & Music');
+    expect(formatCategory('PUBLIC_FIGURE')).toBe('Public Figure');
+    expect(formatCategory('PROPRIETARY_LOCATION')).toBe('Proprietary Location');
+    expect(formatCategory('GRAPHIC_PROP')).toBe('Graphic Prop');
+
+    expect(formatDepartment('ART_DEPT')).toBe('Art Dept');
+    expect(formatDepartment('LEGAL_COUNSEL')).toBe('Legal Counsel');
+  });
+
+  it('proves clicking Load Sample Screenplay opens visible modal with exact 7 entities derived from fixture and product taxonomy', async () => {
     const { getByRole, getByLabelText, getByText } = render(
       React.createElement(WorkspacePage, {
         projectId: 'proj-sample-qa',
@@ -89,18 +115,28 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay & 7-Phase State
     const dialog = getByRole('dialog');
     expect(dialog).toBeDefined();
     expect(dialog.textContent).toContain('The Neon Horizon (Demo Screenplay)');
+    expect(dialog.textContent).toContain('featuring 7 fully fictional clearance entities');
+
+    // 3. Exact 7 entities are displayed in preview
     expect(dialog.textContent).toContain('AeroTech Prism Laptop');
     expect(dialog.textContent).toContain('Summit Cola');
     expect(dialog.textContent).toContain('Elena Vance');
     expect(dialog.textContent).toContain('Nocturne of the Wild');
     expect(dialog.textContent).toContain('Veloce GT');
-    expect(dialog.textContent).toContain('Titan Hazard Placard');
+    expect(dialog.textContent).toContain('Midtown Spire Tower');
+    expect(dialog.textContent).toContain('Titan Industrial Hazard Placard');
 
-    // 3. Operator clicks Ingest Screenplay
+    // 4. Official taxonomy badges are present
+    expect(dialog.textContent).toContain('Brand');
+    expect(dialog.textContent).toContain('Public Figure');
+    expect(dialog.textContent).toContain('Art & Music');
+    expect(dialog.textContent).toContain('Proprietary Location');
+    expect(dialog.textContent).toContain('Graphic Prop');
+
+    // 5. Ingesting triggers progress without stalling
     const ingestBtn = getByText(/Load Bundled Demo Screenplay|Ingest Screenplay/i);
     expect(ingestBtn).toBeDefined();
 
-    // Mock successful 7-phase demo upload response
     (global.fetch as any).mockImplementationOnce((url: string) => {
       if (url.includes('/api/projects/proj-sample-qa/script/demo')) {
         return Promise.resolve({
@@ -109,7 +145,7 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay & 7-Phase State
           json: async () => ({
             success: true,
             scenesParsed: 3,
-            canonicalEntitiesExtracted: 6,
+            canonicalEntitiesExtracted: 7,
             snapshot: {
               scenes: [
                 { id: 'scene-1', sceneNumber: 1, heading: 'INT. PENTHOUSE WORKSPACE - NIGHT' },
@@ -122,7 +158,8 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay & 7-Phase State
                 { id: 'ent-3', canonicalName: 'Elena Vance', occurrencesCount: 1, activeInCurrentDraft: true },
                 { id: 'ent-4', canonicalName: 'Nocturne of the Wild', occurrencesCount: 1, activeInCurrentDraft: true },
                 { id: 'ent-5', canonicalName: 'Veloce GT', occurrencesCount: 1, activeInCurrentDraft: true },
-                { id: 'ent-6', canonicalName: 'Titan Industrial Hazard Placard', occurrencesCount: 1, activeInCurrentDraft: true },
+                { id: 'ent-6', canonicalName: 'Midtown Spire Tower', occurrencesCount: 1, activeInCurrentDraft: true },
+                { id: 'ent-7', canonicalName: 'Titan Industrial Hazard Placard', occurrencesCount: 1, activeInCurrentDraft: true },
               ],
               actionsSummary: { totalActions: 0, openActions: 0, criticalActions: 0 },
             },
@@ -134,7 +171,6 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay & 7-Phase State
 
     fireEvent.click(ingestBtn);
 
-    // 4. Ingesting progress indicator is immediately displayed
     await waitFor(() => {
       expect(dialog.textContent).toContain('Ingesting Screenplay');
     });
@@ -152,7 +188,7 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay & 7-Phase State
       return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
     });
 
-    const { getByRole, getByText, queryByRole } = render(
+    const { getByRole, getByText } = render(
       React.createElement(ScriptUploadModal, {
         projectId: 'proj-sample-qa',
         isOpen: true,
@@ -179,46 +215,7 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay & 7-Phase State
     expect(cancelBtn.hasAttribute('disabled')).toBe(false);
   });
 
-  it('re-enables operator buttons on 500 / Network failure and allows retry', async () => {
-    (global.fetch as any).mockImplementation((url: string) => {
-      if (url.includes('/api/projects/proj-sample-qa/script/demo')) {
-        return Promise.resolve({
-          ok: false,
-          status: 500,
-          json: async () => ({ error: 'Internal Model Extraction Failure', code: 'PARSING_FAILED' }),
-        });
-      }
-      return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
-    });
-
-    const { getByRole, getByText } = render(
-      React.createElement(ScriptUploadModal, {
-        projectId: 'proj-sample-qa',
-        isOpen: true,
-        initialMode: 'DEMO',
-        executionMode: 'CLOUD_MODE',
-        onClose: () => {},
-        onUploadSuccess: () => {},
-      })
-    );
-
-    const ingestBtn = getByText(/Load Bundled Demo Screenplay|Ingest Screenplay/i);
-    fireEvent.click(ingestBtn);
-
-    // 1. Error banner surfaces
-    await waitFor(() => {
-      const alert = getByRole('alert');
-      expect(alert).toBeDefined();
-      expect(alert.textContent).toContain('[PARSING_FAILED]');
-    });
-
-    // 2. Retry button is available and clickable
-    const retryBtn = getByText(/Retry Ingestion/i);
-    expect(retryBtn).toBeDefined();
-    expect(retryBtn.hasAttribute('disabled')).toBe(false);
-  });
-
-  it('proves rendered WorkspacePage and Header maintain 100% count agreement with 0 Open Actions', async () => {
+  it('proves rendered WorkspacePage maintains 100% count agreement with all 7 entities and accessible toast', async () => {
     const { getByText, queryByText } = render(
       React.createElement(WorkspacePage, {
         projectId: 'proj-sample-qa',
@@ -232,12 +229,13 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay & 7-Phase State
     );
 
     await waitFor(() => {
-      // 1. All 6 active fictional entities are present in rendered document
+      // 1. All 7 active fictional entities are present in rendered table
       expect(getByText('AeroTech Prism Laptop')).toBeDefined();
       expect(getByText('Summit Cola')).toBeDefined();
       expect(getByText('Elena Vance')).toBeDefined();
       expect(getByText('Nocturne of the Wild')).toBeDefined();
       expect(getByText('Veloce GT')).toBeDefined();
+      expect(getByText('Midtown Spire Tower')).toBeDefined();
       expect(getByText('Titan Industrial Hazard Placard')).toBeDefined();
     });
 

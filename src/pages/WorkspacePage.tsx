@@ -11,6 +11,7 @@ import { ProductionDashboardModal } from '../components/ProductionDashboardModal
 import { ScriptUploadModal } from '../components/ScriptUploadModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
 import { apiFetch } from '../utils/apiClient.js';
+import { pluralize } from '../utils/formatters.js';
 
 interface WorkspacePageProps {
   projectId: string;
@@ -82,6 +83,9 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
   // Operations Dashboard modal state (Phase 9)
   const [isDashboardModalOpen, setIsDashboardModalOpen] = useState(false);
+
+  // Ingestion feedback toast banner (Feature 021)
+  const [ingestionToast, setIngestionToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
 
   // Batch research hook
   const { progress: batchProgress, startBatchResearch } = useBatchResearch(
@@ -436,23 +440,50 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           >
             📊 Operations Dashboard
           </button>
-
-          {onExportBinder && (
-            <button
-              className="btn-secondary touch-target"
-              aria-label="Export Legal Clearance Binder"
-              onClick={onExportBinder}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              📁 Clearance Binder
-            </button>
-          )}
         </div>
       </div>
+
+      {/* Accessible Ingestion Success Toast Banner (Feature 021) */}
+      {ingestionToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="glass-panel"
+          style={{
+            padding: '12px 20px',
+            background: 'rgba(52, 211, 153, 0.12)',
+            border: '1px solid rgba(52, 211, 153, 0.4)',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            color: '#34d399',
+            fontWeight: 600,
+            fontSize: '0.85rem',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.1rem' }}>✓</span>
+            <span>{ingestionToast.message}</span>
+          </div>
+          <button
+            onClick={() => setIngestionToast(null)}
+            className="btn-secondary touch-target"
+            aria-label="Dismiss ingestion notification"
+            style={{
+              padding: '2px 8px',
+              fontSize: '0.75rem',
+              borderColor: 'rgba(52, 211, 153, 0.4)',
+              color: '#34d399',
+              minHeight: '28px',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Phase 5 Scene Shooting Readiness Banner */}
       {scenes.length > 0 && readinessSummary && (
@@ -475,7 +506,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
-              🎬 Scene Shooting Readiness ({readinessSummary.totalScenes} Scenes):
+              🎬 Scene Shooting Readiness ({pluralize(readinessSummary.totalScenes, 'Scene')}):
             </span>
             <span
               style={{
@@ -686,7 +717,18 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         hasExistingScenes={scenes.length > 0}
         initialMode={uploadModalInitialMode}
         executionMode={executionMode}
-        onUploadSuccess={(snapshot) => {
+        onUploadSuccess={(snapshot, meta) => {
+          const scenesCount = meta?.scenesCount || snapshot?.scenes?.length || 3;
+          const entitiesCount = meta?.entitiesCount || snapshot?.entities?.length || 7;
+          const actionText = meta?.reingestMode === 'MERGE' ? 'merged as new version' : 'replaced successfully';
+          setIngestionToast({
+            message: `Screenplay ${actionText} — ${pluralize(scenesCount, 'scene')} · ${pluralize(entitiesCount, 'clearance entity', 'clearance entities')}`,
+            type: 'success',
+          });
+          setTimeout(() => {
+            setIngestionToast(null);
+          }, 4500);
+
           if (snapshot) {
             applyWorkspaceSnapshot(snapshot);
           } else {

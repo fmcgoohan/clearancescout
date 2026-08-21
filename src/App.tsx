@@ -7,6 +7,7 @@ import { BinderExportModal, ClearanceBinder } from './components/BinderExportMod
 import { ProjectListModal } from './components/ProjectListModal';
 import { useTimelineSSE } from './hooks/useTimelineSSE';
 import { apiFetch, getDemoToken, setDemoToken } from './utils/apiClient';
+import { pluralize } from './utils/formatters';
 
 export default function App() {
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -540,7 +541,7 @@ export default function App() {
             {projectSummary.reviewRecommendedCount > 0 && (
               <span style={{ color: '#fbbf24', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} Needs Review</span>
             )}
-            <span style={{ color: 'var(--text-muted)' }}>({projectSummary.entityCount} Entities)</span>
+            <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'Entity', 'Entities')})</span>
           </div>
 
           {/* Demo Token Header Trigger */}
