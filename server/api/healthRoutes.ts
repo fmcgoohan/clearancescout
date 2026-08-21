@@ -43,6 +43,7 @@ healthRouter.get('/health', async (req: Request, res: Response) => {
         timestamp: new Date().toISOString(),
         version: '1.0.0',
         credentials,
+        firestoreConnected: false,
         error: `CLOUD_MODE is active but Google Cloud Firestore via ADC is unreachable: ${firestoreCheck.error}. Volatile in-memory fallback is prohibited in production.`,
       };
       return res.status(503).json(responsePayload);
@@ -56,6 +57,7 @@ healthRouter.get('/health', async (req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     credentials,
+    ...(config.executionMode === 'CLOUD_MODE' ? { firestoreConnected: true } : {}),
   };
 
   return res.json(responsePayload);

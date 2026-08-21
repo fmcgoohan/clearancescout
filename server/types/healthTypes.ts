@@ -12,6 +12,7 @@ export interface HealthStatusResponse {
   timestamp: string;
   version: string;
   credentials: CredentialStatus;
+  firestoreConnected?: boolean;
   missingCredentials?: string[];
   error?: string;
 }

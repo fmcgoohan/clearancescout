@@ -29,23 +29,42 @@ export function setDemoToken(token: string | null): void {
 export function getAuthHeaders(): Record<string, string> {
   const token = getDemoToken();
   if (token) {
-    return { 'x-demo-token': token };
+    return {
+      'x-demo-token': token,
+      'Authorization': `Bearer ${token}`,
+    };
   }
   return {};
 }
 
 /**
- * Authenticated Fetch wrapper that automatically injects the demo access token header
+ * Authenticated Fetch wrapper that automatically injects demo access token headers
+ * and dispatches a global auth required event on HTTP 401 responses.
  */
 export async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const token = getDemoToken();
   const headers = new Headers(init?.headers);
-  if (token && !headers.has('x-demo-token')) {
-    headers.set('x-demo-token', token);
+  if (token) {
+    if (!headers.has('x-demo-token')) {
+      headers.set('x-demo-token', token);
+    }
+    if (!headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
   }
 
-  return fetch(input, {
+  const response = await fetch(input, {
     ...init,
     headers,
   });
+
+  if (response.status === 401 && typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent('clearancescout:auth_required'));
+    } catch {
+      // Ignore event dispatch errors
+    }
+  }
+
+  return response;
 }

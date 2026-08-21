@@ -20,4 +20,25 @@ describe('Contract: Health & Readiness Endpoint', () => {
     expect(bodyStr).not.toContain('AIzaSy');
     expect(bodyStr).not.toContain('sk-');
   });
+
+  it('GET /api/health - includes firestoreConnected in CLOUD_MODE', async () => {
+    const { config } = await import('../../server/config.js');
+    const origMode = config.executionMode;
+    const origKey = config.geminiApiKey;
+    const origParallel = config.parallelWebApiKey;
+    try {
+      config.executionMode = 'CLOUD_MODE';
+      config.geminiApiKey = 'test-gemini-key';
+      config.parallelWebApiKey = 'test-parallel-key';
+
+      const res = await request(app).get('/api/health');
+      expect(res.body).toHaveProperty('executionMode', 'CLOUD_MODE');
+      expect(res.body).toHaveProperty('firestoreConnected');
+      expect(typeof res.body.firestoreConnected).toBe('boolean');
+    } finally {
+      config.executionMode = origMode;
+      config.geminiApiKey = origKey;
+      config.parallelWebApiKey = origParallel;
+    }
+  });
 });
