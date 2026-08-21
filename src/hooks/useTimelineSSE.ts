@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiFetch, getDemoToken } from '../utils/apiClient.js';
 
 export interface TimelineEvent {
   id: string;
@@ -15,16 +16,24 @@ export function useTimelineSSE(projectId: string | null) {
   useEffect(() => {
     if (!projectId) return;
 
-    // Fetch initial event history
-    fetch(`/api/projects/${projectId}/timeline`)
-      .then((res) => res.json())
+    // Fetch initial event history with authenticated client fetch
+    apiFetch(`/api/projects/${projectId}/timeline`)
+      .then((res) => {
+        if (res.ok) return res.json();
+        return { events: [] };
+      })
       .then((data) => {
         if (data.events) setEvents(data.events);
       })
       .catch((err) => console.error('Error fetching timeline history:', err));
 
-    // Connect to SSE stream
-    const eventSource = new EventSource(`/api/projects/${projectId}/timeline/stream`);
+    // Connect to SSE stream with query parameter auth token
+    const token = getDemoToken();
+    const streamUrl = token
+      ? `/api/projects/${projectId}/timeline/stream?token=${encodeURIComponent(token)}`
+      : `/api/projects/${projectId}/timeline/stream`;
+
+    const eventSource = new EventSource(streamUrl);
 
     eventSource.addEventListener('timeline_event', (e: MessageEvent) => {
       try {

@@ -51,6 +51,8 @@ export function ProjectListModal({
       if (res.ok) {
         const data = await res.json();
         setProjects(data.projects || []);
+      } else if (res.status === 401) {
+        setError('Authentication Required: Configure Demo Access Token to access CLOUD_MODE.');
       } else {
         setError('Failed to fetch projects list.');
       }

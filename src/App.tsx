@@ -99,18 +99,56 @@ export default function App() {
     setIsTimelineOpen(true);
   };
 
+  const bootstrapFromHealth = async () => {
+    let serverMode: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE' = 'DEMO_MODE';
+    try {
+      const healthRes = await apiFetch('/api/health');
+      if (healthRes.ok) {
+        const health = await healthRes.json();
+        if (
+          health.executionMode === 'TEST_MODE' ||
+          health.executionMode === 'DEMO_MODE' ||
+          health.executionMode === 'CLOUD_MODE'
+        ) {
+          serverMode = health.executionMode;
+        }
+      }
+    } catch (err) {
+      console.error('Error loading /api/health execution mode:', err);
+    }
+
+    serverExecutionModeRef.current = serverMode;
+    setExecutionMode(serverMode);
+    await initProject(serverMode);
+  };
+
   const handleSaveToken = (tokenToSave: string) => {
     const trimmed = tokenToSave.trim();
     if (trimmed) {
       setDemoToken(trimmed);
       setHasTokenConfigured(true);
+      setDemoTokenInput(trimmed);
     } else {
       setDemoToken(null);
       setHasTokenConfigured(false);
+      setDemoTokenInput('');
     }
     setAuthError(null);
     setIsTokenModalOpen(false);
+    // Immediately reload project & workspace bootstrap
+    bootstrapFromHealth();
   };
+
+  // Listen for 401 auth required events from apiClient
+  useEffect(() => {
+    const handleAuthRequired = () => {
+      setAuthError('Authentication Required: Configure Demo Access Token to access CLOUD_MODE.');
+      setIsTokenModalOpen(true);
+    };
+
+    window.addEventListener('clearancescout:auth_required', handleAuthRequired);
+    return () => window.removeEventListener('clearancescout:auth_required', handleAuthRequired);
+  }, []);
 
   // Global Escape key handler to close topmost modal/drawer
   useEffect(() => {
@@ -161,79 +199,59 @@ export default function App() {
           });
         }
         setRefreshTrigger((prev) => prev + 1);
+      } else if (res.status === 401) {
+        const errData = await res.json().catch(() => ({}));
+        setAuthError(errData.error || 'Authentication Required: Demo Access Token required.');
+        setIsTokenModalOpen(true);
       }
     } catch (err) {
       console.error('Error loading project details:', err);
     }
   };
 
+  const initProject = async (serverMode: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE') => {
+    try {
+      const listRes = await apiFetch('/api/projects');
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        if (listData.projects && listData.projects.length > 0) {
+          await loadProjectDetails(listData.projects[0].id);
+          return;
+        }
+      } else if (listRes.status === 401) {
+        const errData = await listRes.json().catch(() => ({}));
+        setAuthError(errData.error || 'Authentication Required: Demo Access Token required.');
+        setIsTokenModalOpen(true);
+        return;
+      }
+
+      const res = await apiFetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'ClearanceScout Production Clearance Workspace',
+          productionCompany: 'Apex Entertainment',
+          scriptVersion: 'v1.0-ShootingDraft',
+          projectType: 'Movie',
+          executionMode: serverMode,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await loadProjectDetails(data.id);
+      } else if (res.status === 401) {
+        const errData = await res.json().catch(() => ({}));
+        setAuthError(errData.error || 'Authentication Required: Demo Access Token required.');
+        setIsTokenModalOpen(true);
+      }
+    } catch (err) {
+      console.error('Error initializing project:', err);
+    }
+  };
+
   // Initialize or fetch project. Header mode is sourced from GET /api/health on first paint.
   useEffect(() => {
-    let cancelled = false;
-
-    const initProject = async (serverMode: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE') => {
-      try {
-        const listRes = await apiFetch('/api/projects');
-        if (listRes.ok) {
-          const listData = await listRes.json();
-          if (listData.projects && listData.projects.length > 0) {
-            await loadProjectDetails(listData.projects[0].id);
-            return;
-          }
-        }
-
-        const res = await apiFetch('/api/projects', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: 'ClearanceScout Production Clearance Workspace',
-            productionCompany: 'Apex Entertainment',
-            scriptVersion: 'v1.0-ShootingDraft',
-            projectType: 'Movie',
-            executionMode: serverMode,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          await loadProjectDetails(data.id);
-        } else if (res.status === 401) {
-          const errData = await res.json();
-          setAuthError(errData.error || 'Unauthorized: Demo Access Token required.');
-        }
-      } catch (err) {
-        console.error('Error initializing project:', err);
-      }
-    };
-
-    const bootstrapFromHealth = async () => {
-      let serverMode: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE' = 'DEMO_MODE';
-      try {
-        const healthRes = await apiFetch('/api/health');
-        if (healthRes.ok) {
-          const health = await healthRes.json();
-          if (
-            health.executionMode === 'TEST_MODE' ||
-            health.executionMode === 'DEMO_MODE' ||
-            health.executionMode === 'CLOUD_MODE'
-          ) {
-            serverMode = health.executionMode;
-          }
-        }
-      } catch (err) {
-        console.error('Error loading /api/health execution mode:', err);
-      }
-
-      serverExecutionModeRef.current = serverMode;
-      if (!cancelled) {
-        setExecutionMode(serverMode);
-        await initProject(serverMode);
-      }
-    };
-
     bootstrapFromHealth();
-    return () => {
-      cancelled = true;
-    };
   }, [hasTokenConfigured]);
 
   const refreshProjectSummary = async (id: string) => {
@@ -692,7 +710,25 @@ export default function App() {
           />
         ) : (
           <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-            {authError ? 'Authentication Required to initialize Workspace.' : 'Initializing ClearanceScout Workspace...'}
+            {authError ? (
+              <div style={{ maxWidth: '480px', margin: '0 auto' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f87171', marginBottom: '12px' }}>
+                  🔒 Authentication Required
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '24px' }}>
+                  Production CLOUD_MODE requires an authorized Demo Access Token to access projects, observable timeline streams, and clearance workflows.
+                </p>
+                <button
+                  className="btn-primary"
+                  style={{ padding: '10px 24px', fontSize: '0.9rem' }}
+                  onClick={() => setIsTokenModalOpen(true)}
+                >
+                  🔑 Enter Access Token
+                </button>
+              </div>
+            ) : (
+              'Initializing ClearanceScout Workspace...'
+            )}
           </div>
         )}
       </main>
@@ -735,7 +771,7 @@ export default function App() {
             </div>
 
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
-              If this deployment is protected with a shared demo token, enter the access token below. The token will be stored in your browser session and attached to all API mutations.
+              Production Access Token Required for Live Cloud Mode. Enter the authorized access token below to unlock production clearance workflows, real-time observable timeline streams, and project data access.
             </p>
 
             <div style={{ marginBottom: '20px' }}>

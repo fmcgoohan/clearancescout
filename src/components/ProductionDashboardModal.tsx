@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiFetch } from '../utils/apiClient.js';
 
 export interface ProductionDashboardKPIs {
   totalScenes: number;
@@ -103,7 +104,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/projects/${projectId}/dashboard`);
+      const res = await apiFetch(`/api/projects/${projectId}/dashboard`);
       if (!res.ok) {
         throw new Error(`Failed to load dashboard data: ${res.statusText}`);
       }

@@ -219,5 +219,37 @@ describe('Contract Test: Demo Access Token Protection', () => {
       expect(demoRes.status).not.toBe(401);
       expect([200, 502]).toContain(demoRes.status);
     });
+
+    it('T014: authorizes SSE stream /api/projects/:id/timeline/stream with query token parameter in CLOUD_MODE', async () => {
+      config.executionMode = 'CLOUD_MODE';
+      process.env.EXECUTION_MODE = 'CLOUD_MODE';
+      config.demoAccessToken = 'valid-production-secret-999';
+
+      const projRes = await request(app)
+        .post('/api/projects')
+        .set('Authorization', 'Bearer valid-production-secret-999')
+        .send({
+          title: 'SSE Query Auth Project',
+          productionCompany: 'Stream Studios',
+        });
+      expect(projRes.status).toBe(201);
+      const projectId = projRes.body.id;
+
+      // 1. Missing token query param -> 401
+      const unauthStream = await request(app)
+        .get(`/api/projects/${projectId}/timeline/stream`);
+      expect(unauthStream.status).toBe(401);
+
+      // 2. Invalid token query param -> 401
+      const invalidStream = await request(app)
+        .get(`/api/projects/${projectId}/timeline/stream?token=wrong-secret`);
+      expect(invalidStream.status).toBe(401);
+
+      // 3. Valid token query param on timeline -> 200 OK (does not 401)
+      const authTimeline = await request(app)
+        .get(`/api/projects/${projectId}/timeline?token=valid-production-secret-999`);
+      expect(authTimeline.status).toBe(200);
+      expect(Array.isArray(authTimeline.body.events)).toBe(true);
+    });
   });
 });

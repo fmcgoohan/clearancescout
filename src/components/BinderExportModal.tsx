@@ -1,4 +1,5 @@
 import React from 'react';
+import { apiFetch } from '../utils/apiClient.js';
 
 export interface ProvenanceSummary {
   liveCount: number;
@@ -88,7 +89,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
 
   const handleDownloadMarkdown = async () => {
     try {
-      const res = await fetch(`/api/projects/${binder.projectId}/binder/markdown`);
+      const res = await apiFetch(`/api/projects/${binder.projectId}/binder/markdown`);
       if (!res.ok) throw new Error('Failed to fetch markdown');
       const md = await res.text();
       const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
