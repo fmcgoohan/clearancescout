@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
 
 interface ScriptUploadModalProps {
@@ -7,6 +7,8 @@ interface ScriptUploadModalProps {
   onClose: () => void;
   onUploadSuccess: () => void;
 }
+
+type UploadPhase = 'IDLE' | 'UPLOADING' | 'PARSING' | 'FINALIZING' | 'SUCCESS';
 
 export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   projectId,
@@ -19,11 +21,42 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   const [pastedText, setPastedText] = useState('');
   const [pastedFormat, setPastedFormat] = useState<'FOUNTAIN' | 'PLAINTEXT'>('FOUNTAIN');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadPhase, setUploadPhase] = useState<UploadPhase>('IDLE');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cleanupTimers = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      cleanupTimers();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -37,10 +70,13 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   };
 
   const validateAndSetFile = (file: File) => {
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    const validExtensions = ['fountain', 'txt', 'text', 'pdf'];
-    if (!ext || !validExtensions.includes(ext)) {
-      setErrorMessage(`Unsupported file format '.${ext}'. Supported formats: .fountain, .txt, .pdf`);
+    const origLower = file.name.toLowerCase();
+    const isFountain = origLower.endsWith('.fountain') || origLower.includes('.fountain.') || origLower.endsWith('.fountain.txt');
+    const isTxt = origLower.endsWith('.txt') || origLower.endsWith('.text');
+    const isPdf = origLower.endsWith('.pdf');
+
+    if (!isFountain && !isTxt && !isPdf) {
+      setErrorMessage(`Unsupported file format '${file.name}'. Supported formats: .fountain, .txt, .pdf`);
       setErrorCode('UNSUPPORTED_FORMAT');
       setSelectedFile(null);
       return;
@@ -80,39 +116,93 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
     }
   };
 
+  const handleCancelUpload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    cleanupTimers();
+    setIsUploading(false);
+    setUploadPhase('IDLE');
+    setErrorMessage('Upload cancelled by user.');
+    setErrorCode('CANCELLED');
+  };
+
   const handleSubmit = async () => {
     setErrorMessage(null);
     setErrorCode(null);
     setIsUploading(true);
-    setUploadProgress(25);
+    setUploadPhase('UPLOADING');
+    setElapsedSeconds(0);
+    setUploadProgress(15);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Start live elapsed timer
+    timerIntervalRef.current = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+
+    // Dynamic progress interpolation
+    progressIntervalRef.current = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev < 30) return prev + 5;
+        if (prev < 65) return prev + 2;
+        if (prev < 90) return prev + 1;
+        return prev;
+      });
+    }, 1200);
+
+    // Switch phase to PARSING after brief upload simulation
+    setTimeout(() => {
+      setUploadPhase((current) => (current === 'UPLOADING' ? 'PARSING' : current));
+    }, 1500);
+
+    // Enforce 90-second client-side timeout to avoid indefinite hangs
+    timeoutIdRef.current = setTimeout(() => {
+      if (abortControllerRef.current === controller) {
+        controller.abort();
+        cleanupTimers();
+        setIsUploading(false);
+        setUploadPhase('IDLE');
+        setErrorCode('TIMEOUT_ERROR');
+        setErrorMessage(
+          'Screenplay upload and parsing timed out after 90 seconds. The script may be unusually large or the AI parsing model is experiencing high demand. Please try again.'
+        );
+      }
+    }, 90000);
 
     try {
       let res: Response;
 
       if (activeTab === 'FILE') {
         if (!selectedFile) {
+          cleanupTimers();
           setErrorMessage('Please select a screenplay file to upload.');
           setIsUploading(false);
+          setUploadPhase('IDLE');
           return;
         }
 
         const formData = new FormData();
         formData.append('file', selectedFile);
 
-        setUploadProgress(50);
         res = await apiFetch(`/api/projects/${projectId}/script/upload`, {
           method: 'POST',
           body: formData,
+          signal: controller.signal,
         });
       } else {
         if (!pastedText.trim()) {
+          cleanupTimers();
           setErrorMessage('Please enter or paste screenplay text.');
           setErrorCode('EMPTY_FILE');
           setIsUploading(false);
+          setUploadPhase('IDLE');
           return;
         }
 
-        setUploadProgress(50);
         res = await apiFetch(`/api/projects/${projectId}/script/upload`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -121,30 +211,65 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
             format: pastedFormat,
             filename: `pasted_screenplay.${pastedFormat === 'FOUNTAIN' ? 'fountain' : 'txt'}`,
           }),
+          signal: controller.signal,
         });
       }
 
-      setUploadProgress(85);
-      const data = await res.json();
+      cleanupTimers();
+
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = { error: `Server returned HTTP ${res.status}: ${res.statusText}` };
+      }
 
       if (!res.ok) {
-        setErrorMessage(data.error || 'Failed to upload and parse screenplay.');
-        setErrorCode(data.code || 'UPLOAD_FAILED');
+        const code = data.code || (res.status === 401 ? 'UNAUTHORIZED' : res.status === 413 ? 'FILE_TOO_LARGE' : 'PARSING_FAILED');
+        setErrorMessage(data.error || `Upload failed (HTTP ${res.status}).`);
+        setErrorCode(code);
         setIsUploading(false);
+        setUploadPhase('IDLE');
         return;
       }
 
+      setUploadPhase('SUCCESS');
       setUploadProgress(100);
       setTimeout(() => {
         setIsUploading(false);
+        setUploadPhase('IDLE');
         onUploadSuccess();
         onClose();
       }, 400);
     } catch (err: any) {
-      console.error('Screenplay upload error:', err);
-      setErrorMessage(err.message || 'Network error during upload.');
-      setErrorCode('NETWORK_ERROR');
+      cleanupTimers();
+      if (err.name === 'AbortError') {
+        if (!errorCode) {
+          setErrorCode('TIMEOUT_ERROR');
+          setErrorMessage('Upload timed out or was cancelled.');
+        }
+      } else {
+        console.error('Screenplay upload error:', err);
+        setErrorMessage(err.message || 'Network error during upload.');
+        setErrorCode('NETWORK_ERROR');
+      }
       setIsUploading(false);
+      setUploadPhase('IDLE');
+    }
+  };
+
+  const getPhaseDescription = () => {
+    switch (uploadPhase) {
+      case 'UPLOADING':
+        return `📤 Uploading file payload (${elapsedSeconds}s)...`;
+      case 'PARSING':
+        return `🔍 Parsing scenes & extracting clearance IP (${elapsedSeconds}s)...`;
+      case 'FINALIZING':
+        return `⚙️ Finalizing canonical clearance registry (${elapsedSeconds}s)...`;
+      case 'SUCCESS':
+        return '✓ Ingestion complete!';
+      default:
+        return 'Ready to ingest screenplay';
     }
   };
 
@@ -220,8 +345,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
             </div>
           </div>
           <button
-            onClick={onClose}
-            disabled={isUploading}
+            onClick={isUploading ? handleCancelUpload : onClose}
             aria-label="Close upload dialog"
             className="btn-secondary touch-target"
             style={{ padding: '6px 12px', fontSize: '0.85rem' }}
@@ -242,6 +366,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         >
           <button
             type="button"
+            disabled={isUploading}
             onClick={() => { setActiveTab('FILE'); setErrorMessage(null); }}
             style={{
               padding: '12px 4px',
@@ -251,7 +376,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               border: 'none',
               borderBottom: activeTab === 'FILE' ? '2px solid var(--accent-cyan)' : '2px solid transparent',
               color: activeTab === 'FILE' ? 'var(--accent-cyan)' : 'var(--text-muted)',
-              cursor: 'pointer',
+              cursor: isUploading ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',
             }}
           >
@@ -259,6 +384,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
           </button>
           <button
             type="button"
+            disabled={isUploading}
             onClick={() => { setActiveTab('PASTE'); setErrorMessage(null); }}
             style={{
               padding: '12px 4px',
@@ -268,7 +394,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               border: 'none',
               borderBottom: activeTab === 'PASTE' ? '2px solid var(--accent-cyan)' : '2px solid transparent',
               color: activeTab === 'PASTE' ? 'var(--accent-cyan)' : 'var(--text-muted)',
-              cursor: 'pointer',
+              cursor: isUploading ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',
             }}
           >
@@ -311,7 +437,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => !isUploading && fileInputRef.current?.click()}
                 style={{
                   border: isDragging
                     ? '2px dashed var(--accent-cyan)'
@@ -326,14 +452,16 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                   borderRadius: '12px',
                   padding: '36px 20px',
                   textAlign: 'center',
-                  cursor: 'pointer',
+                  cursor: isUploading ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
+                  opacity: isUploading ? 0.7 : 1,
                 }}
               >
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept=".fountain,.txt,.text,.pdf"
+                  disabled={isUploading}
                   onChange={handleFileChange}
                   style={{ display: 'none' }}
                 />
@@ -360,7 +488,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                       {selectedFile.name}
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {(selectedFile.size / 1024).toFixed(1)} KB • Click or drop another file to change
+                      {(selectedFile.size / 1024).toFixed(1)} KB • {isUploading ? 'Ingesting...' : 'Click or drop another file to change'}
                     </div>
                   </div>
                 ) : (
@@ -401,6 +529,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                     <button
                       key={fmt}
                       type="button"
+                      disabled={isUploading}
                       onClick={() => setPastedFormat(fmt)}
                       style={{
                         padding: '6px 12px',
@@ -411,7 +540,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                         borderColor: pastedFormat === fmt ? 'var(--accent-cyan)' : 'var(--border-color)',
                         background: pastedFormat === fmt ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                         color: pastedFormat === fmt ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                        cursor: 'pointer',
+                        cursor: isUploading ? 'not-allowed' : 'pointer',
                       }}
                     >
                       {fmt}
@@ -421,6 +550,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               </div>
               <textarea
                 value={pastedText}
+                disabled={isUploading}
                 onChange={(e) => setPastedText(e.target.value)}
                 placeholder="Paste screenplay text with standard scene headings (INT. / EXT.)..."
                 style={{
@@ -436,6 +566,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                   outline: 'none',
                   resize: 'vertical',
                   boxSizing: 'border-box',
+                  opacity: isUploading ? 0.7 : 1,
                 }}
               />
             </div>
@@ -444,9 +575,11 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
           {/* Upload & Parsing Progress Bar */}
           {isUploading && (
             <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                <span>Parsing Scenes & Extracting Clearance IP...</span>
-                <span>{uploadProgress}%</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {getPhaseDescription()}
+                </span>
+                <span style={{ fontWeight: 600, color: 'var(--accent-cyan)' }}>{uploadProgress}%</span>
               </div>
               <div
                 style={{
@@ -479,36 +612,49 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
             background: 'rgba(0, 0, 0, 0.25)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: '12px',
+            justifyContent: 'space-between',
           }}
         >
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isUploading}
-            className="btn-secondary touch-target"
-            style={{ fontSize: '0.85rem' }}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim())}
-            className="btn-primary touch-target"
-            style={{
-              fontSize: '0.85rem',
-              opacity: isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim()) ? 0.5 : 1,
-              cursor: isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim()) ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isUploading ? (
-              <span>⏳ Processing Screenplay...</span>
-            ) : (
-              <span>📤 Upload & Ingest Draft</span>
+          <div>
+            {isUploading && (
+              <button
+                type="button"
+                onClick={handleCancelUpload}
+                className="btn-secondary touch-target"
+                style={{ fontSize: '0.8rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+              >
+                ⏹ Cancel Upload
+              </button>
             )}
-          </button>
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isUploading}
+              className="btn-secondary touch-target"
+              style={{ fontSize: '0.85rem' }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim())}
+              className="btn-primary touch-target"
+              style={{
+                fontSize: '0.85rem',
+                opacity: isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim()) ? 0.5 : 1,
+                cursor: isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim()) ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {isUploading ? (
+                <span>⏳ Processing Screenplay ({elapsedSeconds}s)...</span>
+              ) : (
+                <span>📤 Upload & Ingest Draft</span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

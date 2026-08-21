@@ -147,49 +147,72 @@ export class ScriptParserAgent {
 
     // In CLOUD_MODE: Execute authentic Gemini extraction with windowed chunking for large scripts
     const rawScenes = this.splitIntoRawScenes(normalizedText);
-    const CHUNK_SIZE = 10;
+    const CHUNK_SIZE = 12;
     const OVERLAP = 1;
 
     if (rawScenes.length <= CHUNK_SIZE) {
       return await this.parseChunkWithGemini(normalizedText, 1);
     }
 
-    // Process large scripts in sequential windowed chunks with 1-scene overlap buffer
-    const allParsedScenes: ParsedScene[] = [];
-    const processedSceneNumbers = new Set<number>();
-
+    // Build chunk specifications
+    const chunkSpecs: Array<{ chunkScenes: string[]; startSceneNum: number }> = [];
     const step = Math.max(1, CHUNK_SIZE - OVERLAP);
     for (let i = 0; i < rawScenes.length; i += step) {
       const chunkEnd = Math.min(i + CHUNK_SIZE, rawScenes.length);
-      const chunkScenes = rawScenes.slice(i, chunkEnd);
-      const chunkText = chunkScenes.join('\n\n');
-      const startSceneNum = i + 1;
+      chunkSpecs.push({
+        chunkScenes: rawScenes.slice(i, chunkEnd),
+        startSceneNum: i + 1,
+      });
+      if (chunkEnd >= rawScenes.length) {
+        break;
+      }
+    }
 
-      try {
-        const parsedChunk = await this.parseChunkWithGemini(chunkText, startSceneNum);
+    // Process chunks in bounded parallel batches of 3 for fast throughput
+    const allParsedScenes: ParsedScene[] = [];
+    const processedSceneNumbers = new Set<number>();
+    const BATCH_CONCURRENCY = 3;
+
+    for (let b = 0; b < chunkSpecs.length; b += BATCH_CONCURRENCY) {
+      const batch = chunkSpecs.slice(b, b + BATCH_CONCURRENCY);
+      const batchResults = await Promise.all(
+        batch.map((item, idx) =>
+          this.parseChunkWithGemini(item.chunkScenes.join('\n\n'), item.startSceneNum).catch((err: any) => {
+            const chunkIdx = b + idx + 1;
+            console.error(`[ScriptParserAgent Error] Failed parsing scene chunk ${chunkIdx}:`, err);
+            const parseErr: any = new Error(
+              `Live AI screenplay parsing failed during scene extraction chunk ${chunkIdx}: ${err.message || 'Model rate limit or network error'}`
+            );
+            parseErr.code = 'PARSING_FAILED';
+            parseErr.status = 502;
+            throw parseErr;
+          })
+        )
+      );
+
+      for (const parsedChunk of batchResults) {
         for (const scene of parsedChunk) {
           if (!processedSceneNumbers.has(scene.sceneNumber)) {
             processedSceneNumbers.add(scene.sceneNumber);
             allParsedScenes.push(scene);
           }
         }
-      } catch (err: any) {
-        console.error(`[ScriptParserAgent Error] Failed parsing scene chunk ${Math.floor(i / step) + 1}:`, err);
-        const parseErr: any = new Error(`Live AI screenplay parsing failed during scene extraction chunk ${Math.floor(i / step) + 1}: ${err.message || 'Model rate limit or network error'}`);
-        parseErr.code = 'PARSING_FAILED';
-        parseErr.status = 502;
-        throw parseErr;
-      }
-
-      if (chunkEnd >= rawScenes.length) {
-        break;
       }
     }
 
+    allParsedScenes.sort((a, b) => a.sceneNumber - b.sceneNumber);
     return allParsedScenes;
   }
 
-  private async parseChunkWithGemini(chunkText: string, startSceneNumber: number): Promise<ParsedScene[]> {
+  private async parseChunkWithGemini(
+    chunkText: string,
+    startSceneNumber: number,
+    retryCount = 0
+  ): Promise<ParsedScene[]> {
+    if (!this.ai && config.geminiApiKey) {
+      this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+    }
+
     if (!this.ai) {
       const err: any = new Error('Gemini AI client not initialized in CLOUD_MODE');
       err.code = 'PARSING_FAILED';
@@ -198,7 +221,12 @@ export class ScriptParserAgent {
     }
 
     try {
-      const response = await this.ai.models.generateContent({
+      // Set bounded timeout on individual chunk generation call
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini API call timed out after 35 seconds')), 35000)
+      );
+
+      const callPromise = this.ai.models.generateContent({
         model: 'gemini-3.6-flash',
         contents: [
           {
@@ -242,6 +270,7 @@ ${chunkText}`,
         ],
       });
 
+      const response: any = await Promise.race([callPromise, timeoutPromise]);
       const responseText = response.text || '[]';
       const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
@@ -250,8 +279,24 @@ ${chunkText}`,
       }
       return parsed;
     } catch (err: any) {
+      const errMsg = err.message || '';
+      const isTransient =
+        errMsg.includes('503') ||
+        errMsg.includes('high demand') ||
+        errMsg.includes('429') ||
+        errMsg.includes('Resource has been exhausted') ||
+        errMsg.includes('timed out');
+
+      if (isTransient && retryCount < 2) {
+        console.warn(
+          `[ScriptParserAgent] Transient error on chunk at scene ${startSceneNumber} (attempt ${retryCount + 1}), retrying in ${(retryCount + 1) * 1500}ms...`
+        );
+        await new Promise((r) => setTimeout(r, (retryCount + 1) * 1500));
+        return this.parseChunkWithGemini(chunkText, startSceneNumber, retryCount + 1);
+      }
+
       // In CLOUD_MODE, strictly fail visibly without silent fallback to synthetic demo recognizers (FR-005)
-      const parseErr: any = new Error(`Live AI screenplay parsing failed: ${err.message || 'Gemini 3.6 Flash extraction error'}`);
+      const parseErr: any = new Error(`Live AI screenplay parsing failed: ${errMsg || 'Gemini 3.6 Flash extraction error'}`);
       parseErr.code = 'PARSING_FAILED';
       parseErr.status = 502;
       throw parseErr;

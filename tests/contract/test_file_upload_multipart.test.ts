@@ -71,4 +71,15 @@ describe('Feature 019: Multipart Screenplay File Upload & Validation Contract', 
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('PDF_EXTRACTION_FAILED');
   });
+
+  it('correctly identifies compound .fountain.txt files as FOUNTAIN format', async () => {
+    const compoundFountain = `INT. RIVER - NIGHT\n\nEDWARD swims while drinking Coca-Cola.`;
+    const res = await request(app)
+      .post(`/api/projects/${projectId}/script/upload`)
+      .attach('file', Buffer.from(compoundFountain), 'Big-Fish.fountain.txt');
+
+    expect(res.status).toBe(200);
+    expect(res.body.format).toBe('FOUNTAIN');
+    expect(res.body.scenesParsed).toBeGreaterThanOrEqual(1);
+  });
 });

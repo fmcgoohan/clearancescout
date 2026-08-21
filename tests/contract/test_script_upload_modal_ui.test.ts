@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { render, fireEvent, cleanup } from '@testing-library/react';
+import { render, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import { WorkspacePage } from '../../src/pages/WorkspacePage.js';
 import { ScriptUploadModal } from '../../src/components/ScriptUploadModal.js';
 
 describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger', () => {
   beforeEach(() => {
+    vi.useRealTimers();
     // Mock global fetch for WorkspacePage bootstrap fetches
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/api/projects/')) {
@@ -29,6 +30,7 @@ describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger'
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it('renders WorkspacePage, clicks Upload Screenplay button, and opens the visibly styled ScriptUploadModal', async () => {
@@ -107,13 +109,134 @@ describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger'
     const fileInput = dialog.querySelector('input[type="file"]') as HTMLInputElement;
 
     // Simulate selecting an unsupported .docx file
-    const invalidFile = new File(['dummy content'], 'screenplay.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const invalidFile = new File(['dummy content'], 'screenplay.docx', {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
     fireEvent.change(fileInput, { target: { files: [invalidFile] } });
 
     // Assert visible error alert banner is rendered
     const alert = getByRole('alert');
     expect(alert).toBeDefined();
     expect(alert.textContent).toContain('[UNSUPPORTED_FORMAT]');
-    expect(alert.textContent).toContain("Unsupported file format '.docx'");
+    expect(alert.textContent).toContain("Unsupported file format 'screenplay.docx'");
+  });
+
+  it('accepts Big-Fish.fountain.txt as a valid Fountain screenplay file', () => {
+    const { getByRole, queryByRole } = render(
+      React.createElement(ScriptUploadModal, {
+        projectId: 'proj-cyberfall-2026',
+        isOpen: true,
+        onClose: () => {},
+        onUploadSuccess: () => {},
+      })
+    );
+
+    const dialog = getByRole('dialog');
+    const fileInput = dialog.querySelector('input[type="file"]') as HTMLInputElement;
+
+    // Simulate selecting Big-Fish.fountain.txt (142.8 KB)
+    const validFile = new File(['INT. RIVER - NIGHT\nEdward swims.'], 'Big-Fish.fountain.txt', {
+      type: 'text/plain',
+    });
+    fireEvent.change(fileInput, { target: { files: [validFile] } });
+
+    // Assert no error is shown and file name is accepted
+    expect(queryByRole('alert')).toBeNull();
+    expect(dialog.textContent).toContain('Big-Fish.fountain.txt');
+  });
+
+  it('surfaces visible PARSING_FAILED error alert immediately when server returns HTTP 502 error', async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/api/projects/proj-error-123/script/upload')) {
+        return Promise.resolve({
+          ok: false,
+          status: 502,
+          json: async () => ({
+            code: 'PARSING_FAILED',
+            error: 'Live AI screenplay parsing failed during scene extraction chunk 5: Model rate limit',
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+      });
+    });
+
+    const { getByRole, getByText } = render(
+      React.createElement(ScriptUploadModal, {
+        projectId: 'proj-error-123',
+        isOpen: true,
+        onClose: () => {},
+        onUploadSuccess: () => {},
+      })
+    );
+
+    const dialog = getByRole('dialog');
+    const fileInput = dialog.querySelector('input[type="file"]') as HTMLInputElement;
+    const validFile = new File(['INT. HOUSE - DAY'], 'script.fountain', { type: 'text/plain' });
+    fireEvent.change(fileInput, { target: { files: [validFile] } });
+
+    const uploadSubmitButton = getByText(/Upload & Ingest Draft/i);
+    fireEvent.click(uploadSubmitButton);
+
+    await waitFor(() => {
+      const alert = getByRole('alert');
+      expect(alert).toBeDefined();
+      expect(alert.textContent).toContain('[PARSING_FAILED]');
+      expect(alert.textContent).toContain('Live AI screenplay parsing failed');
+    });
+  });
+
+  it('provides a working Cancel Upload button that cancels the active request with CANCELLED code', async () => {
+    // Return a hanging promise for the upload request
+    let abortListener: (() => void) | null = null;
+    global.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes('/api/projects/proj-cancel-123/script/upload')) {
+        return new Promise((_, reject) => {
+          if (init?.signal) {
+            init.signal.addEventListener('abort', () => {
+              const abortErr = new Error('The operation was aborted');
+              abortErr.name = 'AbortError';
+              reject(abortErr);
+            });
+          }
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+
+    const { getByRole, getByText } = render(
+      React.createElement(ScriptUploadModal, {
+        projectId: 'proj-cancel-123',
+        isOpen: true,
+        onClose: () => {},
+        onUploadSuccess: () => {},
+      })
+    );
+
+    const dialog = getByRole('dialog');
+    const fileInput = dialog.querySelector('input[type="file"]') as HTMLInputElement;
+    const validFile = new File(['INT. CABIN - DAY'], 'script.fountain', { type: 'text/plain' });
+    fireEvent.change(fileInput, { target: { files: [validFile] } });
+
+    const uploadSubmitButton = getByText(/Upload & Ingest Draft/i);
+    fireEvent.click(uploadSubmitButton);
+
+    // Active upload shows cancel button
+    await waitFor(() => {
+      expect(getByText(/Cancel Upload/i)).toBeDefined();
+    });
+
+    const cancelUploadButton = getByText(/Cancel Upload/i);
+    fireEvent.click(cancelUploadButton);
+
+    // Assert visible cancellation banner
+    await waitFor(() => {
+      const alert = getByRole('alert');
+      expect(alert).toBeDefined();
+      expect(alert.textContent).toContain('Upload cancelled by user');
+    });
   });
 });

@@ -152,7 +152,7 @@ const handleScriptUpload = async (req: Request, res: Response, next: any) => {
       }
 
       const origLower = filename.toLowerCase();
-      if (origLower.endsWith('.fountain')) {
+      if (origLower.endsWith('.fountain') || origLower.includes('.fountain.') || origLower.endsWith('.fountain.txt')) {
         format = 'FOUNTAIN';
         scriptText = uploadedFile.buffer.toString('utf-8');
       } else if (origLower.endsWith('.pdf') || uploadedFile.mimetype === 'application/pdf') {
