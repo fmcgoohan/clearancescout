@@ -17,6 +17,8 @@ fixtureRouter.get('/fixtures/demo-screenplay', (req: Request, res: Response) => 
       const scriptText = fs.readFileSync(fixturePath, 'utf-8');
       return res.json({
         title: 'The Neon Horizon',
+        sourceLabel: 'The Neon Horizon (Bundled Fictional Demo)',
+        sourceType: 'DEMO_FIXTURE',
         format: 'PLAINTEXT',
         scriptText,
       });
@@ -57,6 +59,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
     return res.json({
       title: 'The Neon Horizon',
+      sourceLabel: 'The Neon Horizon (Bundled Fictional Demo)',
+      sourceType: 'DEMO_FIXTURE',
       format: 'PLAINTEXT',
       scriptText: embeddedScript,
     });
