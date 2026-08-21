@@ -157,15 +157,15 @@
 
 **Purpose**: Address Round-2 QA findings, enforce strict active-draft scope across all backend surfaces (eliminating the 41-vs-6 entity split), wire sample loading to the visible 7-phase state machine, unify open action counts, and provide safe canonical alias reconciliation.
 
-- [ ] T042 [CRITICAL] Unify active-draft entity universe across backend repositories (`EntityRepo`, `ProjectRepo`, `SceneRepo`) so `activeEntityCount == distinct canonicalEntityId across active occurrences` per FR-012, FR-013, SC-005 (missing)
-- [ ] T043 [CRITICAL] Reconcile header counts, default registry view, batch-research queue (`useBatchResearch`), dashboard blockers, and clearance binder export to the unified active-draft universe per FR-012, SC-005 (contradicts)
-- [ ] T044 [HIGH] Implement operator re-ingest choice modal (`Replace Current Screenplay` vs `Merge as New Version` vs `Cancel`) and screenplay version identity per FR-001, FR-004 (missing)
-- [ ] T045 [HIGH] Route "Load Bundled Fictional Demo Screenplay" through the visible 7-phase `ScriptUploadModal` state machine (`Preparing` → `Parsing` → `Extracting` → `Reconciling` → `Updating readiness` → `Complete` / `Failed`) per FR-001, FR-002, FR-017 (partial)
-- [ ] T046 [HIGH] Unify Open Actions calculation across header indicator and Action Center (showing `0 Open Actions` when only resolved actions exist) per FR-004, FR-009 (contradicts)
-- [ ] T047 [HIGH] Implement safe migration and reconciliation for legacy duplicate canonical entities (`Associated Press`, `A.P.`, `AP`) preserving occurrences, citations, aliases, and overrides per FR-010, FR-011 (missing)
-- [ ] T048 [HIGH] Create automated contract and invariant test suite `tests/contract/test_active_draft_invariants.test.ts` asserting the active-draft invariant at data/query level per FR-012, FR-013, SC-005 (missing)
-- [ ] T049 [MEDIUM] Humanize scene IDs (no raw `scene-33c3482f`), status enums (`INSUFFICIENT_EVIDENCE` → `Research Required`), action spacing ("0 Open Actions"), and grouped row actions per FR-020, FR-022, FR-023 (partial)
-- [ ] T050 [HIGH] Execute complete T041-style rendered browser QA validation sequence in live `CLOUD_MODE` per SC-001..SC-008 (missing)
+- [X] T042 [CRITICAL] Unify active-draft entity universe across backend repositories (`EntityRepo`, `ProjectRepo`, `SceneRepo`) so `activeEntityCount == distinct canonicalEntityId across active occurrences` per FR-012, FR-013, SC-005 (missing)
+- [X] T043 [CRITICAL] Reconcile header counts, default registry view, batch-research queue (`useBatchResearch`), dashboard blockers, and clearance binder export to the unified active-draft universe per FR-012, SC-005 (contradicts)
+- [X] T044 [HIGH] Implement operator re-ingest choice modal (`Replace Current Screenplay` vs `Merge as New Version` vs `Cancel`) and screenplay version identity per FR-001, FR-004 (missing)
+- [X] T045 [HIGH] Route "Load Bundled Fictional Demo Screenplay" through the visible 7-phase `ScriptUploadModal` state machine (`Preparing` → `Parsing` → `Extracting` → `Reconciling` → `Updating readiness` → `Complete` / `Failed`) per FR-001, FR-002, FR-017 (partial)
+- [X] T046 [HIGH] Unify Open Actions calculation across header indicator and Action Center (showing `0 Open Actions` when only resolved actions exist) per FR-004, FR-009 (contradicts)
+- [X] T047 [HIGH] Implement safe migration and reconciliation for legacy duplicate canonical entities (`Associated Press`, `A.P.`, `AP`) preserving occurrences, citations, aliases, and overrides per FR-010, FR-011 (missing)
+- [X] T048 [HIGH] Create automated contract and invariant test suite `tests/contract/test_active_draft_invariants.test.ts` asserting the active-draft invariant at data/query level per FR-012, FR-013, SC-005 (missing)
+- [X] T049 [MEDIUM] Humanize scene IDs (no raw `scene-33c3482f`), status enums (`INSUFFICIENT_EVIDENCE` → `Research Required`), action spacing ("0 Open Actions"), and grouped row actions per FR-020, FR-022, FR-023 (partial)
+- [X] T050 [HIGH] Execute complete T041-style rendered browser QA validation sequence in live `CLOUD_MODE` per SC-001..SC-008 (missing)
 
 ---
 

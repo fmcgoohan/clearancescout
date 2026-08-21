@@ -19,11 +19,16 @@ describe('Contract: Workspace execution mode follows GET /api/health', () => {
     expect(appCode).toContain('Server execution mode from health endpoint');
   });
 
-  it('WorkspacePage does not auto-evaluate DEMO_FIXTURE when executionMode is CLOUD_MODE', () => {
+  it('WorkspacePage and ScriptUploadModal do not auto-evaluate DEMO_FIXTURE when executionMode is CLOUD_MODE', () => {
     const pageCode = fs.readFileSync(
       path.resolve(__dirname, '../../src/pages/WorkspacePage.tsx'),
       'utf-8'
     );
-    expect(pageCode).toContain('autoEvaluate: executionMode !== \'CLOUD_MODE\'');
+    const modalCode = fs.readFileSync(
+      path.resolve(__dirname, '../../src/components/ScriptUploadModal.tsx'),
+      'utf-8'
+    );
+    expect(pageCode).toContain('executionMode={executionMode}');
+    expect(modalCode).toContain('autoEvaluate: executionMode !== \'CLOUD_MODE\'');
   });
 });

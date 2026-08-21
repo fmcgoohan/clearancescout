@@ -51,18 +51,21 @@ Alice drinks Summit Cola.
       .send({ scriptText: draft2, format: 'PLAINTEXT' });
     expect(d2Res.status).toBe(200);
 
-    const entitiesD2 = await entityRepo.getEntitiesByProject(projectId);
-    const summitCola = entitiesD2.find((e) => e.canonicalName.toLowerCase().includes('summit cola'));
-    const rolex = entitiesD2.find((e) => e.canonicalName.toLowerCase().includes('rolex'));
+    const activeEntitiesD2 = await entityRepo.getEntitiesByProject(projectId);
+    const summitCola = activeEntitiesD2.find((e) => e.canonicalName.toLowerCase().includes('summit cola'));
+    const rolexInActive = activeEntitiesD2.find((e) => e.canonicalName.toLowerCase().includes('rolex'));
 
     expect(summitCola).toBeDefined();
     expect(summitCola?.occurrencesCount).toBeGreaterThan(0);
     expect(summitCola?.activeInCurrentDraft).toBe(true);
+    expect(rolexInActive).toBeUndefined(); // Role-ex is historical-only, so not in default active entities!
 
-    if (rolex) {
-      expect(rolex.occurrencesCount).toBe(0);
-      expect(rolex.activeInCurrentDraft).toBe(false);
-      expect(rolex.isArchivedHistorical).toBe(true);
+    const allEntitiesD2 = await entityRepo.getEntitiesByProject(projectId, { includeArchived: true });
+    const rolexArchived = allEntitiesD2.find((e) => e.canonicalName.toLowerCase().includes('rolex'));
+    if (rolexArchived) {
+      expect(rolexArchived.occurrencesCount).toBe(0);
+      expect(rolexArchived.activeInCurrentDraft).toBe(false);
+      expect(rolexArchived.isArchivedHistorical).toBe(true);
     }
   });
 });
