@@ -127,6 +127,19 @@ projectRouter.get('/:id', async (req: Request, res: Response, next) => {
   }
 });
 
+// Get Complete Project Workspace Snapshot (Feature 021 Atomic Refresh)
+projectRouter.get('/:id/snapshot', async (req: Request, res: Response, next) => {
+  try {
+    const snapshot = await projectRepo.getProjectSnapshot(req.params.id);
+    if (!snapshot) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    return res.json(snapshot);
+  } catch (err) {
+    next(err);
+  }
+});
+
 const handleScriptUpload = async (req: Request, res: Response, next: any) => {
   try {
     const projectId = req.params.id;
@@ -224,6 +237,7 @@ const handleScriptUpload = async (req: Request, res: Response, next: any) => {
       canonicalEntitiesExtracted: result.canonicalEntitiesExtracted,
       entitiesCount: result.canonicalEntitiesExtracted,
       entities: result.entities,
+      snapshot: result.snapshot,
       checksumSha256,
       uploadedAt: new Date().toISOString(),
     });

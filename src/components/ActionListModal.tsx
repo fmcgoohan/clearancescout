@@ -83,6 +83,17 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
     }
   }, [isOpen, projectId]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleUpdateStatus = async (actionId: string, newStatus: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'DISMISSED') => {
@@ -147,6 +158,9 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="action-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       style={{
         position: 'fixed',
         top: 0,
@@ -158,7 +172,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9999,
+        zIndex: 1400,
         padding: '20px',
       }}
     >

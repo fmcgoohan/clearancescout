@@ -12,6 +12,7 @@ export interface WorkflowResult {
   scenesParsed: number;
   canonicalEntitiesExtracted: number;
   entities: CanonicalEntityData[];
+  snapshot?: any;
 }
 
 export class CanonicalRegistryWorkflow {
@@ -89,6 +90,9 @@ export class CanonicalRegistryWorkflow {
         if (resolution.matched && resolution.canonicalEntityId) {
           const matched = await entityRepo.getEntityById(projectId, resolution.canonicalEntityId);
           canonicalEnt = matched!;
+          if (entMention.name.toLowerCase() !== canonicalEnt.canonicalName.toLowerCase()) {
+            await entityRepo.addAlias(projectId, canonicalEnt.id, entMention.name);
+          }
           timelineEmitter.emit(
             projectId,
             'STATE_TRANSITION',
@@ -138,6 +142,7 @@ export class CanonicalRegistryWorkflow {
     }
 
     const finalEntities = await entityRepo.getEntitiesByProject(projectId);
+    const snapshot = await projectRepo.getProjectSnapshot(projectId);
 
     timelineEmitter.emit(projectId, 'STATE_TRANSITION', 'Script Parsing & Entity Registry Complete', {
       scenesParsed: createdScenes.length,
@@ -150,6 +155,7 @@ export class CanonicalRegistryWorkflow {
       scenesParsed: createdScenes.length,
       canonicalEntitiesExtracted: finalEntities.length,
       entities: finalEntities,
+      snapshot: snapshot || undefined,
     };
   }
 }

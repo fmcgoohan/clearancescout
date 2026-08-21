@@ -5,10 +5,10 @@ interface ScriptUploadModalProps {
   projectId: string;
   isOpen: boolean;
   onClose: () => void;
-  onUploadSuccess: () => void;
+  onUploadSuccess: (snapshot?: any) => void;
 }
 
-type UploadPhase = 'IDLE' | 'UPLOADING' | 'PARSING' | 'FINALIZING' | 'SUCCESS';
+export type UploadPhase = 'IDLE' | 'UPLOADING' | 'PARSING' | 'EXTRACTING' | 'RECONCILING' | 'COMPLETE' | 'FAILED';
 
 export const UPLOAD_TIMEOUT_MS = 270000;
 
@@ -146,7 +146,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
 
-    // Honest progress interpolation (advances steadily up to 75% without fake 90% stalls)
+    // Steady, honest progress interpolation (advances steadily up to 75% without fake 90% stalls)
     progressIntervalRef.current = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev < 30) return prev + 5;
@@ -156,10 +156,14 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       });
     }, 1500);
 
-    // Switch phase to PARSING after brief upload simulation
+    // Sequential phase simulation during request
     setTimeout(() => {
       setUploadPhase((current) => (current === 'UPLOADING' ? 'PARSING' : current));
-    }, 1500);
+    }, 1200);
+
+    setTimeout(() => {
+      setUploadPhase((current) => (current === 'PARSING' ? 'EXTRACTING' : current));
+    }, 3000);
 
     // Enforce 270-second client-side timeout aligned with Cloud Run 300s
     timeoutIdRef.current = setTimeout(() => {
@@ -167,7 +171,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         controller.abort();
         cleanupTimers();
         setIsUploading(false);
-        setUploadPhase('IDLE');
+        setUploadPhase('FAILED');
         setErrorCode('TIMEOUT_ERROR');
         setErrorMessage(
           'Screenplay upload and parsing timed out after 4.5 minutes. The script may be unusually large or the AI parsing model is experiencing high demand. Please try again.'
@@ -231,16 +235,16 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         setErrorMessage(data.error || `Upload failed (HTTP ${res.status}).`);
         setErrorCode(code);
         setIsUploading(false);
-        setUploadPhase('IDLE');
+        setUploadPhase('FAILED');
         return;
       }
 
-      setUploadPhase('SUCCESS');
+      setUploadPhase('COMPLETE');
       setUploadProgress(100);
       setTimeout(() => {
         setIsUploading(false);
         setUploadPhase('IDLE');
-        onUploadSuccess();
+        onUploadSuccess(data.snapshot || data);
         onClose();
       }, 400);
     } catch (err: any) {
@@ -256,20 +260,24 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         setErrorCode('NETWORK_ERROR');
       }
       setIsUploading(false);
-      setUploadPhase('IDLE');
+      setUploadPhase('FAILED');
     }
   };
 
   const getPhaseDescription = () => {
     switch (uploadPhase) {
       case 'UPLOADING':
-        return `📤 Uploading file payload (${elapsedSeconds}s)...`;
+        return `📤 Receiving screenplay payload (${elapsedSeconds}s)...`;
       case 'PARSING':
-        return `🔍 Parsing scenes & extracting clearance IP (${elapsedSeconds}s)...`;
-      case 'FINALIZING':
-        return `⚙️ Finalizing canonical clearance registry (${elapsedSeconds}s)...`;
-      case 'SUCCESS':
-        return '✓ Ingestion complete!';
+        return `📄 Segmenting scenes and sluglines (${elapsedSeconds}s)...`;
+      case 'EXTRACTING':
+        return `🔍 Identifying candidate clearance entities (${elapsedSeconds}s)...`;
+      case 'RECONCILING':
+        return `💾 Persisting canonical registry snapshot (${elapsedSeconds}s)...`;
+      case 'COMPLETE':
+        return `✓ Screenplay ingestion complete (${elapsedSeconds}s)!`;
+      case 'FAILED':
+        return `⚠️ Ingestion failed`;
       default:
         return 'Ready to ingest screenplay';
     }
@@ -418,16 +426,28 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                 color: '#f87171',
                 fontSize: '0.85rem',
                 display: 'flex',
-                alignItems: 'flex-start',
-                gap: '10px',
+                flexDirection: 'column',
+                gap: '8px',
               }}
             >
-              <span style={{ fontSize: '1rem', lineHeight: 1 }}>⚠️</span>
-              <div>
-                <strong style={{ display: 'inline-block', marginRight: '4px' }}>
-                  {errorCode ? `[${errorCode}] ` : ''}
-                </strong>
-                {errorMessage}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                <span style={{ fontSize: '1rem', lineHeight: 1 }}>⚠️</span>
+                <div>
+                  <strong style={{ display: 'inline-block', marginRight: '4px' }}>
+                    {errorCode ? `[${errorCode}] ` : ''}
+                  </strong>
+                  {errorMessage}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginLeft: '24px' }}>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="btn-secondary touch-target"
+                  style={{ padding: '4px 10px', fontSize: '0.75rem', borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fff' }}
+                >
+                  ↻ Retry Ingestion
+                </button>
               </div>
             </div>
           )}
@@ -602,6 +622,22 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                   }}
                 />
               </div>
+
+              {elapsedSeconds >= 30 && (
+                <div
+                  style={{
+                    background: 'rgba(6, 182, 212, 0.1)',
+                    border: '1px solid rgba(6, 182, 212, 0.3)',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    fontSize: '0.75rem',
+                    color: 'var(--text-muted)',
+                    marginTop: '4px',
+                  }}
+                >
+                  ⏱️ Processing screenplay draft ({elapsedSeconds}s elapsed). AI scene extraction is executing in parallel batches. You can continue waiting or cancel at any time.
+                </div>
+              )}
             </div>
           )}
         </div>

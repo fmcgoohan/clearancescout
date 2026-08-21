@@ -187,6 +187,35 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     }
   };
 
+  const applyWorkspaceSnapshot = (snapshot: any) => {
+    if (!snapshot) return;
+    if (Array.isArray(snapshot.scenes)) {
+      let readinessMap = new Map<string, any>();
+      if (snapshot.readiness?.scenes && Array.isArray(snapshot.readiness.scenes)) {
+        snapshot.readiness.scenes.forEach((s: any) => readinessMap.set(s.sceneId, s));
+      }
+      const mappedScenes = snapshot.scenes.map((s: any) => {
+        const readiness = readinessMap.get(s.id);
+        return {
+          ...s,
+          readinessStatus: readiness ? readiness.status : s.readinessStatus,
+          readinessDetails: readiness || s.readinessDetails,
+        };
+      });
+      setScenes(mappedScenes);
+    }
+    if (Array.isArray(snapshot.entities)) {
+      setEntities(snapshot.entities);
+    }
+    if (snapshot.readiness) {
+      setReadinessSummary(snapshot.readiness);
+    }
+    if (snapshot.actionsSummary) {
+      setOpenActionsCount(snapshot.actionsSummary.openActions || 0);
+    }
+    onRefreshProjectSummary?.();
+  };
+
   useEffect(() => {
     fetchWorkspaceData();
   }, [projectId, refreshTrigger]);
@@ -201,7 +230,12 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         body: JSON.stringify({ scriptText: textToParse, format }),
       });
       if (res.ok) {
-        await fetchWorkspaceData();
+        const data = await res.json();
+        if (data.snapshot) {
+          applyWorkspaceSnapshot(data.snapshot);
+        } else {
+          await fetchWorkspaceData();
+        }
       }
     } catch (err) {
       console.error('Error parsing script:', err);
@@ -226,7 +260,12 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       });
 
       if (demoRes.ok) {
-        await fetchWorkspaceData();
+        const data = await demoRes.json();
+        if (data.snapshot) {
+          applyWorkspaceSnapshot(data.snapshot);
+        } else {
+          await fetchWorkspaceData();
+        }
         return;
       }
 
@@ -676,8 +715,12 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         projectId={projectId}
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUploadSuccess={() => {
-          fetchWorkspaceData();
+        onUploadSuccess={(snapshot) => {
+          if (snapshot) {
+            applyWorkspaceSnapshot(snapshot);
+          } else {
+            fetchWorkspaceData();
+          }
         }}
       />
     </div>

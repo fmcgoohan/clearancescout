@@ -185,6 +185,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         },
         provenance: 'DEMO_FIXTURE' as const,
         message: 'Demo screenplay ingested and evaluated successfully with DEMO_FIXTURE provenance.',
+        snapshot: await projectRepo.getProjectSnapshot(projectId),
       };
     }
 
@@ -212,6 +213,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       },
       provenance: 'DEMO_FIXTURE' as const,
       message: 'Demo screenplay ingested successfully.',
+      snapshot: await projectRepo.getProjectSnapshot(projectId),
     };
   }
 }

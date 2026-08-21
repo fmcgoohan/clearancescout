@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TimelineEvent } from '../hooks/useTimelineSSE';
 
 interface TimelineDrawerProps {
@@ -18,6 +18,17 @@ export const TimelineDrawer: React.FC<TimelineDrawerProps> = ({
   targetEntityId,
   onClearTargetEntity,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const activeFocus = targetEntityName || targetEntityId || null;
@@ -68,6 +79,8 @@ export const TimelineDrawer: React.FC<TimelineDrawerProps> = ({
 
   return (
     <div
+      role="region"
+      aria-label="Observable Action Timeline"
       style={{
         position: 'fixed',
         top: 0,
@@ -76,7 +89,7 @@ export const TimelineDrawer: React.FC<TimelineDrawerProps> = ({
         height: '100vh',
         background: 'var(--bg-secondary)',
         borderLeft: '1px solid var(--border-color)',
-        zIndex: 1300,
+        zIndex: 1350,
         padding: '24px',
         display: 'flex',
         flexDirection: 'column',
