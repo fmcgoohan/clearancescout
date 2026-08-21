@@ -164,9 +164,16 @@ timeline
 - **Strict Interim Mitigation Gating**: Scene shooting readiness strictly excludes unapproved replacement cards from interim mitigations. `WORKING_CLEAR` requires `TEMP_APPROVED` or `FINAL_CLEARED` placeholders or replacement cards with status `APPROVED` and `selfClearanceResult: ACCEPTED`.
 - **Atomic 25-Call Live Quota Accounting**: Enforces atomic Firestore transaction boundaries so project live research quotas strictly honor the 25-call allocation under high concurrency.
 - **Worst-Case Canonical Status Roll-Up**: Derived canonical entity status factors in all active occurrences across the script, preventing `NO_ISSUE_SURFACED` if any occurrence is non-cleared or unresolved (`INSUFFICIENT_EVIDENCE`).
-- **Grounding Cache Invalidation & Clean Screenplay Draft Replacement**: Entity edits immediately invalidate grounding caches; screenplay re-uploads execute an atomic replacement transaction that purges old scenes, re-indexes occurrences, and auto-supersedes orphaned action items (`SCRIPT_REVISION_SUPERSEDED`).
+- [X] T042 Standardize `server/repositories/AssessmentRepo.ts` paths to project-scoped subcollections only, removing legacy path dual-writes per FR-005 (partial)
+- **Fail-Closed Production Access Token Verification & Project Data Protection**: `demoAuthMiddleware` enforces fail-closed 401 Unauthorized in `CLOUD_MODE` if `DEMO_ACCESS_TOKEN` is unset on the server, prohibiting arbitrary header presence from bypassing auth. Project, screenplay, entity, and clearance data reads (`GET`) are strictly protected while preserving public exemptions for health probes and demo exploration.
 
----
+### Feature 020: Live Operator Access & Cloud-Mode First Run
+- **Blocking Token Access Gate & Reactive 401 Interception**: Automatic 401 response interception in `apiClient.ts` dispatches `clearancescout:auth_required` events, immediately presenting a blocking Token Access Modal on first load in `CLOUD_MODE` rather than rendering an empty workspace or misleading "no projects found" state.
+- **Immediate Bootstrap & Project Reload on Token Save**: Saving the access token in the modal updates local session storage and immediately re-triggers project list loading and workspace initialization from Cloud Firestore without requiring a browser reload.
+- **Comprehensive Authenticated Client Network Layer**: Wires `Authorization: Bearer <token>` and `x-demo-token` headers to all client network requests (`apiFetch`), including previously unauthenticated outliers in `BinderExportModal.tsx` (markdown binder export download) and `ProductionDashboardModal.tsx` (KPI metrics fetch), plus query token parameters (`?token=`) on Observable Action Timeline SSE streams (`useTimelineSSE.ts`).
+- **Honest 1-Click Demo Auto-Evaluation in `CLOUD_MODE`**: Allows auto-evaluation during 1-Click Demo screenplay loading in `CLOUD_MODE` with non-zero evaluated entity counts and verifiable provenance badges (`PARALLEL_LIVE` or fail-visible `FALLBACK_FIXTURE`).
+- **Explicit Cloud Database Health Reporting**: `GET /api/health` reports `firestoreConnected: boolean` in `CLOUD_MODE` via `verifyFirestoreConnectivity()`.
+- **Operator & Judge Documentation**: Clear documentation in `README.md` guiding operators and evaluators on entering the documented judge token (`judge-pass-2026`).
 
 ## 4. Fictional-Content & Anti-Hallucination Policy
 

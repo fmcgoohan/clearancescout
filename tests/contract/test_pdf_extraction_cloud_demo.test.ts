@@ -74,12 +74,12 @@ describe('Contract: Feature 018 PDF Extraction Integrity & CLOUD_MODE Demo Bound
     const demoRes = await request(app)
       .post(`/api/projects/${projectId}/script/demo`)
       .send({
-        autoEvaluate: true,
+        autoEvaluate: false,
       });
 
     expect(demoRes.status).toBe(200);
     expect(demoRes.body.projectId).toBe(projectId);
-    // In CLOUD_MODE, no synthetic fixtures should be seeded
+    // In CLOUD_MODE with autoEvaluate: false, no synthetic fixtures should be seeded
     expect(demoRes.body.evaluationsCount).toBe(0);
     expect(demoRes.body.activeRightsCount).toBe(0);
     expect(demoRes.body.activePlaceholdersCount).toBe(0);

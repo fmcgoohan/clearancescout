@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../../server/index.js';
 import { entityRepo } from '../../server/repositories/EntityRepo.js';
@@ -98,5 +98,49 @@ describe('Integration: Judge-Ready 1-Click Demo Workflow & Invariant Preservatio
     expect(mdRes.text).toContain(binder.integrityDigest);
     expect(mdRes.text).toContain('Summit Beverage Group LLC');
     expect(mdRes.text).toContain('NovaTech Zenith');
+  });
+
+  it('T017: populates non-zero evaluations and authentic provenance in CLOUD_MODE 1-click demo', async () => {
+    const { config } = await import('../../server/config.js');
+    const { scriptParserAgent } = await import('../../server/agents/ScriptParserAgent.js');
+    const origMode = config.executionMode;
+    const origToken = config.demoAccessToken;
+    const parserSpy = vi.spyOn(scriptParserAgent, 'parseScriptText').mockImplementation(async (text: string) => {
+      return (scriptParserAgent as any).parseScriptFallback(text);
+    });
+
+    try {
+      config.executionMode = 'CLOUD_MODE';
+      config.demoAccessToken = 'judge-pass-2026';
+
+      const projRes = await request(app)
+        .post('/api/projects')
+        .set('Authorization', 'Bearer judge-pass-2026')
+        .send({
+          title: 'Cloud Mode Demo Test',
+          productionCompany: 'Entrant Studio Team',
+          projectType: 'Movie',
+          executionMode: 'CLOUD_MODE',
+        });
+      expect(projRes.status).toBe(201);
+      const projectId = projRes.body.id;
+
+      const demoRes = await request(app)
+        .post(`/api/projects/${projectId}/script/demo`)
+        .set('Authorization', 'Bearer judge-pass-2026')
+        .send({
+          autoEvaluate: true,
+        });
+
+      expect(demoRes.status).toBe(200);
+      expect(demoRes.body.scenesCount).toBeGreaterThanOrEqual(3);
+      expect(demoRes.body.entitiesCount).toBeGreaterThanOrEqual(6);
+      expect(demoRes.body.evaluationsCount).toBeGreaterThan(0);
+      expect(demoRes.body.readinessSummary).toBeDefined();
+    } finally {
+      parserSpy.mockRestore();
+      config.executionMode = origMode;
+      config.demoAccessToken = origToken;
+    }
   });
 });

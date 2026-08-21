@@ -34,7 +34,7 @@ export class DemoAutomationWorkflow {
     }
 
     const liveCloud = config.executionMode === 'CLOUD_MODE' || project.executionMode === 'CLOUD_MODE';
-    const autoEvaluate = liveCloud ? false : options.autoEvaluate !== false;
+    const autoEvaluate = options.autoEvaluate !== false;
     const includeSampleRights = liveCloud ? false : options.includeSampleRights !== false;
     const includeSamplePlaceholders = liveCloud ? false : options.includeSamplePlaceholders !== false;
 

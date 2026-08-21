@@ -9,7 +9,8 @@
 [![Tests](https://img.shields.io/badge/Tests-160%20Passing%20(74%20Suites)-34D399)](tests/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Cloud%20Run-34A853)](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
 
-**Live demo (CLOUD_MODE):** [https://clearance-scout-n3tcx4jcbq-uc.a.run.app](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
+**Live demo (CLOUD_MODE):** [https://clearance-scout-n3tcx4jcbq-uc.a.run.app](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)  
+*First-time visitors in `CLOUD_MODE` can enter the documented judge access token `judge-pass-2026` in the access modal to unlock live project data access, screenplay uploads, observable timeline streams, and clearance workflows.*
 
 ClearanceScout is an enterprise agentic platform designed for studio legal counsel, clearance coordinators, art directors, and production delivery supervisors. It transforms unstructured screenplays into structured, auditable clearance binders by automatically extracting brand marks, music compositions, public figures, proprietary locations, and prop graphics, grounding them against live USPTO and web trademark registries via Parallel Search, generating verified non-infringing replacement assets, and orchestrating comprehensive production clearance operating workflows.
 
@@ -233,7 +234,7 @@ gcloud run deploy clearance-scout \
   --allow-unauthenticated \
   --port 8080 \
   --set-env-vars EXECUTION_MODE=CLOUD_MODE,GOOGLE_CLOUD_PROJECT=clearance-scout-2026 \
-  --set-secrets GEMINI_API_KEY=clearance-gemini-api-key:latest,PARALLEL_WEB_API_KEY=clearance-parallel-api-key:latest
+  --set-secrets GEMINI_API_KEY=clearance-gemini-api-key:latest,PARALLEL_WEB_API_KEY=clearance-parallel-api-key:latest,DEMO_ACCESS_TOKEN=clearance-demo-access-token:latest
 ```
 
 Missing production credentials must fail visibly. Do not silently substitute DEMO fixtures in `CLOUD_MODE`.
