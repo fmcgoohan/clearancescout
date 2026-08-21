@@ -141,16 +141,18 @@ export class ProjectRepo {
     const project = await this.getProject(projectId);
     if (!project) return null;
 
-    const [scenes, entities, occurrences, readiness, actions] = await Promise.all([
+    const [scenes, allEntities, allOccurrences, readiness, actions] = await Promise.all([
       sceneRepo.getScenesByProject(projectId),
-      entityRepo.getEntitiesByProject(projectId),
+      entityRepo.getEntitiesByProject(projectId, { includeArchived: true }),
       entityRepo.getAllOccurrences(projectId),
       sceneReadinessEngine.evaluateAllScenesReadiness(projectId),
       actionNotificationRepo.getActionsByProject(projectId).catch(() => []),
     ]);
 
-    const activeEntities = entities.filter((e) => e.activeInCurrentDraft !== false);
-    const historicalEntities = entities.filter((e) => e.isArchivedHistorical === true);
+    const activeSceneIds = new Set(scenes.map((s) => s.id));
+    const activeOccurrences = allOccurrences.filter((o) => activeSceneIds.has(o.sceneId));
+    const activeEntities = allEntities.filter((e) => e.activeInCurrentDraft !== false);
+    const historicalEntities = allEntities.filter((e) => e.isArchivedHistorical === true);
     const openActions = actions.filter((a: any) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
     const criticalActions = openActions.filter((a: any) => a.priority === 'CRITICAL');
 
@@ -163,7 +165,7 @@ export class ProjectRepo {
       scenes,
       entities: activeEntities,
       historicalEntitiesCount: historicalEntities.length,
-      occurrences,
+      occurrences: activeOccurrences,
       readiness,
       actionsSummary: {
         totalActions: actions.length,

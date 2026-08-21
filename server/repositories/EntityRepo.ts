@@ -400,8 +400,8 @@ export class EntityRepo {
     const occurrences = await this.getAllOccurrences(projectId);
     const enriched = entities.map((ent: CanonicalEntityData) => {
       const occCount = occurrences.filter((o) => o.canonicalEntityId === ent.id).length;
-      const isActive = occCount > 0;
-      const isHistorical = occCount === 0 && ent.origin === 'AUTO_EXTRACTED';
+      const isActive = occCount > 0 || ent.origin === 'MANUALLY_ADDED' || ent.origin === 'USER_EDITED';
+      const isHistorical = !isActive;
       return {
         ...ent,
         occurrencesCount: occCount,
@@ -410,7 +410,87 @@ export class EntityRepo {
       };
     });
 
-    return enriched;
+    if (options?.includeArchived) {
+      return enriched;
+    }
+    return enriched.filter((e: CanonicalEntityData) => !e.isArchivedHistorical);
+  }
+
+  async reconcileDuplicateCanonicalEntities(projectId: string): Promise<{ reconciledCount: number; remainingEntities: CanonicalEntityData[] }> {
+    const colRef = await this.db.collection(`projects/${projectId}/entities`);
+    const snap = await colRef.get();
+    const entities = snap.docs.map((d: any) => d.data() as CanonicalEntityData);
+
+    if (entities.length <= 1) {
+      return { reconciledCount: 0, remainingEntities: entities };
+    }
+
+    const { entityResolutionEngine } = await import('../workflows/entityResolutionEngine.js');
+    const grouped: CanonicalEntityData[][] = [];
+    const visited = new Set<string>();
+
+    for (let i = 0; i < entities.length; i++) {
+      const e1 = entities[i];
+      if (visited.has(e1.id)) continue;
+      const group: CanonicalEntityData[] = [e1];
+      visited.add(e1.id);
+
+      for (let j = i + 1; j < entities.length; j++) {
+        const e2 = entities[j];
+        if (visited.has(e2.id)) continue;
+        if (entityResolutionEngine.isGenericMatch(e1.canonicalName, e2.canonicalName)) {
+          group.push(e2);
+          visited.add(e2.id);
+        }
+      }
+      grouped.push(group);
+    }
+
+    let reconciledCount = 0;
+    const occurrences = await this.getAllOccurrences(projectId);
+
+    for (const group of grouped) {
+      if (group.length <= 1) continue;
+
+      group.sort((a, b) => {
+        if (a.isOverridden && !b.isOverridden) return -1;
+        if (!a.isOverridden && b.isOverridden) return 1;
+        if (a.replacementCard && !b.replacementCard) return -1;
+        if (!a.replacementCard && b.replacementCard) return 1;
+        if (a.origin === 'MANUALLY_ADDED' && b.origin !== 'MANUALLY_ADDED') return -1;
+        if (a.origin !== 'MANUALLY_ADDED' && b.origin === 'MANUALLY_ADDED') return 1;
+        return b.canonicalName.length - a.canonicalName.length;
+      });
+
+      const primary = group[0];
+      const secondaries = group.slice(1);
+      const allAliases = new Set<string>(primary.aliases || []);
+
+      for (const sec of secondaries) {
+        allAliases.add(sec.canonicalName);
+        (sec.aliases || []).forEach((a) => allAliases.add(a));
+
+        const secOccurrences = occurrences.filter((o) => o.canonicalEntityId === sec.id);
+        for (const occ of secOccurrences) {
+          const occDocRef = await this.db.doc(`projects/${projectId}/scenes/${occ.sceneId}/occurrences/${occ.id}`);
+          await occDocRef.set({ ...occ, canonicalEntityId: primary.id });
+        }
+
+        const secDocRef = await this.db.doc(`projects/${projectId}/entities/${sec.id}`);
+        await secDocRef.delete();
+        reconciledCount++;
+      }
+
+      allAliases.delete(primary.canonicalName);
+      primary.aliases = Array.from(allAliases);
+      primary.updatedAt = new Date().toISOString();
+
+      const primaryDocRef = await this.db.doc(`projects/${projectId}/entities/${primary.id}`);
+      await primaryDocRef.set(primary);
+    }
+
+    const remaining = await this.getEntitiesByProject(projectId, { includeArchived: true });
+    return { reconciledCount, remainingEntities: remaining };
   }
 
   async createOccurrence(projectId: string, input: Omit<SceneEntityOccurrenceData, 'id'>): Promise<SceneEntityOccurrenceData> {

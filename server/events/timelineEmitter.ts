@@ -18,7 +18,8 @@ export type TimelineEventType =
   | 'ITEM_REMOVED'
   | 'RESEARCH_RETRY_STARTED'
   | 'BINDER_EXPORT'
-  | 'OVERRIDE_RECORDED';
+  | 'OVERRIDE_RECORDED'
+  | 'ENTITIES_RECONCILED';
 
 export interface ExecutionEvent {
   id: string;

@@ -335,3 +335,22 @@ entityMutationRouter.delete('/projects/:id/entities/:entityId', async (req: Requ
     next(err);
   }
 });
+
+// POST /projects/:id/entities/reconcile-duplicates - Reconcile/merge duplicate canonical entities
+entityMutationRouter.post('/projects/:id/entities/reconcile-duplicates', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const projectId = req.params.id;
+    const result = await entityRepo.reconcileDuplicateCanonicalEntities(projectId);
+    
+    if (result.reconciledCount > 0) {
+      timelineEmitter.emit(projectId, 'ENTITIES_RECONCILED', `Reconciled ${result.reconciledCount} duplicate canonical entities`, {
+        reconciledCount: result.reconciledCount,
+        remainingCount: result.remainingEntities.length,
+      });
+    }
+
+    return res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});

@@ -141,6 +141,9 @@ export class CanonicalRegistryWorkflow {
       }
     }
 
+    // Automatically reconcile any duplicate generic canonical variants
+    await entityRepo.reconcileDuplicateCanonicalEntities(projectId);
+
     const finalEntities = await entityRepo.getEntitiesByProject(projectId);
     const snapshot = await projectRepo.getProjectSnapshot(projectId);
 

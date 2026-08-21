@@ -283,6 +283,30 @@ export class EntityResolutionEngine {
       matchRule: 'NONE',
     };
   }
+
+  isGenericMatch(name1: string, name2: string): boolean {
+    const n1 = this.normalize(name1);
+    const n2 = this.normalize(name2);
+    if (n1 === n2) return true;
+
+    const t1 = this.extractCandidateTokens(name1);
+    const t2 = this.extractCandidateTokens(name2);
+    for (const token1 of t1) {
+      for (const token2 of t2) {
+        if (this.normalize(token1) === this.normalize(token2)) return true;
+      }
+    }
+
+    const a1 = this.extractAcronym(name1);
+    const a2 = this.extractAcronym(name2);
+    const words1 = name1.trim().split(/\s+/).length;
+    const words2 = name2.trim().split(/\s+/).length;
+    if (a1.length >= 2 && a1 === a2 && (words1 > 1 || words2 > 1)) {
+      return true;
+    }
+
+    return false;
+  }
 }
 
 export const entityResolutionEngine = new EntityResolutionEngine();
