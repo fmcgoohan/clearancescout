@@ -6,6 +6,9 @@ interface ScriptUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUploadSuccess: (snapshot?: any) => void;
+  hasExistingScenes?: boolean;
+  initialMode?: 'FILE' | 'PASTE' | 'DEMO';
+  executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
 }
 
 export type UploadPhase = 'IDLE' | 'UPLOADING' | 'PARSING' | 'EXTRACTING' | 'RECONCILING' | 'COMPLETE' | 'FAILED';
@@ -17,8 +20,12 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   isOpen,
   onClose,
   onUploadSuccess,
+  hasExistingScenes = false,
+  initialMode = 'FILE',
+  executionMode = 'DEMO_MODE',
 }) => {
-  const [activeTab, setActiveTab] = useState<'FILE' | 'PASTE'>('FILE');
+  const [activeTab, setActiveTab] = useState<'FILE' | 'PASTE' | 'DEMO'>(initialMode);
+  const [reingestMode, setReingestMode] = useState<'REPLACE' | 'MERGE'>('REPLACE');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [pastedText, setPastedText] = useState('');
   const [pastedFormat, setPastedFormat] = useState<'FOUNTAIN' | 'PLAINTEXT'>('FOUNTAIN');
@@ -35,6 +42,14 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialMode);
+      setErrorMessage(null);
+      setErrorCode(null);
+    }
+  }, [isOpen, initialMode]);
 
   const cleanupTimers = () => {
     if (timerIntervalRef.current) {
@@ -141,31 +156,31 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    // Start live elapsed timer
     timerIntervalRef.current = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
 
-    // Steady, honest progress interpolation (advances steadily up to 75% without fake 90% stalls)
     progressIntervalRef.current = setInterval(() => {
       setUploadProgress((prev) => {
-        if (prev < 30) return prev + 5;
-        if (prev < 55) return prev + 2;
-        if (prev < 75) return prev + 1;
+        if (prev < 35) return prev + 5;
+        if (prev < 65) return prev + 3;
+        if (prev < 85) return prev + 1;
         return prev;
       });
-    }, 1500);
-
-    // Sequential phase simulation during request
-    setTimeout(() => {
-      setUploadPhase((current) => (current === 'UPLOADING' ? 'PARSING' : current));
     }, 1200);
 
     setTimeout(() => {
-      setUploadPhase((current) => (current === 'PARSING' ? 'EXTRACTING' : current));
-    }, 3000);
+      setUploadPhase((current) => (current === 'UPLOADING' ? 'PARSING' : current));
+    }, 1000);
 
-    // Enforce 270-second client-side timeout aligned with Cloud Run 300s
+    setTimeout(() => {
+      setUploadPhase((current) => (current === 'PARSING' ? 'EXTRACTING' : current));
+    }, 2500);
+
+    setTimeout(() => {
+      setUploadPhase((current) => (current === 'EXTRACTING' ? 'RECONCILING' : current));
+    }, 4500);
+
     timeoutIdRef.current = setTimeout(() => {
       if (abortControllerRef.current === controller) {
         controller.abort();
@@ -174,7 +189,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         setUploadPhase('FAILED');
         setErrorCode('TIMEOUT_ERROR');
         setErrorMessage(
-          'Screenplay upload and parsing timed out after 4.5 minutes. The script may be unusually large or the AI parsing model is experiencing high demand. Please try again.'
+          'Screenplay ingestion timed out after 4.5 minutes. Please try again.'
         );
       }
     }, UPLOAD_TIMEOUT_MS);
@@ -182,7 +197,19 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
     try {
       let res: Response;
 
-      if (activeTab === 'FILE') {
+      if (activeTab === 'DEMO') {
+        res = await apiFetch(`/api/projects/${projectId}/script/demo`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reingestMode,
+            autoEvaluate: executionMode !== 'CLOUD_MODE',
+            includeSampleRights: executionMode !== 'CLOUD_MODE',
+            includeSamplePlaceholders: executionMode !== 'CLOUD_MODE',
+          }),
+          signal: controller.signal,
+        });
+      } else if (activeTab === 'FILE') {
         if (!selectedFile) {
           cleanupTimers();
           setErrorMessage('Please select a screenplay file to upload.');
@@ -193,6 +220,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
 
         const formData = new FormData();
         formData.append('file', selectedFile);
+        formData.append('reingestMode', reingestMode);
 
         res = await apiFetch(`/api/projects/${projectId}/script/upload`, {
           method: 'POST',
@@ -215,6 +243,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
           body: JSON.stringify({
             scriptText: pastedText,
             format: pastedFormat,
+            reingestMode,
             filename: `pasted_screenplay.${pastedFormat === 'FOUNTAIN' ? 'fountain' : 'txt'}`,
           }),
           signal: controller.signal,
@@ -231,7 +260,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       }
 
       if (!res.ok) {
-        const code = data.code || (res.status === 401 ? 'UNAUTHORIZED' : res.status === 413 ? 'FILE_TOO_LARGE' : 'PARSING_FAILED');
+        const code = data.code || (res.status === 401 ? 'UNAUTHORIZED' : res.status === 413 ? 'FILE_TOO_LARGE' : res.status === 429 ? 'RATE_LIMITED' : 'PARSING_FAILED');
         setErrorMessage(data.error || `Upload failed (HTTP ${res.status}).`);
         setErrorCode(code);
         setIsUploading(false);
@@ -273,7 +302,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       case 'EXTRACTING':
         return `🔍 Identifying candidate clearance entities (${elapsedSeconds}s)...`;
       case 'RECONCILING':
-        return `💾 Persisting canonical registry snapshot (${elapsedSeconds}s)...`;
+        return `💾 Persisting active canonical registry snapshot (${elapsedSeconds}s)...`;
       case 'COMPLETE':
         return `✓ Screenplay ingestion complete (${elapsedSeconds}s)!`;
       case 'FAILED':
@@ -318,7 +347,6 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
           border: '1px solid var(--border-color)',
         }}
       >
-        {/* Modal Header */}
         <div
           style={{
             padding: '20px 24px',
@@ -347,10 +375,12 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
             </div>
             <div>
               <h3 id="upload-modal-title" style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
-                Upload Screenplay Draft
+                {activeTab === 'DEMO' ? 'Load Bundled Fictional Demo' : 'Upload Screenplay Draft'}
               </h3>
               <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                Ingest real .fountain, .txt, or text-based .pdf scripts (up to 25MB)
+                {activeTab === 'DEMO'
+                  ? '3 scenes with fully fictional assets for clearance workflow demonstration'
+                  : 'Ingest real .fountain, .txt, or text-based .pdf scripts (up to 25MB)'}
               </p>
             </div>
           </div>
@@ -364,14 +394,13 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
           </button>
         </div>
 
-        {/* Tab Selector */}
         <div
           style={{
             display: 'flex',
             borderBottom: '1px solid var(--border-color)',
             background: 'rgba(0, 0, 0, 0.15)',
             padding: '0 24px',
-            gap: '24px',
+            gap: '16px',
           }}
         >
           <button
@@ -410,10 +439,71 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
           >
             ✍️ Paste Screenplay Text
           </button>
+          <button
+            type="button"
+            disabled={isUploading}
+            onClick={() => { setActiveTab('DEMO'); setErrorMessage(null); }}
+            style={{
+              padding: '12px 4px',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              background: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'DEMO' ? '2px solid var(--accent-cyan)' : '2px solid transparent',
+              color: activeTab === 'DEMO' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+              cursor: isUploading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            🎭 Bundled Demo Screenplay
+          </button>
         </div>
 
         {/* Modal Body */}
         <div style={{ padding: '24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Re-Ingest Strategy Selector if project has existing scenes */}
+          {hasExistingScenes && (
+            <div
+              style={{
+                padding: '12px 16px',
+                background: 'rgba(6, 182, 212, 0.08)',
+                border: '1px solid rgba(6, 182, 212, 0.3)',
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-cyan)' }}>
+                🔄 Screenplay Re-Ingest Strategy
+              </div>
+              <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="reingestMode"
+                    value="REPLACE"
+                    checked={reingestMode === 'REPLACE'}
+                    onChange={() => setReingestMode('REPLACE')}
+                    disabled={isUploading}
+                  />
+                  <span><strong>Replace Current Screenplay</strong> (Recommended — updates active draft scope)</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="reingestMode"
+                    value="MERGE"
+                    checked={reingestMode === 'MERGE'}
+                    onChange={() => setReingestMode('MERGE')}
+                    disabled={isUploading}
+                  />
+                  <span><strong>Merge as New Version</strong></span>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Error Banner */}
           {errorMessage && (
             <div
@@ -452,7 +542,35 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
             </div>
           )}
 
-          {activeTab === 'FILE' ? (
+          {activeTab === 'DEMO' ? (
+            <div
+              style={{
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '12px',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.2rem' }}>🎬</span>
+                <strong style={{ fontSize: '1rem', color: 'var(--text-main)' }}>The Neon Horizon (Demo Screenplay)</strong>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+                A 3-scene sci-fi feature excerpt featuring 6 fully fictional clearance entities across Brand, Technology, Music, Vehicle, Graphic Prop, and Character categories:
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px', fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>💻 AeroTech Prism Laptop</div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>🥤 Summit Cola</div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>👤 Elena Vance Keynote</div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>🎵 Nocturne of the Wild</div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>🚗 Veloce GT Coupe</div>
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px' }}>⚠️ Titan Hazard Placard</div>
+              </div>
+            </div>
+          ) : activeTab === 'FILE' ? (
             <div>
               {/* Drag & Drop Zone */}
               <div
@@ -501,39 +619,24 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '1.4rem',
-                        color: 'var(--status-no-issue)',
                       }}
                     >
                       ✓
                     </div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#34d399' }}>
                       {selectedFile.name}
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {(selectedFile.size / 1024).toFixed(1)} KB • {isUploading ? 'Ingesting...' : 'Click or drop another file to change'}
+                      {(selectedFile.size / 1024).toFixed(1)} KB — Click to choose a different file
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                    <div
-                      style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '50%',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid var(--border-color)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.4rem',
-                      }}
-                    >
-                      📁
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ fontSize: '2rem' }}>📁</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                      Drag & drop screenplay file here, or browse
                     </div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-main)' }}>
-                      Drag & drop screenplay file here, or <span style={{ color: 'var(--accent-cyan)', textDecoration: 'underline' }}>browse</span>
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       Supports .fountain, .txt, and text-based .pdf up to 25MB
                     </div>
                   </div>
@@ -541,12 +644,13 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
                   Screenplay Format
                 </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Format:</span>
                   {(['FOUNTAIN', 'PLAINTEXT'] as const).map((fmt) => (
                     <button
                       key={fmt}
@@ -622,22 +726,6 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                   }}
                 />
               </div>
-
-              {elapsedSeconds >= 30 && (
-                <div
-                  style={{
-                    background: 'rgba(6, 182, 212, 0.1)',
-                    border: '1px solid rgba(6, 182, 212, 0.3)',
-                    borderRadius: '6px',
-                    padding: '8px 12px',
-                    fontSize: '0.75rem',
-                    color: 'var(--text-muted)',
-                    marginTop: '4px',
-                  }}
-                >
-                  ⏱️ Processing screenplay draft ({elapsedSeconds}s elapsed). AI scene extraction is executing in parallel batches. You can continue waiting or cancel at any time.
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -687,7 +775,9 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               }}
             >
               {isUploading ? (
-                <span>⏳ Processing Screenplay ({elapsedSeconds}s)...</span>
+                <span>⏳ Ingesting Screenplay ({elapsedSeconds}s)...</span>
+              ) : activeTab === 'DEMO' ? (
+                <span>🎭 Load Bundled Demo Screenplay</span>
               ) : (
                 <span>📤 Upload & Ingest Draft</span>
               )}

@@ -244,46 +244,11 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     }
   };
 
-  const handleLoadSampleScreenplay = async () => {
-    if (!projectId) return;
-    setIsUploading(true);
-    try {
-      const demoRes = await apiFetch(`/api/projects/${projectId}/script/demo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          // CLOUD_MODE must not silently substitute DEMO_FIXTURE evaluations.
-          autoEvaluate: executionMode !== 'CLOUD_MODE',
-          includeSampleRights: executionMode !== 'CLOUD_MODE',
-          includeSamplePlaceholders: executionMode !== 'CLOUD_MODE',
-        }),
-      });
+  const [uploadModalInitialMode, setUploadModalInitialMode] = useState<'FILE' | 'PASTE' | 'DEMO'>('FILE');
 
-      if (demoRes.ok) {
-        const data = await demoRes.json();
-        if (data.snapshot) {
-          applyWorkspaceSnapshot(data.snapshot);
-        } else {
-          await fetchWorkspaceData();
-        }
-        return;
-      }
-
-      // Fallback if demo route not supported
-      const fixtureRes = await apiFetch('/api/fixtures/demo-screenplay');
-      let scriptToIngest = defaultFictionalDemoScript;
-      if (fixtureRes.ok) {
-        const data = await fixtureRes.json();
-        if (data.scriptText) {
-          scriptToIngest = data.scriptText;
-        }
-      }
-      await handleParseScript(scriptToIngest, 'PLAINTEXT');
-    } catch (err) {
-      await handleParseScript(defaultFictionalDemoScript, 'PLAINTEXT');
-    } finally {
-      setIsUploading(false);
-    }
+  const handleLoadSampleScreenplay = () => {
+    setUploadModalInitialMode('DEMO');
+    setIsUploadModalOpen(true);
   };
 
   const handleOpenAddModal = () => {
@@ -429,7 +394,10 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           <button
             className="btn-primary touch-target"
             aria-label="Upload Screenplay File (.fountain, .txt, .pdf)"
-            onClick={() => setIsUploadModalOpen(true)}
+            onClick={() => {
+              setUploadModalInitialMode('FILE');
+              setIsUploadModalOpen(true);
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -710,11 +678,14 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         }}
       />
 
-      {/* Screenplay Multipart File-Picker & Upload Modal (Feature 019) */}
+      {/* Screenplay Multipart File-Picker & Upload Modal (Feature 019 / 021) */}
       <ScriptUploadModal
         projectId={projectId}
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
+        hasExistingScenes={scenes.length > 0}
+        initialMode={uploadModalInitialMode}
+        executionMode={executionMode}
         onUploadSuccess={(snapshot) => {
           if (snapshot) {
             applyWorkspaceSnapshot(snapshot);

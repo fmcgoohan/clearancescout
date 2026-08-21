@@ -140,7 +140,20 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   };
 
   const formatStatus = (status: string) => {
-    return status.replace(/_/g, ' ');
+    switch (status) {
+      case 'INSUFFICIENT_EVIDENCE':
+        return 'Research Required';
+      case 'NO_ISSUE_SURFACED':
+        return 'Cleared';
+      case 'REVIEW_RECOMMENDED':
+        return 'Review Recommended';
+      case 'ACTION_REQUIRED':
+        return 'Action Required';
+      case 'SCRIPT_REVISION_SUPERSEDED':
+        return 'Superseded Draft';
+      default:
+        return status ? status.replace(/_/g, ' ') : 'Pending';
+    }
   };
 
   const getCategoryColor = (cat: string) => {
