@@ -252,6 +252,15 @@ export class ActionNotificationRepo {
     return count;
   }
 
+  async deleteActionItem(projectId: string, actionId: string): Promise<boolean> {
+    const col = await this.getActionsCollection(projectId);
+    const docRef = col.doc(actionId);
+    const snap = await docRef.get();
+    if (!snap.exists) return false;
+    await docRef.delete();
+    return true;
+  }
+
   // --- Notification Methods ---
 
   async createNotification(

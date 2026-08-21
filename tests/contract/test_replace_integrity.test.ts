@@ -214,4 +214,65 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     expect(snapshot.entities.length).toBe(7);
     expect(snapshot.project.totalActiveEntities).toBe(7);
   });
+
+  it('proves replacement fails and preserves previous active snapshot if new occurrences drop Elena Vance even when old draft has her', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Elena Vance Invariant Test',
+        productionCompany: 'Entrant Studio',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    // 1. Ingest full 7-entity demo (old draft has all 7 entities including Elena Vance)
+    const initialRes = await request(app)
+      .post(`/api/projects/${projectId}/script/demo`)
+      .send({ autoEvaluate: false });
+    expect(initialRes.status).toBe(200);
+
+    const initialEntities = await entityRepo.getEntitiesByProject(projectId);
+    expect(initialEntities.length).toBe(7);
+    const initialScenes = await sceneRepo.getScenesByProject(projectId);
+    expect(initialScenes.length).toBe(3);
+
+    // 2. Mock or construct a defective script that drops Elena Vance from Scene 1
+    const defectiveDemoScript = `TITLE: THE NEON HORIZON
+AUTHOR: Entrant Studio Team
+FORMAT: Feature Screenplay Excerpt (Fully Fictional Assets)
+
+INT. PENTHOUSE WORKSPACE - NIGHT
+Rain lashes against floor-to-ceiling glass overlooking the neon cityscape.
+ALEX (30s) sits at a curved glass desk. He taps the illuminated keyboard of his AeroTech Prism Laptop. Data streams across the transparent display.
+On the desk rests a chilled crimson can of Summit Cola. Alex pops the tab and takes a drink.
+From the spatial audio system, the atmospheric synth-rock melody of Nocturne of the Wild plays softly in the background.
+
+EXT. MIDTOWN SPIRE TOWER - NIGHT
+Down on the wet asphalt, streetlights reflect in glistening puddles.
+JORDAN (20s) steers a sleek metallic silver Veloce GT sports coupe into the private circular driveway directly beneath the soaring art-deco arches of the Midtown Spire Tower.
+Jordan steps out, locking the car with a subtle chime.
+
+INT. INDUSTRIAL SUB-LEVEL - NIGHT
+Jordan walks through the reinforced maintenance corridor.
+Along the heavy steel bulkhead, a weathered warning sign is bolted to the wall: a bold yellow-and-black Titan Industrial Hazard Placard flashing an active circuit warning.
+Jordan inputs the security code. The hydraulic lock hisses open.`;
+
+    // 3. Attempt replacement with the defective script via demo pipeline
+    try {
+      await canonicalRegistryWorkflow.processScriptUpload(projectId, defectiveDemoScript, 'PLAINTEXT', { isBundledDemo: true });
+      expect.fail('Expected processScriptUpload to fail pre-activation invariant check');
+    } catch (err: any) {
+      expect(err.message).toMatch(/Elena Vance is missing|expected 7 distinct clearance entities/);
+    }
+
+    // 4. Invariant: Previous active snapshot MUST remain 100% intact with 7 entities and 3 scenes
+    const afterEntities = await entityRepo.getEntitiesByProject(projectId);
+    expect(afterEntities.length).toBe(7);
+    expect(afterEntities.map((e) => e.canonicalName)).toContain('Elena Vance');
+
+    const afterScenes = await sceneRepo.getScenesByProject(projectId);
+    expect(afterScenes.length).toBe(3);
+    expect(afterScenes.map((s) => s.id)).toEqual(initialScenes.map((s) => s.id));
+  });
 });

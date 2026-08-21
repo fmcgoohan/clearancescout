@@ -49,6 +49,7 @@ export class CanonicalRegistryWorkflow {
     const createdScenes: SceneData[] = [];
     const createdOccurrences: any[] = [];
     const newlyCreatedEntityIds: string[] = [];
+    const newlyCreatedActionIds: string[] = [];
 
     try {
       // --- Phase 1: Staged Building ---
@@ -133,7 +134,7 @@ export class CanonicalRegistryWorkflow {
       // Automatically reconcile any duplicate generic canonical variants
       await entityRepo.reconcileDuplicateCanonicalEntities(projectId);
 
-      // --- Phase 2: Pre-Activation Invariant Checks ---
+      // --- Phase 2: Pre-Activation Invariant Checks (Strictly against staged draft) ---
       // Check 1: activeSceneCount == parsedSceneCount
       if (createdScenes.length !== parsedScenes.length) {
         throw new Error(`[VALIDATION_FAILED] Staged scenes count (${createdScenes.length}) does not match parsed scenes (${parsedScenes.length})`);
@@ -153,15 +154,42 @@ export class CanonicalRegistryWorkflow {
         }
       }
 
-      // Check 3: Check bundled demo expected entities count (7 items)
+      // Check 3: Check distinct canonical entities strictly in the new staged occurrences
+      const stagedDistinctCanonicalIds = new Set(createdOccurrences.map((o) => o.canonicalEntityId));
       if (options?.isBundledDemo) {
-        const activeEntitiesBeforeCommit = await entityRepo.getEntitiesByProject(projectId);
-        if (activeEntitiesBeforeCommit.length < 7) {
-          throw new Error(`[VALIDATION_FAILED] Bundled demo expected 7 clearance entities, but found ${activeEntitiesBeforeCommit.length}`);
+        if (stagedDistinctCanonicalIds.size < 7) {
+          throw new Error(
+            `[VALIDATION_FAILED] Bundled demo expected 7 distinct clearance entities in new occurrences, but found ${stagedDistinctCanonicalIds.size}`
+          );
+        }
+        // Verify Elena Vance is present in new staged occurrences
+        const stagedNames = Array.from(stagedDistinctCanonicalIds).map((id) => entityMap.get(id)?.canonicalName);
+        if (!stagedNames.includes('Elena Vance')) {
+          throw new Error(`[VALIDATION_FAILED] Bundled demo pre-activation check failed: Elena Vance is missing from new draft occurrences`);
         }
       }
 
-      // --- Phase 3: Activation & Atomic Commit ---
+      // --- Phase 3: Action & Readiness Generation (Pre-Activation) ---
+      const { actionDispatcher } = await import('./actionDispatcher.js');
+      for (const entId of stagedDistinctCanonicalIds) {
+        const ent = entityMap.get(entId);
+        if (ent && (ent.overallClearanceStatus === 'ACTION_REQUIRED' || ent.overallClearanceStatus === 'REVIEW_RECOMMENDED')) {
+          const stagedEntOccs = createdOccurrences.filter((o) => o.canonicalEntityId === ent.id);
+          for (const occ of stagedEntOccs) {
+            const createdAct = await actionDispatcher.dispatchOccurrenceAction(projectId, occ, ent);
+            if (createdAct) {
+              newlyCreatedActionIds.push(createdAct.id);
+            }
+          }
+        }
+      }
+
+      // Pre-evaluate Scene Shooting Readiness for staged scenes
+      const { sceneReadinessEngine } = await import('./sceneReadinessEngine.js');
+      await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
+
+      // --- Phase 4: Atomic Activation & Previous Draft Cleanup ---
+      // (Only reached if Phases 1-3 succeed with 100% invariant validity)
       if (isReplacement) {
         const previousSceneIds = new Set(previousScenes.map((s) => s.id));
         for (const prevScene of previousScenes) {
@@ -173,7 +201,9 @@ export class CanonicalRegistryWorkflow {
           const openActions = await actionNotificationRepo.getActionsByProject(projectId);
           for (const act of openActions) {
             if (act.status === 'OPEN' || act.status === 'IN_PROGRESS') {
-              if (!act.sceneId || previousSceneIds.has(act.sceneId)) {
+              if (act.sceneId && previousSceneIds.has(act.sceneId)) {
+                await actionNotificationRepo.updateActionStatus(projectId, act.id, 'RESOLVED', 'SCRIPT_REVISION_SUPERSEDED');
+              } else if (!act.sceneId && !newlyCreatedActionIds.includes(act.id)) {
                 await actionNotificationRepo.updateActionStatus(projectId, act.id, 'RESOLVED', 'SCRIPT_REVISION_SUPERSEDED');
               }
             }
@@ -185,24 +215,6 @@ export class CanonicalRegistryWorkflow {
         // Invalidate grounding caches
         clearanceEvaluator.invalidateGroundingCache(projectId);
       }
-
-      // Action Invariant (T060): Dispatch required OPEN actions for all current ACTION_REQUIRED / REVIEW_RECOMMENDED items
-      const { actionDispatcher } = await import('./actionDispatcher.js');
-      const latestActiveEntities = await entityRepo.getEntitiesByProject(projectId);
-      const latestOccurrences = await entityRepo.getAllOccurrences(projectId);
-
-      for (const ent of latestActiveEntities) {
-        if (ent.overallClearanceStatus === 'ACTION_REQUIRED' || ent.overallClearanceStatus === 'REVIEW_RECOMMENDED') {
-          const entOccs = latestOccurrences.filter((o) => o.canonicalEntityId === ent.id);
-          for (const occ of entOccs) {
-            await actionDispatcher.dispatchOccurrenceAction(projectId, occ, ent);
-          }
-        }
-      }
-
-      // Re-evaluate Scene Shooting Readiness
-      const { sceneReadinessEngine } = await import('./sceneReadinessEngine.js');
-      await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
 
       const finalEntities = await entityRepo.getEntitiesByProject(projectId);
       const snapshot = await projectRepo.getProjectSnapshot(projectId);
@@ -222,7 +234,7 @@ export class CanonicalRegistryWorkflow {
         snapshot: snapshot || undefined,
       };
     } catch (err) {
-      // Rollback staged draft on failure: previous active snapshot remains untouched
+      // Rollback staged draft on failure: previous active snapshot remains 100% untouched
       console.error('[CanonicalRegistryWorkflow] Draft replacement validation failed. Rolling back staged draft:', err);
       for (const sc of createdScenes) {
         try {
@@ -232,6 +244,11 @@ export class CanonicalRegistryWorkflow {
       for (const entId of newlyCreatedEntityIds) {
         try {
           await entityRepo.deleteCanonicalEntity(projectId, entId);
+        } catch {}
+      }
+      for (const actId of newlyCreatedActionIds) {
+        try {
+          await actionNotificationRepo.deleteActionItem(projectId, actId);
         } catch {}
       }
       throw err;
