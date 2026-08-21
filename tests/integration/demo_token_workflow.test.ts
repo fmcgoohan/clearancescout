@@ -16,7 +16,9 @@ describe('Integration Test: Demo Access Token Protection End-to-End Workflow', (
   });
 
   afterEach(() => {
-    config.demoAccessToken = originalToken;
+    config.demoAccessToken = undefined;
+    delete process.env.DEMO_ACCESS_TOKEN;
+    delete process.env.DEMO_TOKEN;
   });
 
   it('T009: verifies complete protected project lifecycle, mutation rejections without token, and public endpoint exemptions', async () => {

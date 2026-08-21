@@ -14,4 +14,8 @@ export default defineConfig({
       },
     },
   },
+  // @ts-ignore
+  test: {
+    fileParallelism: false,
+  },
 });

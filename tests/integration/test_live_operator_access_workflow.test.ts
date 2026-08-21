@@ -24,11 +24,13 @@ describe('Integration: Feature 020 Live Operator Access & First-Run Workflow', (
 
   afterEach(() => {
     parserSpy.mockRestore();
-    config.demoAccessToken = originalToken;
-    config.executionMode = originalMode;
+    config.demoAccessToken = undefined;
+    config.executionMode = 'DEMO_MODE';
     config.geminiApiKey = originalGemini;
     config.parallelWebApiKey = originalParallel;
     delete process.env.EXECUTION_MODE;
+    delete process.env.DEMO_ACCESS_TOKEN;
+    delete process.env.DEMO_TOKEN;
   });
 
   it('T002: executes complete unauthenticated 401 gate -> token configuration -> bootstrap & 1-click demo workflow in CLOUD_MODE', async () => {

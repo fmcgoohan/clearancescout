@@ -15,7 +15,9 @@ describe('Contract Test: Demo Access Token Protection', () => {
   });
 
   afterEach(() => {
-    config.demoAccessToken = originalToken;
+    config.demoAccessToken = undefined;
+    delete process.env.DEMO_ACCESS_TOKEN;
+    delete process.env.DEMO_TOKEN;
   });
 
   it('T003: rejects mutation requests with 401 when DEMO_ACCESS_TOKEN is configured and token is missing or invalid', async () => {

@@ -74,6 +74,7 @@ describe('Integration: Manual Clearance Item Correction Workflow (Add, Edit, Del
 
     // 7. Verify entity list
     const listRes = await request(app).get(`/api/projects/${projectId}/entities`);
+    expect(listRes.status).toBe(200);
     const allNames = listRes.body.map((e: any) => e.canonicalName);
     expect(allNames).toContain('Apex Energy Drink');
     expect(allNames).toContain('Cyberdyne Security Badge');
