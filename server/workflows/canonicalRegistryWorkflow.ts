@@ -20,6 +20,9 @@ export class CanonicalRegistryWorkflow {
     scriptText: string,
     format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = 'PLAINTEXT'
   ): Promise<WorkflowResult> {
+    const project = await projectRepo.getProject(projectId);
+    const executionMode = project?.executionMode;
+
     timelineEmitter.emit(projectId, 'DOCUMENT_QUERY', `Parsing Script Content (${format})`, {
       scriptLength: scriptText.length,
       format,

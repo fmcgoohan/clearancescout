@@ -128,20 +128,28 @@ export class ScriptParserAgent {
   /**
     * Parse screenplay text across Plaintext, Fountain, or extracted PDF format.
     */
-  async parseScriptText(scriptText: string, format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = 'PLAINTEXT'): Promise<ParsedScene[]> {
+  async parseScriptText(
+    scriptText: string,
+    format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = 'PLAINTEXT'
+  ): Promise<ParsedScene[]> {
     // Normalize Fountain or raw text comments
     const normalizedText = this.preprocessScript(scriptText, format);
 
-    const isCloudMode = config.executionMode === 'CLOUD_MODE' || process.env.EXECUTION_MODE === 'CLOUD_MODE';
-    if (isCloudMode && !this.ai) {
+    const isCloudRuntime = config.executionMode === 'CLOUD_MODE';
+
+    if (isCloudRuntime && !this.ai && config.geminiApiKey) {
+      this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+    }
+
+    if (isCloudRuntime && !this.ai) {
       const parseErr: any = new Error('Live AI screenplay parser unavailable in CLOUD_MODE: GEMINI_API_KEY is not configured.');
       parseErr.code = 'PARSING_FAILED';
       parseErr.status = 502;
       throw parseErr;
     }
 
-    // If in TEST_MODE or DEMO_MODE, use deterministic parsing engine
-    if (!isCloudMode) {
+    // If server is in TEST_MODE or DEMO_MODE, use deterministic parsing engine
+    if (!isCloudRuntime) {
       return this.parseScriptFallback(normalizedText);
     }
 
