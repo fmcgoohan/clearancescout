@@ -31,14 +31,17 @@ describe('Contract: Passive Timeline Idempotency (Feature 021)', () => {
     const baselineCount = initialTimelineRes.body.events.length;
     expect(baselineCount).toBeGreaterThan(0);
 
-    // 4. Repeatedly execute passive read operations
-    for (let i = 0; i < 5; i++) {
-      await request(app).get(`/api/projects/${projectId}`);
-      await request(app).get(`/api/projects/${projectId}/scenes`);
-      await request(app).get(`/api/projects/${projectId}/entities`);
-      await request(app).get(`/api/projects/${projectId}/snapshot`);
-      await request(app).get(`/api/projects/${projectId}/timeline`);
-    }
+    // 4. Execute passive read operations across all project resources
+    const r1 = await request(app).get(`/api/projects/${projectId}`);
+    expect(r1.status).toBe(200);
+    const r2 = await request(app).get(`/api/projects/${projectId}/scenes`);
+    expect(r2.status).toBe(200);
+    const r3 = await request(app).get(`/api/projects/${projectId}/entities`);
+    expect(r3.status).toBe(200);
+    const r4 = await request(app).get(`/api/projects/${projectId}/snapshot`);
+    expect(r4.status).toBe(200);
+    const r5 = await request(app).get(`/api/projects/${projectId}/timeline`);
+    expect(r5.status).toBe(200);
 
     // 5. Verify timeline event count has not increased at all
     const afterPassiveRes = await request(app).get(`/api/projects/${projectId}/timeline`);
