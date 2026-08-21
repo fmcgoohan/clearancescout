@@ -4,6 +4,9 @@ export type MatchRule =
   | 'EXACT_CANONICAL'
   | 'ALIAS_MATCH'
   | 'NORMALIZED_EQUIVALENCE'
+  | 'PARENTHETICAL_EXPANSION'
+  | 'DELIMITER_EXPANSION'
+  | 'ACRONYM_EQUIVALENCE'
   | 'HIERARCHY_PARENT_MATCH'
   | 'NONE';
 
@@ -31,6 +34,37 @@ export class EntityResolutionEngine {
       .trim();
   }
 
+  private extractAcronym(str: string): string {
+    // Generates acronym from uppercase initials or first letters of words: e.g. "Associated Press" -> "AP", "A.P." -> "AP"
+    const cleaned = str.replace(/[\.,\-_'"`()\[\]\{\}\/\\!@#$%^&*+=:;?<>~]/g, ' ').trim();
+    const words = cleaned.split(/\s+/).filter(Boolean);
+    if (words.length > 1) {
+      return words.map((w) => w[0]).join('').toLowerCase();
+    }
+    // If single word like "AP", just return lowercase letters without dots
+    return str.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  }
+
+  private extractCandidateTokens(mention: string): string[] {
+    const tokens = new Set<string>();
+    tokens.add(mention.trim());
+
+    // 1. Check for parenthetical forms: "A.P. (Associated Press)" -> ["A.P.", "Associated Press"]
+    const parentheticalMatch = mention.match(/^(.+?)\s*\((.+?)\)$/);
+    if (parentheticalMatch) {
+      tokens.add(parentheticalMatch[1].trim());
+      tokens.add(parentheticalMatch[2].trim());
+    }
+
+    // 2. Check for delimiter splits: "Associated Press / A.P." -> ["Associated Press", "A.P."]
+    if (mention.includes('/') || mention.includes('|') || mention.toLowerCase().includes(' aka ')) {
+      const parts = mention.split(/\/|\||\baka\b/i).map((s) => s.trim()).filter(Boolean);
+      parts.forEach((p) => tokens.add(p));
+    }
+
+    return Array.from(tokens);
+  }
+
   async resolveEntityMention(
     projectId: string,
     mention: string,
@@ -41,8 +75,10 @@ export class EntityResolutionEngine {
       return { matched: false, confidence: 0.0, matchRule: 'NONE' };
     }
 
-    const entities = await entityRepo.getEntitiesByProject(projectId);
+    const entities = await entityRepo.getEntitiesByProject(projectId, { includeArchived: true });
     const normMention = this.normalize(rawClean);
+    const mentionAcronym = this.extractAcronym(rawClean);
+    const candidateTokens = this.extractCandidateTokens(rawClean);
 
     // 1. Stage 1: Exact Canonical Match (Case-Insensitive)
     for (const ent of entities) {
@@ -136,11 +172,92 @@ export class EntityResolutionEngine {
       }
     }
 
-    // 4. Stage 4: Parent Brand Prefix / Product Hierarchy Match
+    // 4. Stage 4: Parenthetical & Composite Delimiter Token Matching
+    if (candidateTokens.length > 1) {
+      for (const token of candidateTokens) {
+        if (token.toLowerCase() === rawClean.toLowerCase()) continue;
+        const normToken = this.normalize(token);
+        for (const ent of entities) {
+          if (category && ent.entityCategory !== category) continue;
+          if (
+            ent.canonicalName.toLowerCase() === token.toLowerCase() ||
+            this.normalize(ent.canonicalName) === normToken ||
+            (ent.aliases || []).some((a) => a.toLowerCase() === token.toLowerCase() || this.normalize(a) === normToken)
+          ) {
+            const rule: MatchRule = rawClean.includes('(') ? 'PARENTHETICAL_EXPANSION' : 'DELIMITER_EXPANSION';
+            return {
+              matched: true,
+              canonicalEntityId: ent.id,
+              canonicalName: ent.canonicalName,
+              entityCategory: ent.entityCategory,
+              confidence: 0.90,
+              matchRule: rule,
+              matchedAlias: token,
+              parentEntity: ent.parentEntityId
+                ? {
+                    id: ent.parentEntityId,
+                    name: ent.parentEntityName || '',
+                    relationshipType: ent.relationshipType || 'BRAND_PRODUCT',
+                  }
+                : undefined,
+            };
+          }
+        }
+      }
+    }
+
+    // 5. Stage 5: Generic Acronym / Initialism Equivalence (e.g., "Associated Press" <-> "AP" / "A.P.")
+    for (const ent of entities) {
+      if (category && ent.entityCategory !== category) continue;
+      const canonicalAcronym = this.extractAcronym(ent.canonicalName);
+      const isMultiWordCanonical = ent.canonicalName.trim().split(/\s+/).length > 1;
+      const isMultiWordMention = rawClean.trim().split(/\s+/).length > 1;
+
+      // Case A: Mention is acronym (e.g., "A.P.", "AP") and Canonical is multi-word ("Associated Press")
+      if (!isMultiWordMention && isMultiWordCanonical && mentionAcronym.length >= 2 && mentionAcronym === canonicalAcronym) {
+        return {
+          matched: true,
+          canonicalEntityId: ent.id,
+          canonicalName: ent.canonicalName,
+          entityCategory: ent.entityCategory,
+          confidence: 0.88,
+          matchRule: 'ACRONYM_EQUIVALENCE',
+          matchedAlias: rawClean,
+          parentEntity: ent.parentEntityId
+            ? {
+                id: ent.parentEntityId,
+                name: ent.parentEntityName || '',
+                relationshipType: ent.relationshipType || 'BRAND_PRODUCT',
+              }
+            : undefined,
+        };
+      }
+
+      // Case B: Mention is multi-word ("Associated Press") and Canonical was registered as acronym ("A.P.", "AP")
+      if (isMultiWordMention && !isMultiWordCanonical && mentionAcronym.length >= 2 && mentionAcronym === canonicalAcronym) {
+        return {
+          matched: true,
+          canonicalEntityId: ent.id,
+          canonicalName: ent.canonicalName,
+          entityCategory: ent.entityCategory,
+          confidence: 0.88,
+          matchRule: 'ACRONYM_EQUIVALENCE',
+          matchedAlias: rawClean,
+          parentEntity: ent.parentEntityId
+            ? {
+                id: ent.parentEntityId,
+                name: ent.parentEntityName || '',
+                relationshipType: ent.relationshipType || 'BRAND_PRODUCT',
+              }
+            : undefined,
+        };
+      }
+    }
+
+    // 6. Stage 6: Parent Brand Prefix / Product Hierarchy Match
     for (const ent of entities) {
       if (category && ent.entityCategory !== category) continue;
       const normCanonical = this.normalize(ent.canonicalName);
-      // If mention starts with canonical brand name (e.g. "Porsche 911" matches "Porsche")
       if (normMention.startsWith(`${normCanonical} `) || normCanonical.startsWith(`${normMention} `)) {
         return {
           matched: true,

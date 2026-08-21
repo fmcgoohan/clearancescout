@@ -174,4 +174,63 @@ describe('Contract: Upgraded Entity Resolution, Aliases, Hierarchy & Merge (Feat
     expect(targetOccs).toHaveLength(1);
     expect(targetOccs[0].canonicalEntityId).toBe(targetId);
   });
+
+  it('P0-3: resolves and merges generic acronyms, parentheticals, and composite mentions (Associated Press / A.P.)', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Acronym & Composite Resolution Test',
+        productionCompany: 'News Media Inc',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    const projectId = projRes.body.id;
+
+    // 1. Create canonical entity "Associated Press"
+    const entRes = await request(app)
+      .post(`/api/projects/${projectId}/entities`)
+      .send({
+        canonicalName: 'Associated Press',
+        entityCategory: 'BRAND',
+        description: 'Global news agency',
+      });
+    expect(entRes.status).toBe(201);
+    const apEntityId = entRes.body.id;
+
+    // 2. Resolve "A.P." acronym with dots
+    const resDottedAcronym = await request(app)
+      .post(`/api/projects/${projectId}/entities/resolve`)
+      .send({ mention: 'A.P.', category: 'BRAND' });
+    expect(resDottedAcronym.status).toBe(200);
+    expect(resDottedAcronym.body.matched).toBe(true);
+    expect(resDottedAcronym.body.canonicalEntityId).toBe(apEntityId);
+    expect(resDottedAcronym.body.matchRule).toBe('ACRONYM_EQUIVALENCE');
+
+    // 3. Resolve "AP" acronym without dots
+    const resCleanAcronym = await request(app)
+      .post(`/api/projects/${projectId}/entities/resolve`)
+      .send({ mention: 'AP', category: 'BRAND' });
+    expect(resCleanAcronym.status).toBe(200);
+    expect(resCleanAcronym.body.matched).toBe(true);
+    expect(resCleanAcronym.body.canonicalEntityId).toBe(apEntityId);
+    expect(resCleanAcronym.body.matchRule).toBe('ACRONYM_EQUIVALENCE');
+
+    // 4. Resolve "A.P. (Associated Press)" parenthetical mention
+    const resParenthetical = await request(app)
+      .post(`/api/projects/${projectId}/entities/resolve`)
+      .send({ mention: 'A.P. (Associated Press)', category: 'BRAND' });
+    expect(resParenthetical.status).toBe(200);
+    expect(resParenthetical.body.matched).toBe(true);
+    expect(resParenthetical.body.canonicalEntityId).toBe(apEntityId);
+    expect(resParenthetical.body.matchRule).toBe('PARENTHETICAL_EXPANSION');
+
+    // 5. Resolve "Associated Press / A.P." compound delimiter mention
+    const resDelimiter = await request(app)
+      .post(`/api/projects/${projectId}/entities/resolve`)
+      .send({ mention: 'Associated Press / A.P.', category: 'BRAND' });
+    expect(resDelimiter.status).toBe(200);
+    expect(resDelimiter.body.matched).toBe(true);
+    expect(resDelimiter.body.canonicalEntityId).toBe(apEntityId);
+    expect(resDelimiter.body.matchRule).toBe('DELIMITER_EXPANSION');
+  });
 });

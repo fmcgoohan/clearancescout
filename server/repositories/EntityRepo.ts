@@ -48,6 +48,11 @@ export interface CanonicalEntityData {
   groundingCacheVersion?: number;
   isStale?: boolean;
 
+  // Current-Draft Scoping & Historical Archival (Feature 021)
+  activeInCurrentDraft?: boolean;
+  occurrencesCount?: number;
+  isArchivedHistorical?: boolean;
+
   // Counsel Overrides & Cards
   isOverridden?: boolean;
   latestOverride?: {
@@ -387,10 +392,25 @@ export class EntityRepo {
     return data;
   }
 
-  async getEntitiesByProject(projectId: string): Promise<CanonicalEntityData[]> {
+  async getEntitiesByProject(projectId: string, options?: { includeArchived?: boolean }): Promise<CanonicalEntityData[]> {
     const colRef = await this.db.collection(`projects/${projectId}/entities`);
     const snap = await colRef.get();
-    return snap.docs.map((d: any) => d.data() as CanonicalEntityData);
+    const entities = snap.docs.map((d: any) => d.data() as CanonicalEntityData);
+
+    const occurrences = await this.getAllOccurrences(projectId);
+    const enriched = entities.map((ent: CanonicalEntityData) => {
+      const occCount = occurrences.filter((o) => o.canonicalEntityId === ent.id).length;
+      const isActive = occCount > 0;
+      const isHistorical = occCount === 0 && ent.origin === 'AUTO_EXTRACTED';
+      return {
+        ...ent,
+        occurrencesCount: occCount,
+        activeInCurrentDraft: isActive,
+        isArchivedHistorical: isHistorical,
+      };
+    });
+
+    return enriched;
   }
 
   async createOccurrence(projectId: string, input: Omit<SceneEntityOccurrenceData, 'id'>): Promise<SceneEntityOccurrenceData> {

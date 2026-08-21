@@ -1,5 +1,9 @@
 import { getDb } from './firestoreClient.js';
 import { v4 as uuidv4 } from 'uuid';
+import { sceneRepo, SceneData } from './SceneRepo.js';
+import { entityRepo, CanonicalEntityData, SceneEntityOccurrenceData } from './EntityRepo.js';
+import { sceneReadinessEngine } from '../workflows/sceneReadinessEngine.js';
+import { actionNotificationRepo } from './ActionNotificationRepo.js';
 
 export type ProductionProjectType = 'Movie' | 'TV Show' | 'Commercial';
 
@@ -20,6 +24,26 @@ export interface ProjectQuotaStatus {
   limit: number;
   used: number;
   remaining: number;
+}
+
+export interface ProjectWorkspaceSnapshot {
+  project: ProjectData & {
+    totalScenes: number;
+    totalActiveEntities: number;
+    sourceType?: string;
+    sourceLabel?: string;
+  };
+  scenes: SceneData[];
+  entities: CanonicalEntityData[];
+  historicalEntitiesCount: number;
+  occurrences: SceneEntityOccurrenceData[];
+  readiness: any;
+  actionsSummary: {
+    totalActions: number;
+    openActions: number;
+    criticalActions: number;
+  };
+  snapshotTimestamp: string;
 }
 
 export class ProjectRepo {
@@ -111,6 +135,43 @@ export class ProjectRepo {
         quota: { limit, used: newUsed, remaining: Math.max(0, limit - newUsed) },
       };
     });
+  }
+
+  async getProjectSnapshot(projectId: string): Promise<ProjectWorkspaceSnapshot | null> {
+    const project = await this.getProject(projectId);
+    if (!project) return null;
+
+    const [scenes, entities, occurrences, readiness, actions] = await Promise.all([
+      sceneRepo.getScenesByProject(projectId),
+      entityRepo.getEntitiesByProject(projectId),
+      entityRepo.getAllOccurrences(projectId),
+      sceneReadinessEngine.evaluateAllScenesReadiness(projectId),
+      actionNotificationRepo.getActionsByProject(projectId).catch(() => []),
+    ]);
+
+    const activeEntities = entities.filter((e) => e.activeInCurrentDraft !== false);
+    const historicalEntities = entities.filter((e) => e.isArchivedHistorical === true);
+    const openActions = actions.filter((a: any) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
+    const criticalActions = openActions.filter((a: any) => a.priority === 'CRITICAL');
+
+    return {
+      project: {
+        ...project,
+        totalScenes: scenes.length,
+        totalActiveEntities: activeEntities.length,
+      },
+      scenes,
+      entities: activeEntities,
+      historicalEntitiesCount: historicalEntities.length,
+      occurrences,
+      readiness,
+      actionsSummary: {
+        totalActions: actions.length,
+        openActions: openActions.length,
+        criticalActions: criticalActions.length,
+      },
+      snapshotTimestamp: new Date().toISOString(),
+    };
   }
 }
 
