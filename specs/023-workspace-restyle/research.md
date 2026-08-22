@@ -8,10 +8,8 @@
 
 ## Technical Investigations & Architecture Decisions
 
-### 0. Visual Mockup Reference & Access Limitation Note
-- **URL**: `https://claude.ai/code/artifact/c116e0ca-7ba8-4e7a-bbcf-80cd1211431b`
-- **Access Limitation**: Direct HTTP retrieval returns an authenticated application container shell without rendered DOM content.
-- **Resolution (Constitution Article 9)**: Per Constitution Article 9 (*Target Shipped Architecture*), reference implementations are visual and behavioral oracles, never architectural mandates. The written feature specification (`spec.md`), acceptance checklist, and DOM contracts serve as the canonical oracle for rendered visual outcomes, DOM classes, and behavioral criteria. The existing shipped TypeScript/React/Vite architecture remains 100% authoritative.
+### 0. Specification Invariants & Architectural Mandate (Constitution Article 9)
+- **Resolution**: Per Constitution Article 9 (*Target Shipped Architecture*), the written feature specification (`spec.md`), acceptance checklist, and DOM contracts serve as the canonical oracle for rendered visual outcomes, DOM classes, and behavioral criteria. All design decisions target the shipped TypeScript/React/Vite application stack.
 
 ### 1. Token Architecture (`src/index.css`)
 - **Requirement**: One single source of truth for all color, spacing, typography, and motion custom properties.
