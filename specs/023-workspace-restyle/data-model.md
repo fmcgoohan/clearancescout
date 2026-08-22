@@ -1,7 +1,7 @@
 # Phase 1 Data Model & Tokens: Feature 023 Workspace Restyle
 
-**Feature**: Workspace Restyle (All Five Surfaces)
-**Spec**: [`spec.md`](spec.md)
+**Feature**: Workspace Restyle (All Five Surfaces)  
+**Spec**: [`spec.md`](spec.md)  
 
 ---
 
@@ -31,9 +31,21 @@
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'Courier Prime', 'JetBrains Mono', monospace;
 
-  /* Spacing & Borders */
+  /* Spacing & Card Backgrounds */
   --border-color: rgba(255, 255, 255, 0.1);
-  --card-bg: rgba(15, 23, 42, 0.75);
+  --bg-card: rgba(15, 23, 42, 0.75);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}
+
+/* Motion Rules & Reduced Motion Collapse */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 ```
 
