@@ -258,6 +258,16 @@
 
 ---
 
+## Phase 19: Convergence (Comprehensive Live E2E QA Journey & React Rules of Hooks Resolution)
+
+**Purpose**: Execute full end-to-end user journey live pass against Cloud Run covering unauthenticated token gate, project creation/selection, script ingestion with confirmation toast, entity table select filtering, operations dashboard modal, department action center modal, clearance binder export modal, and state persistence across page reload. Resolve React Rules of Hooks violation in `BinderExportModal`.
+
+- [X] T091 [CRITICAL] Resolve React Rules of Hooks violation in `BinderExportModal.tsx` by placing all `useState` hooks before conditional return statements per FR-008
+- [X] T092 [HIGH] Automate end-to-end live user journey QA script `tests/live_e2e_journey_qa.js` covering authentication, project selection, script replacement, entity table filters, dashboard, action center, binder export, and reload persistence per SC-001..SC-008
+- [X] T093 [HIGH] Deploy revision `clearance-scout-00045-llb` to Cloud Run and verify 100% PASS on `node tests/live_e2e_journey_qa.js` and `node tests/live_keyboard_focus_validation.js`
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
