@@ -1,8 +1,8 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 → 1.1.0
-- List of modified principles: Preserved Core Principles I-V; added UI & Visual Design System Principles VI-XIII (Semantic Color, Type Provenance, No Emoji in Chrome, Hero Index & Blocked Reasons, Motion Signal, Status Text Pairing, Defect Regression Law, Append-Only Design Log)
-- Added sections: UI & Visual Design System Principles (Articles 1-8)
+- Version change: 1.1.0 → 1.2.0
+- List of modified principles: None
+- Added sections: XIV. Article 9: Target Shipped Architecture (Reference Implementations Are Rendered Oracles)
 - Removed sections: None
 - Follow-up TODOs: None
 -->
@@ -78,6 +78,11 @@ Sync Impact Report:
 - Every UI/UX design iteration MUST record what changed, the underlying rationale, and verification evidence in `DESIGN_LOG.md` in an append-only format.
 - Conflicts between specification requirements and visual implementation MUST be resolved explicitly and documented in `DESIGN_LOG.md`, never silently overridden.
 
+### XIV. Article 9: Target Shipped Architecture (NON-NEGOTIABLE)
+- Plans and implementations MUST strictly target the actual shipped stack and application architecture (currently TypeScript, React, Vite, Express, and Google ADK).
+- When a reference implementation (such as a single self-contained HTML file, vanilla CSS/JS demo, or prototype) is provided as guidance, it defines the intended rendered visual/behavioral outcomes and verification criteria as an oracle, but MUST NOT be interpreted as a mandate to rewrite, replace, or discard the actual shipped application architecture.
+- All specification plans, task breakdowns, and feature deliverables MUST continue to target and integrate cleanly into the real shipped codebase.
+
 ## System Architecture & Operational Constraints
 
 ### Deterministic Calculation & Reasoning Pattern
@@ -98,4 +103,4 @@ Sync Impact Report:
   - **PATCH**: Wording clarifications, typo fixes, or non-semantic formatting updates.
 - All Pull Requests, architectural specs (`spec.md`), implementation plans (`plan.md`), and task breakdowns (`tasks.md`) MUST explicitly comply with all principles defined in this constitution.
 
-**Version**: 1.1.0 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-08-22
+**Version**: 1.2.0 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-08-23

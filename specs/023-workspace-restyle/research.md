@@ -24,14 +24,29 @@
 - **Question**: How to streamline the entity registry table for rapid visual scanning by clearance coordinators?
 - **Decision**: In `src/components/EntityRegistryTable.tsx`, format the first column with bold entity title (`font-weight: 600`) and category as a muted sub-line (`font-size: 0.75rem`, `color: var(--text-muted)`). Render status badges as chip-plus-word badges (`.badge`). Label right-aligned action buttons by domain meaning (*"2 uses"*, *"Ground"*, *"Compare"*). Purge all emojis and monospace fonts from table chrome.
 
-### 5. Modals & Body Scroll Lock Invariants (Section 5 & Regression Clause)
-- **Question**: How to ensure modal overlays present high-density KPI metrics and task triage while strictly locking body scroll?
-- **Decision**: In `src/components/ProductionDashboardModal.tsx` and `src/components/ActionListModal.tsx`, maintain 5 KPI tiles and row-level triage controls. Ensure all 13 modal components invoke `useModalFocus` (which encapsulates `useBodyScrollLock`), setting `document.body.style.overflow = 'hidden'` when open and restoring original overflow on dismissal via Escape key, backdrop click, or close button (`✕`).
+### 5. Google Fonts Pairing Justification (Article 2)
+- **Variable Sans**: `Inter` (variable-width sans-serif, weights 400–800).
+  - *Justification*: Unmatched clarity for dense tabular metadata, built-in `tabular-nums` support for financial and quota counters, neutral visual posture that preserves emphasis for sacred HSL status badges.
+- **Monospace**: `Courier Prime` (monospace).
+  - *Justification*: The gold standard screenplay font designed specifically for screenwriting formatting. Provides exact 10 CPI layout fidelity for Fountain manuscript parsing and strict monospace provenance for raw API/JSON logs.
+
+### 6. Dark-Only Committed Theme Rationale
+- **Decision**: Committed dark-only color palette defined strictly via CSS custom properties on `:root` in `src/index.css`.
+- **Justification**: Film clearance operators evaluate high-density legal, rights, and screenplay metadata under controlled studio lighting. A committed dark theme prevents visual fatigue, eliminates background glare, and maximizes the visual salience of HSL status badges (`--status-no-issue`, `--status-review`, `--status-action`).
+
+### 7. Static Spec Check Gate (`scripts/spec-check.sh`)
+- **Decision**: Create `scripts/spec-check.sh` automated gate script using `perl` and `grep` to enforce static invariants:
+  - Fails on raw emojis in markup/TSX.
+  - Fails on hex color literals outside `src/index.css` token definitions.
+  - Fails if more than 1 infinite CSS animation is defined.
+  - Fails if `@media (prefers-reduced-motion)` or `:focus-visible` rules are missing.
+  - Fails on raw `·`, `—`, or `<=` characters in markup (must use HTML entities `&middot;`, `&mdash;`, `&le;`).
 
 ---
 
 ## Performance & Accessibility Validation
 
 - **Color Contrast**: All HSL status color tokens in `src/index.css` meet WCAG AAA / AA contrast ratios against dark theme backgrounds.
-- **Keyboard Trapping & Focus**: All interactive buttons, tabs, and inputs display visible `outline` focus rings when navigated via keyboard.
+- **Keyboard Trapping & Focus**: All interactive buttons, tabs, and inputs display visible `outline` focus rings (`:focus-visible`) when navigated via keyboard.
 - **Zero Emoji Compliance**: All icons render as clean, accessible `<svg>` elements with `aria-hidden="true"` or explicit `aria-label`.
+- **Browser DOM Behavioral Assertions**: Modal scroll lock (`document.body.style.overflow === 'hidden'`) and Escape-to-close behavior verified via Playwright browser assertions in `tests/live_design_system_validation.js`.

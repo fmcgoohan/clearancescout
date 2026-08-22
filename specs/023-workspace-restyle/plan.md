@@ -49,13 +49,20 @@ Restyle all five surfaces of the ClearanceScout clearance workspace (Toolbar Com
 specs/023-workspace-restyle/
 ├── spec.md              # Feature specification
 ├── plan.md              # Implementation plan
-├── research.md          # Technical research & decisions
+├── research.md          # Technical research & decisions (Font pairing & dark theme justifications)
 ├── data-model.md        # Tokens & component data contracts
 ├── quickstart.md        # Build & test verification guide
 ├── contracts/           # Interface & DOM contract definitions
 │   └── workspace_restyle_contract.md
 └── checklists/          # Quality checklists
     └── requirements.md
+```
+
+### Verification & Gate Scripts
+
+```text
+scripts/
+└── spec-check.sh       # Static grep/perl gate verifying zero emoji, CSS tokens, font zones, and HTML entities
 ```
 
 ### Source Code Structure
