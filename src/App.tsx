@@ -255,7 +255,20 @@ export default function App() {
     bootstrapFromHealth();
   }, [hasTokenConfigured]);
 
-  const refreshProjectSummary = async (id: string) => {
+  const refreshProjectSummary = async (id: string, snapshot?: any) => {
+    if (snapshot && Array.isArray(snapshot.entities)) {
+      const entities = snapshot.entities;
+      const clearedCount = entities.filter((e: any) => e.overallClearanceStatus === 'NO_ISSUE_SURFACED').length;
+      const actionRequiredCount = entities.filter((e: any) => e.overallClearanceStatus === 'ACTION_REQUIRED').length;
+      const reviewRecommendedCount = entities.filter((e: any) => e.overallClearanceStatus === 'REVIEW_RECOMMENDED').length;
+      setProjectSummary({
+        entityCount: entities.length,
+        clearedCount,
+        actionRequiredCount,
+        reviewRecommendedCount,
+      });
+      return;
+    }
     try {
       const res = await apiFetch(`/api/projects/${id}`);
       if (res.ok) {
@@ -520,7 +533,7 @@ export default function App() {
           {/* Landing Clearance Summary Indicator */}
           <div
             className="touch-target"
-            aria-label={`Project Summary: ${projectSummary.entityCount} Total Entities, ${projectSummary.clearedCount} Cleared, ${projectSummary.actionRequiredCount} Action Required`}
+            aria-label={`Project Summary: ${projectSummary.entityCount} Total Entities, ${projectSummary.clearedCount} Cleared, ${projectSummary.actionRequiredCount} Clearance Blockers, ${projectSummary.reviewRecommendedCount} Review Recommended`}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -705,8 +718,8 @@ export default function App() {
             onGenerateReplacement={handleGenerateReplacement}
             onOpenCounselReview={handleOpenCounselReview}
             onExportBinder={handleExportBinder}
-            onRefreshProjectSummary={() => {
-              if (projectId) refreshProjectSummary(projectId);
+            onRefreshProjectSummary={(snapshot) => {
+              if (projectId) refreshProjectSummary(projectId, snapshot);
             }}
             isEvaluating={isEvaluating}
             refreshTrigger={refreshTrigger}

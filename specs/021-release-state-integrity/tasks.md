@@ -211,6 +211,20 @@
 
 ---
 
+## Phase 15: Convergence (Round-6 Truthful Completion Barrier, Read-Only GETs, and Rendered Browser Convergence)
+
+**Purpose**: Eliminate hardcoded fallbacks in completion toast, ensure `COMPLETE` state is only reached on successful workspace state application, make all GET snapshot/readiness/action endpoints strictly read-only, synchronize header/workspace atomically from the committed snapshot, clarify Clearance Blockers vs Department Tasks labels across all surfaces, and execute rendered browser validation.
+
+- [X] T072 [HIGH] Eliminate `|| 3` and `|| 7` fallbacks in `ScriptUploadModal.tsx` and `WorkspacePage.tsx`, deriving completion toast counts strictly from committed snapshot with Replace vs Merge accuracy and including department tasks (`N scenes processed · N entities registered · N department tasks created`) via `aria-live="polite"` per FR-002, FR-004 (partial)
+- [X] T073 [HIGH] Enforce fail-closed `COMPLETE` state machine in `ScriptUploadModal.tsx` so that `COMPLETE` is declared ONLY if `onUploadSuccess` snapshot application succeeds, transitioning to `FAILED` with error message if sync fails per FR-004 (partial)
+- [X] T074 [HIGH] Synchronously pass and apply committed snapshot to `onRefreshProjectSummary` in `App.tsx` and `WorkspacePage.tsx` to eliminate render lag across header summary, registry, scenes, and department tasks per FR-001, FR-012 (partial)
+- [X] T075 [HIGH] Convert `ProjectRepo.getProjectSnapshot` and `GET /scenes/readiness` to strictly read-only queries (retrieving existing evaluated scene readiness without invoking `sceneRepo.updateSceneReadiness` or emitting timeline events on GET) per FR-011, Constitution II (contradicts)
+- [X] T076 [MEDIUM] Standardize operator-facing terminology across header aria-labels, workspace toolbar (`📋 Department Tasks (N)`), Action Center header, and Operations Dashboard KPI to clearly distinguish Clearance Blockers, Review Recommended, and Department Tasks per FR-019, FR-020 (partial)
+- [X] T077 [HIGH] Strengthen contract test suite in `tests/contract/test_completion_barrier_sync.test.ts` and `tests/contract/test_rendered_sample_load_ui.test.ts` to assert exact 7 department tasks, Elena Vance present, 2 blockers / 5 review distribution, and strictly read-only GET behavior per SC-001..SC-008 (partial)
+- [ ] T078 [HIGH] Execute complete rendered browser validation sequence against live/running application, capturing timestamped evidence across initial demo load, replacement, SYNCING progress stage, immediate Complete truth without modal opens, 20-30s idle stability, and reload persistence per SC-001..SC-008 (missing)
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid

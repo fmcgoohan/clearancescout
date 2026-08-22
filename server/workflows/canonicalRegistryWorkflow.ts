@@ -173,7 +173,7 @@ export class CanonicalRegistryWorkflow {
       const { actionDispatcher } = await import('./actionDispatcher.js');
       for (const entId of stagedDistinctCanonicalIds) {
         const ent = entityMap.get(entId);
-        if (ent && (ent.overallClearanceStatus === 'ACTION_REQUIRED' || ent.overallClearanceStatus === 'REVIEW_RECOMMENDED')) {
+        if (ent) {
           const stagedEntOccs = createdOccurrences.filter((o) => o.canonicalEntityId === ent.id);
           for (const occ of stagedEntOccs) {
             const createdAct = await actionDispatcher.dispatchOccurrenceAction(projectId, occ, ent);

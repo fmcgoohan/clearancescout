@@ -260,7 +260,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                   }}
                 >
                   <div style={{ fontSize: '0.75rem', color: '#ed8796', textTransform: 'uppercase', fontWeight: 600 }}>
-                    Critical Blockers
+                    Clearance Blockers
                   </div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#ed8796', marginTop: '4px' }}>
                     {data.kpis.criticalBlockersCount}
@@ -310,7 +310,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                   </div>
                 </div>
 
-                {/* Open Department Actions */}
+                {/* Open Department Tasks */}
                 <div
                   style={{
                     background: 'rgba(198, 160, 246, 0.05)',
@@ -320,7 +320,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                   }}
                 >
                   <div style={{ fontSize: '0.75rem', color: '#c6a0f6', textTransform: 'uppercase', fontWeight: 600 }}>
-                    Pending Actions
+                    Department Tasks
                   </div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#c6a0f6', marginTop: '4px' }}>
                     {data.kpis.pendingActionsCount}

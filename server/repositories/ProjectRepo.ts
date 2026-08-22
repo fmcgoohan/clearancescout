@@ -145,7 +145,7 @@ export class ProjectRepo {
       sceneRepo.getScenesByProject(projectId),
       entityRepo.getEntitiesByProject(projectId, { includeArchived: true }),
       entityRepo.getAllOccurrences(projectId),
-      sceneReadinessEngine.evaluateAllScenesReadiness(projectId),
+      sceneReadinessEngine.getProjectReadinessSummaryReadOnly(projectId),
       actionNotificationRepo.getActionsByProject(projectId).catch(() => []),
     ]);
 

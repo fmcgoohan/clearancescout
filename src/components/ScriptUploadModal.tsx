@@ -5,7 +5,7 @@ interface ScriptUploadModalProps {
   projectId: string;
   isOpen: boolean;
   onClose: () => void;
-  onUploadSuccess: (snapshot?: any, meta?: { reingestMode: 'REPLACE' | 'MERGE'; scenesCount: number; entitiesCount: number }) => void;
+  onUploadSuccess: (snapshot?: any, meta?: { reingestMode: 'REPLACE' | 'MERGE'; scenesCount: number; entitiesCount: number; openActionsCount: number }) => void | Promise<void>;
   hasExistingScenes?: boolean;
   initialMode?: 'FILE' | 'PASTE' | 'DEMO';
   executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
@@ -272,22 +272,26 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       setUploadProgress(95);
 
       const snapshot = data.snapshot || data;
-      const scenesCount = data.scenesCount || snapshot?.scenes?.length || 3;
-      const entitiesCount = data.entitiesCount || data.canonicalEntitiesExtracted || snapshot?.entities?.length || 7;
+      const scenesCount = Array.isArray(snapshot?.scenes) ? snapshot.scenes.length : (data.scenesCount || 0);
+      const entitiesCount = Array.isArray(snapshot?.entities) ? snapshot.entities.length : (data.entitiesCount || 0);
+      const openActionsCount = snapshot?.actionsSummary?.openActions !== undefined ? snapshot.actionsSummary.openActions : (data.openActionsCount || 0);
 
       try {
-        await Promise.resolve(onUploadSuccess(snapshot, { reingestMode, scenesCount, entitiesCount }));
-      } catch (syncErr) {
-        console.warn('Workspace sync notification error:', syncErr);
-      }
-
-      setUploadPhase('COMPLETE');
-      setUploadProgress(100);
-      setTimeout(() => {
+        await Promise.resolve(onUploadSuccess(snapshot, { reingestMode, scenesCount, entitiesCount, openActionsCount }));
+        setUploadPhase('COMPLETE');
+        setUploadProgress(100);
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadPhase('IDLE');
+          onClose();
+        }, 350);
+      } catch (syncErr: any) {
+        console.error('Workspace sync notification error:', syncErr);
+        setErrorMessage(syncErr?.message || 'Failed to synchronize workspace state from committed snapshot.');
+        setErrorCode('SYNC_FAILED');
         setIsUploading(false);
-        setUploadPhase('IDLE');
-        onClose();
-      }, 350);
+        setUploadPhase('FAILED');
+      }
     } catch (err: any) {
       cleanupTimers();
       if (err.name === 'AbortError') {

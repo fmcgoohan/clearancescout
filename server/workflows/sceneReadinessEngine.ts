@@ -243,6 +243,51 @@ export class SceneReadinessEngine {
       evaluatedAt: new Date().toISOString(),
     };
   }
+
+  /**
+   * Retrieves existing evaluated readiness summary for a project without writing to DB or emitting timeline events.
+   * Strictly read-only query for GET endpoints.
+   */
+  async getProjectReadinessSummaryReadOnly(projectId: string): Promise<ProjectReadinessSummary> {
+    const scenes = await sceneRepo.getScenesByProject(projectId);
+    const assessments: SceneReadinessAssessment[] = scenes.map((s) => {
+      if (s.readinessDetails) return s.readinessDetails;
+      return {
+        sceneId: s.id,
+        sceneNumber: s.sceneNumber,
+        heading: s.heading,
+        status: s.readinessStatus || 'RED',
+        evaluatedAt: s.readinessEvaluatedAt || s.updatedAt || new Date().toISOString(),
+        blockersCount: s.readinessStatus === 'RED' ? 1 : 0,
+        workingClearCount: s.readinessStatus === 'WORKING_CLEAR' ? 1 : 0,
+        finalClearCount: s.readinessStatus === 'FINAL_CLEAR' ? 1 : 0,
+        totalOccurrences: 0,
+        itemsBreakdown: [],
+        summaryText: `Scene ${s.sceneNumber} (${s.readinessStatus || 'RED'})`,
+      };
+    });
+
+    const totalScenes = assessments.length;
+    const redScenesCount = assessments.filter((a) => a.status === 'RED').length;
+    const workingClearScenesCount = assessments.filter((a) => a.status === 'WORKING_CLEAR').length;
+    const finalClearScenesCount = assessments.filter((a) => a.status === 'FINAL_CLEAR').length;
+
+    const overallReadinessPercentage =
+      totalScenes === 0
+        ? 100
+        : Math.round(((finalClearScenesCount + workingClearScenesCount * 0.5) / totalScenes) * 1000) / 10;
+
+    return {
+      projectId,
+      totalScenes,
+      redScenesCount,
+      workingClearScenesCount,
+      finalClearScenesCount,
+      overallReadinessPercentage,
+      scenes: assessments,
+      evaluatedAt: new Date().toISOString(),
+    };
+  }
 }
 
 export const sceneReadinessEngine = new SceneReadinessEngine();

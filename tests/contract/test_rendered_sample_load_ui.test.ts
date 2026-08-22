@@ -249,8 +249,8 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
       expect(getAllByText('Titan Industrial Hazard Placard').length).toBeGreaterThanOrEqual(1);
     });
 
-    // 2. Open Actions indicator is rendered with exact 2 count
-    expect(getByText('📋 Open Actions (2)')).toBeDefined();
+    // 2. Department Tasks indicator is rendered with exact 2 count
+    expect(getByText('📋 Department Tasks (2)')).toBeDefined();
 
     // 3. Stale / legacy entities are strictly absent from rendered table
     expect(queryByText('Bob Hope')).toBeNull();
@@ -275,7 +275,7 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
             snapshot: {
               scenes: sampleScenes,
               entities: sampleEntities,
-              actionsSummary: { totalActions: 2, openActions: 2, criticalActions: 0 },
+              actionsSummary: { totalActions: 7, openActions: 7, criticalActions: 0 },
             },
           }),
         });
@@ -290,9 +290,12 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
         initialMode: 'DEMO',
         executionMode: 'DEMO_MODE',
         onClose: () => {},
-        onUploadSuccess: async (snapshot: any) => {
+        onUploadSuccess: async (snapshot: any, meta: any) => {
           uploadSuccessCalled = true;
           syncedSnapshot = snapshot;
+          expect(meta.scenesCount).toBe(3);
+          expect(meta.entitiesCount).toBe(7);
+          expect(meta.openActionsCount).toBe(7);
         },
       })
     );
@@ -309,6 +312,7 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
       expect(syncedSnapshot).not.toBeNull();
       expect(syncedSnapshot.entities.length).toBe(7);
       expect(syncedSnapshot.scenes.length).toBe(3);
+      expect(syncedSnapshot.actionsSummary.openActions).toBe(7);
     });
   });
 });

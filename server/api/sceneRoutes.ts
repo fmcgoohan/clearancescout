@@ -8,7 +8,7 @@ export const sceneRouter = Router();
 sceneRouter.get('/projects/:id/scenes/readiness', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = req.params.id;
-    const summary = await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
+    const summary = await sceneReadinessEngine.getProjectReadinessSummaryReadOnly(projectId);
     return res.json(summary);
   } catch (err) {
     next(err);
@@ -25,7 +25,19 @@ sceneRouter.get('/projects/:id/scenes/:sceneId/readiness', async (req: Request, 
     }
 
     const assessment =
-      scene.readinessDetails || (await sceneReadinessEngine.evaluateSceneReadiness(projectId, sceneId));
+      scene.readinessDetails || {
+        sceneId,
+        sceneNumber: scene.sceneNumber,
+        heading: scene.heading,
+        status: scene.readinessStatus || 'RED',
+        evaluatedAt: scene.readinessEvaluatedAt || scene.updatedAt || new Date().toISOString(),
+        blockersCount: scene.readinessStatus === 'RED' ? 1 : 0,
+        workingClearCount: scene.readinessStatus === 'WORKING_CLEAR' ? 1 : 0,
+        finalClearCount: scene.readinessStatus === 'FINAL_CLEAR' ? 1 : 0,
+        totalOccurrences: 0,
+        itemsBreakdown: [],
+        summaryText: `Scene ${scene.sceneNumber} (${scene.readinessStatus || 'RED'})`,
+      };
     return res.json(assessment);
   } catch (err) {
     next(err);

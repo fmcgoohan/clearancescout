@@ -19,7 +19,7 @@ interface WorkspacePageProps {
   onGenerateReplacement: (entityId: string) => void;
   onOpenCounselReview: (entityId: string, sceneId?: string) => void;
   onExportBinder?: () => void;
-  onRefreshProjectSummary?: () => void;
+  onRefreshProjectSummary?: (snapshot?: any) => void | Promise<void>;
   isEvaluating: boolean;
   refreshTrigger: number;
   executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
@@ -225,7 +225,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     if (snapshot.actionsSummary) {
       setOpenActionsCount(snapshot.actionsSummary.openActions || 0);
     }
-    onRefreshProjectSummary?.();
+    onRefreshProjectSummary?.(snapshot);
   };
 
   useEffect(() => {
@@ -421,7 +421,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
           <button
             className="btn-secondary touch-target"
-            aria-label={`Open Department Action & Notification Center (${openActionsCount} Open Actions)`}
+            aria-label={`Open Department Action & Notification Center (${openActionsCount} Department Tasks)`}
             onClick={() => setIsActionModalOpen(true)}
             style={{
               display: 'flex',
@@ -431,7 +431,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               color: openActionsCount > 0 ? '#f87171' : 'var(--text-main)',
             }}
           >
-            📋 Open Actions ({openActionsCount})
+            📋 Department Tasks ({openActionsCount})
           </button>
 
           <button
@@ -726,8 +726,9 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         initialMode={uploadModalInitialMode}
         executionMode={executionMode}
         onUploadSuccess={async (snapshot, meta) => {
-          const scenesCount = meta?.scenesCount || snapshot?.scenes?.length || 3;
-          const entitiesCount = meta?.entitiesCount || snapshot?.entities?.length || 7;
+          const scenesCount = Array.isArray(snapshot?.scenes) ? snapshot.scenes.length : (meta?.scenesCount ?? scenes.length);
+          const entitiesCount = Array.isArray(snapshot?.entities) ? snapshot.entities.length : (meta?.entitiesCount ?? entities.length);
+          const tasksCount = snapshot?.actionsSummary?.openActions !== undefined ? snapshot.actionsSummary.openActions : (meta?.openActionsCount ?? openActionsCount);
           const actionText = meta?.reingestMode === 'MERGE' ? 'merged as new version' : 'replaced successfully';
 
           if (snapshot) {
@@ -737,11 +738,11 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           }
 
           if (onRefreshProjectSummary) {
-            await Promise.resolve(onRefreshProjectSummary());
+            await Promise.resolve(onRefreshProjectSummary(snapshot));
           }
 
           setIngestionToast({
-            message: `Screenplay ${actionText} — ${pluralize(scenesCount, 'scene')} · ${pluralize(entitiesCount, 'clearance entity', 'clearance entities')}`,
+            message: `Screenplay ${actionText} — ${pluralize(scenesCount, 'scene')} processed · ${pluralize(entitiesCount, 'entity', 'entities')} registered · ${pluralize(tasksCount, 'department task', 'department tasks')} created`,
             type: 'success',
           });
           setTimeout(() => {

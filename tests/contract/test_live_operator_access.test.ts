@@ -17,14 +17,16 @@ describe('Contract: Feature 020 Live Operator Access & Client Network Auth', () 
   });
 
   afterEach(() => {
-    config.demoAccessToken = undefined;
-    config.executionMode = 'DEMO_MODE';
+    config.demoAccessToken = originalToken;
+    config.executionMode = originalMode;
     delete process.env.EXECUTION_MODE;
     delete process.env.DEMO_ACCESS_TOKEN;
     delete process.env.DEMO_TOKEN;
   });
 
   it('T001: verifies unauthenticated client requests fail closed with 401 in CLOUD_MODE across dashboard, binder, and projects', async () => {
+    process.env.EXECUTION_MODE = 'CLOUD_MODE';
+    process.env.DEMO_ACCESS_TOKEN = 'judge-pass-2026';
     config.executionMode = 'CLOUD_MODE';
     config.demoAccessToken = 'judge-pass-2026';
 

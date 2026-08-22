@@ -83,6 +83,24 @@ export class ActionDispatcher {
         title = `Review Right of Publicity: ${entity.canonicalName}`;
         description = `Living public figure depicted in ${sceneLabel} requires legal counsel review.`;
         priority = 'MEDIUM';
+      } else if (entity.entityCategory === 'BRAND') {
+        actionType = 'LEGAL_COUNSEL_RELEASE';
+        targetDepartment = 'LEGAL_COUNSEL';
+        title = `Review Trademark Clearance: ${entity.canonicalName}`;
+        description = `Brand mark in ${sceneLabel} requires trademark counsel review.`;
+        priority = 'MEDIUM';
+      } else if (entity.entityCategory === 'GRAPHIC_PROP') {
+        actionType = 'ART_DEPT_REPLACEMENT';
+        targetDepartment = 'ART_DEPT';
+        title = `Review Graphic Prop: ${entity.canonicalName}`;
+        description = `Graphic prop in ${sceneLabel} requires art department review.`;
+        priority = 'MEDIUM';
+      } else if (entity.entityCategory === 'ART_MUSIC') {
+        actionType = 'LEGAL_COUNSEL_RELEASE';
+        targetDepartment = 'LEGAL_COUNSEL';
+        title = `Review Music License: ${entity.canonicalName}`;
+        description = `Musical work in ${sceneLabel} requires licensing review.`;
+        priority = 'MEDIUM';
       }
     }
 
