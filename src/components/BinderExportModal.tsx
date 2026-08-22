@@ -65,15 +65,15 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
   onJumpToEvidence,
   onJumpToTimeline,
 }) => {
+  const [activeTab, setActiveTab] = React.useState<'ALL' | 'SCENES' | 'RIGHTS' | 'PLACEHOLDERS' | 'ACTIONS'>('ALL');
+  const [copiedDigest, setCopiedDigest] = React.useState(false);
+
   const { containerRef } = useModalFocus<HTMLDivElement>({
     isOpen: isOpen && !!binder,
     onClose,
   });
 
   if (!isOpen || !binder) return null;
-
-  const [activeTab, setActiveTab] = React.useState<'ALL' | 'SCENES' | 'RIGHTS' | 'PLACEHOLDERS' | 'ACTIONS'>('ALL');
-  const [copiedDigest, setCopiedDigest] = React.useState(false);
 
   const dominant =
     binder.provenanceSummary?.dominantProvenance ||
