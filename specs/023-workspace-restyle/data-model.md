@@ -2,6 +2,7 @@
 
 **Feature**: Workspace Restyle (All Five Surfaces)  
 **Spec**: [`spec.md`](spec.md)  
+**Oracle**: `mockup-v3.html` (local visual reference)
 
 ---
 
@@ -9,36 +10,53 @@
 
 ```css
 :root {
-  /* Sacred Status Colors (Article 1) */
-  --status-no-issue: #10b981;          /* Cleared / Green */
-  --status-no-issue-bg: rgba(16, 185, 129, 0.15);
-  --status-no-issue-border: rgba(16, 185, 129, 0.4);
+  /* Surfaces & Borders */
+  --bg: #0E1116;
+  --panel: #151B23;
+  --panel2: #111721;
+  --border: #242E3A;
+  --border-soft: #1C2530;
 
-  --status-review: #f59e0b;            /* Review Recommended / Amber */
-  --status-review-bg: rgba(245, 158, 11, 0.15);
-  --status-review-border: rgba(245, 158, 11, 0.4);
-
-  --status-action: #ef4444;            /* Action Required / Red */
-  --status-action-bg: rgba(239, 68, 68, 0.15);
-  --status-action-border: rgba(239, 68, 68, 0.4);
+  /* Typography Colors */
+  --text: #E7EDF4;
+  --muted: #8B97A7;
+  --faint: #5C6878;
 
   /* Single Permitted Brand Accent */
-  --accent-cyan: #06b6d4;              /* Brand Accent / Cyan */
-  --accent-cyan-bg: rgba(6, 182, 212, 0.15);
-  --accent-cyan-border: rgba(6, 182, 212, 0.4);
+  --accent: #7C9CFF;             /* Periwinkle Accent */
+  --accent-dim: #7C9CFF33;
+
+  /* Sacred Status Colors (Article 1) */
+  --ok: #4CC38A;                 /* Cleared / Green */
+  --ok-bg: #4CC38A1A;
+
+  --warn: #E5B454;               /* Review Recommended / Amber */
+  --warn-bg: #E5B4541A;
+
+  --crit: #E5646E;               /* Action Required / Red */
+  --crit-bg: #E5646E1F;
 
   /* Typography Scale (Article 2) */
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Courier Prime', 'JetBrains Mono', monospace;
-
-  /* Spacing & Card Backgrounds */
-  --border-color: rgba(255, 255, 255, 0.1);
-  --bg-card: rgba(15, 23, 42, 0.75);
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
+  --font-sans: 'Archivo', system-ui, -apple-system, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* Motion Rules & Reduced Motion Collapse */
+/* Keyframe Motion Rules & Reduced Motion Collapse */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes pop {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 4px var(--crit-bg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;
