@@ -32,6 +32,7 @@ export interface CanonicalEntity {
     timestamp: string;
   };
   replacementCard?: any;
+  occurrenceCount?: number;
 }
 
 export interface SceneFilterOption {
@@ -482,89 +483,93 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
 
                 return (
                   <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-main)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span>{e.canonicalName}</span>
-                        {e.origin === 'USER_EDITED' && (
-                          <span
-                            style={{
-                              fontSize: '0.65rem',
-                              background: 'rgba(56, 189, 248, 0.15)',
-                              color: '#38bdf8',
-                              border: '1px solid rgba(56, 189, 248, 0.4)',
-                              borderRadius: '4px',
-                              padding: '2px 5px',
-                            }}
-                          >
-                            ✏️ Edited
-                          </span>
-                        )}
-                        {e.origin === 'MANUALLY_ADDED' && (
-                          <span
-                            style={{
-                              fontSize: '0.65rem',
-                              background: 'rgba(192, 132, 252, 0.15)',
-                              color: '#c084fc',
-                              border: '1px solid rgba(192, 132, 252, 0.4)',
-                              borderRadius: '4px',
-                              padding: '2px 5px',
-                            }}
-                          >
-                            ✨ Added
-                          </span>
-                        )}
-                        {e.parentEntityName && (
-                          <span
-                            title={`Child entity of ${e.parentEntityName} (${e.relationshipType || 'BRAND_PRODUCT'})`}
-                            style={{
-                              fontSize: '0.65rem',
-                              background: 'rgba(251, 146, 60, 0.15)',
-                              color: '#fb923c',
-                              border: '1px solid rgba(251, 146, 60, 0.4)',
-                              borderRadius: '4px',
-                              padding: '2px 5px',
-                            }}
-                          >
-                            🏢 Part of: {e.parentEntityName}
-                          </span>
-                        )}
-                        {e.aliases && e.aliases.length > 0 && (
-                          <span
-                            title={`Recognized Aliases: ${e.aliases.join(', ')}`}
-                            style={{
-                              fontSize: '0.65rem',
-                              background: 'rgba(244, 114, 182, 0.15)',
-                              color: '#f472b6',
-                              border: '1px solid rgba(244, 114, 182, 0.4)',
-                              borderRadius: '4px',
-                              padding: '2px 5px',
-                            }}
-                          >
-                            🏷️ {e.aliases.length} {e.aliases.length === 1 ? 'alias' : 'aliases'}
-                          </span>
-                        )}
-                        {e.isOverridden && (
-                          <span
-                            title={e.latestOverride ? `Overridden by ${e.latestOverride.counselName}: ${e.latestOverride.rationale}` : 'Overridden by Legal Counsel'}
-                            style={{
-                              fontSize: '0.65rem',
-                              background: 'rgba(52, 211, 153, 0.15)',
-                              color: '#34d399',
-                              border: '1px solid rgba(52, 211, 153, 0.4)',
-                              borderRadius: '4px',
-                              padding: '2px 6px',
-                              fontWeight: 500,
-                              cursor: 'help',
-                            }}
-                          >
-                            ⚖️ Counsel Override
-                          </span>
-                        )}
+                    <td style={{ padding: '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{e.canonicalName}</span>
+                          {e.origin === 'USER_EDITED' && (
+                            <span
+                              style={{
+                                fontSize: '0.65rem',
+                                background: 'rgba(56, 189, 248, 0.15)',
+                                color: '#38bdf8',
+                                border: '1px solid rgba(56, 189, 248, 0.4)',
+                                borderRadius: '4px',
+                                padding: '2px 5px',
+                              }}
+                            >
+                              Edited
+                            </span>
+                          )}
+                          {e.origin === 'MANUALLY_ADDED' && (
+                            <span
+                              style={{
+                                fontSize: '0.65rem',
+                                background: 'rgba(192, 132, 252, 0.15)',
+                                color: '#c084fc',
+                                border: '1px solid rgba(192, 132, 252, 0.4)',
+                                borderRadius: '4px',
+                                padding: '2px 5px',
+                              }}
+                            >
+                              Added
+                            </span>
+                          )}
+                          {e.parentEntityName && (
+                            <span
+                              title={`Child entity of ${e.parentEntityName} (${e.relationshipType || 'BRAND_PRODUCT'})`}
+                              style={{
+                                fontSize: '0.65rem',
+                                background: 'rgba(251, 146, 60, 0.15)',
+                                color: '#fb923c',
+                                border: '1px solid rgba(251, 146, 60, 0.4)',
+                                borderRadius: '4px',
+                                padding: '2px 5px',
+                              }}
+                            >
+                              Part of: {e.parentEntityName}
+                            </span>
+                          )}
+                          {e.aliases && e.aliases.length > 0 && (
+                            <span
+                              title={`Recognized Aliases: ${e.aliases.join(', ')}`}
+                              style={{
+                                fontSize: '0.65rem',
+                                background: 'rgba(244, 114, 182, 0.15)',
+                                color: '#f472b6',
+                                border: '1px solid rgba(244, 114, 182, 0.4)',
+                                borderRadius: '4px',
+                                padding: '2px 5px',
+                              }}
+                            >
+                              {e.aliases.length} {e.aliases.length === 1 ? 'alias' : 'aliases'}
+                            </span>
+                          )}
+                          {e.isOverridden && (
+                            <span
+                              title={e.latestOverride ? `Overridden by ${e.latestOverride.counselName}: ${e.latestOverride.rationale}` : 'Overridden by Legal Counsel'}
+                              style={{
+                                fontSize: '0.65rem',
+                                background: 'rgba(52, 211, 153, 0.15)',
+                                color: '#34d399',
+                                border: '1px solid rgba(52, 211, 153, 0.4)',
+                                borderRadius: '4px',
+                                padding: '2px 6px',
+                                fontWeight: 500,
+                                cursor: 'help',
+                              }}
+                            >
+                              Counsel Override
+                            </span>
+                          )}
+                        </div>
+                        <span className="entity-category-subline" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {formatCategory(e.entityCategory)}
+                        </span>
                       </div>
                     </td>
                     <td style={{ padding: '12px' }}>
                       <span
-                        className="mono"
                         style={{
                           fontSize: '0.75rem',
                           color: getCategoryColor(e.entityCategory),
@@ -579,7 +584,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                     <td style={{ padding: '12px' }}>
                       {batchProgress?.isActive && itemProgress?.status === 'QUEUED' ? (
                         <span className="badge" style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}>
-                          ⏳ Queued
+                          Queued
                         </span>
                       ) : batchProgress?.isActive && itemProgress?.status === 'RESEARCHING' ? (
                         <span
@@ -590,7 +595,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             border: '1px solid rgba(56, 189, 248, 0.4)',
                           }}
                         >
-                          🔄 Researching...
+                          Researching...
                         </span>
                       ) : itemProgress?.status === 'FAILED' ? (
                         <span
@@ -602,7 +607,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                           }}
                           title={itemProgress.error || 'Clearance research failed'}
                         >
-                          ⚠️ Failed
+                          Failed
                         </span>
                       ) : (
                         <span className={getBadgeClass(e.overallClearanceStatus)}>{formatStatus(e.overallClearanceStatus)}</span>
@@ -652,14 +657,14 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                         {/* Primary Action 2: Occurrences */}
                         {onViewOccurrences && (
                           <button
-                            className="btn-secondary touch-target"
+                            className="btn-secondary touch-target occurrence-action-btn"
                             style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                             onClick={() => onViewOccurrences(e.id)}
                             disabled={isEvaluating || isItemInActiveBatch}
                             title={`View scene occurrences for ${e.canonicalName}`}
                             aria-label={`View occurrences for ${e.canonicalName}`}
                           >
-                            🎬 Occurrences
+                            {e.occurrenceCount || 1} {(e.occurrenceCount || 1) === 1 ? 'use' : 'uses'}
                           </button>
                         )}
 

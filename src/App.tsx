@@ -462,7 +462,7 @@ export default function App() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header Bar */}
       <header
-        className="glass-panel responsive-stack"
+        className="glass-panel responsive-stack header-command-bar"
         style={{
           borderRadius: 0,
           borderLeft: 'none',
@@ -521,7 +521,7 @@ export default function App() {
                   fontWeight: 600,
                 }}
               >
-                {projectType === 'TV Show' ? '📺 TV Show' : projectType === 'Commercial' ? '📢 Commercial' : '🎬 Movie'}
+                {projectType === 'TV Show' ? 'TV Show' : projectType === 'Commercial' ? 'Commercial' : 'Movie'}
               </span>
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -538,7 +538,7 @@ export default function App() {
             style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
             onClick={() => setIsProjectModalOpen(true)}
           >
-            📁 Switch Project
+            Switch Project
           </button>
 
           {/* Landing Clearance Summary Indicator */}
@@ -554,7 +554,6 @@ export default function App() {
               borderRadius: '20px',
               border: '1px solid var(--border-color)',
               fontSize: '0.75rem',
-              fontFamily: 'JetBrains Mono, monospace',
             }}
           >
             <span style={{ color: 'var(--text-muted)' }}>Summary:</span>
@@ -587,7 +586,7 @@ export default function App() {
               setIsTokenModalOpen(true);
             }}
           >
-            🔑 Demo Token {hasTokenConfigured && <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>●</span>}
+            Demo Token {hasTokenConfigured && <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>●</span>}
           </button>
 
           {/* Execution Mode Selector */}
@@ -603,7 +602,6 @@ export default function App() {
                 background: 'transparent',
                 border: 'none',
                 color: 'var(--accent-cyan)',
-                fontFamily: 'JetBrains Mono, monospace',
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -618,7 +616,7 @@ export default function App() {
 
           {/* Live Quota Indicator */}
           <div
-            className="touch-target"
+            className="touch-target quota-meter"
             aria-label={`Live Quota Remaining: ${liveQuota.remaining} of ${liveQuota.limit}`}
             style={{
               display: 'flex',
@@ -629,12 +627,11 @@ export default function App() {
               borderRadius: '20px',
               border: `1px solid ${liveQuota.remaining === 0 ? 'rgba(239, 68, 68, 0.5)' : 'var(--border-color)'}`,
               fontSize: '0.75rem',
-              fontFamily: 'JetBrains Mono, monospace',
               color: liveQuota.remaining === 0 ? '#f87171' : 'var(--text-main)',
             }}
           >
-            <span>⚡ Live Quota:</span>
-            <span style={{ fontWeight: 700, color: liveQuota.remaining === 0 ? '#f87171' : 'var(--accent-cyan)' }}>
+            <span>Quota:</span>
+            <span className="quota-meter-number" style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: liveQuota.remaining === 0 ? '#f87171' : 'var(--accent-cyan)' }}>
               {liveQuota.remaining} / {liveQuota.limit}
             </span>
           </div>

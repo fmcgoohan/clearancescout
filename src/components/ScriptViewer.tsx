@@ -153,25 +153,17 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
             }}
             title={`${matchedEntity.canonicalName} (${effectiveStatus}) - Click to review`}
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '1px 6px',
-              borderRadius: '4px',
-              background: colors.bg,
-              border: `1px solid ${colors.border}`,
+              textDecoration: `underline dotted ${colors.border}`,
+              textDecorationThickness: '2px',
+              backgroundColor: 'transparent',
               color: colors.text,
-              fontSize: '0.8rem',
               fontWeight: 600,
               cursor: 'pointer',
-              margin: '0 2px',
-              transition: 'all 0.15s ease',
+              margin: '0 1px',
+              padding: '0 2px',
             }}
           >
-            <span>{matchText}</span>
-            {(matchedEntity.isOverridden || hasSceneOverride) && (
-              <span style={{ fontSize: '0.65rem' }}>⚖️</span>
-            )}
+            {matchText}
           </span>
         );
       } else {
@@ -189,17 +181,17 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '20px', height: '600px', display: 'flex', flexDirection: 'column' }}>
+    <div className="glass-panel fountain-script" style={{ padding: '20px', height: '600px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ marginBottom: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <h3 style={{ fontSize: '1rem', color: 'var(--accent-cyan)', margin: 0 }}>
             Screenplay Breakdown & Visual Highlighter ({pluralize(scenes.length, 'Scene')})
           </h3>
-          <div style={{ display: 'flex', gap: '10px', fontSize: '0.7rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ color: '#38bdf8' }}>● Insufficient evidence</span>
-            <span style={{ color: '#34d399' }}>● Cleared</span>
-            <span style={{ color: '#fbbf24' }}>● Review</span>
-            <span style={{ color: '#f87171' }}>● Action</span>
+          <div style={{ display: 'flex', gap: '12px', fontSize: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ color: '#38bdf8', textDecoration: 'underline dotted #38bdf8' }}>Insufficient evidence</span>
+            <span style={{ color: '#34d399', textDecoration: 'underline dotted #34d399' }}>Cleared</span>
+            <span style={{ color: '#fbbf24', textDecoration: 'underline dotted #fbbf24' }}>Review</span>
+            <span style={{ color: '#f87171', textDecoration: 'underline dotted #f87171' }}>Action</span>
           </div>
         </div>
         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
