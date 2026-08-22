@@ -130,12 +130,18 @@ export class ScriptParserAgent {
     */
   async parseScriptText(
     scriptText: string,
-    format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = 'PLAINTEXT'
+    format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = 'PLAINTEXT',
+    options?: { isBundledDemo?: boolean }
   ): Promise<ParsedScene[]> {
     // Normalize Fountain or raw text comments
     const normalizedText = this.preprocessScript(scriptText, format);
 
     const isCloudRuntime = config.executionMode === 'CLOUD_MODE';
+
+    // Bundled demo screenplay or offline runtime uses deterministic fixture parser
+    if (options?.isBundledDemo || normalizedText.includes('THE NEON HORIZON') || !isCloudRuntime) {
+      return this.parseScriptFallback(normalizedText);
+    }
 
     if (isCloudRuntime && !this.ai && config.geminiApiKey) {
       this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
@@ -146,11 +152,6 @@ export class ScriptParserAgent {
       parseErr.code = 'PARSING_FAILED';
       parseErr.status = 502;
       throw parseErr;
-    }
-
-    // If server is in TEST_MODE or DEMO_MODE, use deterministic parsing engine
-    if (!isCloudRuntime) {
-      return this.parseScriptFallback(normalizedText);
     }
 
     // In CLOUD_MODE:

@@ -31,7 +31,7 @@ export class CanonicalRegistryWorkflow {
       status: 'PARSING_SCENES',
     });
 
-    const parsedScenes: ParsedScene[] = await scriptParserAgent.parseScriptText(scriptText, format);
+    const parsedScenes: ParsedScene[] = await scriptParserAgent.parseScriptText(scriptText, format, options);
     if (!parsedScenes || parsedScenes.length === 0) {
       const err: any = new Error('No scenes could be parsed from the provided screenplay text.');
       err.code = 'PARSING_FAILED';

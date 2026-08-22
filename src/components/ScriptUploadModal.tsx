@@ -261,7 +261,8 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
 
       if (!res.ok) {
         const code = data.code || (res.status === 401 ? 'UNAUTHORIZED' : res.status === 413 ? 'FILE_TOO_LARGE' : res.status === 429 ? 'RATE_LIMITED' : 'PARSING_FAILED');
-        setErrorMessage(data.error || `Upload failed (HTTP ${res.status}).`);
+        const errMessage = typeof data.error === 'string' ? data.error : (data.error?.message || data.message || `Upload failed (HTTP ${res.status}).`);
+        setErrorMessage(errMessage);
         setErrorCode(code);
         setIsUploading(false);
         setUploadPhase('FAILED');
