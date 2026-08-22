@@ -125,6 +125,31 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
     };
   }, [isOpen, restoreFocus]);
 
+  // 1.5. Manage background accessibility tree inertness (set aria-hidden on top-level body siblings)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const modifiedElements: HTMLElement[] = [];
+
+    Array.from(document.body.children).forEach((child) => {
+      if (child instanceof HTMLElement && child !== container && !child.contains(container)) {
+        if (!child.hasAttribute('aria-hidden')) {
+          child.setAttribute('aria-hidden', 'true');
+          modifiedElements.push(child);
+        }
+      }
+    });
+
+    return () => {
+      modifiedElements.forEach((el) => {
+        el.removeAttribute('aria-hidden');
+      });
+    };
+  }, [isOpen]);
+
   // 2. Keyboard Trap: intercept Tab, Shift+Tab, and Escape
   useEffect(() => {
     if (!isOpen) return;

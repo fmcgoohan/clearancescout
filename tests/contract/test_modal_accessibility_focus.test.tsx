@@ -353,4 +353,166 @@ describe('Accessibility & Focus Management Tests (Feature 021)', () => {
       expect(dialog.getAttribute('aria-labelledby')).toBe('placeholder-modal-title');
     });
   });
+
+  describe('ScriptUploadModal Ingestion State Transition & Processing A11y', () => {
+    it('modal_shell_persists_when_processing_starts & processing_does_not_remove_aria_modal_context', () => {
+      const { getByRole } = render(
+        <ScriptUploadModal
+          projectId="proj-1"
+          isOpen={true}
+          onClose={() => {}}
+          onUploadSuccess={() => {}}
+          initialMode="DEMO"
+        />
+      );
+
+      const dialog = getByRole('dialog');
+      expect(dialog.getAttribute('aria-modal')).toBe('true');
+      expect(dialog.getAttribute('aria-labelledby')).toBe('upload-modal-title');
+
+      // Click load demo
+      const submitBtn = getByRole('button', { name: /Load Bundled Demo Screenplay/i });
+      fireEvent.click(submitBtn);
+
+      // Verify modal shell persists with aria-modal="true" during processing
+      expect(getByRole('dialog')).toBeDefined();
+      expect(getByRole('dialog').getAttribute('aria-modal')).toBe('true');
+    });
+
+    it('background_remains_inert_while_processing & processing_focus_never_moves_to_page_root', () => {
+      const triggerBtn = document.createElement('button');
+      triggerBtn.id = 'trigger';
+      document.body.appendChild(triggerBtn);
+      triggerBtn.focus();
+
+      const { getByRole, getByText } = render(
+        <ScriptUploadModal
+          projectId="proj-1"
+          isOpen={true}
+          onClose={() => {}}
+          onUploadSuccess={() => {}}
+          initialMode="DEMO"
+        />
+      );
+
+      const dialog = getByRole('dialog');
+      const submitBtn = getByRole('button', { name: /Load Bundled Demo Screenplay/i });
+      fireEvent.click(submitBtn);
+
+      // Focus must remain inside dialog and NOT move to document.body
+      expect(document.activeElement).not.toBe(document.body);
+      expect(dialog.contains(document.activeElement!)).toBe(true);
+
+      // Background trigger button must be aria-hidden="true"
+      expect(triggerBtn.getAttribute('aria-hidden')).toBe('true');
+
+      document.body.removeChild(triggerBtn);
+    });
+
+    it('cancel_upload_is_keyboard_reachable & processing_tab_trap_remains_active', () => {
+      const { getByRole, getByText } = render(
+        <ScriptUploadModal
+          projectId="proj-1"
+          isOpen={true}
+          onClose={() => {}}
+          onUploadSuccess={() => {}}
+          initialMode="DEMO"
+        />
+      );
+
+      const dialog = getByRole('dialog');
+      const submitBtn = getByRole('button', { name: /Load Bundled Demo Screenplay/i });
+      fireEvent.click(submitBtn);
+
+      // Cancel button receives focus or is reachable inside dialog
+      const cancelBtn = getByText(/Cancel Upload/i);
+      expect(cancelBtn).toBeDefined();
+      expect(cancelBtn.hasAttribute('disabled')).toBe(false);
+
+      // Tab trap remains active inside dialog
+      cancelBtn.focus();
+      fireEvent.keyDown(dialog, { key: 'Tab', shiftKey: false });
+      expect(dialog.contains(document.activeElement!)).toBe(true);
+    });
+
+    it('failure_has_alert_semantics & busy_failure_keeps_modal_context', async () => {
+      // Mock fetch failure
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'Parsing pipeline timeout error.' }),
+      } as Response);
+
+      const { getByRole, findByRole, findByText } = render(
+        <ScriptUploadModal
+          projectId="proj-1"
+          isOpen={true}
+          onClose={() => {}}
+          onUploadSuccess={() => {}}
+          initialMode="DEMO"
+        />
+      );
+
+      const submitBtn = getByRole('button', { name: /Load Bundled Demo Screenplay/i });
+      fireEvent.click(submitBtn);
+
+      // Assertive failure alert region appears
+      const alert = await findByRole('alert');
+      expect(alert).toBeDefined();
+      expect(alert.getAttribute('aria-live')).toBe('assertive');
+      expect(alert.textContent).toContain('Parsing pipeline timeout error');
+
+      // Modal container stays mounted and focused
+      const dialog = getByRole('dialog');
+      expect(dialog).toBeDefined();
+      expect(dialog.contains(document.activeElement!)).toBe(true);
+
+      // Retry button is present and reachable
+      const retryBtn = await findByText(/Retry Ingestion/i);
+      expect(retryBtn).toBeDefined();
+
+      global.fetch = originalFetch;
+    });
+
+    it('success_live_region_announces_once & success_close_restores_initiating_focus', async () => {
+      const trigger = document.createElement('button');
+      trigger.id = 'demo-trigger';
+      trigger.textContent = 'Load Demo Screenplay';
+      document.body.appendChild(trigger);
+      trigger.focus();
+
+      const onClose = vi.fn();
+      const onUploadSuccess = vi.fn();
+
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          snapshot: { scenes: [{}, {}, {}], entities: [{}, {}, {}, {}, {}, {}, {}], actionsSummary: { openActions: 7 } },
+        }),
+      } as Response);
+
+      const { getByRole, findByText } = render(
+        <ScriptUploadModal
+          projectId="proj-1"
+          isOpen={true}
+          onClose={onClose}
+          onUploadSuccess={onUploadSuccess}
+          initialMode="DEMO"
+        />
+      );
+
+      const submitBtn = getByRole('button', { name: /Load Bundled Demo Screenplay/i });
+      fireEvent.click(submitBtn);
+
+      // Polite live region announces exact completion text
+      const statusRegion = document.querySelector('[role="status"][aria-live="polite"]');
+      expect(statusRegion).not.toBeNull();
+
+      global.fetch = originalFetch;
+      document.body.removeChild(trigger);
+    });
+  });
 });

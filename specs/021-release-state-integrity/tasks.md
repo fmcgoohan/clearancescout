@@ -268,6 +268,16 @@
 
 ---
 
+## Phase 20: Convergence (Processing State Transition Focus Trapping & Background Inertness)
+
+**Purpose**: Fix modal focus context loss during asynchronous script ingestion state transitions. Ensure focus never leaks to `document.body`, background DOM elements retain `aria-hidden="true"` inertness, `"Cancel Upload"` button receives focus upon upload start, keyboard tab trap remains active while busy, and completion announcements are accurately delivered via polite ARIA live regions.
+
+- [X] T094 [CRITICAL] Prevent focus loss during asynchronous script ingestion state transitions (`IDLE` -> `UPLOADING` -> `SYNCING` -> `COMPLETE`) by dynamically managing `aria-hidden="true"` on top-level background body siblings in `useModalFocus.ts` and programmatically focusing the `Cancel Upload` button upon upload start in `ScriptUploadModal.tsx` per FR-008
+- [X] T095 [HIGH] Add comprehensive processing state transition contract tests (`modal_shell_persists_when_processing_starts`, `processing_does_not_remove_aria_modal_context`, `background_remains_inert_while_processing`, `processing_focus_never_moves_to_page_root`, `processing_focus_is_inside_dialog`, `cancel_upload_is_keyboard_reachable`, `processing_tab_trap_remains_active`, `busy_failure_keeps_modal_context`, `success_live_region_announces_once`, `failure_has_alert_semantics`, `success_close_restores_initiating_focus`) in `tests/contract/test_modal_accessibility_focus.test.tsx` per FR-008, SC-003
+- [X] T096 [HIGH] Automate live ingestion transition and accessibility validation script `tests/live_ingestion_transition_validation.js` verifying 100% focused button retention (`activeTag: 'BUTTON'`, `isInside: true`, `isBody: false`), background inertness (`backgroundInert: true`), keyboard tab trapping during active processing, and focus restoration to initiating control on Cloud Run revision `clearance-scout-00046-d5r` per SC-003, SC-008
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
