@@ -149,9 +149,10 @@ async function runLiveValidation() {
     throw new Error(`Assertion Failed: Department Tasks button did not show (7). Got: "${snapshotData.deptTasksBtn}"`);
   }
 
-  console.log('--- Step 6.5: Verify Action Density & Overflow Menu on Elena Vance ---');
+  console.log('--- Step 6.5: Verify Action Density & Keyboard Overflow Menu on Elena Vance ---');
   const overflowBtn = await page.waitForSelector('button[aria-label="More actions for Elena Vance"]');
-  await overflowBtn.click();
+  await overflowBtn.focus();
+  await page.keyboard.press('Enter');
   await page.waitForSelector('[role="menu"][aria-label="Actions for Elena Vance"]');
   const menuText = await page.evaluate(() => document.querySelector('[role="menu"][aria-label="Actions for Elena Vance"]')?.innerText || '');
   console.log('Elena Vance Overflow Menu Content:', menuText.replace(/\n/g, ' · '));
@@ -180,10 +181,11 @@ async function runLiveValidation() {
     throw new Error(`Assertion Failed: Idle drift detected after 25s (Rows: ${postIdleData.tableRowsCount}, Btn: ${postIdleData.deptTasksBtn})`);
   }
 
-  console.log('--- Step 8: Open Action Center (Verify Read-Only & Count Coherence) ---');
+  console.log('--- Step 8: Open Action Center via Keyboard (Verify Read-Only & Count Coherence) ---');
   const preActionReqCount = networkLogs.filter(l => l.method !== 'GET').length;
   const actionModalBtn = await page.waitForSelector('button:has-text("Department Tasks")');
-  await actionModalBtn.click();
+  await actionModalBtn.focus();
+  await page.keyboard.press('Enter');
   await page.waitForSelector('[role="dialog"]');
 
   // Wait for loading to finish and actions to render
@@ -210,8 +212,8 @@ async function runLiveValidation() {
     throw new Error(`Assertion Failed: Action Center header did not use Department Task terminology. Got badge: "${actionModalData.badgeText}"`);
   }
   
-  // Close Action Center
-  await page.locator('[role="dialog"] button[aria-label*="lose" i], [role="dialog"] button:has-text("×"), [role="dialog"] button:has-text("✕")').first().click();
+  // Close Action Center via Escape key
+  await page.keyboard.press('Escape');
   await page.waitForSelector('[role="dialog"]', { state: 'detached', timeout: 10000 });
   await page.waitForTimeout(500);
 
@@ -221,10 +223,11 @@ async function runLiveValidation() {
     throw new Error(`Assertion Failed: Mutating requests detected on Action Center open: ${postActionReqCount - preActionReqCount}`);
   }
 
-  console.log('--- Step 9: Open Operations Dashboard (Verify Read-Only & KPI Rendering) ---');
+  console.log('--- Step 9: Open Operations Dashboard via Keyboard (Verify Collapsible Groups & Read-Only) ---');
   const preDashReqCount = networkLogs.filter(l => l.method !== 'GET').length;
   const dashBtn = await page.waitForSelector('button:has-text("Operations Dashboard")');
-  await dashBtn.click();
+  await dashBtn.focus();
+  await page.keyboard.press('Enter');
   await page.waitForSelector('[role="dialog"]');
 
   // Wait for dashboard data to load
@@ -241,18 +244,39 @@ async function runLiveValidation() {
   if (!dashDialogText.toUpperCase().includes('BLOCKING OCCURRENCES')) {
     throw new Error('Assertion Failed: Operations Dashboard KPI should be labeled BLOCKING OCCURRENCES');
   }
+  if (!dashDialogText.includes('Blocking Occurrences Triage')) {
+    throw new Error('Assertion Failed: Operations Dashboard list heading should be labeled "Blocking Occurrences Triage"');
+  }
+  if (dashDialogText.includes('Shoot Blocker') || dashDialogText.includes('shoot blockers')) {
+    throw new Error('Assertion Failed: Operations Dashboard must not contain leftover "Shoot Blocker" operator copy');
+  }
   if (!dashDialogText.includes('An entity may appear in more than one scene')) {
     throw new Error('Assertion Failed: Operations Dashboard must include the count relationship explanation banner');
   }
   if (!dashDialogText.includes('Why this blocks shooting')) {
     throw new Error('Assertion Failed: Operations Dashboard must include the "Why this blocks shooting" callout');
   }
-  if (dashDialogText.includes('CLEARANCE BLOCKERS')) {
-    throw new Error('Assertion Failed: Operations Dashboard KPI must not use CLEARANCE BLOCKERS (reserved for entity status)');
+
+  // Verify Collapsible Scene Groups via Keyboard
+  const sceneToggleBtn = await page.waitForSelector('button[aria-label^="Toggle Scene"]');
+  const initialExpanded = await sceneToggleBtn.getAttribute('aria-expanded');
+  if (initialExpanded !== 'true') {
+    throw new Error('Assertion Failed: Collapsible scene group should default to aria-expanded="true"');
+  }
+  await sceneToggleBtn.focus();
+  await page.keyboard.press('Enter');
+  const collapsedExpanded = await sceneToggleBtn.getAttribute('aria-expanded');
+  if (collapsedExpanded !== 'false') {
+    throw new Error('Assertion Failed: Collapsible scene group did not toggle to aria-expanded="false" upon Enter');
+  }
+  await page.keyboard.press('Enter');
+  const reExpanded = await sceneToggleBtn.getAttribute('aria-expanded');
+  if (reExpanded !== 'true') {
+    throw new Error('Assertion Failed: Collapsible scene group did not re-expand upon Enter');
   }
 
-  // Close Dashboard
-  await page.locator('[role="dialog"] button[aria-label*="lose" i], [role="dialog"] button:has-text("×"), [role="dialog"] button:has-text("✕")').first().click();
+  // Close Dashboard via Escape key
+  await page.keyboard.press('Escape');
   await page.waitForSelector('[role="dialog"]', { state: 'detached', timeout: 10000 });
   await page.waitForTimeout(500);
 

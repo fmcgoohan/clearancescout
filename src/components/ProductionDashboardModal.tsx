@@ -100,6 +100,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
   const [data, setData] = useState<ProductionDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [collapsedScenes, setCollapsedScenes] = useState<Record<string, boolean>>({});
 
   const fetchDashboard = async () => {
     if (!projectId) return;
@@ -124,6 +125,20 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
       fetchDashboard();
     }
   }, [isOpen, projectId]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -413,14 +428,14 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                           marginTop: '4px',
                         }}
                       >
-                        {scn.status.replace('_', ' ')}
+                        {formatStatus(scn.status)}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Shoot Blocker Triage Center */}
+              {/* Blocking Occurrences Triage Center */}
               <div
                 style={{
                   background: 'rgba(255, 255, 255, 0.02)',
@@ -431,7 +446,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ed8796', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>🚨 Shoot Blocker Triage Center ({data.shootBlockers.length})</span>
+                    <span>🚨 {TERMINOLOGY.BLOCKING_OCCURRENCES_LABEL} Triage ({data.shootBlockers.length})</span>
                   </div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Resolve via direct mitigation actions
@@ -456,11 +471,11 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
 
                 {data.shootBlockers.length === 0 ? (
                   <div style={{ fontSize: '0.8rem', color: '#a6da95', padding: '12px 0' }}>
-                    ✓ No active shoot blockers! All scenes are cleared or covered by placeholders/rights.
+                    ✓ No blocking occurrences! All scenes are cleared or covered by placeholders/rights.
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {/* Group by Scene */}
+                    {/* Group by Scene (Collapsible) */}
                     {Object.entries(
                       data.shootBlockers.reduce((acc, blk) => {
                         const key = `Scene ${blk.sceneNumber}: ${blk.heading}`;
@@ -468,96 +483,110 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                         acc[key].push(blk);
                         return acc;
                       }, {} as Record<string, BlockerItemDetail[]>)
-                    ).map(([sceneHeading, blockers]) => (
-                      <div
-                        key={sceneHeading}
-                        style={{
-                          background: 'rgba(0, 0, 0, 0.25)',
-                          border: '1px solid rgba(237, 135, 150, 0.25)',
-                          borderRadius: '8px',
-                          padding: '12px 14px',
-                        }}
-                      >
+                    ).map(([sceneHeading, blockers]) => {
+                      const isCollapsed = collapsedScenes[sceneHeading] ?? false;
+                      return (
                         <div
+                          key={sceneHeading}
                           style={{
-                            fontSize: '0.8rem',
-                            fontWeight: 700,
-                            color: '#ed8796',
-                            marginBottom: '8px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
+                            background: 'rgba(0, 0, 0, 0.25)',
+                            border: '1px solid rgba(237, 135, 150, 0.25)',
+                            borderRadius: '8px',
+                            padding: '12px 14px',
                           }}
                         >
-                          <span>🎬 {sceneHeading}</span>
-                          <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
-                            {pluralize(blockers.length, 'Blocker')}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {blockers.map((blk) => (
-                            <div
-                              key={blk.occurrenceId}
-                              style={{
-                                background: 'rgba(255, 255, 255, 0.03)',
-                                border: '1px solid rgba(255, 255, 255, 0.07)',
-                                borderRadius: '6px',
-                                padding: '10px 12px',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                gap: '12px',
-                                flexWrap: 'wrap',
-                              }}
-                            >
-                              <div style={{ flex: 1, minWidth: '220px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                  <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.85rem' }}>
-                                    {blk.canonicalName}
-                                  </span>
-                                  <span className="badge badge-ACTION_REQUIRED" style={{ fontSize: '0.65rem' }}>
-                                    {formatStatus(blk.clearanceStatus)}
-                                  </span>
+                          <button
+                            type="button"
+                            aria-expanded={!isCollapsed}
+                            aria-label={`Toggle ${sceneHeading} (${pluralize(blockers.length, 'blocking occurrence', 'blocking occurrences')})`}
+                            onClick={() => setCollapsedScenes((prev) => ({ ...prev, [sceneHeading]: !isCollapsed }))}
+                            style={{
+                              width: '100%',
+                              background: 'transparent',
+                              border: 'none',
+                              padding: 0,
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              color: '#ed8796',
+                              marginBottom: isCollapsed ? 0 : '8px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              textAlign: 'left',
+                            }}
+                          >
+                            <span>{isCollapsed ? '▸' : '▾'} 🎬 {sceneHeading}</span>
+                            <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
+                              {pluralize(blockers.length, 'blocking occurrence', 'blocking occurrences')}
+                            </span>
+                          </button>
+                          {!isCollapsed && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {blockers.map((blk) => (
+                                <div
+                                  key={blk.occurrenceId}
+                                  style={{
+                                    background: 'rgba(255, 255, 255, 0.03)',
+                                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                                    borderRadius: '6px',
+                                    padding: '10px 12px',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    flexWrap: 'wrap',
+                                  }}
+                                >
+                                  <div style={{ flex: 1, minWidth: '220px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                      <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.85rem' }}>
+                                        {blk.canonicalName}
+                                      </span>
+                                      <span className="badge badge-ACTION_REQUIRED" style={{ fontSize: '0.65rem' }}>
+                                        {formatStatus(blk.clearanceStatus)}
+                                      </span>
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: '#fca5a5', marginTop: '4px', lineHeight: 1.4 }}>
+                                      {blk.riskRationale}
+                                    </div>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {onMitigatePlaceholder && (
+                                      <button
+                                        className="btn-secondary touch-target"
+                                        onClick={() => onMitigatePlaceholder(blk.canonicalEntityId)}
+                                        style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#c6a0f6', color: '#c6a0f6', minHeight: '30px' }}
+                                      >
+                                        🎨 Placeholder
+                                      </button>
+                                    )}
+                                    {onMitigateRights && (
+                                      <button
+                                        className="btn-secondary touch-target"
+                                        onClick={() => onMitigateRights(blk.canonicalEntityId)}
+                                        style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#91d7e3', color: '#91d7e3', minHeight: '30px' }}
+                                      >
+                                        📜 Add Rights
+                                      </button>
+                                    )}
+                                    {onMitigateOverride && (
+                                      <button
+                                        className="btn-secondary touch-target"
+                                        onClick={() => onMitigateOverride(blk.canonicalEntityId)}
+                                        style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#f87171', color: '#f87171', minHeight: '30px' }}
+                                      >
+                                        ⚖️ Override
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#fca5a5', marginTop: '4px', lineHeight: 1.4 }}>
-                                  {blk.riskRationale}
-                                </div>
-                              </div>
-
-                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                {onMitigatePlaceholder && (
-                                  <button
-                                    className="btn-secondary touch-target"
-                                    onClick={() => onMitigatePlaceholder(blk.canonicalEntityId)}
-                                    style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#eed49f', color: '#eed49f', minHeight: '30px' }}
-                                  >
-                                    🎨 Placeholder
-                                  </button>
-                                )}
-                                {onMitigateRights && (
-                                  <button
-                                    className="btn-secondary touch-target"
-                                    onClick={() => onMitigateRights(blk.canonicalEntityId)}
-                                    style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#91d7e3', color: '#91d7e3', minHeight: '30px' }}
-                                  >
-                                    📜 Add Rights
-                                  </button>
-                                )}
-                                {onMitigateOverride && (
-                                  <button
-                                    className="btn-secondary touch-target"
-                                    onClick={() => onMitigateOverride(blk.canonicalEntityId)}
-                                    style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#f87171', color: '#f87171', minHeight: '30px' }}
-                                  >
-                                    ⚖️ Override
-                                  </button>
-                                )}
-                              </div>
+                              ))}
                             </div>
-                          ))}
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -665,7 +694,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                                 border: ph.clearanceTier === 'FINAL_CLEARED' ? '1px solid #a6da95' : '1px solid #eed49f',
                               }}
                             >
-                              {ph.clearanceTier.replace('_', ' ')}
+                              {formatStatus(ph.clearanceTier)}
                             </span>
                           </div>
                           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>

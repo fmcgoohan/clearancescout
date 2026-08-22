@@ -4,6 +4,7 @@ import app from '../../server/index.js';
 import { entityRepo } from '../../server/repositories/EntityRepo.js';
 import { rightsRepo } from '../../server/repositories/RightsRepo.js';
 import { placeholderRepo } from '../../server/repositories/PlaceholderRepo.js';
+import { pluralize, formatStatus } from '../../src/utils/formatters.js';
 
 describe('Contract: Production Operations Dashboard (Feature 016 Phase 9)', () => {
   it('GET /api/projects/:id/dashboard returns consolidated KPIs, blockers, expiring rights, and department summary', async () => {
@@ -151,5 +152,28 @@ Alex types on an AeroTech Prism Laptop.
     expect(blockerNames).toContain('Elena Vance');
     expect(blockerNames).toContain('AeroTech Prism Laptop');
     expect(dash.shootBlockers.every((b: any) => b.sceneNumber >= 1 && b.sceneNumber <= 3)).toBe(true);
+  });
+
+  it('guarantees correct singular, plural, and zero count formatting across entities, tasks, and blocking occurrences', () => {
+    expect(pluralize(1, 'entity', 'entities')).toBe('1 entity');
+    expect(pluralize(0, 'entity', 'entities')).toBe('0 entities');
+    expect(pluralize(7, 'entity', 'entities')).toBe('7 entities');
+
+    expect(pluralize(1, 'department task', 'department tasks')).toBe('1 department task');
+    expect(pluralize(0, 'department task', 'department tasks')).toBe('0 department tasks');
+
+    expect(pluralize(1, 'blocking occurrence', 'blocking occurrences')).toBe('1 blocking occurrence');
+    expect(pluralize(0, 'blocking occurrence', 'blocking occurrences')).toBe('0 blocking occurrences');
+    expect(pluralize(8, 'blocking occurrence', 'blocking occurrences')).toBe('8 blocking occurrences');
+
+    expect(formatStatus('FINAL_CLEAR')).toBe('Final Clear');
+    expect(formatStatus('WORKING_CLEAR')).toBe('Working Clear');
+    expect(formatStatus('RED')).toBe('Blocked (Red)');
+    expect(formatStatus('TEMP_APPROVED')).toBe('Temporarily Approved');
+    expect(formatStatus('FINAL_CLEARED')).toBe('Final Cleared');
+    expect(formatStatus('INSUFFICIENT_EVIDENCE')).toBe('Insufficient evidence');
+    expect(formatStatus('NO_ISSUE_SURFACED')).toBe('Cleared');
+    expect(formatStatus('ACTION_REQUIRED')).toBe('Action Required');
+    expect(formatStatus('REVIEW_RECOMMENDED')).toBe('Review Recommended');
   });
 });

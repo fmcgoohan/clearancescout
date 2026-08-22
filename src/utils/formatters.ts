@@ -21,6 +21,16 @@ export function formatStatus(status: string | undefined | null): string {
       return 'Cleared';
     case 'SCRIPT_REVISION_SUPERSEDED':
       return 'Superseded by New Script Revision';
+    case 'FINAL_CLEAR':
+      return 'Final Clear';
+    case 'WORKING_CLEAR':
+      return 'Working Clear';
+    case 'RED':
+      return 'Blocked (Red)';
+    case 'TEMP_APPROVED':
+      return 'Temporarily Approved';
+    case 'FINAL_CLEARED':
+      return 'Final Cleared';
     case 'RESOLVED':
       return 'Resolved';
     case 'OPEN':
