@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatStatus } from '../utils/formatters.js';
+import { useModalFocus } from '../hooks/useModalFocus.js';
 
 export interface ClearanceCitation {
   id: string;
@@ -77,6 +78,11 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
 }) => {
   const [showHistory, setShowHistory] = useState(true);
 
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen,
+    onClose,
+  });
+
   if (!isOpen) return null;
 
   const getBadgeClass = (status: string) => {
@@ -128,6 +134,8 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
       onClick={onClose}
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '1000px',
@@ -142,6 +150,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
           border: '1px solid var(--border-color)',
           borderRadius: '12px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          outline: 'none',
         }}
         onClick={(e) => e.stopPropagation()}
       >

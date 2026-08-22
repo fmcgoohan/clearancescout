@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient';
 import { formatStatus, formatExplanationText } from '../utils/formatters.js';
+import { useModalFocus } from '../hooks/useModalFocus.js';
 
 export interface OccurrenceItem {
   id: string;
@@ -49,6 +50,11 @@ export function EntityDetailModal({
   const [derivedStatus, setDerivedStatus] = useState<string>('INSUFFICIENT_EVIDENCE');
   const [isLoading, setIsLoading] = useState(false);
   const [evaluatingOccId, setEvaluatingOccId] = useState<string | null>(null);
+
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen,
+    onClose,
+  });
 
   const fetchOccurrences = async () => {
     if (!projectId || !entityId) return;
@@ -145,6 +151,8 @@ export function EntityDetailModal({
       }}
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '760px',
@@ -155,6 +163,7 @@ export function EntityDetailModal({
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
           overflow: 'hidden',
           borderRadius: '12px',
+          outline: 'none',
         }}
       >
         {/* Header */}

@@ -27,10 +27,16 @@ describe('Accessible Responsive Workspace Contract Tests (Feature 014)', () => {
   });
 
   it('FR-004: UI components declare ARIA dialog roles and descriptive labels', () => {
-    const appCode = fs.readFileSync(appTsxPath, 'utf-8');
-    expect(appCode).toContain('role="dialog"');
-    expect(appCode).toContain('aria-modal="true"');
-    expect(appCode).toContain('aria-label=');
+    const demoTokenModalPath = path.resolve(__dirname, '../../src/components/DemoTokenModal.tsx');
+    const tokenModalCode = fs.readFileSync(demoTokenModalPath, 'utf-8');
+    expect(tokenModalCode).toContain('role="dialog"');
+    expect(tokenModalCode).toContain('aria-modal="true"');
+    expect(tokenModalCode).toContain('aria-labelledby=');
+
+    const citationCode = fs.readFileSync(citationDrawerPath, 'utf-8');
+    expect(citationCode).toContain('role="dialog"');
+    expect(citationCode).toContain('aria-modal="true"');
+    expect(citationCode).toContain('aria-label=');
   });
 
   it('FR-005: Status badge colors meet WCAG AA high-contrast requirements', () => {

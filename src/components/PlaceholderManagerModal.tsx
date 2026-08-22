@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
+import { useModalFocus } from '../hooks/useModalFocus.js';
 
 export interface CategoryDetails {
   trademarkSearchNotes?: string;
@@ -65,6 +66,11 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
   const [creativeRationale, setCreativeRationale] = useState('');
   const [approvedBy, setApprovedBy] = useState('Clearance Coordinator');
   const [approvedRole, setApprovedRole] = useState('Production Clearance Lead');
+
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen,
+    onClose,
+  });
 
   const [scopeType, setScopeType] = useState<'SELECTED_SCENES' | 'SINGLE_OCCURRENCE' | 'PROJECT_WIDE'>('SELECTED_SCENES');
   const [availableScenes, setAvailableScenes] = useState<Array<{ id: string; sceneNumber: number; heading: string }>>([]);
@@ -312,6 +318,8 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
       }}
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         className="glass-panel"
         style={{
           width: '100%',
@@ -324,6 +332,7 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
           borderRadius: '12px',
           boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
           overflow: 'hidden',
+          outline: 'none',
         }}
       >
         {/* Modal Header */}

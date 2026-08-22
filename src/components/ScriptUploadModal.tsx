@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
+import { useModalFocus } from '../hooks/useModalFocus.js';
 
 interface ScriptUploadModalProps {
   projectId: string;
@@ -36,6 +37,12 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen,
+    onClose,
+    canCloseOnEscape: !isUploading,
+  });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -333,6 +340,27 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
     }
   };
 
+  const getNamedStageAnnouncement = (phase: UploadPhase) => {
+    switch (phase) {
+      case 'UPLOADING':
+        return 'Uploading screenplay';
+      case 'PARSING':
+        return 'Segmenting scenes and sluglines';
+      case 'EXTRACTING':
+        return 'Identifying candidate clearance entities';
+      case 'RECONCILING':
+        return 'Persisting active canonical registry snapshot';
+      case 'SYNCING':
+        return 'Syncing project workspace from active snapshot';
+      case 'COMPLETE':
+        return 'Screenplay ingestion complete';
+      case 'FAILED':
+        return 'Screenplay ingestion failed';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div
       role="dialog"
@@ -355,6 +383,8 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       }}
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '640px',
@@ -366,8 +396,13 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
           overflow: 'hidden',
           borderRadius: '12px',
           border: '1px solid var(--border-color)',
+          outline: 'none',
         }}
       >
+        {/* Screen reader live stage announcements (announced once per stage transition, not every timer tick) */}
+        <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+          {getNamedStageAnnouncement(uploadPhase)}
+        </div>
         <div
           style={{
             padding: '20px 24px',

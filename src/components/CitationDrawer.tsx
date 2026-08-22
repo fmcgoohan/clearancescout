@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
 import { formatStatus } from '../utils/formatters.js';
+import { useModalFocus } from '../hooks/useModalFocus.js';
 
 export type ProvenanceType = 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE';
 
@@ -53,6 +54,11 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
   executionMode = 'DEMO_MODE',
   onOverrideSaved,
 }) => {
+  const { containerRef } = useModalFocus<HTMLElement>({
+    isOpen,
+    onClose,
+  });
+
   const [activeTab, setActiveTab] = useState<'PROVENANCE' | 'OVERRIDE'>('PROVENANCE');
   const [overrideStatus, setOverrideStatus] = useState<string>('NO_ISSUE_SURFACED');
   const [applySceneSpecific, setApplySceneSpecific] = useState<boolean>(false);
@@ -119,6 +125,8 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
 
   return (
     <aside
+      ref={containerRef}
+      tabIndex={-1}
       className="glass-panel drawer-responsive"
       role="dialog"
       aria-modal="true"
@@ -141,6 +149,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
         flexDirection: 'column',
         gap: '16px',
         boxShadow: '-8px 0 32px rgba(0,0,0,0.5)',
+        outline: 'none',
       }}
     >
       {/* Header */}

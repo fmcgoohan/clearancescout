@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
 import { pluralize, formatStatus, formatDepartment, formatPriority } from '../utils/formatters.js';
 import { TERMINOLOGY } from '../constants/terminology.js';
+import { useModalFocus } from '../hooks/useModalFocus.js';
 
 export interface ClearanceActionItem {
   id: string;
@@ -54,6 +55,11 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'RESOLVED'>('OPEN');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen,
+    onClose,
+  });
 
   const fetchActionsAndNotifications = async () => {
     if (!projectId) return;
@@ -183,6 +189,8 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
       }}
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         className="glass-panel"
         style={{
           width: '100%',
@@ -195,6 +203,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
           borderRadius: '12px',
           boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
           overflow: 'hidden',
+          outline: 'none',
         }}
       >
         {/* Modal Header */}

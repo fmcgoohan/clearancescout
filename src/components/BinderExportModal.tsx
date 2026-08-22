@@ -1,6 +1,7 @@
 import React from 'react';
 import { apiFetch } from '../utils/apiClient.js';
 import { formatStatus, formatCategory } from '../utils/formatters.js';
+import { useModalFocus } from '../hooks/useModalFocus.js';
 
 export interface ProvenanceSummary {
   liveCount: number;
@@ -64,6 +65,11 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
   onJumpToEvidence,
   onJumpToTimeline,
 }) => {
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen: isOpen && !!binder,
+    onClose,
+  });
+
   if (!isOpen || !binder) return null;
 
   const [activeTab, setActiveTab] = React.useState<'ALL' | 'SCENES' | 'RIGHTS' | 'PLACEHOLDERS' | 'ACTIONS'>('ALL');
@@ -158,6 +164,8 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
         }
       `}</style>
       <div
+        ref={containerRef}
+        tabIndex={-1}
         id="printable-binder-modal"
         className="glass-panel"
         style={{
@@ -173,6 +181,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
           border: '1px solid var(--border-color)',
           borderRadius: '12px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          outline: 'none',
         }}
       >
         {/* Executive Header */}

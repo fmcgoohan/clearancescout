@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 export interface RightsItem {
   id: string;
@@ -42,6 +43,11 @@ export function RightsModal({
   const [rightsList, setRightsList] = useState<RightsItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen,
+    onClose,
+  });
 
   // New License Form State
   const [licensorName, setLicensorName] = useState('');
@@ -182,6 +188,8 @@ export function RightsModal({
       }}
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '780px',
@@ -192,6 +200,7 @@ export function RightsModal({
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
           overflow: 'hidden',
           borderRadius: '12px',
+          outline: 'none',
         }}
       >
         {/* Header */}

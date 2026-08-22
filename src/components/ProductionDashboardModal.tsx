@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
 import { pluralize, formatStatus, formatCategory, formatExplanationText } from '../utils/formatters.js';
 import { TERMINOLOGY } from '../constants/terminology.js';
+import { useModalFocus } from '../hooks/useModalFocus.js';
 
 export interface ProductionDashboardKPIs {
   totalScenes: number;
@@ -102,6 +103,11 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
   const [error, setError] = useState<string | null>(null);
   const [collapsedScenes, setCollapsedScenes] = useState<Record<string, boolean>>({});
 
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen,
+    onClose,
+  });
+
   const fetchDashboard = async () => {
     if (!projectId) return;
     setIsLoading(true);
@@ -163,6 +169,8 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
       }}
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         style={{
           background: 'var(--bg-secondary, #181926)',
           border: '1px solid var(--border-color, #2d3142)',
@@ -174,6 +182,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
           flexDirection: 'column',
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
           overflow: 'hidden',
+          outline: 'none',
         }}
       >
         {/* Sticky Header */}

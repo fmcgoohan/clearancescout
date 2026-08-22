@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatStatus } from '../utils/formatters.js';
+import { useModalFocus } from '../hooks/useModalFocus.js';
 
 export interface ReplacementAttempt {
   attemptNumber: number;
@@ -40,6 +41,11 @@ interface ReplacementCardModalProps {
 export const ReplacementCardModal: React.FC<ReplacementCardModalProps> = ({ card, isOpen, onClose }) => {
   const [showHistory, setShowHistory] = useState(false);
 
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen: isOpen && !!card,
+    onClose,
+  });
+
   if (!isOpen || !card) return null;
 
   const isAccepted = card.selfClearanceResult === 'ACCEPTED' || card.clearanceStatus === 'NO_ISSUE_SURFACED';
@@ -47,6 +53,9 @@ export const ReplacementCardModal: React.FC<ReplacementCardModalProps> = ({ card
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="replacement-modal-title"
       style={{
         position: 'fixed',
         top: 0,
@@ -61,8 +70,13 @@ export const ReplacementCardModal: React.FC<ReplacementCardModalProps> = ({ card
         justifyContent: 'center',
         padding: '20px',
       }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         className="glass-panel"
         style={{
           width: '600px',
@@ -73,6 +87,7 @@ export const ReplacementCardModal: React.FC<ReplacementCardModalProps> = ({ card
           flexDirection: 'column',
           gap: '18px',
           boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+          outline: 'none',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

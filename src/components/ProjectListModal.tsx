@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 export interface ProjectListItem {
   id: string;
@@ -35,6 +36,11 @@ export function ProjectListModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen,
+    onClose,
+  });
 
   // New Project Form State
   const [title, setTitle] = useState('');
@@ -144,6 +150,8 @@ export function ProjectListModal({
       }}
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '720px',
@@ -154,6 +162,7 @@ export function ProjectListModal({
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
           overflow: 'hidden',
           borderRadius: '12px',
+          outline: 'none',
         }}
       >
         {/* Header */}

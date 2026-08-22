@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CanonicalEntity } from './EntityRegistryTable';
+import { useModalFocus } from '../hooks/useModalFocus';
 
 export type EntityCategory =
   | 'BRAND'
@@ -50,6 +51,11 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
   const [sceneId, setSceneId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { containerRef } = useModalFocus<HTMLDivElement>({
+    isOpen,
+    onClose,
+  });
 
   useEffect(() => {
     if (entityToEdit) {
@@ -132,6 +138,8 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
       }}
     >
       <div
+        ref={containerRef}
+        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '560px',
@@ -142,6 +150,7 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
           overflow: 'hidden',
           borderRadius: '12px',
+          outline: 'none',
         }}
       >
         {/* Header */}
