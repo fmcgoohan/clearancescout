@@ -116,11 +116,11 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
       clearTimeout(timeoutId);
       if (restoreFocus && previousActiveElementRef.current && document.body.contains(previousActiveElementRef.current)) {
         const prevEl = previousActiveElementRef.current;
-        setTimeout(() => {
-          if (document.body.contains(prevEl)) {
-            prevEl.focus();
-          }
-        }, 0);
+        try {
+          prevEl.focus();
+        } catch {
+          // ignore
+        }
       }
     };
   }, [isOpen, restoreFocus]);

@@ -247,6 +247,17 @@
 
 ---
 
+## Phase 18: Convergence (Modal Focus Traps, Keyboard Accessibility & ARIA Live Regions)
+
+**Purpose**: Implement reusable `useModalFocus` focus-trapping hook, place `containerRef` directly on `role="dialog"` across all 13 modals, add automated live keyboard focus trap validation, and verify 100% test suite and production build pass.
+
+- [X] T087 [HIGH] Implement reusable `useModalFocus` hook with focus trapping (forward/backward Tab cycle), initial focus prioritization (`autofocus`, controls, heading `-1`), and trigger focus restoration per FR-008 (missing)
+- [X] T088 [HIGH] Move modal `containerRef` directly to `role="dialog"` container across all 13 dialog components (`ScriptUploadModal`, `DemoTokenModal`, `ProductionDashboardModal`, `ActionListModal`, `ProjectListModal`, `CitationDrawer`, `RightsModal`, `PlaceholderManagerModal`, `ComparisonModal`, `EntityDetailModal`, `ItemEditModal`, `BinderExportModal`, `ReplacementCardModal`) to enforce strict initial focus containment per FR-006, FR-008 (missing)
+- [X] T089 [HIGH] Create automated live keyboard validation runner `tests/live_keyboard_focus_validation.js` asserting initial focus inside dialogs, Tab cycle trapping, Escape dismissal, and trigger focus restoration against live Cloud Run deployment per FR-008, SC-003 (missing)
+- [X] T090 [HIGH] Execute complete automated test suite (`npm test`) and production build (`npm run build`) confirming 100% pass across all 86 test suites (212 tests) per SC-008 (missing)
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid
@@ -261,6 +272,7 @@ graph TD
     P4 --> P9[Phase 9: US7 Secondary UX & Streamlined Header]
     P3 & P4 & P5 & P6 & P7 & P8 & P9 --> P10[Phase 10: Polish & Rendered Browser QA]
     P10 --> P11[Phase 11: Convergence Active-Draft Scope Unification]
+    P11 --> P18[Phase 18: Convergence Modal Focus Traps & ARIA Compliance]
 ```
 
 ### Parallel Execution Opportunities
@@ -277,3 +289,4 @@ graph TD
 3. **Step 3 (P0 Overlay & Disambiguation Integrity - US2, US3, US4, US5)**: Complete T013–T030 to fix overlay z-index stacking, merge generic aliases (`Associated Press` / `A.P.`), ground active occurrences, and eliminate timeline runaway.
 4. **Step 4 (Transparency & Polish - US6, US7)**: Complete T031–T038 for truthful provenance labels, recovery banners, quiet header, and consolidated export controls.
 5. **Step 5 (Validation)**: Complete T039–T041 to verify the full suite and browser journey.
+
