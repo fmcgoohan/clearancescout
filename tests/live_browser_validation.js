@@ -160,20 +160,24 @@ async function runLiveValidation() {
   await page.waitForSelector('[role="dialog"]');
 
   // Wait for loading to finish and actions to render
+  await page.waitForTimeout(500);
   await page.waitForFunction(() => {
     const dialog = document.querySelector('[role="dialog"]');
     return dialog && !dialog.innerText.includes('Loading action items...');
-  }, { timeout: 10000 });
+  }, { timeout: 15000 });
+  await page.waitForTimeout(300);
 
   const actionModalData = await page.evaluate(() => {
     const dialog = document.querySelector('[role="dialog"]');
     const text = dialog ? dialog.innerText : '';
-    const headerBadge = dialog?.querySelector('span')?.innerText || '';
-    const actionCards = Array.from(dialog?.querySelectorAll('.action-item, [style*="border-radius"]') || []).map(el => (el as HTMLElement).innerText);
-    return { text, headerBadge, actionCardsSample: actionCards.slice(0, 5) };
+    const badgeText = Array.from(dialog?.querySelectorAll('span') || []).map(s => s.innerText).find(t => t.includes('Action') || t.includes('Task')) || '';
+    const actionCards = Array.from(dialog?.querySelectorAll('[style*="border-left"]') || []).map(el => el.innerText || el.textContent || '');
+    return { text, badgeText, actionCardsCount: actionCards.length, actionCardsSample: actionCards.slice(0, 3) };
   });
 
-  console.log('Action Center Loaded Data:', actionModalData.text.slice(0, 300));
+  console.log('Action Center Fully Loaded. Badge:', actionModalData.badgeText);
+  console.log('Action Center Rendered Action Items Count:', actionModalData.actionCardsCount);
+  console.log('Action Center Content Snippet:', actionModalData.text.slice(0, 400));
   
   // Close Action Center
   await page.locator('[role="dialog"] button[aria-label*="lose" i], [role="dialog"] button:has-text("×"), [role="dialog"] button:has-text("✕")').first().click();
@@ -193,13 +197,15 @@ async function runLiveValidation() {
   await page.waitForSelector('[role="dialog"]');
 
   // Wait for dashboard data to load
+  await page.waitForTimeout(500);
   await page.waitForFunction(() => {
     const dialog = document.querySelector('[role="dialog"]');
-    return dialog && !dialog.innerText.includes('Loading dashboard...');
-  }, { timeout: 10000 });
+    return dialog && !dialog.innerText.includes('Loading consolidated');
+  }, { timeout: 15000 });
+  await page.waitForTimeout(300);
 
   const dashDialogText = await page.evaluate(() => document.querySelector('[role="dialog"]')?.innerText || '');
-  console.log('Operations Dashboard Loaded Content Snippet:', dashDialogText.slice(0, 400));
+  console.log('Operations Dashboard Loaded KPIs & Content:\n', dashDialogText.slice(0, 500));
 
   // Close Dashboard
   await page.locator('[role="dialog"] button[aria-label*="lose" i], [role="dialog"] button:has-text("×"), [role="dialog"] button:has-text("✕")').first().click();
