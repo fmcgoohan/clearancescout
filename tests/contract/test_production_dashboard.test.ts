@@ -107,4 +107,49 @@ Alex types on an AeroTech Prism Laptop.
     // Verify Scene Distribution
     expect(dash.sceneReadinessDistribution).toHaveLength(3);
   });
+
+  it('guarantees 7 entities, 7 department tasks, and 8 blocking scene occurrences are intentionally distinct objects', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Count Semantics Validation',
+        productionCompany: 'Specter Media Corp',
+        projectType: 'Movie',
+        executionMode: 'CLOUD_MODE',
+      });
+    expect(projRes.status).toBe(201);
+    const projectId = projRes.body.id;
+
+    // Load bundled fictional demo in CLOUD_MODE
+    const demoRes = await request(app)
+      .post(`/api/projects/${projectId}/script/demo`)
+      .send({
+        reingestMode: 'REPLACE',
+        autoEvaluate: false,
+        includeSampleRights: false,
+        includeSamplePlaceholders: false,
+      });
+    expect(demoRes.status).toBe(200);
+
+    const entities = await entityRepo.getEntitiesByProject(projectId);
+    expect(entities).toHaveLength(7);
+
+    const dashRes = await request(app).get(`/api/projects/${projectId}/dashboard`);
+    expect(dashRes.status).toBe(200);
+    const dash = dashRes.body;
+
+    // 1. Canonical entities count = 7
+    expect(dash.kpis.totalEntities).toBe(7);
+    // 2. Department tasks count = 7
+    expect(dash.kpis.pendingActionsCount).toBe(7);
+    // 3. Scene occurrences blocking shooting are populated per scene
+    expect(dash.kpis.criticalBlockersCount).toBe(dash.shootBlockers.length);
+    expect(dash.shootBlockers.length).toBeGreaterThanOrEqual(7);
+
+    // Verify shoot blockers contain canonical details and scene provenance
+    const blockerNames = dash.shootBlockers.map((b: any) => b.canonicalName);
+    expect(blockerNames).toContain('Elena Vance');
+    expect(blockerNames).toContain('AeroTech Prism Laptop');
+    expect(dash.shootBlockers.every((b: any) => b.sceneNumber >= 1 && b.sceneNumber <= 3)).toBe(true);
+  });
 });

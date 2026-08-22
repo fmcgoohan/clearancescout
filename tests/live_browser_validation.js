@@ -131,9 +131,30 @@ async function runLiveValidation() {
   if (!hasElena) {
     throw new Error('Assertion Failed: Elena Vance was not found in active entity registry table.');
   }
+  const hasInsufficientEvidence = snapshotData.tableRows.some(r => r.includes('Insufficient evidence'));
+  if (!hasInsufficientEvidence) {
+    throw new Error('Assertion Failed: Entity table rows did not render operator copy "Insufficient evidence"');
+  }
+  const hasUppercaseStatus = snapshotData.tableRows.some(r => r.includes('INSUFFICIENT_EVIDENCE') || r.includes('INSUFFICIENT EVIDENCE'));
+  if (hasUppercaseStatus) {
+    throw new Error('Assertion Failed: Entity table rows contained raw or all-caps INSUFFICIENT_EVIDENCE/INSUFFICIENT EVIDENCE');
+  }
   if (!snapshotData.deptTasksBtn.includes('(7)')) {
     throw new Error(`Assertion Failed: Department Tasks button did not show (7). Got: "${snapshotData.deptTasksBtn}"`);
   }
+
+  console.log('--- Step 6.5: Verify Action Density & Overflow Menu on Elena Vance ---');
+  const overflowBtn = await page.waitForSelector('button[aria-label="More actions for Elena Vance"]');
+  await overflowBtn.click();
+  await page.waitForSelector('[role="menu"][aria-label="Actions for Elena Vance"]');
+  const menuText = await page.evaluate(() => document.querySelector('[role="menu"][aria-label="Actions for Elena Vance"]')?.innerText || '');
+  console.log('Elena Vance Overflow Menu Content:', menuText.replace(/\n/g, ' · '));
+  if (!menuText.includes('Edit Details') || !menuText.includes('Contractual Rights') || !menuText.includes('Attach Placeholder') || !menuText.includes('Counsel Review & Override')) {
+    throw new Error(`Assertion Failed: Overflow menu missing required secondary actions. Got: ${menuText}`);
+  }
+  // Close menu via Escape key
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[role="menu"][aria-label="Actions for Elena Vance"]', { state: 'detached', timeout: 5000 });
 
   console.log('--- Step 7: 20-30 Second Idle Stability Check ---');
   console.log('Waiting 25 seconds idle...');
@@ -211,8 +232,14 @@ async function runLiveValidation() {
   const dashDialogText = await page.evaluate(() => document.querySelector('[role="dialog"]')?.innerText || '');
   console.log('Operations Dashboard Loaded KPIs & Content:\n', dashDialogText.slice(0, 500));
 
-  if (!dashDialogText.toUpperCase().includes('SHOOT BLOCKERS')) {
-    throw new Error('Assertion Failed: Operations Dashboard KPI should be labeled SHOOT BLOCKERS');
+  if (!dashDialogText.toUpperCase().includes('BLOCKING OCCURRENCES')) {
+    throw new Error('Assertion Failed: Operations Dashboard KPI should be labeled BLOCKING OCCURRENCES');
+  }
+  if (!dashDialogText.includes('An entity may appear in more than one scene')) {
+    throw new Error('Assertion Failed: Operations Dashboard must include the count relationship explanation banner');
+  }
+  if (!dashDialogText.includes('Why this blocks shooting')) {
+    throw new Error('Assertion Failed: Operations Dashboard must include the "Why this blocks shooting" callout');
   }
   if (dashDialogText.includes('CLEARANCE BLOCKERS')) {
     throw new Error('Assertion Failed: Operations Dashboard KPI must not use CLEARANCE BLOCKERS (reserved for entity status)');

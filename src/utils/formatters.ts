@@ -9,10 +9,10 @@ export function pluralize(count: number, singular: string, plural?: string): str
 }
 
 export function formatStatus(status: string | undefined | null): string {
-  if (!status) return 'Insufficient Evidence';
+  if (!status) return 'Insufficient evidence';
   switch (status.toUpperCase()) {
     case 'INSUFFICIENT_EVIDENCE':
-      return 'Insufficient Evidence';
+      return 'Insufficient evidence';
     case 'ACTION_REQUIRED':
       return 'Action Required';
     case 'REVIEW_RECOMMENDED':

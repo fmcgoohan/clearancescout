@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatStatus } from '../utils/formatters.js';
 
 export interface ClearanceCitation {
   id: string;
@@ -80,10 +81,6 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
   const getBadgeClass = (status: string) => {
     return `badge badge-${status}`;
-  };
-
-  const formatStatus = (status: string) => {
-    return status.replace(/_/g, ' ');
   };
 
   const getProvenanceBadge = (prov?: string) => {

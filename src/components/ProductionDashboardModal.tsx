@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
 import { pluralize, formatStatus, formatCategory } from '../utils/formatters.js';
+import { TERMINOLOGY } from '../constants/terminology.js';
 
 export interface ProductionDashboardKPIs {
   totalScenes: number;
@@ -253,7 +254,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                   </div>
                 </div>
 
-                {/* Shoot Blockers */}
+                {/* Blocking Occurrences */}
                 <div
                   style={{
                     background: 'rgba(237, 135, 150, 0.05)',
@@ -261,15 +262,16 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                     borderRadius: '8px',
                     padding: '14px',
                   }}
+                  title={TERMINOLOGY.BLOCKING_OCCURRENCES_TOOLTIP}
                 >
                   <div style={{ fontSize: '0.75rem', color: '#ed8796', textTransform: 'uppercase', fontWeight: 600 }}>
-                    Shoot Blockers
+                    {TERMINOLOGY.BLOCKING_OCCURRENCES_LABEL}
                   </div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#ed8796', marginTop: '4px' }}>
                     {data.kpis.criticalBlockersCount}
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Unresolved Scene Occurrences
+                    {TERMINOLOGY.BLOCKING_OCCURRENCES_SUBTITLE}
                   </div>
                 </div>
 
@@ -321,9 +323,10 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                     borderRadius: '8px',
                     padding: '14px',
                   }}
+                  title={TERMINOLOGY.TASKS_TOOLTIP}
                 >
                   <div style={{ fontSize: '0.75rem', color: '#c6a0f6', textTransform: 'uppercase', fontWeight: 600 }}>
-                    Department Tasks
+                    {TERMINOLOGY.TASKS_LABEL}
                   </div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#c6a0f6', marginTop: '4px' }}>
                     {data.kpis.pendingActionsCount}
@@ -332,6 +335,26 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                     Art: {data.departmentActionsSummary.ART_DEPT} | Legal: {data.departmentActionsSummary.LEGAL_COUNSEL}
                   </div>
                 </div>
+              </div>
+
+              {/* Multi-Occurrence Relationship Explanation Banner */}
+              <div
+                style={{
+                  background: 'rgba(56, 189, 248, 0.05)',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  borderRadius: '6px',
+                  padding: '8px 12px',
+                  fontSize: '0.75rem',
+                  color: '#cbd5e1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <span style={{ fontSize: '0.9rem' }}>ℹ️</span>
+                <span>
+                  <strong>Count Relationship:</strong> {TERMINOLOGY.COUNT_RELATIONSHIP_EXPLANATION}
+                </span>
               </div>
 
               {/* Scene Readiness Distribution */}
@@ -413,6 +436,22 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Resolve via direct mitigation actions
                   </span>
+                </div>
+
+                {/* Why This Blocks Shooting Callout */}
+                <div
+                  style={{
+                    background: 'rgba(237, 135, 150, 0.08)',
+                    border: '1px solid rgba(237, 135, 150, 0.3)',
+                    borderRadius: '6px',
+                    padding: '10px 14px',
+                    fontSize: '0.75rem',
+                    color: '#ed8796',
+                    marginBottom: '14px',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {TERMINOLOGY.WHY_SCENE_BLOCKS_SHOOTING}
                 </div>
 
                 {data.shootBlockers.length === 0 ? (

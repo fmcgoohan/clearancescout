@@ -98,7 +98,7 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
     expect(pluralize(7, 'Department Task')).toBe('7 Department Tasks');
     expect(pluralize(7, 'clearance entity', 'clearance entities')).toBe('7 clearance entities');
 
-    expect(formatStatus('INSUFFICIENT_EVIDENCE')).toBe('Insufficient Evidence');
+    expect(formatStatus('INSUFFICIENT_EVIDENCE')).toBe('Insufficient evidence');
     expect(formatStatus('ACTION_REQUIRED')).toBe('Action Required');
     expect(formatStatus('REVIEW_RECOMMENDED')).toBe('Review Recommended');
     expect(formatStatus('NO_ISSUE_SURFACED')).toBe('Cleared');
@@ -313,5 +313,47 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
       expect(syncedSnapshot.scenes.length).toBe(3);
       expect(syncedSnapshot.actionsSummary.openActions).toBe(7);
     });
+  });
+
+  it('proves EntityRegistryTable displays 1-2 primary actions and stores secondary actions in an accessible overflow dropdown', async () => {
+    const { getByLabelText, getByRole, queryByRole } = render(
+      React.createElement(WorkspacePage, {
+        projectId: 'proj-sample-qa',
+        onEvaluateClearance: () => {},
+        onGenerateReplacement: () => {},
+        onOpenCounselReview: () => {},
+        isEvaluating: false,
+        refreshTrigger: 0,
+        executionMode: 'CLOUD_MODE',
+      })
+    );
+
+    // 1. Wait for entities to render
+    await waitFor(() => {
+      expect(getByLabelText('View occurrences for Elena Vance')).toBeDefined();
+    });
+
+    // 2. Primary actions are directly visible
+    expect(getByLabelText('View occurrences for Elena Vance')).toBeDefined();
+
+    // 3. Secondary menu is initially closed
+    expect(queryByRole('menu')).toBeNull();
+
+    // 4. Clicking overflow trigger '⋯' opens accessible menu with secondary actions
+    const overflowTrigger = getByLabelText('More actions for Elena Vance');
+    expect(overflowTrigger).toBeDefined();
+    fireEvent.click(overflowTrigger);
+
+    const menu = getByRole('menu');
+    expect(menu).toBeDefined();
+    expect(menu.textContent).toContain('Edit Details');
+    expect(menu.textContent).toContain('Contractual Rights');
+    expect(menu.textContent).toContain('Attach Placeholder');
+    expect(menu.textContent).toContain('Counsel Review & Override');
+    expect(menu.textContent).toContain('Delete Item');
+
+    // 5. Pressing Escape closes the overflow menu
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+    expect(queryByRole('menu')).toBeNull();
   });
 });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
 import { pluralize, formatStatus, formatDepartment, formatPriority } from '../utils/formatters.js';
+import { TERMINOLOGY } from '../constants/terminology.js';
 
 export interface ClearanceActionItem {
   id: string;
@@ -471,6 +472,11 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
                     {act.description}
                   </div>
+                  {TERMINOLOGY.DEPARTMENT_ROUTING_REASONS[act.targetDepartment] && (
+                    <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic', marginBottom: '4px' }}>
+                      ℹ️ {TERMINOLOGY.DEPARTMENT_ROUTING_REASONS[act.targetDepartment]}
+                    </div>
+                  )}
                   {act.resolutionTrigger && (
                     <div style={{ fontSize: '0.72rem', color: '#34d399', marginTop: '4px' }}>
                       Resolved via: {formatStatus(act.resolutionTrigger)}

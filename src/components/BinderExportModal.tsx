@@ -1,5 +1,6 @@
 import React from 'react';
 import { apiFetch } from '../utils/apiClient.js';
+import { formatStatus, formatCategory } from '../utils/formatters.js';
 
 export interface ProvenanceSummary {
   liveCount: number;
@@ -446,7 +447,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                             : '#f87171',
                       }}
                     >
-                      {s.status?.replace(/_/g, ' ')}
+                      {formatStatus(s.status)}
                     </span>
                   </div>
                 </div>
@@ -607,10 +608,10 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{ent.canonicalName}</span>
                     <span className="badge" style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.06)' }}>
-                      {ent.entityCategory}
+                      {formatCategory(ent.entityCategory)}
                     </span>
                     <span className={`badge badge-${ent.overallClearanceStatus}`} style={{ fontSize: '0.65rem' }}>
-                      {ent.overallClearanceStatus?.replace(/_/g, ' ')}
+                      {formatStatus(ent.overallClearanceStatus)}
                     </span>
                   </div>
                   <div className="no-print" style={{ display: 'flex', gap: '6px' }}>

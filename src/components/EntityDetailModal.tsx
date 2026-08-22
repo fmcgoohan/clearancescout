@@ -109,13 +109,13 @@ export function EntityDetailModal({
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'NO_ISSUE_SURFACED':
-        return { label: '✓ No Issue Surfaced', color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)' };
+        return { label: '✓ Cleared', color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)' };
       case 'REVIEW_RECOMMENDED':
         return { label: '⚠️ Review Recommended', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)' };
       case 'ACTION_REQUIRED':
         return { label: '⛔ Action Required', color: '#f87171', bg: 'rgba(248, 113, 113, 0.15)' };
       default:
-        return { label: '⏳ Insufficient Evidence', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)' };
+        return { label: '⏳ Insufficient evidence', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)' };
     }
   };
 

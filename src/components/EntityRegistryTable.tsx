@@ -130,6 +130,27 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
     }
   }, [selectedSceneId]);
 
+  const [openDropdownEntityId, setOpenDropdownEntityId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpenDropdownEntityId(null);
+      }
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement)?.closest('.action-overflow-container')) {
+        setOpenDropdownEntityId(null);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const filteredEntities = filterEntities(entities, filter, scenes);
   const pendingEntities = entities.filter(
     (e) => !e.overallClearanceStatus || e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE'
@@ -320,7 +341,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
           >
             {categories.map((cat) => (
               <option key={cat} value={cat}>
-                {cat.replace(/_/g, ' ')}
+                {cat === 'ALL' ? 'All Categories' : formatCategory(cat)}
               </option>
             ))}
           </select>
@@ -345,7 +366,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
           >
             {statuses.map((st) => (
               <option key={st} value={st}>
-                {st.replace(/_/g, ' ')}
+                {st === 'ALL' ? 'All Statuses' : formatStatus(st)}
               </option>
             ))}
           </select>
@@ -403,7 +424,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
             No entities match the active filters
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: '400px' }}>
-            Active criteria: Category: <strong>{filter.category.replace(/_/g, ' ')}</strong> • Status: <strong>{filter.status.replace(/_/g, ' ')}</strong> • Scene: <strong>{getSceneLabel(filter.sceneId)}</strong>
+            Active criteria: Category: <strong>{filter.category === 'ALL' ? 'All' : formatCategory(filter.category)}</strong> • Status: <strong>{filter.status === 'ALL' ? 'All' : formatStatus(filter.status)}</strong> • Scene: <strong>{getSceneLabel(filter.sceneId)}</strong>
           </div>
           <button
             className="btn-secondary touch-target"
@@ -564,36 +585,11 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                       )}
                     </td>
                     <td style={{ padding: '12px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                        {onEditItem && (
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center', position: 'relative' }} className="action-overflow-container">
+                        {/* Primary Action 1: Research / Compare / Ground */}
+                        {e.replacementCard && onOpenComparison ? (
                           <button
-                            className="btn-secondary"
-                            style={{ fontSize: '0.75rem', padding: '4px 6px' }}
-                            onClick={() => onEditItem(e)}
-                            disabled={isEvaluating || isItemInActiveBatch}
-                            title="Edit clearance item name, category, or context"
-                          >
-                            ✏️ Edit
-                          </button>
-                        )}
-                        {onDeleteItem && (
-                          <button
-                            className="btn-secondary"
-                            style={{ fontSize: '0.75rem', padding: '4px 6px', color: 'var(--danger-color)', borderColor: 'var(--danger-color)' }}
-                            onClick={() => {
-                              if (window.confirm(`Are you sure you want to remove "${e.canonicalName}" from the clearance registry?`)) {
-                                onDeleteItem(e.id);
-                              }
-                            }}
-                            disabled={isEvaluating || isItemInActiveBatch}
-                            title="Remove item from clearance registry"
-                          >
-                            🗑️
-                          </button>
-                        )}
-                        {e.replacementCard && onOpenComparison && (
-                          <button
-                            className="btn-secondary"
+                            className="btn-secondary touch-target"
                             style={{ fontSize: '0.75rem', padding: '4px 8px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
                             onClick={() => onOpenComparison(e.id)}
                             disabled={isItemInActiveBatch}
@@ -601,10 +597,9 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                           >
                             🔍 Compare
                           </button>
-                        )}
-                        {e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE' ? (
+                        ) : e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE' ? (
                           <button
-                            className="btn-secondary"
+                            className="btn-secondary touch-target"
                             style={{ fontSize: '0.75rem', padding: '4px 8px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
                             onClick={() => {
                               if (onRetryResearch) {
@@ -620,67 +615,230 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                           </button>
                         ) : (
                           <button
-                            className="btn-secondary"
+                            className="btn-secondary touch-target"
                             style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                             onClick={() => onEvaluateClearance(e.id)}
                             disabled={isEvaluating || isItemInActiveBatch}
+                            title="Evaluate clearance research"
                           >
                             {isEvaluating || isItemInActiveBatch ? 'Researching...' : '🔍 Ground'}
                           </button>
                         )}
-                        {onOpenRightsModal && (
-                          <button
-                            className="btn-secondary"
-                            style={{ fontSize: '0.75rem', padding: '4px 6px', color: '#34d399', borderColor: 'rgba(52, 211, 153, 0.4)' }}
-                            onClick={() => onOpenRightsModal(e.id, e.canonicalName)}
-                            disabled={isEvaluating || isItemInActiveBatch}
-                            title="Manage contractual rights, licenses, and covenants"
-                          >
-                            📜 Rights
-                          </button>
-                        )}
-                        {onOpenPlaceholderModal && (
-                          <button
-                            className="btn-secondary"
-                            style={{ fontSize: '0.75rem', padding: '4px 6px', color: 'var(--accent-cyan)', borderColor: 'rgba(0, 240, 255, 0.4)' }}
-                            onClick={() => onOpenPlaceholderModal(e.id, e.canonicalName, e.entityCategory)}
-                            disabled={isEvaluating || isItemInActiveBatch}
-                            title="Manage generalized fictional replacement and production placeholder"
-                          >
-                            🎨 Placeholder
-                          </button>
-                        )}
+
+                        {/* Primary Action 2: Occurrences */}
                         {onViewOccurrences && (
                           <button
-                            className="btn-secondary"
-                            style={{ fontSize: '0.75rem', padding: '4px 6px' }}
+                            className="btn-secondary touch-target"
+                            style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                             onClick={() => onViewOccurrences(e.id)}
                             disabled={isEvaluating || isItemInActiveBatch}
-                            title="View scene occurrences and evaluation details"
+                            title={`View scene occurrences for ${e.canonicalName}`}
+                            aria-label={`View occurrences for ${e.canonicalName}`}
                           >
                             🎬 Occurrences
                           </button>
                         )}
-                        {onOpenCounselReview && (
+
+                        {/* Overflow Dropdown Trigger for Secondary Actions */}
+                        <div style={{ position: 'relative' }}>
                           <button
-                            className="btn-secondary"
-                            style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                            onClick={() => onOpenCounselReview(e.id)}
-                            disabled={isItemInActiveBatch}
+                            className="btn-secondary touch-target"
+                            style={{
+                              fontSize: '0.85rem',
+                              padding: '4px 8px',
+                              background: openDropdownEntityId === e.id ? 'rgba(0, 240, 255, 0.15)' : undefined,
+                              borderColor: openDropdownEntityId === e.id ? 'var(--accent-cyan)' : undefined,
+                            }}
+                            onClick={() => setOpenDropdownEntityId(openDropdownEntityId === e.id ? null : e.id)}
+                            aria-label={`More actions for ${e.canonicalName}`}
+                            aria-haspopup="true"
+                            aria-expanded={openDropdownEntityId === e.id}
+                            title="More actions"
                           >
-                            ⚖️ Counsel Review
+                            ⋯
                           </button>
-                        )}
-                        {(e.overallClearanceStatus === 'ACTION_REQUIRED' || e.overallClearanceStatus === 'REVIEW_RECOMMENDED') && (
-                          <button
-                            className="btn-primary"
-                            style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                            onClick={() => onGenerateReplacement(e.id)}
-                            disabled={isItemInActiveBatch}
-                          >
-                            Generate Replacement
-                          </button>
-                        )}
+
+                          {openDropdownEntityId === e.id && (
+                            <div
+                              role="menu"
+                              aria-label={`Actions for ${e.canonicalName}`}
+                              style={{
+                                position: 'absolute',
+                                right: 0,
+                                top: 'calc(100% + 4px)',
+                                zIndex: 1000,
+                                background: 'var(--bg-secondary, #1e293b)',
+                                border: '1px solid var(--border-color, #334155)',
+                                borderRadius: '6px',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                                padding: '4px',
+                                minWidth: '190px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px',
+                              }}
+                            >
+                              {onEditItem && (
+                                <button
+                                  role="menuitem"
+                                  style={{
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '6px 10px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--text-main)',
+                                    fontSize: '0.75rem',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                  }}
+                                  onClick={() => {
+                                    setOpenDropdownEntityId(null);
+                                    onEditItem(e);
+                                  }}
+                                >
+                                  ✏️ Edit Details
+                                </button>
+                              )}
+
+                              {onOpenRightsModal && (
+                                <button
+                                  role="menuitem"
+                                  style={{
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '6px 10px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#34d399',
+                                    fontSize: '0.75rem',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                  }}
+                                  onClick={() => {
+                                    setOpenDropdownEntityId(null);
+                                    onOpenRightsModal(e.id, e.canonicalName);
+                                  }}
+                                >
+                                  📜 Contractual Rights
+                                </button>
+                              )}
+
+                              {onOpenPlaceholderModal && (
+                                <button
+                                  role="menuitem"
+                                  style={{
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '6px 10px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--accent-cyan)',
+                                    fontSize: '0.75rem',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                  }}
+                                  onClick={() => {
+                                    setOpenDropdownEntityId(null);
+                                    onOpenPlaceholderModal(e.id, e.canonicalName, e.entityCategory);
+                                  }}
+                                >
+                                  🎨 Attach Placeholder
+                                </button>
+                              )}
+
+                              {onOpenCounselReview && (
+                                <button
+                                  role="menuitem"
+                                  style={{
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '6px 10px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--text-main)',
+                                    fontSize: '0.75rem',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                  }}
+                                  onClick={() => {
+                                    setOpenDropdownEntityId(null);
+                                    onOpenCounselReview(e.id);
+                                  }}
+                                >
+                                  ⚖️ Counsel Review & Override
+                                </button>
+                              )}
+
+                              {(e.overallClearanceStatus === 'ACTION_REQUIRED' || e.overallClearanceStatus === 'REVIEW_RECOMMENDED') && (
+                                <button
+                                  role="menuitem"
+                                  style={{
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '6px 10px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--accent-cyan)',
+                                    fontSize: '0.75rem',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                  }}
+                                  onClick={() => {
+                                    setOpenDropdownEntityId(null);
+                                    onGenerateReplacement(e.id);
+                                  }}
+                                >
+                                  ✨ Generate Fictional Replacement
+                                </button>
+                              )}
+
+                              {onDeleteItem && (
+                                <button
+                                  role="menuitem"
+                                  style={{
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '6px 10px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--danger-color, #ef4444)',
+                                    fontSize: '0.75rem',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                                  }}
+                                  onClick={() => {
+                                    setOpenDropdownEntityId(null);
+                                    if (window.confirm(`Are you sure you want to remove "${e.canonicalName}" from the clearance registry?`)) {
+                                      onDeleteItem(e.id);
+                                    }
+                                  }}
+                                >
+                                  🗑️ Delete Item
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>

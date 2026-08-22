@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
+import { formatStatus } from '../utils/formatters.js';
 
 export type ProvenanceType = 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE';
 
@@ -153,7 +154,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
           </h3>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
             <span className={`badge badge-${currentStatus}`}>
-              {currentStatus.replace(/_/g, ' ')}
+              {formatStatus(currentStatus)}
             </span>
             {isOverridden && (
               <span
