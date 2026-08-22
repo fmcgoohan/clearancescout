@@ -332,7 +332,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                     {data.kpis.pendingActionsCount}
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Art: {data.departmentActionsSummary.ART_DEPT} | Legal: {data.departmentActionsSummary.LEGAL_COUNSEL}
+                    Art: {data.departmentActionsSummary.ART_DEPT} | Legal: {data.departmentActionsSummary.LEGAL_COUNSEL} (Research Queue)
                   </div>
                 </div>
               </div>

@@ -20,7 +20,7 @@ export const TERMINOLOGY = {
 
   // 2. Operational Tasks (Work Queue Level)
   TASKS_LABEL: 'Department Tasks',
-  TASKS_TOOLTIP: 'Action items assigned to production departments (Legal, Art Dept, Locations) to resolve clearance obligations.',
+  TASKS_TOOLTIP: 'Action items assigned to production departments. Initial ungrounded items enter the Legal Counsel research queue; classified items route to Art Dept or Locations.',
 
   // 3. Scene Breakdown (Scene Occurrence Level)
   BLOCKING_OCCURRENCES_LABEL: 'Blocking Occurrences',

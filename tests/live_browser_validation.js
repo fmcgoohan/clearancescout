@@ -124,6 +124,12 @@ async function runLiveValidation() {
   if (!snapshotData.toast.includes('3 scenes processed · 7 entities registered · 7 department tasks created')) {
     throw new Error(`Assertion Failed: Toast message did not match expected counts. Got: "${snapshotData.toast}"`);
   }
+  if (!snapshotData.headerText.includes('7 Insufficient evidence')) {
+    throw new Error(`Assertion Failed: Header did not render standardized status copy "7 Insufficient evidence". Got: "${snapshotData.headerText}"`);
+  }
+  if (snapshotData.headerText.includes('Research Required') || snapshotData.headerText.includes('Clearance Blockers')) {
+    throw new Error(`Assertion Failed: Header contained un-standardized synonym copy: "${snapshotData.headerText}"`);
+  }
   if (snapshotData.tableRows.length !== 7) {
     throw new Error(`Assertion Failed: Expected 7 entity rows in registry, but found ${snapshotData.tableRows.length}`);
   }

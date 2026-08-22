@@ -747,7 +747,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           });
           setTimeout(() => {
             setIngestionToast(null);
-          }, 4500);
+          }, 11000);
         }}
       />
     </div>

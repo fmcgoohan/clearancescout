@@ -8,6 +8,7 @@ import { ProjectListModal } from './components/ProjectListModal';
 import { useTimelineSSE } from './hooks/useTimelineSSE';
 import { apiFetch, getDemoToken, setDemoToken } from './utils/apiClient';
 import { pluralize } from './utils/formatters';
+import { TERMINOLOGY } from './constants/terminology';
 
 interface ProjectSummary {
   entityCount: number;
@@ -541,7 +542,7 @@ export default function App() {
           {/* Landing Clearance Summary Indicator */}
           <div
             className="touch-target"
-            aria-label={`Project Summary: ${projectSummary.entityCount} Total Entities, ${projectSummary.clearedCount} Cleared, ${projectSummary.actionRequiredCount} Clearance Blockers, ${projectSummary.reviewRecommendedCount} Review Recommended`}
+            aria-label={`Project Summary: ${projectSummary.entityCount} Total Entities, ${projectSummary.clearedCount} ${TERMINOLOGY.STATUS_CLEARED}, ${projectSummary.actionRequiredCount} ${TERMINOLOGY.STATUS_ACTION_REQUIRED}, ${projectSummary.reviewRecommendedCount} ${TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}, ${projectSummary.researchRequiredCount || 0} ${TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}`}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -555,15 +556,15 @@ export default function App() {
             }}
           >
             <span style={{ color: 'var(--text-muted)' }}>📊 Summary:</span>
-            <span style={{ color: '#34d399', fontWeight: 600 }}>{projectSummary.clearedCount} Cleared</span>
+            <span style={{ color: '#34d399', fontWeight: 600 }}>{projectSummary.clearedCount} {TERMINOLOGY.STATUS_CLEARED}</span>
             {projectSummary.actionRequiredCount > 0 && (
-              <span style={{ color: '#f87171', fontWeight: 600 }}>{projectSummary.actionRequiredCount} Clearance Blockers</span>
+              <span style={{ color: '#f87171', fontWeight: 600 }}>{projectSummary.actionRequiredCount} {TERMINOLOGY.STATUS_ACTION_REQUIRED}</span>
             )}
             {projectSummary.reviewRecommendedCount > 0 && (
-              <span style={{ color: '#fbbf24', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} Review Recommended</span>
+              <span style={{ color: '#fbbf24', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} {TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}</span>
             )}
             {(projectSummary.researchRequiredCount || 0) > 0 && (
-              <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{projectSummary.researchRequiredCount} Research Required</span>
+              <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{projectSummary.researchRequiredCount} {TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}</span>
             )}
             <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'entity', 'entities')})</span>
           </div>

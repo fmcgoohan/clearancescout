@@ -18,12 +18,13 @@ describe('Contract: Passive Timeline Idempotency (Feature 021)', () => {
     const projectId = projRes.body.id;
 
     // 2. Ingest a script to populate baseline events
-    await request(app)
-      .post(`/api/projects/${projectId}/script/upload`)
+    const scriptRes = await request(app)
+      .post(`/api/projects/${projectId}/script`)
       .send({
         scriptText: 'INT. CAFE - DAY\nAlice drinks Summit Cola.',
         format: 'PLAINTEXT',
       });
+    expect(scriptRes.status).toBe(200);
 
     // 3. Query baseline timeline history
     const initialTimelineRes = await request(app).get(`/api/projects/${projectId}/timeline`);
