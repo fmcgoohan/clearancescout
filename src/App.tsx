@@ -10,6 +10,7 @@ import { useTimelineSSE } from './hooks/useTimelineSSE';
 import { apiFetch, getDemoToken, setDemoToken } from './utils/apiClient';
 import { pluralize } from './utils/formatters';
 import { TERMINOLOGY } from './constants/terminology';
+import { AlertTriangleIcon } from './components/icons/Icons';
 
 interface ProjectSummary {
   entityCount: number;
@@ -556,13 +557,13 @@ export default function App() {
               fontFamily: 'JetBrains Mono, monospace',
             }}
           >
-            <span style={{ color: 'var(--text-muted)' }}>📊 Summary:</span>
-            <span style={{ color: '#34d399', fontWeight: 600 }}>{projectSummary.clearedCount} {TERMINOLOGY.STATUS_CLEARED}</span>
+            <span style={{ color: 'var(--text-muted)' }}>Summary:</span>
+            <span style={{ color: 'var(--status-no-issue)', fontWeight: 600 }}>{projectSummary.clearedCount} {TERMINOLOGY.STATUS_CLEARED}</span>
             {projectSummary.actionRequiredCount > 0 && (
-              <span style={{ color: '#f87171', fontWeight: 600 }}>{projectSummary.actionRequiredCount} {TERMINOLOGY.STATUS_ACTION_REQUIRED}</span>
+              <span style={{ color: 'var(--status-action)', fontWeight: 600 }}>{projectSummary.actionRequiredCount} {TERMINOLOGY.STATUS_ACTION_REQUIRED}</span>
             )}
             {projectSummary.reviewRecommendedCount > 0 && (
-              <span style={{ color: '#fbbf24', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} {TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}</span>
+              <span style={{ color: 'var(--status-review)', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} {TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}</span>
             )}
             {(projectSummary.researchRequiredCount || 0) > 0 && (
               <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{projectSummary.researchRequiredCount} {TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}</span>
@@ -646,7 +647,7 @@ export default function App() {
             onClick={handleExportBinder}
             disabled={isExportingBinder}
           >
-            📋 {isExportingBinder ? 'Compiling...' : 'Export Clearance Binder'}
+            {isExportingBinder ? 'Compiling...' : 'Export Clearance Binder'}
           </button>
 
           {/* Timeline Action Trigger */}
@@ -677,7 +678,7 @@ export default function App() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>⚠️</span>
+            <AlertTriangleIcon size={16} />
             <span>{quotaError}</span>
           </div>
           <button
@@ -706,7 +707,7 @@ export default function App() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>⚠️</span>
+            <AlertTriangleIcon size={16} />
             <span>{authError}</span>
           </div>
           <button

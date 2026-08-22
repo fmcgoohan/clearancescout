@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
 import { formatStatus } from '../utils/formatters.js';
 import { useModalFocus } from '../hooks/useModalFocus.js';
+import {
+  SearchIcon,
+  CheckCircleIcon,
+  XIcon,
+} from './icons/Icons';
 
 export type ProvenanceType = 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE';
 
@@ -171,13 +176,17 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                   fontSize: '0.7rem',
                   padding: '2px 6px',
                   borderRadius: '4px',
-                  background: 'rgba(52, 211, 153, 0.15)',
-                  color: '#34d399',
-                  border: '1px solid rgba(52, 211, 153, 0.3)',
+                  background: 'var(--status-no-issue-bg)',
+                  color: 'var(--status-no-issue)',
+                  border: '1px solid var(--status-no-issue-border)',
                   fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
                 }}
               >
-                ⚖️ Legal Counsel Override
+                <CheckCircleIcon size={12} />
+                <span>Legal Counsel Override</span>
               </span>
             )}
           </div>
@@ -185,10 +194,11 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
         <button
           className="btn-secondary touch-target"
           aria-label="Close research evidence drawer"
-          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+          style={{ padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
           onClick={onClose}
         >
-          ✕ Close
+          <XIcon size={16} />
+          <span>Close</span>
         </button>
       </div>
 
@@ -216,19 +226,21 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
           role="tab"
           aria-selected={activeTab === 'PROVENANCE'}
           className={activeTab === 'PROVENANCE' ? 'btn-primary' : 'btn-secondary'}
-          style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+          style={{ padding: '6px 12px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}
           onClick={() => setActiveTab('PROVENANCE')}
         >
-          🔍 Research Evidence ({citations.length})
+          <SearchIcon size={14} />
+          <span>Research Evidence ({citations.length})</span>
         </button>
         <button
           role="tab"
           aria-selected={activeTab === 'OVERRIDE'}
           className={activeTab === 'OVERRIDE' ? 'btn-primary' : 'btn-secondary'}
-          style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+          style={{ padding: '6px 12px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}
           onClick={() => setActiveTab('OVERRIDE')}
         >
-          ⚖️ Counsel Decision Override {isOverridden && '✓'}
+          <CheckCircleIcon size={14} />
+          <span>Counsel Decision Override {isOverridden && '✓'}</span>
         </button>
       </div>
 
@@ -240,7 +252,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
           background: 'rgba(245, 158, 11, 0.1)',
           border: '1px solid rgba(245, 158, 11, 0.3)',
           fontSize: '0.72rem',
-          color: '#fbbf24',
+          color: 'var(--status-review)',
         }}
       >
         <strong>Legal Disclaimer:</strong> ClearanceScout provides research issue-spotting and workflow tracking. It does NOT render formal legal advice.
@@ -256,7 +268,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 background: 'rgba(248, 113, 113, 0.1)',
                 border: '1px solid rgba(248, 113, 113, 0.3)',
                 fontSize: '0.72rem',
-                color: '#f87171',
+                color: 'var(--status-action)',
               }}
             >
               <strong>⚠️ Cloud Fallback Active:</strong> Live Parallel search API was unavailable. Displaying deterministic benchmark fallback fixture.
@@ -308,10 +320,12 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 gap: '8px',
               }}
             >
-              <div style={{ fontSize: '1.2rem' }}>🔍</div>
+              <div style={{ color: 'var(--text-muted)' }}>
+                <SearchIcon size={20} />
+              </div>
               <div style={{ color: 'var(--text-main)', fontWeight: 600 }}>No Grounded Citations Recorded</div>
               <div style={{ fontSize: '0.75rem' }}>
-                No grounded research citations surfaced for this entity. Click '🔍 Ground' in the workspace registry to evaluate research.
+                No grounded research citations surfaced for this entity. Click 'Ground' in the workspace registry to evaluate research.
               </div>
             </div>
           )}

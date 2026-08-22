@@ -3,6 +3,11 @@ import { apiFetch } from '../utils/apiClient.js';
 import { pluralize, formatStatus, formatDepartment, formatPriority } from '../utils/formatters.js';
 import { TERMINOLOGY } from '../constants/terminology.js';
 import { useModalFocus } from '../hooks/useModalFocus.js';
+import {
+  FileTextIcon,
+  RefreshCwIcon,
+  XIcon,
+} from './icons/Icons';
 
 export interface ClearanceActionItem {
   id: string;
@@ -217,16 +222,18 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h2 id="action-modal-title" style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>
-              📋 Production Clearance Action & Notification Center
+            <h2 id="action-modal-title" style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FileTextIcon size={20} className="text-cyan-400" />
+              <span>Production Clearance Action & Notification Center</span>
             </h2>
             <span
               style={{
                 fontSize: '0.75rem',
                 padding: '2px 8px',
                 borderRadius: '10px',
-                background: openCount > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(52, 211, 153, 0.15)',
-                color: openCount > 0 ? '#f87171' : '#34d399',
+                background: openCount > 0 ? 'var(--status-action-bg)' : 'var(--status-no-issue-bg)',
+                color: openCount > 0 ? 'var(--status-action)' : 'var(--status-no-issue)',
+                border: openCount > 0 ? '1px solid var(--status-action-border)' : '1px solid var(--status-no-issue-border)',
                 fontWeight: 600,
               }}
             >
@@ -238,23 +245,16 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
               className="btn-secondary"
               onClick={handleSyncActions}
               disabled={isSyncing}
-              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+              style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              {isSyncing ? 'Syncing...' : '🔄 Re-Sync'}
+              <RefreshCwIcon size={14} />
+              <span>{isSyncing ? 'Syncing...' : 'Re-Sync'}</span>
             </button>
             <button
               onClick={onClose}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                fontSize: '1.4rem',
-                cursor: 'pointer',
-                lineHeight: 1,
-              }}
               aria-label="Close action modal"
             >
-              ×
+              <XIcon size={18} />
             </button>
           </div>
         </div>

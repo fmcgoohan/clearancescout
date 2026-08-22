@@ -12,6 +12,16 @@ import { ScriptUploadModal } from '../components/ScriptUploadModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
 import { apiFetch } from '../utils/apiClient.js';
 import { pluralize } from '../utils/formatters.js';
+import {
+  FilmIcon,
+  FileTextIcon,
+  LayersIcon,
+  CheckCircleIcon,
+  AlertTriangleIcon,
+  XCircleIcon,
+  HelpCircleIcon,
+  XIcon,
+} from '../components/icons/Icons';
 
 interface WorkspacePageProps {
   projectId: string;
@@ -415,7 +425,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               gap: '6px',
             }}
           >
-            📁 Upload Screenplay
+            <FilmIcon size={16} />
+            <span>Upload Screenplay</span>
           </button>
 
           <button
@@ -426,11 +437,12 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              border: openActionsCount > 0 ? '1px solid #f87171' : '1px solid var(--border-color)',
-              color: openActionsCount > 0 ? '#f87171' : 'var(--text-main)',
+              border: openActionsCount > 0 ? '1px solid var(--status-action)' : '1px solid var(--border-color)',
+              color: openActionsCount > 0 ? 'var(--status-action)' : 'var(--text-main)',
             }}
           >
-            📋 Department Tasks ({openActionsCount})
+            <FileTextIcon size={16} />
+            <span>Department Tasks ({openActionsCount})</span>
           </button>
 
           <button
@@ -445,7 +457,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               color: 'var(--accent-cyan)',
             }}
           >
-            📊 Operations Dashboard
+            <LayersIcon size={16} />
+            <span>Operations Dashboard</span>
           </button>
         </div>
       </div>
@@ -458,21 +471,21 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           className="glass-panel"
           style={{
             padding: '12px 20px',
-            background: 'rgba(52, 211, 153, 0.12)',
-            border: '1px solid rgba(52, 211, 153, 0.4)',
+            background: 'var(--status-no-issue-bg)',
+            border: '1px solid var(--status-no-issue-border)',
             borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '12px',
-            color: '#34d399',
+            color: 'var(--status-no-issue)',
             fontWeight: 600,
             fontSize: '0.85rem',
             boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.1rem' }}>✓</span>
+            <CheckCircleIcon size={18} />
             <span>{ingestionToast.message}</span>
           </div>
           <button
@@ -482,78 +495,131 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             style={{
               padding: '2px 8px',
               fontSize: '0.75rem',
-              borderColor: 'rgba(52, 211, 153, 0.4)',
-              color: '#34d399',
+              borderColor: 'var(--status-no-issue-border)',
+              color: 'var(--status-no-issue)',
               minHeight: '28px',
             }}
           >
-            ✕
+            <XIcon size={14} />
           </button>
         </div>
       )}
 
-      {/* Phase 5 Scene Shooting Readiness Banner */}
+      {/* Hero Readiness Index Card (Constitution v1.1.0 Article 4: The Hero Is the Answer) */}
       {scenes.length > 0 && readinessSummary && (
         <div
-          className="glass-panel"
+          className="glass-panel hero-animate"
           style={{
-            padding: '14px 20px',
+            padding: '20px 24px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: '12px',
+            gap: '20px',
+            background: 'var(--bg-secondary)',
             borderLeft:
               readinessSummary.redScenesCount > 0
-                ? '4px solid #f87171'
+                ? '6px solid var(--status-action)'
                 : readinessSummary.workingClearScenesCount > 0
-                ? '4px solid #fbbf24'
-                : '4px solid #34d399',
+                ? '6px solid var(--status-review)'
+                : '6px solid var(--status-no-issue)',
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
-              🎬 Scene Shooting Readiness ({pluralize(readinessSummary?.totalScenes ?? scenes.length, 'Scene')}):
-            </span>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                padding: '3px 8px',
-                borderRadius: '6px',
-                background: 'rgba(52, 211, 153, 0.15)',
-                color: '#34d399',
-                fontWeight: 600,
-              }}
-            >
-              🟢 Final Clear: {readinessSummary.finalClearScenesCount}
-            </span>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                padding: '3px 8px',
-                borderRadius: '6px',
-                background: 'rgba(251, 191, 36, 0.15)',
-                color: '#fbbf24',
-                fontWeight: 600,
-              }}
-            >
-              🟡 Working Clear: {readinessSummary.workingClearScenesCount}
-            </span>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                padding: '3px 8px',
-                borderRadius: '6px',
-                background: 'rgba(239, 68, 68, 0.15)',
-                color: '#f87171',
-                fontWeight: 600,
-              }}
-            >
-              🔴 Red (Blocked): {readinessSummary.redScenesCount}
-            </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: 700 }}>
+              Film Production Readiness Metrics
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                {pluralize(readinessSummary?.totalScenes ?? scenes.length, 'Scene')} Total
+              </span>
+              <span
+                style={{
+                  fontSize: '0.8rem',
+                  padding: '4px 10px',
+                  borderRadius: '16px',
+                  background: 'var(--status-no-issue-bg)',
+                  color: 'var(--status-no-issue)',
+                  border: '1px solid var(--status-no-issue-border)',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <CheckCircleIcon size={14} />
+                <span>Final Clear: {readinessSummary.finalClearScenesCount}</span>
+              </span>
+              <span
+                style={{
+                  fontSize: '0.8rem',
+                  padding: '4px 10px',
+                  borderRadius: '16px',
+                  background: 'var(--status-review-bg)',
+                  color: 'var(--status-review)',
+                  border: '1px solid var(--status-review-border)',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <AlertTriangleIcon size={14} />
+                <span>Working Clear: {readinessSummary.workingClearScenesCount}</span>
+              </span>
+              <span
+                style={{
+                  fontSize: '0.8rem',
+                  padding: '4px 10px',
+                  borderRadius: '16px',
+                  background: 'var(--status-action-bg)',
+                  color: 'var(--status-action)',
+                  border: '1px solid var(--status-action-border)',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+                className={readinessSummary.redScenesCount > 0 ? 'pulse-block-signal' : ''}
+              >
+                <XCircleIcon size={14} />
+                <span>Red (Blocked): {readinessSummary.redScenesCount}</span>
+              </span>
+            </div>
           </div>
-          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-cyan)' }}>
-            Shooting Readiness Index: {readinessSummary.overallReadinessPercentage}%
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              background: 'rgba(255, 255, 255, 0.03)',
+              padding: '12px 20px',
+              borderRadius: '10px',
+              border: '1px solid var(--border-color)',
+            }}
+          >
+            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', fontWeight: 600 }}>
+              Shooting Readiness Index
+            </div>
+            <div
+              style={{
+                fontSize: '2.75rem',
+                fontWeight: 900,
+                lineHeight: 1,
+                color:
+                  readinessSummary.overallReadinessPercentage === 100
+                    ? 'var(--status-no-issue)'
+                    : readinessSummary.redScenesCount > 0
+                    ? 'var(--status-action)'
+                    : 'var(--status-review)',
+                marginTop: '4px',
+              }}
+            >
+              {readinessSummary.overallReadinessPercentage}%
+            </div>
           </div>
         </div>
       )}

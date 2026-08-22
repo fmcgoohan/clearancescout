@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { BatchResearchProgress } from '../hooks/useBatchResearch.js';
 import { pluralize, formatStatus, formatCategory } from '../utils/formatters.js';
+import {
+  SearchIcon,
+  RefreshCwIcon,
+  CheckCircleIcon,
+  AlertTriangleIcon,
+  XCircleIcon,
+  HelpCircleIcon,
+  ChevronRightIcon,
+} from './icons/Icons';
 
 export type ClearanceStatusType = 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
 
@@ -220,9 +229,12 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                   padding: '3px 8px',
                   borderColor: 'var(--accent-cyan)',
                   color: 'var(--accent-cyan)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
                 }}
               >
-                ➕ Add Item
+                <span>Add Item</span>
               </button>
             )}
             {onEvaluateBatch && (
@@ -240,6 +252,9 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                   borderColor: pendingEntities.length > 0 ? 'var(--accent-cyan)' : 'var(--border-color)',
                   color: pendingEntities.length > 0 ? 'var(--accent-cyan)' : 'var(--text-muted)',
                   cursor: pendingEntities.length === 0 || batchProgress?.isActive ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
                 title={
                   pendingEntities.length === 0
@@ -247,13 +262,16 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                     : `Run clearance research on ${pendingEntities.length} pending entities`
                 }
               >
-                {batchProgress?.isActive
-                  ? `⏳ Evaluating (${batchProgress.completed}/${batchProgress.total})...`
-                  : `🔍 Research All Pending (${pendingEntities.length})`}
+                <SearchIcon size={14} />
+                <span>
+                  {batchProgress?.isActive
+                    ? `Evaluating (${batchProgress.completed}/${batchProgress.total})...`
+                    : `Research All Pending (${pendingEntities.length})`}
+                </span>
               </button>
             )}
           </div>
-          <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Showing {filteredEntities.length} of {pluralize(entities.length, 'entity', 'entities')}
           </span>
         </div>
@@ -266,11 +284,15 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
             style={{
               fontSize: '0.75rem',
               padding: '4px 10px',
-              borderColor: 'rgba(255,255,255,0.2)',
+              borderColor: 'var(--border-bright)',
               color: 'var(--text-muted)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
             }}
           >
-            🔄 Clear Filters
+            <RefreshCwIcon size={12} />
+            <span>Clear Filters</span>
           </button>
         )}
       </div>
@@ -419,7 +441,9 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
             gap: '12px',
           }}
         >
-          <div style={{ fontSize: '1.5rem' }}>🔍</div>
+          <div style={{ color: 'var(--text-muted)' }}>
+            <SearchIcon size={24} />
+          </div>
           <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: 500 }}>
             No entities match the active filters
           </div>
@@ -595,7 +619,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             disabled={isItemInActiveBatch}
                             title="View side-by-side original and fictional replacement comparison"
                           >
-                            🔍 Compare
+                            Compare
                           </button>
                         ) : e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE' ? (
                           <button
@@ -611,7 +635,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             disabled={isEvaluating || isItemInActiveBatch}
                             title="Retry clearance research for this item"
                           >
-                            {isEvaluating || isItemInActiveBatch ? 'Retrying...' : '🔁 Retry Research'}
+                            {isEvaluating || isItemInActiveBatch ? 'Retrying...' : 'Retry Research'}
                           </button>
                         ) : (
                           <button
@@ -621,7 +645,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             disabled={isEvaluating || isItemInActiveBatch}
                             title="Evaluate clearance research"
                           >
-                            {isEvaluating || isItemInActiveBatch ? 'Researching...' : '🔍 Ground'}
+                            {isEvaluating || isItemInActiveBatch ? 'Researching...' : 'Ground'}
                           </button>
                         )}
 

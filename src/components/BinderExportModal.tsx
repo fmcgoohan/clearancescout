@@ -265,7 +265,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                 style={{
                   fontSize: '0.85rem',
                   fontWeight: 600,
-                  color: isLive ? 'var(--accent-cyan)' : isFallback ? '#f87171' : isMixed ? '#c084fc' : '#fbbf24',
+                  color: isLive ? 'var(--accent-cyan)' : isFallback ? 'var(--status-action)' : isMixed ? 'var(--status-insufficient)' : 'var(--status-review)',
                 }}
               >
                 {isLive
@@ -301,7 +301,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                 : isMixed
                 ? 'rgba(168, 85, 247, 0.2)'
                 : 'rgba(251, 191, 36, 0.2)',
-              color: isLive ? 'var(--accent-cyan)' : isFallback ? '#f87171' : isMixed ? '#c084fc' : '#fbbf24',
+              color: isLive ? 'var(--accent-cyan)' : isFallback ? 'var(--status-action)' : isMixed ? 'var(--status-insufficient)' : 'var(--status-review)',
             }}
           >
             {dominant}
@@ -334,7 +334,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
               style={{ fontSize: '0.7rem', padding: '4px 8px' }}
               onClick={handleCopyDigest}
             >
-              {copiedDigest ? '✓ Copied' : '📋 Copy Checksum'}
+              {copiedDigest ? '✓ Copied' : 'Copy Checksum'}
             </button>
             <span style={{ fontSize: '1.2rem' }}>🔒</span>
           </div>
@@ -348,7 +348,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
             borderRadius: '8px',
             border: '1px solid rgba(245, 158, 11, 0.3)',
             fontSize: '0.75rem',
-            color: '#fbbf24',
+            color: 'var(--status-review)',
           }}
         >
           <strong>Legal Disclaimer:</strong> {binder.disclaimer}
@@ -373,20 +373,20 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
             </div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.7rem', color: '#fbbf24' }}>Working Clear</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fbbf24' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--status-review)' }}>Working Clear</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--status-review)' }}>
               {binder.projectSummary.workingClearScenes ?? 0}
             </div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.7rem', color: 'var(--status-action-required)' }}>Red / Blocked</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--status-action-required)' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--status-action)' }}>Red / Blocked</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--status-action)' }}>
               {binder.projectSummary.redScenes ?? binder.projectSummary.actionRequiredCount}
             </div>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.7rem', color: '#34d399' }}>Rights & Props</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#34d399' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--status-no-issue)' }}>Rights & Props</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--status-no-issue)' }}>
               {(binder.projectSummary.activeRightsCount || 0) + (binder.projectSummary.activePlaceholdersCount || 0)}
             </div>
           </div>
@@ -405,7 +405,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
               {tab === 'SCENES' && `🎬 Scene Schedule (${binder.sceneReadinessSchedule?.length || 0})`}
               {tab === 'RIGHTS' && `📜 Rights Catalog (${binder.rightsAgreements?.length || 0})`}
               {tab === 'PLACEHOLDERS' && `🎨 Placeholders (${binder.placeholders?.length || 0})`}
-              {tab === 'ACTIONS' && `📋 Unresolved Actions (${binder.unresolvedActions?.length || 0})`}
+              {tab === 'ACTIONS' && `Unresolved Actions (${binder.unresolvedActions?.length || 0})`}
             </button>
           ))}
         </div>
@@ -640,7 +640,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                           )
                         }
                       >
-                        🔍 View Evidence
+                        View Evidence
                       </button>
                     )}
                     {onJumpToTimeline && (
@@ -705,7 +705,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                             )
                           }
                         >
-                          🔍 View Evidence
+                          View Evidence
                         </button>
                       )}
                       {onJumpToTimeline && (
@@ -751,7 +751,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                             )
                           }
                         >
-                          🔍 View Evidence
+                          View Evidence
                         </button>
                       )}
                       {onJumpToTimeline && (

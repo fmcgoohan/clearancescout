@@ -1,6 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
 import { useModalFocus } from '../hooks/useModalFocus.js';
+import {
+  FileTextIcon,
+  UploadIcon,
+  AlertTriangleIcon,
+  CheckCircleIcon,
+  XIcon,
+} from './icons/Icons';
 
 interface ScriptUploadModalProps {
   projectId: string;
@@ -341,19 +348,19 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   const getPhaseDescription = () => {
     switch (uploadPhase) {
       case 'UPLOADING':
-        return `📤 Receiving screenplay payload (${elapsedSeconds}s)...`;
+        return `Receiving screenplay payload (${elapsedSeconds}s)...`;
       case 'PARSING':
-        return `📄 Segmenting scenes and sluglines (${elapsedSeconds}s)...`;
+        return `Segmenting scenes and sluglines (${elapsedSeconds}s)...`;
       case 'EXTRACTING':
-        return `🔍 Identifying candidate clearance entities (${elapsedSeconds}s)...`;
+        return `Identifying candidate clearance entities (${elapsedSeconds}s)...`;
       case 'RECONCILING':
-        return `💾 Persisting active canonical registry snapshot (${elapsedSeconds}s)...`;
+        return `Persisting active canonical registry snapshot (${elapsedSeconds}s)...`;
       case 'SYNCING':
-        return `🔄 Syncing project workspace from active snapshot (${elapsedSeconds}s)...`;
+        return `Syncing project workspace from active snapshot (${elapsedSeconds}s)...`;
       case 'COMPLETE':
-        return `✓ Screenplay ingestion complete (${elapsedSeconds}s)!`;
+        return `Screenplay ingestion complete (${elapsedSeconds}s)!`;
       case 'FAILED':
-        return `⚠️ Ingestion failed`;
+        return `Ingestion failed`;
       default:
         return 'Ready to ingest screenplay';
     }
@@ -442,10 +449,10 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.2rem',
+                color: 'var(--accent-cyan)',
               }}
             >
-              📄
+              <FileTextIcon size={18} />
             </div>
             <div>
               <h3 id="upload-modal-title" style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
@@ -464,7 +471,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
             className="btn-secondary touch-target"
             style={{ padding: '6px 12px', fontSize: '0.85rem' }}
           >
-            ✕
+            <XIcon size={16} />
           </button>
         </div>
 
@@ -491,9 +498,13 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               color: activeTab === 'FILE' ? 'var(--accent-cyan)' : 'var(--text-muted)',
               cursor: isUploading ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            📁 Upload File (.fountain, .txt, .pdf)
+            <UploadIcon size={14} />
+            <span>Upload File (.fountain, .txt, .pdf)</span>
           </button>
           <button
             type="button"
@@ -509,9 +520,13 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               color: activeTab === 'PASTE' ? 'var(--accent-cyan)' : 'var(--text-muted)',
               cursor: isUploading ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
           >
-            ✍️ Paste Screenplay Text
+            <FileTextIcon size={14} />
+            <span>Paste Screenplay Text</span>
           </button>
           <button
             type="button"
@@ -847,9 +862,9 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                 onClick={handleCancelUpload}
                 aria-label="Cancel upload in progress"
                 className="btn-secondary touch-target"
-                style={{ fontSize: '0.8rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                style={{ fontSize: '0.8rem', color: 'var(--status-action)', borderColor: 'var(--status-action-border)' }}
               >
-                ⏹ Cancel Upload
+                Cancel Upload
               </button>
             )}
           </div>
@@ -875,11 +890,11 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               }}
             >
               {isUploading ? (
-                <span>⏳ Ingesting Screenplay ({elapsedSeconds}s)...</span>
+                <span>Ingesting Screenplay ({elapsedSeconds}s)...</span>
               ) : activeTab === 'DEMO' ? (
-                <span>🎭 Load Bundled Demo Screenplay</span>
+                <span>Load Bundled Demo Screenplay</span>
               ) : (
-                <span>📤 Upload & Ingest Draft</span>
+                <span>Upload & Ingest Draft</span>
               )}
             </button>
           </div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useBodyScrollLock } from './useBodyScrollLock';
 
 export interface UseModalFocusOptions {
   isOpen: boolean;
@@ -54,6 +55,9 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
 }: UseModalFocusOptions) {
   const containerRef = useRef<T>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
+  // Automatically lock body scroll when open (Article 7 Defect Law)
+  useBodyScrollLock(isOpen);
 
   // 1. Manage initial focus and remember trigger element
   useEffect(() => {

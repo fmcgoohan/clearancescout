@@ -41,10 +41,10 @@ describe('Accessible Responsive Workspace Contract Tests (Feature 014)', () => {
 
   it('FR-005: Status badge colors meet WCAG AA high-contrast requirements', () => {
     const css = fs.readFileSync(indexCssPath, 'utf-8');
-    expect(css).toContain('--status-no-issue: #34d399');
-    expect(css).toContain('--status-review: #fbbf24');
-    expect(css).toContain('--status-action: #f87171');
-    expect(css).toContain('--status-insufficient: #a78bfa');
+    expect(css).toContain('--status-no-issue: hsl(142');
+    expect(css).toContain('--status-review: hsl(38');
+    expect(css).toContain('--status-action: hsl(354');
+    expect(css).toContain('--status-insufficient: hsl(263');
   });
 
   it('FR-006 & FR-007: index.css includes mobile media queries below 768px', () => {

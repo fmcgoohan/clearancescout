@@ -1,6 +1,11 @@
 import React from 'react';
 import { CanonicalEntity } from './EntityRegistryTable';
 import { pluralize } from '../utils/formatters.js';
+import {
+  CheckCircleIcon,
+  AlertTriangleIcon,
+  XCircleIcon,
+} from './icons/Icons';
 
 export interface Scene {
   id: string;
@@ -228,15 +233,19 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
                       title={s.readinessDetails?.summaryText || 'Scene is 100% Cleared for Shooting'}
                       style={{
                         fontSize: '0.68rem',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        background: 'rgba(52, 211, 153, 0.15)',
-                        color: '#34d399',
-                        border: '1px solid rgba(52, 211, 153, 0.4)',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        background: 'var(--status-no-issue-bg)',
+                        color: 'var(--status-no-issue)',
+                        border: '1px solid var(--status-no-issue-border)',
                         fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
                       }}
                     >
-                      🟢 FINAL CLEAR
+                      <CheckCircleIcon size={12} />
+                      <span>FINAL CLEAR</span>
                     </span>
                   )}
                   {s.readinessStatus === 'WORKING_CLEAR' && (
@@ -244,15 +253,19 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
                       title={s.readinessDetails?.summaryText || 'Scene is Working Clear with interim assets'}
                       style={{
                         fontSize: '0.68rem',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        background: 'rgba(251, 191, 36, 0.15)',
-                        color: '#fbbf24',
-                        border: '1px solid rgba(251, 191, 36, 0.4)',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        background: 'var(--status-review-bg)',
+                        color: 'var(--status-review)',
+                        border: '1px solid var(--status-review-border)',
                         fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
                       }}
                     >
-                      🟡 WORKING CLEAR
+                      <AlertTriangleIcon size={12} />
+                      <span>WORKING CLEAR</span>
                     </span>
                   )}
                   {s.readinessStatus === 'RED' && (
@@ -260,15 +273,20 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
                       title={s.readinessDetails?.blockingRationale || s.readinessDetails?.summaryText || 'Clearance Blocker: Cannot Shoot As Written'}
                       style={{
                         fontSize: '0.68rem',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        background: 'rgba(239, 68, 68, 0.15)',
-                        color: '#f87171',
-                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        background: 'var(--status-action-bg)',
+                        color: 'var(--status-action)',
+                        border: '1px solid var(--status-action-border)',
                         fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
                       }}
+                      className="pulse-block-signal"
                     >
-                      🔴 RED
+                      <XCircleIcon size={12} />
+                      <span>BLOCKS SHOOTING</span>
                     </span>
                   )}
                 </div>

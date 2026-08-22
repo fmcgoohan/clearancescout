@@ -3,6 +3,14 @@ import { apiFetch } from '../utils/apiClient.js';
 import { pluralize, formatStatus, formatCategory, formatExplanationText } from '../utils/formatters.js';
 import { TERMINOLOGY } from '../constants/terminology.js';
 import { useModalFocus } from '../hooks/useModalFocus.js';
+import {
+  AlertTriangleIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  LayersIcon,
+  XIcon,
+  ChevronRightIcon,
+} from './icons/Icons';
 
 export interface ProductionDashboardKPIs {
   totalScenes: number;
@@ -199,10 +207,11 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
           }}
         >
           <div>
-            <h2 id="dashboard-modal-title" style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-main, #cad3f5)' }}>
-              📊 Production Clearance Operations Dashboard
+            <h2 id="dashboard-modal-title" style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <LayersIcon size={20} className="text-cyan-400" />
+              <span>Production Clearance Operations Dashboard</span>
             </h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#cbd5e1' }}>
+            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               Executive cockpit: Shooting readiness, critical blockers, rights expirations, and active department work queues.
             </p>
           </div>
@@ -210,17 +219,18 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
             <button
               className="btn-secondary touch-target"
               onClick={fetchDashboard}
-              style={{ padding: '6px 12px', fontSize: '0.8rem', minHeight: '34px' }}
+              style={{ padding: '6px 12px', fontSize: '0.8rem', minHeight: '34px', display: 'flex', alignItems: 'center', gap: '6px' }}
               disabled={isLoading}
             >
-              🔄 Refresh
+              <span>Refresh</span>
             </button>
             <button
               className="btn-secondary touch-target"
               onClick={onClose}
-              style={{ padding: '6px 12px', fontSize: '0.8rem', minHeight: '34px' }}
+              style={{ padding: '6px 12px', fontSize: '0.8rem', minHeight: '34px', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              ✕ Close
+              <XIcon size={14} />
+              <span>Close</span>
             </button>
           </div>
         </div>

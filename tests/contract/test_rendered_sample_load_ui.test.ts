@@ -249,7 +249,7 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
     });
 
     // 2. Department Tasks indicator is rendered with exact 2 count
-    expect(getByText('📋 Department Tasks (2)')).toBeDefined();
+    expect(getByText(/Department Tasks \(2\)/)).toBeDefined();
 
     // 3. Stale / legacy entities are strictly absent from rendered table
     expect(queryByText('Bob Hope')).toBeNull();
