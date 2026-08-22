@@ -128,6 +128,7 @@ describe('Contract & Invariants: Ingestion Completion Barrier & Query Synchroniz
 
     expect(projectRes.status).toBe(200);
     expect(projectRes.body.entityCount).toBe(7);
+    expect(projectRes.body.researchRequiredCount).toBe(7);
   });
 
   it('proves GET /api/projects/:id/actions, GET /snapshot, and GET /scenes/readiness are strictly side-effect free', async () => {
@@ -160,6 +161,8 @@ describe('Contract & Invariants: Ingestion Completion Barrier & Query Synchroniz
       expect(snapRes.status).toBe(200);
       const readRes = await request(app).get(`/api/projects/${projectId}/scenes/readiness`);
       expect(readRes.status).toBe(200);
+      const dashRes = await request(app).get(`/api/projects/${projectId}/dashboard`);
+      expect(dashRes.status).toBe(200);
     }
 
     const afterEntities = await entityRepo.getEntitiesByProject(projectId);

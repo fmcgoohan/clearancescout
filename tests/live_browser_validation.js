@@ -178,6 +178,10 @@ async function runLiveValidation() {
   console.log('Action Center Fully Loaded. Badge:', actionModalData.badgeText);
   console.log('Action Center Rendered Action Items Count:', actionModalData.actionCardsCount);
   console.log('Action Center Content Snippet:', actionModalData.text.slice(0, 400));
+
+  if (!actionModalData.badgeText.includes('Department Task') && !actionModalData.text.includes('Department Task')) {
+    throw new Error(`Assertion Failed: Action Center header did not use Department Task terminology. Got badge: "${actionModalData.badgeText}"`);
+  }
   
   // Close Action Center
   await page.locator('[role="dialog"] button[aria-label*="lose" i], [role="dialog"] button:has-text("×"), [role="dialog"] button:has-text("✕")').first().click();
@@ -206,6 +210,13 @@ async function runLiveValidation() {
 
   const dashDialogText = await page.evaluate(() => document.querySelector('[role="dialog"]')?.innerText || '');
   console.log('Operations Dashboard Loaded KPIs & Content:\n', dashDialogText.slice(0, 500));
+
+  if (!dashDialogText.toUpperCase().includes('SHOOT BLOCKERS')) {
+    throw new Error('Assertion Failed: Operations Dashboard KPI should be labeled SHOOT BLOCKERS');
+  }
+  if (dashDialogText.includes('CLEARANCE BLOCKERS')) {
+    throw new Error('Assertion Failed: Operations Dashboard KPI must not use CLEARANCE BLOCKERS (reserved for entity status)');
+  }
 
   // Close Dashboard
   await page.locator('[role="dialog"] button[aria-label*="lose" i], [role="dialog"] button:has-text("×"), [role="dialog"] button:has-text("✕")').first().click();

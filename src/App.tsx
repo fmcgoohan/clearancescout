@@ -9,22 +9,26 @@ import { useTimelineSSE } from './hooks/useTimelineSSE';
 import { apiFetch, getDemoToken, setDemoToken } from './utils/apiClient';
 import { pluralize } from './utils/formatters';
 
+interface ProjectSummary {
+  entityCount: number;
+  clearedCount: number;
+  actionRequiredCount: number;
+  reviewRecommendedCount: number;
+  researchRequiredCount?: number;
+}
+
 export default function App() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [executionMode, setExecutionMode] = useState<'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE'>('DEMO_MODE');
   const serverExecutionModeRef = useRef<'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE'>('DEMO_MODE');
   const [projectTitle, setProjectTitle] = useState('Production Project Workspace');
   const [projectType, setProjectType] = useState<'Movie' | 'TV Show' | 'Commercial'>('Movie');
-  const [projectSummary, setProjectSummary] = useState<{
-    entityCount: number;
-    clearedCount: number;
-    actionRequiredCount: number;
-    reviewRecommendedCount: number;
-  }>({
+  const [projectSummary, setProjectSummary] = useState<ProjectSummary>({
     entityCount: 0,
     clearedCount: 0,
     actionRequiredCount: 0,
     reviewRecommendedCount: 0,
+    researchRequiredCount: 0,
   });
 
   // Project List Modal State
@@ -191,6 +195,7 @@ export default function App() {
           clearedCount: data.clearedCount || 0,
           actionRequiredCount: data.actionRequiredCount || 0,
           reviewRecommendedCount: data.reviewRecommendedCount || 0,
+          researchRequiredCount: data.researchRequiredCount || 0,
         });
         if (data.liveQuotaLimit !== undefined) {
           setLiveQuota({
@@ -261,11 +266,13 @@ export default function App() {
       const clearedCount = entities.filter((e: any) => e.overallClearanceStatus === 'NO_ISSUE_SURFACED').length;
       const actionRequiredCount = entities.filter((e: any) => e.overallClearanceStatus === 'ACTION_REQUIRED').length;
       const reviewRecommendedCount = entities.filter((e: any) => e.overallClearanceStatus === 'REVIEW_RECOMMENDED').length;
+      const researchRequiredCount = entities.filter((e: any) => e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE').length;
       setProjectSummary({
         entityCount: entities.length,
         clearedCount,
         actionRequiredCount,
         reviewRecommendedCount,
+        researchRequiredCount,
       });
       return;
     }
@@ -278,6 +285,7 @@ export default function App() {
           clearedCount: data.clearedCount || 0,
           actionRequiredCount: data.actionRequiredCount || 0,
           reviewRecommendedCount: data.reviewRecommendedCount || 0,
+          researchRequiredCount: data.researchRequiredCount || 0,
         });
         if (data.liveQuotaLimit !== undefined) {
           setLiveQuota({
@@ -553,6 +561,9 @@ export default function App() {
             )}
             {projectSummary.reviewRecommendedCount > 0 && (
               <span style={{ color: '#fbbf24', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} Review Recommended</span>
+            )}
+            {(projectSummary.researchRequiredCount || 0) > 0 && (
+              <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{projectSummary.researchRequiredCount} Research Required</span>
             )}
             <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'entity', 'entities')})</span>
           </div>

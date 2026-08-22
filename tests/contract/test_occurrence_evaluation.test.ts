@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import app from '../../server/index.js';
 import { entityRepo } from '../../server/repositories/EntityRepo.js';
+import { sceneRepo } from '../../server/repositories/SceneRepo.js';
 
 describe('Contract: Occurrence-Level Evaluation & Canonical Roll-up (Feature 016 Phase 2)', () => {
   it('FR-002: evaluates occurrence with scene context and updates derived canonical status', async () => {
@@ -98,9 +99,20 @@ describe('Contract: Occurrence-Level Evaluation & Canonical Roll-up (Feature 016
       });
     const entityId = entityRes.body.id;
 
-    // Create occurrence with high risk defect
+    // 1. Create a scene for this project
+    const scene = await sceneRepo.createScene({
+      projectId,
+      sceneNumber: 1,
+      heading: 'INT. HAZARD LAB - NIGHT',
+      locationType: 'INT',
+      timeOfDay: 'NIGHT',
+      rawText: 'Volt Spark battery dangerous and toxic fault.',
+      characterActionSummary: 'Testing faulty battery',
+    });
+
+    // 2. Create occurrence with high risk defect
     const occ = await entityRepo.createOccurrence(projectId, {
-      sceneId: 'scene-danger',
+      sceneId: scene.id,
       canonicalEntityId: entityId,
       scriptLineNumber: 42,
       excerptText: 'Volt Spark battery dangerous and toxic fault.',
@@ -118,9 +130,9 @@ describe('Contract: Occurrence-Level Evaluation & Canonical Roll-up (Feature 016
       .post(`/api/projects/${projectId}/entities/${entityId}/override`)
       .send({
         overrideStatus: 'NO_ISSUE_SURFACED',
-        rationale: 'Written producer release obtained specifically for scene-danger.',
+        rationale: 'Written producer release obtained specifically for scene.',
         counselName: 'Jane Doe, Esq.',
-        sceneId: 'scene-danger',
+        sceneId: scene.id,
       });
     expect(overrideRes.status).toBe(200);
 

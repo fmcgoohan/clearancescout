@@ -253,7 +253,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                   </div>
                 </div>
 
-                {/* Critical Blockers */}
+                {/* Shoot Blockers */}
                 <div
                   style={{
                     background: 'rgba(237, 135, 150, 0.05)',
@@ -263,13 +263,13 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                   }}
                 >
                   <div style={{ fontSize: '0.75rem', color: '#ed8796', textTransform: 'uppercase', fontWeight: 600 }}>
-                    Clearance Blockers
+                    Shoot Blockers
                   </div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#ed8796', marginTop: '4px' }}>
                     {data.kpis.criticalBlockersCount}
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Require Immediate Mitigation
+                    Unresolved Scene Occurrences
                   </div>
                 </div>
 

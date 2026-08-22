@@ -93,7 +93,7 @@ export class DashboardEngine {
     }
 
     const [readinessSummary, entities, rights, placeholders, openActions] = await Promise.all([
-      sceneReadinessEngine.evaluateAllScenesReadiness(projectId),
+      sceneReadinessEngine.getProjectReadinessSummaryReadOnly(projectId),
       entityRepo.getEntitiesByProject(projectId),
       rightsRepo.getRightsByProject(projectId),
       placeholderRepo.getPlaceholdersByProject(projectId),

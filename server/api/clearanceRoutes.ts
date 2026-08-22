@@ -4,6 +4,7 @@ import { overrideRepo } from '../repositories/OverrideRepo.js';
 import { entityRepo, ClearanceStatus } from '../repositories/EntityRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { resolveEffectiveClearanceStatus } from '../workflows/effectiveStatusResolver.js';
+import { sceneReadinessEngine } from '../workflows/sceneReadinessEngine.js';
 
 export const clearanceRouter = Router();
 
@@ -170,6 +171,8 @@ clearanceRouter.post('/projects/:id/entities/:entityId/override', async (req: Re
       counselName: override.counselName,
       rationale: override.rationale,
     });
+
+    await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
 
     return res.json({
       success: true,

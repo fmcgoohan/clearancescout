@@ -7,6 +7,7 @@ import {
 import { entityRepo } from '../repositories/EntityRepo.js';
 import { actionNotificationRepo } from '../repositories/ActionNotificationRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
+import { sceneReadinessEngine } from '../workflows/sceneReadinessEngine.js';
 
 export const placeholderRouter = Router();
 
@@ -144,6 +145,8 @@ placeholderRouter.post('/projects/:id/placeholders', async (req: Request, res: R
       }
     );
 
+    await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
+
     return res.status(201).json(placeholder);
   } catch (err) {
     next(err);
@@ -183,6 +186,8 @@ placeholderRouter.patch('/projects/:id/placeholders/:placeholderId/tier', async 
       }
     );
 
+    await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
+
     return res.json(updated);
   } catch (err) {
     next(err);
@@ -197,6 +202,7 @@ placeholderRouter.delete('/projects/:id/placeholders/:placeholderId', async (req
     if (!success) {
       return res.status(404).json({ error: `Placeholder ${placeholderId} not found.` });
     }
+    await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
     return res.json({ success: true, id: placeholderId });
   } catch (err) {
     next(err);

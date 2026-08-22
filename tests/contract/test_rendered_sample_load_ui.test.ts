@@ -93,10 +93,9 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
 
   it('verifies shared pluralization and status enum formatting helpers', () => {
     expect(pluralize(1, 'Scene')).toBe('1 Scene');
-    expect(pluralize(3, 'Scene')).toBe('3 Scenes');
-    expect(pluralize(0, 'Open Action')).toBe('0 Open Actions');
-    expect(pluralize(1, 'Open Action')).toBe('1 Open Action');
-    expect(pluralize(2, 'Open Action')).toBe('2 Open Actions');
+    expect(pluralize(0, 'Department Task')).toBe('0 Department Tasks');
+    expect(pluralize(1, 'Department Task')).toBe('1 Department Task');
+    expect(pluralize(7, 'Department Task')).toBe('7 Department Tasks');
     expect(pluralize(7, 'clearance entity', 'clearance entities')).toBe('7 clearance entities');
 
     expect(formatStatus('INSUFFICIENT_EVIDENCE')).toBe('Insufficient Evidence');

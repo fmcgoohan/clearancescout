@@ -153,6 +153,10 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
 
   const openCount = actions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS').length;
   const unreadNotifsCount = notifications.filter((n) => !n.isRead).length;
+  const artCount = actions.filter((a) => (a.status === 'OPEN' || a.status === 'IN_PROGRESS') && a.targetDepartment === 'ART_DEPT').length;
+  const legalCount = actions.filter((a) => (a.status === 'OPEN' || a.status === 'IN_PROGRESS') && a.targetDepartment === 'LEGAL_COUNSEL').length;
+  const locCount = actions.filter((a) => (a.status === 'OPEN' || a.status === 'IN_PROGRESS') && a.targetDepartment === 'LOCATIONS').length;
+  const prodCount = actions.filter((a) => (a.status === 'OPEN' || a.status === 'IN_PROGRESS') && a.targetDepartment === 'PRODUCTION_MGMT').length;
 
   return (
     <div
@@ -217,7 +221,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                 fontWeight: 600,
               }}
             >
-              {pluralize(openCount, 'Open Action')}
+              {pluralize(openCount, 'Department Task')}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -261,11 +265,11 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
         >
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {[
-              { key: 'ALL', label: 'All Actions' },
-              { key: 'ART_DEPT', label: '🎨 Art Dept' },
-              { key: 'LEGAL_COUNSEL', label: '⚖️ Legal Counsel' },
-              { key: 'LOCATIONS', label: '📍 Locations' },
-              { key: 'PRODUCTION_MGMT', label: '🎬 Production' },
+              { key: 'ALL', label: `All Actions (${openCount})` },
+              { key: 'ART_DEPT', label: `🎨 Art Dept (${artCount})` },
+              { key: 'LEGAL_COUNSEL', label: `⚖️ Legal Counsel (${legalCount})` },
+              { key: 'LOCATIONS', label: `📍 Locations (${locCount})` },
+              { key: 'PRODUCTION_MGMT', label: `🎬 Production (${prodCount})` },
               { key: 'NOTIFICATIONS', label: `🔔 Alerts (${unreadNotifsCount})` },
             ].map((tab) => (
               <button

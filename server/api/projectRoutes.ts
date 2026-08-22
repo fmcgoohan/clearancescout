@@ -36,6 +36,7 @@ projectRouter.get('/', async (_req: Request, res: Response, next) => {
         const clearedCount = entities.filter((e) => e.overallClearanceStatus === 'NO_ISSUE_SURFACED').length;
         const actionRequiredCount = entities.filter((e) => e.overallClearanceStatus === 'ACTION_REQUIRED').length;
         const reviewRecommendedCount = entities.filter((e) => e.overallClearanceStatus === 'REVIEW_RECOMMENDED').length;
+        const researchRequiredCount = entities.filter((e) => e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE').length;
 
         return {
           ...proj,
@@ -46,6 +47,7 @@ projectRouter.get('/', async (_req: Request, res: Response, next) => {
           clearedCount,
           actionRequiredCount,
           reviewRecommendedCount,
+          researchRequiredCount,
         };
       })
     );
@@ -89,6 +91,7 @@ projectRouter.post('/', async (req: Request, res: Response, next) => {
       clearedCount: 0,
       actionRequiredCount: 0,
       reviewRecommendedCount: 0,
+      researchRequiredCount: 0,
     });
   } catch (err) {
     next(err);
@@ -111,6 +114,7 @@ projectRouter.get('/:id', async (req: Request, res: Response, next) => {
     const clearedCount = entities.filter((e) => e.overallClearanceStatus === 'NO_ISSUE_SURFACED').length;
     const actionRequiredCount = entities.filter((e) => e.overallClearanceStatus === 'ACTION_REQUIRED').length;
     const reviewRecommendedCount = entities.filter((e) => e.overallClearanceStatus === 'REVIEW_RECOMMENDED').length;
+    const researchRequiredCount = entities.filter((e) => e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE').length;
 
     return res.json({
       ...project,
@@ -121,6 +125,7 @@ projectRouter.get('/:id', async (req: Request, res: Response, next) => {
       clearedCount,
       actionRequiredCount,
       reviewRecommendedCount,
+      researchRequiredCount,
     });
   } catch (err) {
     next(err);

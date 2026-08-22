@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { rightsRepo, GrantType, TerritoryType, MediaWindowType, RightsStatus } from '../repositories/RightsRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
+import { sceneReadinessEngine } from '../workflows/sceneReadinessEngine.js';
 
 export const rightsRouter = Router();
 
@@ -115,6 +116,8 @@ rightsRouter.post('/projects/:id/rights', async (req: Request, res: Response, ne
         status: created.status,
       }
     );
+
+    await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
 
     return res.status(201).json(created);
   } catch (err) {
