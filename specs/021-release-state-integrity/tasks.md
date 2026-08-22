@@ -227,12 +227,23 @@
 
 ## Phase 16: Convergence (Operator-Facing Sync Polish & Transparent Status Breakdown)
 
-**Purpose**: Deliver remaining operator-facing sync polish: surface explicit `Research Required` status count in header summary for newly registered un-evaluated items (`INSUFFICIENT_EVIDENCE`), harmonize Action Center task badge with workspace toolbar `📋 Department Tasks (N)`, strengthen contract assertions, and execute end-to-end Playwright browser validation.
+**Purpose**: Deliver remaining operator-facing sync polish: surface explicit `Insufficient evidence` status count in header summary for newly registered un-evaluated items (`INSUFFICIENT_EVIDENCE`), harmonize Action Center task badge with workspace toolbar `📋 Department Tasks (N)`, strengthen contract assertions, and execute end-to-end Playwright browser validation.
 
-- [X] T079 [MEDIUM] Include `researchRequiredCount` in `ProjectRepo.ts`, `projectRoutes.ts`, `App.tsx`, and `WorkspacePage.tsx` so that `INSUFFICIENT_EVIDENCE` entities in `CLOUD_MODE` display as `N Research Required` in header summary alongside `Cleared`, `Clearance Blockers`, and `Review Recommended` per FR-012, FR-020 (partial)
-- [X] T080 [MEDIUM] Harmonize Action Center open task counter and tab counts in `ActionListModal.tsx` with workspace toolbar `📋 Department Tasks (N)` for zero-lag count agreement per FR-019, FR-020 (partial)
-- [X] T081 [HIGH] Strengthen automated contract test suites in `tests/contract/test_completion_barrier_sync.test.ts` and `tests/contract/test_rendered_sample_load_ui.test.ts` to assert truthful `Research Required` and `Department Tasks` metrics per SC-001..SC-008 (partial)
-- [X] T082 [HIGH] Execute complete Playwright browser validation against live Cloud Run deployment verifying SYNCING stage, 7 registered entities, Elena Vance, truthful toast counts, Action Center task coherence, 25s idle stability, and reload persistence per SC-001..SC-008 (missing)
+- [X] T079 [MEDIUM] Include `researchRequiredCount` in `ProjectRepo.ts`, `projectRoutes.ts`, `App.tsx`, and `WorkspacePage.tsx` so that `INSUFFICIENT_EVIDENCE` entities in `CLOUD_MODE` display as `N Insufficient evidence` in header summary alongside `Cleared`, `Action Required`, and `Review Recommended` per FR-012, FR-020
+- [X] T080 [MEDIUM] Harmonize Action Center open task counter and tab counts in `ActionListModal.tsx` with workspace toolbar `📋 Department Tasks (N)` for zero-lag count agreement per FR-019, FR-020
+- [X] T081 [HIGH] Strengthen automated contract test suites in `tests/contract/test_completion_barrier_sync.test.ts` and `tests/contract/test_rendered_sample_load_ui.test.ts` to assert truthful `Insufficient evidence` and `Department Tasks` metrics per SC-001..SC-008
+- [X] T082 [HIGH] Execute complete Playwright browser validation against live Cloud Run deployment verifying SYNCING stage, 7 registered entities, Elena Vance, truthful toast counts, Action Center task coherence, 25s idle stability, and reload persistence per SC-001..SC-008
+
+---
+
+## Phase 17: Convergence (Final Operator Terminology, Count Distinction, and Action Density Polish)
+
+**Purpose**: Eliminate terminology drift across Header, Registry, and Dashboard, document exact count semantics for 7 entities / 7 tasks / 8 blocking occurrences with operator-facing relationship copy, streamline table action density with an accessible overflow dropdown, extend toast duration to 11s, and validate in live Playwright browser.
+
+- [X] T083 [HIGH] Unify operator terminology model in `src/constants/terminology.ts`, `src/utils/formatters.ts`, `App.tsx`, `EntityRegistryTable.tsx`, and `ProductionDashboardModal.tsx` with zero synonym collisions (`Cleared`, `Action Required`, `Review Recommended`, `Insufficient evidence`, `Department Tasks`, `Blocking Occurrences`) per FR-019, FR-020
+- [X] T084 [MEDIUM] Implement explicit count distinction copy and relationship banner in `ProductionDashboardModal.tsx` and `ActionListModal.tsx` explaining why blocking occurrences (8) exceed entities requiring clearance (7) and detailing Legal Counsel initial research queues per FR-020
+- [X] T085 [HIGH] Streamline Registry action density in `EntityRegistryTable.tsx` keeping primary actions visible (`🔁 Retry Research` / `🎬 Occurrences`) and moving secondary actions into an accessible `⋯` overflow dropdown with full keyboard navigation and Escape dismissal per FR-016
+- [X] T086 [HIGH] Extend durable ingestion confirmation toast duration to 11s in `WorkspacePage.tsx` and execute complete live Playwright browser validation on Cloud Run revision `clearance-scout-00039-xqw` confirming zero terminology drift and stable reload persistence per SC-001..SC-008
 
 ---
 
