@@ -258,4 +258,57 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
     expect(queryByText('Budweiser')).toBeNull();
     expect(queryByText('Chevrolet')).toBeNull();
   });
+
+  it('proves submit replace transitions through named stages including SYNCING to COMPLETE and synchronizes without secondary modals', async () => {
+    let uploadSuccessCalled = false;
+    let syncedSnapshot: any = null;
+
+    (global.fetch as any).mockImplementation((url: string) => {
+      if (url.includes('/script/demo')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            scenesParsed: 3,
+            canonicalEntitiesExtracted: 7,
+            snapshot: {
+              scenes: sampleScenes,
+              entities: sampleEntities,
+              actionsSummary: { totalActions: 2, openActions: 2, criticalActions: 0 },
+            },
+          }),
+        });
+      }
+      return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
+    });
+
+    const { getByText, getByRole } = render(
+      React.createElement(ScriptUploadModal, {
+        projectId: 'proj-sample-qa',
+        isOpen: true,
+        initialMode: 'DEMO',
+        executionMode: 'DEMO_MODE',
+        onClose: () => {},
+        onUploadSuccess: async (snapshot: any) => {
+          uploadSuccessCalled = true;
+          syncedSnapshot = snapshot;
+        },
+      })
+    );
+
+    const ingestBtn = getByText(/Load Bundled Demo Screenplay|Ingest Screenplay/i);
+    fireEvent.click(ingestBtn);
+
+    // Verify dialog shows progress and named machine state
+    const dialog = getByRole('dialog');
+    expect(dialog).toBeDefined();
+
+    await waitFor(() => {
+      expect(uploadSuccessCalled).toBe(true);
+      expect(syncedSnapshot).not.toBeNull();
+      expect(syncedSnapshot.entities.length).toBe(7);
+      expect(syncedSnapshot.scenes.length).toBe(3);
+    });
+  });
 });

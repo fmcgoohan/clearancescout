@@ -233,7 +233,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
             )}
           </div>
           <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
-            {filteredEntities.length} of {pluralize(entities.length, 'Entity', 'Entities')} Displayed
+            Showing {filteredEntities.length} of {pluralize(entities.length, 'entity', 'entities')}
           </span>
         </div>
 
@@ -528,7 +528,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                           borderRadius: '4px',
                         }}
                       >
-                        {e.entityCategory.replace(/_/g, ' ')}
+                        {formatCategory(e.entityCategory)}
                       </span>
                     </td>
                     <td style={{ padding: '12px' }}>

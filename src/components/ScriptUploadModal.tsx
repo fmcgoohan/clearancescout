@@ -11,7 +11,7 @@ interface ScriptUploadModalProps {
   executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
 }
 
-export type UploadPhase = 'IDLE' | 'UPLOADING' | 'PARSING' | 'EXTRACTING' | 'RECONCILING' | 'COMPLETE' | 'FAILED';
+export type UploadPhase = 'IDLE' | 'UPLOADING' | 'PARSING' | 'EXTRACTING' | 'RECONCILING' | 'SYNCING' | 'COMPLETE' | 'FAILED';
 
 export const UPLOAD_TIMEOUT_MS = 270000;
 
@@ -268,17 +268,26 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         return;
       }
 
+      setUploadPhase('SYNCING');
+      setUploadProgress(95);
+
+      const snapshot = data.snapshot || data;
+      const scenesCount = data.scenesCount || snapshot?.scenes?.length || 3;
+      const entitiesCount = data.entitiesCount || data.canonicalEntitiesExtracted || snapshot?.entities?.length || 7;
+
+      try {
+        await Promise.resolve(onUploadSuccess(snapshot, { reingestMode, scenesCount, entitiesCount }));
+      } catch (syncErr) {
+        console.warn('Workspace sync notification error:', syncErr);
+      }
+
       setUploadPhase('COMPLETE');
       setUploadProgress(100);
       setTimeout(() => {
         setIsUploading(false);
         setUploadPhase('IDLE');
-        const snapshot = data.snapshot || data;
-        const scenesCount = data.scenesCount || snapshot?.scenes?.length || 3;
-        const entitiesCount = data.entitiesCount || data.canonicalEntitiesExtracted || snapshot?.entities?.length || 7;
-        onUploadSuccess(snapshot, { reingestMode, scenesCount, entitiesCount });
         onClose();
-      }, 400);
+      }, 350);
     } catch (err: any) {
       cleanupTimers();
       if (err.name === 'AbortError') {
@@ -306,6 +315,8 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         return `🔍 Identifying candidate clearance entities (${elapsedSeconds}s)...`;
       case 'RECONCILING':
         return `💾 Persisting active canonical registry snapshot (${elapsedSeconds}s)...`;
+      case 'SYNCING':
+        return `🔄 Syncing project workspace from active snapshot (${elapsedSeconds}s)...`;
       case 'COMPLETE':
         return `✓ Screenplay ingestion complete (${elapsedSeconds}s)!`;
       case 'FAILED':

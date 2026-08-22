@@ -536,12 +536,12 @@ export default function App() {
             <span style={{ color: 'var(--text-muted)' }}>📊 Summary:</span>
             <span style={{ color: '#34d399', fontWeight: 600 }}>{projectSummary.clearedCount} Cleared</span>
             {projectSummary.actionRequiredCount > 0 && (
-              <span style={{ color: '#f87171', fontWeight: 600 }}>{projectSummary.actionRequiredCount} Action Required</span>
+              <span style={{ color: '#f87171', fontWeight: 600 }}>{projectSummary.actionRequiredCount} Clearance Blockers</span>
             )}
             {projectSummary.reviewRecommendedCount > 0 && (
-              <span style={{ color: '#fbbf24', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} Needs Review</span>
+              <span style={{ color: '#fbbf24', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} Review Recommended</span>
             )}
-            <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'Entity', 'Entities')})</span>
+            <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'entity', 'entities')})</span>
           </div>
 
           {/* Demo Token Header Trigger */}

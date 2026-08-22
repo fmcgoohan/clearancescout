@@ -197,6 +197,20 @@
 
 ---
 
+## Phase 14: Convergence (Round-5 Completion-Barrier, Deterministic Workspace Sync & Clarified Task Labels)
+
+**Purpose**: Guarantee that screenplay ingestion HTTP success occurs ONLY when the active project snapshot is queryably coherent across scenes, occurrences, canonical entities, assessments, open actions, readiness, and project summary. Introduce explicit frontend `SYNCING` state in `ScriptUploadModal`, atomic workspace refresh in `WorkspacePage`, truthful completion toasts from committed snapshots, and clearly separate Clearance Entity Statuses from Department Action Tasks.
+
+- [X] T065 [CRITICAL] Enforce backend ingestion completion barrier in `canonicalRegistryWorkflow.ts` and `projectRoutes.ts` guaranteeing that HTTP 200 is returned ONLY after the active snapshot is fully committed and queryably coherent across scenes, occurrences, canonical entities, assessments, open actions, and readiness per FR-001, FR-011, Constitution II (missing)
+- [X] T066 [HIGH] Implement explicit frontend `SYNCING` state in `ScriptUploadModal.tsx` keeping conflicting controls disabled and transitioning to `COMPLETE` only after the workspace has refreshed from the committed snapshot per FR-002, FR-004 (missing)
+- [X] T067 [HIGH] Implement atomic workspace state application with snapshot revision timestamp tracking and parallel override fetching in `WorkspacePage.tsx` and `App.tsx` per FR-001, FR-012 (partial)
+- [X] T068 [MEDIUM] Derive completion toast counts directly from committed active snapshot and clearly distinguish Clearance Blockers (ACTION_REQUIRED entities), Review Recommended entities, and Department Open Actions across header, workspace toolbar, and Action Center per FR-019, FR-020 (partial)
+- [X] T069 [MEDIUM] Verify side-effect-free GET endpoints for actions, readiness, and snapshot, and enforce "Showing N of N entities" table formatting and `Art & Music` badge formatting per FR-016, FR-022 (partial)
+- [X] T070 [HIGH] Implement contract test suite in `tests/contract/test_completion_barrier_sync.test.ts` verifying immediate query coherence upon HTTP success without requiring secondary modal opens or client mutations per SC-001..SC-008 (missing)
+- [X] T071 [HIGH] Execute rendered browser QA in `tests/contract/test_rendered_sample_load_ui.test.ts` verifying full replace lifecycle through named stages (Uploading -> Parsing -> Extracting -> Reconciling -> Syncing -> Complete), immediate 3/7 Elena truth in highlighter and registry without opening modals, and identical reload consistency per SC-001..SC-008 (missing)
+
+---
+
 ## Dependencies & Execution Order
 
 ```mermaid

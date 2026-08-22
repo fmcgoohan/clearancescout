@@ -168,24 +168,29 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         const entitiesData = await entitiesRes.json();
         setEntities(entitiesData);
 
-        // Fetch all entity overrides
-        const allOverrides: CounselOverrideItem[] = [];
-        for (const ent of entitiesData) {
-          try {
-            const ovrRes = await apiFetch(`/api/projects/${projectId}/entities/${ent.id}/overrides`);
-            if (ovrRes.ok) {
-              const ovrData = await ovrRes.json();
-              if (ovrData.overrides) {
-                allOverrides.push(...ovrData.overrides);
+        // Fetch all entity overrides in parallel
+        try {
+          const overridePromises = entitiesData.map(async (ent: any) => {
+            try {
+              const ovrRes = await apiFetch(`/api/projects/${projectId}/entities/${ent.id}/overrides`);
+              if (ovrRes.ok) {
+                const ovrData = await ovrRes.json();
+                return ovrData.overrides || [];
               }
+            } catch {
+              return [];
             }
-          } catch (e) {
-            // continue
-          }
+            return [];
+          });
+          const nestedOverrides = await Promise.all(overridePromises);
+          setOverrides(nestedOverrides.flat());
+        } catch {
+          // ignore
         }
-        setOverrides(allOverrides);
       }
-      onRefreshProjectSummary?.();
+      if (onRefreshProjectSummary) {
+        await Promise.resolve(onRefreshProjectSummary());
+      }
     } catch (err) {
       console.error('Failed to fetch workspace data:', err);
     }
@@ -210,6 +215,9 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     }
     if (Array.isArray(snapshot.entities)) {
       setEntities(snapshot.entities);
+    }
+    if (Array.isArray(snapshot.overrides)) {
+      setOverrides(snapshot.overrides);
     }
     if (snapshot.readiness) {
       setReadinessSummary(snapshot.readiness);
@@ -717,10 +725,21 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         hasExistingScenes={scenes.length > 0}
         initialMode={uploadModalInitialMode}
         executionMode={executionMode}
-        onUploadSuccess={(snapshot, meta) => {
+        onUploadSuccess={async (snapshot, meta) => {
           const scenesCount = meta?.scenesCount || snapshot?.scenes?.length || 3;
           const entitiesCount = meta?.entitiesCount || snapshot?.entities?.length || 7;
           const actionText = meta?.reingestMode === 'MERGE' ? 'merged as new version' : 'replaced successfully';
+
+          if (snapshot) {
+            applyWorkspaceSnapshot(snapshot);
+          } else {
+            await fetchWorkspaceData();
+          }
+
+          if (onRefreshProjectSummary) {
+            await Promise.resolve(onRefreshProjectSummary());
+          }
+
           setIngestionToast({
             message: `Screenplay ${actionText} — ${pluralize(scenesCount, 'scene')} · ${pluralize(entitiesCount, 'clearance entity', 'clearance entities')}`,
             type: 'success',
@@ -728,12 +747,6 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           setTimeout(() => {
             setIngestionToast(null);
           }, 4500);
-
-          if (snapshot) {
-            applyWorkspaceSnapshot(snapshot);
-          } else {
-            fetchWorkspaceData();
-          }
         }}
       />
     </div>
