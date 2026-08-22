@@ -138,8 +138,8 @@ export class ScriptParserAgent {
 
     const isCloudRuntime = config.executionMode === 'CLOUD_MODE';
 
-    // Bundled demo screenplay or offline runtime uses deterministic fixture parser
-    if (options?.isBundledDemo || normalizedText.includes('THE NEON HORIZON') || !isCloudRuntime) {
+    // Bundled demo screenplay (from demo endpoint) or offline runtime uses deterministic fixture parser
+    if (options?.isBundledDemo || !isCloudRuntime) {
       return this.parseScriptFallback(normalizedText);
     }
 

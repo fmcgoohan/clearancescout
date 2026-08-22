@@ -93,20 +93,21 @@ async function runLiveValidation() {
   clearInterval(stageWatcher);
 
   console.log('Observed Named Stages during Replace:', Array.from(observedStages));
+  if (!observedStages.has('SYNCING')) {
+    throw new Error('Assertion Failed: SYNCING progress stage was not observed during screenplay replacement.');
+  }
 
   console.log('--- Step 6: Verify Immediate Truth at Complete (Without opening any modals) ---');
   const snapshotData = await page.evaluate(() => {
     const headerText = document.querySelector('header')?.innerText || '';
     const bodyText = document.body.innerText;
     const tableRows = Array.from(document.querySelectorAll('table tbody tr')).map(tr => tr.innerText);
-    const scenesText = Array.from(document.querySelectorAll('.scene-card, .script-scene, h3, h4')).map(el => el.innerText);
     const toast = document.querySelector('[role="alert"], [aria-live="polite"], .toast')?.innerText || '';
     const deptTasksBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Department Tasks'))?.innerText || '';
 
     return {
       headerText,
       tableRows,
-      scenesText,
       toast,
       deptTasksBtn,
       bodyTextSnippet: bodyText.slice(0, 1500),
@@ -118,6 +119,21 @@ async function runLiveValidation() {
   console.log('Immediate Department Tasks Toolbar Button:', snapshotData.deptTasksBtn);
   console.log('Immediate Entity Registry Table Rows Count:', snapshotData.tableRows.length);
   console.log('Immediate Entity Table Rows Sample:', snapshotData.tableRows.slice(0, 7));
+
+  // Immediate Assertions
+  if (!snapshotData.toast.includes('3 scenes processed · 7 entities registered · 7 department tasks created')) {
+    throw new Error(`Assertion Failed: Toast message did not match expected counts. Got: "${snapshotData.toast}"`);
+  }
+  if (snapshotData.tableRows.length !== 7) {
+    throw new Error(`Assertion Failed: Expected 7 entity rows in registry, but found ${snapshotData.tableRows.length}`);
+  }
+  const hasElena = snapshotData.tableRows.some(r => r.includes('Elena Vance'));
+  if (!hasElena) {
+    throw new Error('Assertion Failed: Elena Vance was not found in active entity registry table.');
+  }
+  if (!snapshotData.deptTasksBtn.includes('(7)')) {
+    throw new Error(`Assertion Failed: Department Tasks button did not show (7). Got: "${snapshotData.deptTasksBtn}"`);
+  }
 
   console.log('--- Step 7: 20-30 Second Idle Stability Check ---');
   console.log('Waiting 25 seconds idle...');
@@ -133,35 +149,68 @@ async function runLiveValidation() {
   console.log('Post-Idle Table Rows Count:', postIdleData.tableRowsCount);
   console.log('Post-Idle Department Tasks Button:', postIdleData.deptTasksBtn);
 
-  console.log('--- Step 8: Open Action Center (Verify Read-Only) ---');
+  if (postIdleData.tableRowsCount !== 7 || !postIdleData.deptTasksBtn.includes('(7)')) {
+    throw new Error(`Assertion Failed: Idle drift detected after 25s (Rows: ${postIdleData.tableRowsCount}, Btn: ${postIdleData.deptTasksBtn})`);
+  }
+
+  console.log('--- Step 8: Open Action Center (Verify Read-Only & Count Coherence) ---');
   const preActionReqCount = networkLogs.filter(l => l.method !== 'GET').length;
   const actionModalBtn = await page.waitForSelector('button:has-text("Department Tasks")');
   await actionModalBtn.click();
   await page.waitForSelector('[role="dialog"]');
-  const actionDialogText = await page.evaluate(() => document.querySelector('[role="dialog"]')?.innerText || '');
-  console.log('Action Center Opened. Dialog Content Snippet:', actionDialogText.slice(0, 300));
+
+  // Wait for loading to finish and actions to render
+  await page.waitForFunction(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    return dialog && !dialog.innerText.includes('Loading action items...');
+  }, { timeout: 10000 });
+
+  const actionModalData = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    const text = dialog ? dialog.innerText : '';
+    const headerBadge = dialog?.querySelector('span')?.innerText || '';
+    const actionCards = Array.from(dialog?.querySelectorAll('.action-item, [style*="border-radius"]') || []).map(el => (el as HTMLElement).innerText);
+    return { text, headerBadge, actionCardsSample: actionCards.slice(0, 5) };
+  });
+
+  console.log('Action Center Loaded Data:', actionModalData.text.slice(0, 300));
   
   // Close Action Center
   await page.locator('[role="dialog"] button[aria-label*="lose" i], [role="dialog"] button:has-text("×"), [role="dialog"] button:has-text("✕")').first().click();
   await page.waitForSelector('[role="dialog"]', { state: 'detached', timeout: 10000 });
   await page.waitForTimeout(500);
+
   const postActionReqCount = networkLogs.filter(l => l.method !== 'GET').length;
   console.log('Non-GET network requests during Action Center inspection (must be 0):', postActionReqCount - preActionReqCount);
+  if (postActionReqCount - preActionReqCount !== 0) {
+    throw new Error(`Assertion Failed: Mutating requests detected on Action Center open: ${postActionReqCount - preActionReqCount}`);
+  }
 
-  console.log('--- Step 9: Open Operations Dashboard (Verify Read-Only) ---');
+  console.log('--- Step 9: Open Operations Dashboard (Verify Read-Only & KPI Rendering) ---');
   const preDashReqCount = networkLogs.filter(l => l.method !== 'GET').length;
   const dashBtn = await page.waitForSelector('button:has-text("Operations Dashboard")');
   await dashBtn.click();
   await page.waitForSelector('[role="dialog"]');
+
+  // Wait for dashboard data to load
+  await page.waitForFunction(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    return dialog && !dialog.innerText.includes('Loading dashboard...');
+  }, { timeout: 10000 });
+
   const dashDialogText = await page.evaluate(() => document.querySelector('[role="dialog"]')?.innerText || '');
-  console.log('Operations Dashboard Opened. Dialog Content Snippet:', dashDialogText.slice(0, 300));
+  console.log('Operations Dashboard Loaded Content Snippet:', dashDialogText.slice(0, 400));
 
   // Close Dashboard
   await page.locator('[role="dialog"] button[aria-label*="lose" i], [role="dialog"] button:has-text("×"), [role="dialog"] button:has-text("✕")').first().click();
   await page.waitForSelector('[role="dialog"]', { state: 'detached', timeout: 10000 });
   await page.waitForTimeout(500);
+
   const postDashReqCount = networkLogs.filter(l => l.method !== 'GET').length;
   console.log('Non-GET network requests during Dashboard inspection (must be 0):', postDashReqCount - preDashReqCount);
+  if (postDashReqCount - preDashReqCount !== 0) {
+    throw new Error(`Assertion Failed: Mutating requests detected on Dashboard open: ${postDashReqCount - preDashReqCount}`);
+  }
 
   console.log('--- Step 9.5: Open Observable Action Timeline (Verify Read-Only) ---');
   const preTimeReqCount = networkLogs.filter(l => l.method !== 'GET').length;
@@ -175,8 +224,12 @@ async function runLiveValidation() {
   await page.click('[role="region"][aria-label*="Observable Action Timeline"] button:has-text("Close")');
   await page.waitForSelector('[role="region"][aria-label*="Observable Action Timeline"]', { state: 'detached', timeout: 10000 });
   await page.waitForTimeout(500);
+
   const postTimeReqCount = networkLogs.filter(l => l.method !== 'GET').length;
   console.log('Non-GET network requests during Timeline inspection (must be 0):', postTimeReqCount - preTimeReqCount);
+  if (postTimeReqCount - preTimeReqCount !== 0) {
+    throw new Error(`Assertion Failed: Mutating requests detected on Timeline open: ${postTimeReqCount - preTimeReqCount}`);
+  }
 
   console.log('--- Step 10: Reload Browser & Verify Persistence ---');
   await page.reload({ waitUntil: 'networkidle' });
@@ -192,8 +245,18 @@ async function runLiveValidation() {
   console.log('Post-Reload Department Tasks Button:', postReloadData.deptTasksBtn);
   console.log('Post-Reload Table Rows Sample:', postReloadData.tableRows.slice(0, 7));
 
+  if (postReloadData.tableRowsCount !== 7) {
+    throw new Error(`Assertion Failed: Expected 7 rows after reload, found ${postReloadData.tableRowsCount}`);
+  }
+  if (!postReloadData.tableRows.some(r => r.includes('Elena Vance'))) {
+    throw new Error('Assertion Failed: Elena Vance missing after reload');
+  }
+  if (!postReloadData.deptTasksBtn.includes('(7)')) {
+    throw new Error(`Assertion Failed: Department Tasks button did not show (7) after reload`);
+  }
+
   await browser.close();
-  console.log('=== Live Browser Validation Complete ===');
+  console.log('=== Live Browser Validation Passed All Strict Assertions ===');
 }
 
 runLiveValidation().catch((err) => {

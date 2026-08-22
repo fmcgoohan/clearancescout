@@ -279,6 +279,8 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
 
       try {
         await Promise.resolve(onUploadSuccess(snapshot, { reingestMode, scenesCount, entitiesCount, openActionsCount }));
+        // Ensure SYNCING state renders to DOM/a11y before declaring COMPLETE
+        await new Promise((r) => setTimeout(r, 200));
         setUploadPhase('COMPLETE');
         setUploadProgress(100);
         setTimeout(() => {
