@@ -1,6 +1,6 @@
 import React from 'react';
 import { CanonicalEntity } from './EntityRegistryTable';
-import { pluralize } from '../utils/formatters.js';
+import { pluralize, getPlainLanguageSceneReason } from '../utils/formatters.js';
 import {
   CheckCircleIcon,
   AlertTriangleIcon,
@@ -282,9 +282,22 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
                     </span>
                   )}
                 </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {s.locationType} • {s.timeOfDay}
-                </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {s.locationType} • {s.timeOfDay}
+                  </span>
+                </div>
+                <div
+                  className="scene-why-blocked-reason"
+                  style={{
+                    fontSize: '0.78rem',
+                    color: s.readinessStatus === 'RED' ? '#fca5a5' : s.readinessStatus === 'WORKING_CLEAR' ? '#fde68a' : 'var(--text-muted)',
+                    margin: '6px 0 10px 0',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {getPlainLanguageSceneReason(s)}
+                </div>
               </div>
               <div
                 style={{

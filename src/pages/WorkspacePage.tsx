@@ -11,7 +11,7 @@ import { ProductionDashboardModal } from '../components/ProductionDashboardModal
 import { ScriptUploadModal } from '../components/ScriptUploadModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
 import { apiFetch } from '../utils/apiClient.js';
-import { pluralize } from '../utils/formatters.js';
+import { pluralize, getPlainLanguageSceneReason } from '../utils/formatters.js';
 import {
   FilmIcon,
   FileTextIcon,
@@ -621,6 +621,77 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               {readinessSummary.overallReadinessPercentage}%
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Per-Scene Readiness Reason Cards Grid (Feature 023 Section 2) */}
+      {scenes.length > 0 && (
+        <div className="scene-readiness-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+          {scenes.map((s) => {
+            const isRed = s.readinessStatus === 'RED';
+            const isWorking = s.readinessStatus === 'WORKING_CLEAR';
+            const borderColor = isRed ? 'var(--status-action)' : isWorking ? 'var(--status-review)' : 'var(--status-no-issue)';
+            const bgColor = isRed ? 'var(--status-action-bg)' : isWorking ? 'var(--status-review-bg)' : 'var(--status-no-issue-bg)';
+            const textColor = isRed ? 'var(--status-action)' : isWorking ? 'var(--status-review)' : 'var(--status-no-issue)';
+            const borderChip = isRed ? 'var(--status-action-border)' : isWorking ? 'var(--status-review-border)' : 'var(--status-no-issue-border)';
+            const statusLabel = isRed ? 'BLOCKS SHOOTING' : isWorking ? 'WORKING CLEAR' : 'FINAL CLEAR';
+
+            return (
+              <div
+                key={s.id}
+                className="glass-panel scene-readiness-card"
+                onClick={() => setSelectedSceneId(s.id)}
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '8px',
+                  background: 'var(--bg-card)',
+                  borderLeft: `6px solid ${borderColor}`,
+                  borderTop: '1px solid var(--border-color)',
+                  borderRight: '1px solid var(--border-color)',
+                  borderBottom: '1px solid var(--border-color)',
+                  cursor: 'pointer',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      SCENE {s.sceneNumber}
+                    </span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      {s.locationType || (s.heading?.startsWith('EXT') ? 'EXT' : 'INT')} • {s.timeOfDay || 'DAY'}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '0.65rem',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      background: bgColor,
+                      color: textColor,
+                      border: `1px solid ${borderChip}`,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {statusLabel}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>
+                  {s.heading}
+                </div>
+                <div
+                  className="scene-why-blocked-reason"
+                  style={{
+                    fontSize: '0.78rem',
+                    color: isRed ? '#fca5a5' : isWorking ? '#fde68a' : 'var(--text-muted)',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {getPlainLanguageSceneReason(s)}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

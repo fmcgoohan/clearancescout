@@ -464,7 +464,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ed8796', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>🚨 {TERMINOLOGY.BLOCKING_OCCURRENCES_LABEL} Triage ({data.shootBlockers.length})</span>
+                    <span>{TERMINOLOGY.BLOCKING_OCCURRENCES_LABEL} Triage ({data.shootBlockers.length})</span>
                   </div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Resolve via direct mitigation actions
@@ -489,7 +489,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
 
                 {data.shootBlockers.length === 0 ? (
                   <div style={{ fontSize: '0.8rem', color: '#a6da95', padding: '12px 0' }}>
-                    ✓ No blocking occurrences! All scenes are cleared or covered by placeholders/rights.
+                    No blocking occurrences! All scenes are cleared or covered by placeholders/rights.
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -534,7 +534,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                               textAlign: 'left',
                             }}
                           >
-                            <span>{isCollapsed ? '▸' : '▾'} 🎬 {sceneHeading}</span>
+                            <span>{isCollapsed ? '▸' : '▾'} {sceneHeading}</span>
                             <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
                               {pluralize(blockers.length, 'blocking occurrence', 'blocking occurrences')}
                             </span>
@@ -572,29 +572,29 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                     {onMitigatePlaceholder && (
                                       <button
-                                        className="btn-secondary touch-target"
+                                        className="btn-secondary touch-target resolve-row-action"
                                         onClick={() => onMitigatePlaceholder(blk.canonicalEntityId)}
                                         style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#c6a0f6', color: '#c6a0f6', minHeight: '30px' }}
                                       >
-                                        🎨 Placeholder
+                                        Placeholder
                                       </button>
                                     )}
                                     {onMitigateRights && (
                                       <button
-                                        className="btn-secondary touch-target"
+                                        className="btn-secondary touch-target resolve-row-action"
                                         onClick={() => onMitigateRights(blk.canonicalEntityId)}
                                         style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#91d7e3', color: '#91d7e3', minHeight: '30px' }}
                                       >
-                                        📜 Add Rights
+                                        Attach Rights
                                       </button>
                                     )}
                                     {onMitigateOverride && (
                                       <button
-                                        className="btn-secondary touch-target"
+                                        className="btn-secondary touch-target resolve-row-action"
                                         onClick={() => onMitigateOverride(blk.canonicalEntityId)}
                                         style={{ fontSize: '0.7rem', padding: '4px 8px', borderColor: '#f87171', color: '#f87171', minHeight: '30px' }}
                                       >
-                                        ⚖️ Override
+                                        Counsel Override
                                       </button>
                                     )}
                                   </div>

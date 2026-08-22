@@ -110,6 +110,20 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
   if (!isOpen) return null;
 
   const handleUpdateStatus = async (actionId: string, newStatus: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'DISMISSED') => {
+    // Optimistic in-place update without layout shift
+    setActions((prev) =>
+      prev.map((a) =>
+        a.id === actionId
+          ? {
+              ...a,
+              status: newStatus,
+              resolutionTrigger: newStatus === 'RESOLVED' ? 'MANUAL_COORDINATOR_SIGN_OFF' : a.resolutionTrigger,
+              resolvedAt: newStatus === 'RESOLVED' ? new Date().toISOString() : undefined,
+            }
+          : a
+      )
+    );
+
     try {
       const res = await apiFetch(`/api/projects/${projectId}/actions/${actionId}`, {
         method: 'PATCH',
@@ -120,7 +134,6 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
         }),
       });
       if (res.ok) {
-        await fetchActionsAndNotifications();
         onActionUpdated?.();
       }
     } catch (err) {
@@ -158,7 +171,6 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
 
   const filteredActions = actions.filter((act) => {
     if (activeTab !== 'ALL' && act.targetDepartment !== activeTab) return false;
-    if (statusFilter === 'OPEN' && act.status === 'RESOLVED') return false;
     if (statusFilter === 'RESOLVED' && act.status !== 'RESOLVED') return false;
     return true;
   });
@@ -382,14 +394,17 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                 style={{
                   padding: '14px 18px',
                   borderRadius: '8px',
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-color)',
+                  background: act.status === 'RESOLVED' ? 'rgba(52, 211, 153, 0.05)' : 'var(--bg-card)',
+                  border: act.status === 'RESOLVED' ? '1px solid rgba(52, 211, 153, 0.25)' : '1px solid var(--border-color)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'flex-start',
                   gap: '16px',
+                  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                   borderLeft:
-                    act.priority === 'CRITICAL'
+                    act.status === 'RESOLVED'
+                      ? '4px solid #34d399'
+                      : act.priority === 'CRITICAL'
                       ? '4px solid #ef4444'
                       : act.priority === 'HIGH'
                       ? '4px solid #f97316'
@@ -442,7 +457,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                           fontWeight: 600,
                         }}
                       >
-                        ✓ {formatStatus(act.status)}
+                        {formatStatus(act.status)}
                       </span>
                     )}
                     {act.status === 'IN_PROGRESS' && (
@@ -482,7 +497,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                   </div>
                   {TERMINOLOGY.DEPARTMENT_ROUTING_REASONS[act.targetDepartment] && (
                     <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic', marginBottom: '4px' }}>
-                      ℹ️ {TERMINOLOGY.DEPARTMENT_ROUTING_REASONS[act.targetDepartment]}
+                      {TERMINOLOGY.DEPARTMENT_ROUTING_REASONS[act.targetDepartment]}
                     </div>
                   )}
                   {act.resolutionTrigger && (
@@ -501,7 +516,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                         onClick={() => handleUpdateStatus(act.id, 'RESOLVED')}
                         style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                       >
-                        ✓ Resolve
+                        Resolve
                       </button>
                       {act.status === 'OPEN' && (
                         <button

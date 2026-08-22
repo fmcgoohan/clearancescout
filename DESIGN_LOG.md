@@ -43,3 +43,16 @@ This log records all visual design, restyling, and user interface iterations for
      - Body scroll locking (`overflow: hidden`) active on modal display and cleanly restored upon dismissal.
 - **Rationale**: Complete alignment with Constitution v1.1.0 visual design system rules.
 - **Verification**: `npm test` passed 100% (217 unit and contract tests across 86 test suites), `npm run build` compiled with 0 errors, Playwright live audit passed 100%.
+
+---
+
+## [2026-08-23] - Feature 023 Workspace Restyle (All Five Workspace Surfaces)
+
+- **Change**: Restyled all five workspace surfaces as one unified system adhering to Constitution v1.1.0:
+  1. *Section 1 - Header Command Bar*: Collapsed two-row pill header into a single command bar (`.header-command-bar`) in `App.tsx` featuring project switcher, live quota meter with tabular figures (`tabular-nums`), and a single primary button page-wide for open tasks.
+  2. *Section 2 - Hero Readiness Band*: Rendered Shooting Readiness Index at display scale (`2.75rem`) with border-left severity edge and per-scene readiness cards (`scene-readiness-card`) displaying INT/EXT indicators, time-of-day micro-labels, status chips, and plain-language why-blocked reason cards (`scene-why-blocked-reason`).
+  3. *Section 3 - Screenplay Panel*: Enforced legal monospace typography (`Courier Prime`), status-colored dotted underlines (`underline dotted var(--status-color)`) with zero background fills on occurrences, and a single highlight legend in `ScriptViewer.tsx`.
+  4. *Section 4 - Scan-First Entity Registry Table*: Reformatted `EntityRegistryTable.tsx` with bold entity titles, muted category sub-lines, standardized status badges, and domain-meaning right-aligned action buttons (*"2 uses"*, *"Ground"*, *"Compare"*).
+  5. *Section 5 - Operations Dashboard & Task Center Modals*: Redesigned `ProductionDashboardModal.tsx` with 5 KPI tiles and direct row-level triage action buttons (`resolve-row-action`), and `ActionListModal.tsx` with department tabs, open counts, severity-striped cards, and in-place resolution transitions that ease into a labeled `RESOLVED` state without layout shift. Body scroll locking verified across all modals.
+- **Rationale**: Full execution of Feature 023 specification across all five workspace surfaces for line producers and clearance coordinators.
+- **Verification**: `grep` confirmed literal artifacts across all 5 sections, `npm test` passed 100% (217 tests), `npm run build` succeeded cleanly with zero errors.
