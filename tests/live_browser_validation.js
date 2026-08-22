@@ -142,24 +142,41 @@ async function runLiveValidation() {
   console.log('Action Center Opened. Dialog Content Snippet:', actionDialogText.slice(0, 300));
   
   // Close Action Center
-  await page.click('[role="dialog"] button:has-text("✕"), [role="dialog"] button[aria-label*="Close"]');
+  await page.locator('[role="dialog"] button[aria-label*="lose" i], [role="dialog"] button:has-text("×"), [role="dialog"] button:has-text("✕")').first().click();
+  await page.waitForSelector('[role="dialog"]', { state: 'detached', timeout: 10000 });
   await page.waitForTimeout(500);
   const postActionReqCount = networkLogs.filter(l => l.method !== 'GET').length;
   console.log('Non-GET network requests during Action Center inspection (must be 0):', postActionReqCount - preActionReqCount);
 
   console.log('--- Step 9: Open Operations Dashboard (Verify Read-Only) ---');
   const preDashReqCount = networkLogs.filter(l => l.method !== 'GET').length;
-  const dashBtn = await page.waitForSelector('button[aria-label*="Dashboard"], button:has-text("Dashboard")');
+  const dashBtn = await page.waitForSelector('button:has-text("Operations Dashboard")');
   await dashBtn.click();
   await page.waitForSelector('[role="dialog"]');
   const dashDialogText = await page.evaluate(() => document.querySelector('[role="dialog"]')?.innerText || '');
   console.log('Operations Dashboard Opened. Dialog Content Snippet:', dashDialogText.slice(0, 300));
 
   // Close Dashboard
-  await page.click('[role="dialog"] button:has-text("✕"), [role="dialog"] button[aria-label*="Close"]');
+  await page.locator('[role="dialog"] button[aria-label*="lose" i], [role="dialog"] button:has-text("×"), [role="dialog"] button:has-text("✕")').first().click();
+  await page.waitForSelector('[role="dialog"]', { state: 'detached', timeout: 10000 });
   await page.waitForTimeout(500);
   const postDashReqCount = networkLogs.filter(l => l.method !== 'GET').length;
   console.log('Non-GET network requests during Dashboard inspection (must be 0):', postDashReqCount - preDashReqCount);
+
+  console.log('--- Step 9.5: Open Observable Action Timeline (Verify Read-Only) ---');
+  const preTimeReqCount = networkLogs.filter(l => l.method !== 'GET').length;
+  const timeBtn = await page.waitForSelector('button:has-text("Observable Timeline")');
+  await timeBtn.click();
+  await page.waitForSelector('[role="region"][aria-label*="Observable Action Timeline"]');
+  const timelineText = await page.evaluate(() => document.querySelector('[role="region"][aria-label*="Observable Action Timeline"]')?.innerText || '');
+  console.log('Observable Timeline Opened. Content Snippet:', timelineText.slice(0, 300));
+
+  // Close Timeline
+  await page.click('[role="region"][aria-label*="Observable Action Timeline"] button:has-text("Close")');
+  await page.waitForSelector('[role="region"][aria-label*="Observable Action Timeline"]', { state: 'detached', timeout: 10000 });
+  await page.waitForTimeout(500);
+  const postTimeReqCount = networkLogs.filter(l => l.method !== 'GET').length;
+  console.log('Non-GET network requests during Timeline inspection (must be 0):', postTimeReqCount - preTimeReqCount);
 
   console.log('--- Step 10: Reload Browser & Verify Persistence ---');
   await page.reload({ waitUntil: 'networkidle' });
@@ -171,8 +188,9 @@ async function runLiveValidation() {
   });
 
   console.log('Post-Reload Header:', postReloadData.headerText);
-  console.log('Post-Reload Table Rows Count:', postReloadData.tableRowsCount);
+  console.log('Post-Reload Table Rows Count (must be 7):', postReloadData.tableRowsCount);
   console.log('Post-Reload Department Tasks Button:', postReloadData.deptTasksBtn);
+  console.log('Post-Reload Table Rows Sample:', postReloadData.tableRows.slice(0, 7));
 
   await browser.close();
   console.log('=== Live Browser Validation Complete ===');

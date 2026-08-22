@@ -128,6 +128,9 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dashboard-modal-title"
       style={{
         position: 'fixed',
         top: 0,
@@ -172,7 +175,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
           }}
         >
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-main, #cad3f5)' }}>
+            <h2 id="dashboard-modal-title" style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-main, #cad3f5)' }}>
               📊 Production Clearance Operations Dashboard
             </h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#cbd5e1' }}>
