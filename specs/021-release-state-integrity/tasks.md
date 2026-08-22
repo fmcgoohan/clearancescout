@@ -229,10 +229,10 @@
 
 **Purpose**: Deliver remaining operator-facing sync polish: surface explicit `Research Required` status count in header summary for newly registered un-evaluated items (`INSUFFICIENT_EVIDENCE`), harmonize Action Center task badge with workspace toolbar `📋 Department Tasks (N)`, strengthen contract assertions, and execute end-to-end Playwright browser validation.
 
-- [ ] T079 [MEDIUM] Include `researchRequiredCount` in `ProjectRepo.ts`, `projectRoutes.ts`, `App.tsx`, and `WorkspacePage.tsx` so that `INSUFFICIENT_EVIDENCE` entities in `CLOUD_MODE` display as `N Research Required` in header summary alongside `Cleared`, `Clearance Blockers`, and `Review Recommended` per FR-012, FR-020 (partial)
-- [ ] T080 [MEDIUM] Harmonize Action Center open task counter and tab counts in `ActionListModal.tsx` with workspace toolbar `📋 Department Tasks (N)` for zero-lag count agreement per FR-019, FR-020 (partial)
-- [ ] T081 [HIGH] Strengthen automated contract test suites in `tests/contract/test_completion_barrier_sync.test.ts` and `tests/contract/test_rendered_sample_load_ui.test.ts` to assert truthful `Research Required` and `Department Tasks` metrics per SC-001..SC-008 (partial)
-- [ ] T082 [HIGH] Execute complete Playwright browser validation against live Cloud Run deployment verifying SYNCING stage, 7 registered entities, Elena Vance, truthful toast counts, Action Center task coherence, 25s idle stability, and reload persistence per SC-001..SC-008 (missing)
+- [X] T079 [MEDIUM] Include `researchRequiredCount` in `ProjectRepo.ts`, `projectRoutes.ts`, `App.tsx`, and `WorkspacePage.tsx` so that `INSUFFICIENT_EVIDENCE` entities in `CLOUD_MODE` display as `N Research Required` in header summary alongside `Cleared`, `Clearance Blockers`, and `Review Recommended` per FR-012, FR-020 (partial)
+- [X] T080 [MEDIUM] Harmonize Action Center open task counter and tab counts in `ActionListModal.tsx` with workspace toolbar `📋 Department Tasks (N)` for zero-lag count agreement per FR-019, FR-020 (partial)
+- [X] T081 [HIGH] Strengthen automated contract test suites in `tests/contract/test_completion_barrier_sync.test.ts` and `tests/contract/test_rendered_sample_load_ui.test.ts` to assert truthful `Research Required` and `Department Tasks` metrics per SC-001..SC-008 (partial)
+- [X] T082 [HIGH] Execute complete Playwright browser validation against live Cloud Run deployment verifying SYNCING stage, 7 registered entities, Elena Vance, truthful toast counts, Action Center task coherence, 25s idle stability, and reload persistence per SC-001..SC-008 (missing)
 
 ---
 
