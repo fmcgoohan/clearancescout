@@ -745,9 +745,6 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             message: `Screenplay ${actionText} — ${pluralize(scenesCount, 'scene')} processed · ${pluralize(entitiesCount, 'entity', 'entities')} registered · ${pluralize(tasksCount, 'department task', 'department tasks')} created`,
             type: 'success',
           });
-          setTimeout(() => {
-            setIngestionToast(null);
-          }, 11000);
         }}
       />
     </div>

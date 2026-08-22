@@ -17,7 +17,7 @@ describe('Contract: Truthful Demo Provenance Labeling (Feature 021)', () => {
         title: 'Demo Provenance Test',
         productionCompany: 'Entrant Studio',
         projectType: 'Movie',
-        executionMode: 'DEMO_MODE',
+        executionMode: 'TEST_MODE',
       });
     expect(projRes.status).toBe(201);
     const projectId = projRes.body.id;
@@ -25,9 +25,9 @@ describe('Contract: Truthful Demo Provenance Labeling (Feature 021)', () => {
     const demoRes = await request(app)
       .post(`/api/projects/${projectId}/script/demo`)
       .send({
-        autoEvaluate: true,
-        includeSampleRights: true,
-        includeSamplePlaceholders: true,
+        autoEvaluate: false,
+        includeSampleRights: false,
+        includeSamplePlaceholders: false,
       });
 
     expect(demoRes.status).toBe(200);

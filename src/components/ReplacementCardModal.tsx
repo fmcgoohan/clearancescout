@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatStatus } from '../utils/formatters.js';
 
 export interface ReplacementAttempt {
   attemptNumber: number;
@@ -153,7 +154,7 @@ export const ReplacementCardModal: React.FC<ReplacementCardModalProps> = ({ card
             {card.attemptHistory.map((att) => (
               <div key={att.attemptNumber} style={{ fontSize: '0.75rem', borderLeft: `3px solid ${att.clearanceStatus === 'NO_ISSUE_SURFACED' ? '#34d399' : '#f87171'}`, paddingLeft: '8px' }}>
                 <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>Attempt #{att.attemptNumber}: {att.candidateName}</span> —{' '}
-                <span style={{ color: att.clearanceStatus === 'NO_ISSUE_SURFACED' ? '#34d399' : '#f87171' }}>{att.clearanceStatus}</span>
+                <span style={{ color: att.clearanceStatus === 'NO_ISSUE_SURFACED' ? '#34d399' : '#f87171' }}>{formatStatus(att.clearanceStatus)}</span>
                 {att.collisionRationale && (
                   <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: '2px' }}>{att.collisionRationale}</div>
                 )}

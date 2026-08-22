@@ -8,13 +8,13 @@ export const SceneRiskBadge: React.FC<SceneRiskBadgeProps> = ({ status }) => {
   const getLabel = () => {
     switch (status) {
       case 'NO_ISSUE_SURFACED':
-        return '✓ No Issue Surfaced';
+        return '✓ No issue surfaced';
       case 'REVIEW_RECOMMENDED':
-        return '⚠️ Review Recommended';
+        return '⚠️ Review recommended';
       case 'ACTION_REQUIRED':
-        return '⛔ Action Required';
+        return '⛔ Action required';
       case 'INSUFFICIENT_EVIDENCE':
-        return '❓ Insufficient Evidence';
+        return '⏳ Insufficient evidence';
       default:
         return status;
     }

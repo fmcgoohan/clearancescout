@@ -94,8 +94,9 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
         return { bg: 'rgba(251, 191, 36, 0.15)', border: '#fbbf24', text: '#fbbf24' };
       case 'ACTION_REQUIRED':
         return { bg: 'rgba(248, 113, 113, 0.15)', border: '#f87171', text: '#f87171' };
+      case 'INSUFFICIENT_EVIDENCE':
       default:
-        return { bg: 'rgba(148, 163, 184, 0.15)', border: '#94a3b8', text: '#94a3b8' };
+        return { bg: 'rgba(56, 189, 248, 0.15)', border: '#38bdf8', text: '#38bdf8' };
     }
   };
 
@@ -184,14 +185,20 @@ export const ScriptViewer: React.FC<ScriptViewerProps> = ({
 
   return (
     <div className="glass-panel" style={{ padding: '20px', height: '600px', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h3 style={{ fontSize: '1rem', color: 'var(--accent-cyan)' }}>
-          Screenplay Breakdown & Visual Highlighter ({pluralize(scenes.length, 'Scene')})
-        </h3>
-        <div style={{ display: 'flex', gap: '8px', fontSize: '0.7rem' }}>
-          <span style={{ color: '#34d399' }}>● Cleared</span>
-          <span style={{ color: '#fbbf24' }}>● Review</span>
-          <span style={{ color: '#f87171' }}>● Action</span>
+      <div style={{ marginBottom: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <h3 style={{ fontSize: '1rem', color: 'var(--accent-cyan)', margin: 0 }}>
+            Screenplay Breakdown & Visual Highlighter ({pluralize(scenes.length, 'Scene')})
+          </h3>
+          <div style={{ display: 'flex', gap: '10px', fontSize: '0.7rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ color: '#38bdf8' }}>● Insufficient evidence</span>
+            <span style={{ color: '#34d399' }}>● Cleared</span>
+            <span style={{ color: '#fbbf24' }}>● Review</span>
+            <span style={{ color: '#f87171' }}>● Action</span>
+          </div>
+        </div>
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+          Items with insufficient evidence are treated as blockers until research, rights, a placeholder, or counsel approval is attached.
         </div>
       </div>
 

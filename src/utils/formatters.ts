@@ -14,29 +14,29 @@ export function formatStatus(status: string | undefined | null): string {
     case 'INSUFFICIENT_EVIDENCE':
       return 'Insufficient evidence';
     case 'ACTION_REQUIRED':
-      return 'Action Required';
+      return 'Action required';
     case 'REVIEW_RECOMMENDED':
-      return 'Review Recommended';
+      return 'Review recommended';
     case 'NO_ISSUE_SURFACED':
-      return 'Cleared';
+      return 'No issue surfaced';
     case 'SCRIPT_REVISION_SUPERSEDED':
-      return 'Superseded by New Script Revision';
+      return 'Superseded by new script revision';
     case 'FINAL_CLEAR':
-      return 'Final Clear';
+      return 'Final clear';
     case 'WORKING_CLEAR':
-      return 'Working Clear';
+      return 'Working clear';
     case 'RED':
       return 'Blocked (Red)';
     case 'TEMP_APPROVED':
-      return 'Temporarily Approved';
+      return 'Temporarily approved';
     case 'FINAL_CLEARED':
-      return 'Final Cleared';
+      return 'Final cleared';
     case 'RESOLVED':
       return 'Resolved';
     case 'OPEN':
       return 'Open';
     case 'IN_PROGRESS':
-      return 'In Progress';
+      return 'In progress';
     case 'DISMISSED':
       return 'Dismissed';
     default:
@@ -100,4 +100,18 @@ export function formatPriority(priority: string | undefined | null): string {
     default:
       return priority;
   }
+}
+
+export function formatExplanationText(text: string | undefined | null): string {
+  if (!text) return '';
+  return text
+    .replace(/\bINSUFFICIENT_EVIDENCE\b/g, 'Insufficient evidence')
+    .replace(/\bACTION_REQUIRED\b/g, 'Action required')
+    .replace(/\bREVIEW_RECOMMENDED\b/g, 'Review recommended')
+    .replace(/\bNO_ISSUE_SURFACED\b/g, 'No issue surfaced')
+    .replace(/\bSCRIPT_REVISION_SUPERSEDED\b/g, 'Superseded by new script revision')
+    .replace(/\bTEMP_APPROVED\b/g, 'Temporarily approved')
+    .replace(/\bFINAL_CLEARED\b/g, 'Final cleared')
+    .replace(/\bFINAL_CLEAR\b/g, 'Final clear')
+    .replace(/\bWORKING_CLEAR\b/g, 'Working clear');
 }

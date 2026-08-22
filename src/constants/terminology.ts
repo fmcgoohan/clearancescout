@@ -29,7 +29,7 @@ export const TERMINOLOGY = {
 
   // 4. Multi-Occurrence Relationship Copy
   COUNT_RELATIONSHIP_EXPLANATION:
-    'An entity may appear in more than one scene, so blocking occurrences can exceed the number of entities requiring clearance.',
+    'An entity may appear multiple times within one or more scenes, so blocking occurrences can exceed entity tasks.',
 
   // 5. Why A Scene Blocks Shooting Copy
   WHY_SCENE_BLOCKS_SHOOTING:

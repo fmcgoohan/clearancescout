@@ -99,10 +99,10 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
     expect(pluralize(7, 'clearance entity', 'clearance entities')).toBe('7 clearance entities');
 
     expect(formatStatus('INSUFFICIENT_EVIDENCE')).toBe('Insufficient evidence');
-    expect(formatStatus('ACTION_REQUIRED')).toBe('Action Required');
-    expect(formatStatus('REVIEW_RECOMMENDED')).toBe('Review Recommended');
-    expect(formatStatus('NO_ISSUE_SURFACED')).toBe('Cleared');
-    expect(formatStatus('SCRIPT_REVISION_SUPERSEDED')).toBe('Superseded by New Script Revision');
+    expect(formatStatus('ACTION_REQUIRED')).toBe('Action required');
+    expect(formatStatus('REVIEW_RECOMMENDED')).toBe('Review recommended');
+    expect(formatStatus('NO_ISSUE_SURFACED')).toBe('No issue surfaced');
+    expect(formatStatus('SCRIPT_REVISION_SUPERSEDED')).toBe('Superseded by new script revision');
 
     expect(formatCategory('BRAND')).toBe('Brand');
     expect(formatCategory('ART_MUSIC')).toBe('Art & Music');

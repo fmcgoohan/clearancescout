@@ -166,14 +166,51 @@ Alex types on an AeroTech Prism Laptop.
     expect(pluralize(0, 'blocking occurrence', 'blocking occurrences')).toBe('0 blocking occurrences');
     expect(pluralize(8, 'blocking occurrence', 'blocking occurrences')).toBe('8 blocking occurrences');
 
-    expect(formatStatus('FINAL_CLEAR')).toBe('Final Clear');
-    expect(formatStatus('WORKING_CLEAR')).toBe('Working Clear');
+    expect(formatStatus('FINAL_CLEAR')).toBe('Final clear');
+    expect(formatStatus('WORKING_CLEAR')).toBe('Working clear');
     expect(formatStatus('RED')).toBe('Blocked (Red)');
-    expect(formatStatus('TEMP_APPROVED')).toBe('Temporarily Approved');
-    expect(formatStatus('FINAL_CLEARED')).toBe('Final Cleared');
+    expect(formatStatus('TEMP_APPROVED')).toBe('Temporarily approved');
+    expect(formatStatus('FINAL_CLEARED')).toBe('Final cleared');
     expect(formatStatus('INSUFFICIENT_EVIDENCE')).toBe('Insufficient evidence');
-    expect(formatStatus('NO_ISSUE_SURFACED')).toBe('Cleared');
-    expect(formatStatus('ACTION_REQUIRED')).toBe('Action Required');
-    expect(formatStatus('REVIEW_RECOMMENDED')).toBe('Review Recommended');
+    expect(formatStatus('NO_ISSUE_SURFACED')).toBe('No issue surfaced');
+    expect(formatStatus('ACTION_REQUIRED')).toBe('Action required');
+    expect(formatStatus('REVIEW_RECOMMENDED')).toBe('Review recommended');
+  });
+
+  it('guarantees that an entity appearing twice in the same scene produces 1 entity, 1 department task, and 2 blocking occurrences', async () => {
+    const projRes = await request(app)
+      .post('/api/projects')
+      .send({
+        title: 'Single Scene Multi Occurrence Test',
+        productionCompany: 'Specter Media Corp',
+        projectType: 'Movie',
+        executionMode: 'DEMO_MODE',
+      });
+    expect(projRes.status).toBe(201);
+    const projectId = projRes.body.id;
+
+    // Ingest script with Midtown Spire Tower mentioned twice in Scene 1
+    const scriptText = `
+INT. MIDTOWN SPIRE TOWER - DAY
+Alice enters the lobby of Midtown Spire Tower. Later, Bob looks out the window of Midtown Spire Tower.
+`;
+    const uploadRes = await request(app)
+      .post(`/api/projects/${projectId}/script`)
+      .send({ scriptText, format: 'PLAINTEXT' });
+    expect(uploadRes.status).toBe(200);
+
+    const entities = await entityRepo.getEntitiesByProject(projectId);
+    expect(entities).toHaveLength(1);
+    expect(entities[0].canonicalName).toBe('Midtown Spire Tower');
+
+    const dashRes = await request(app).get(`/api/projects/${projectId}/dashboard`);
+    expect(dashRes.status).toBe(200);
+    const dash = dashRes.body;
+
+    expect(dash.kpis.totalEntities).toBe(1);
+    expect(dash.kpis.pendingActionsCount).toBe(1);
+    expect(dash.kpis.criticalBlockersCount).toBe(2);
+    expect(dash.shootBlockers).toHaveLength(2);
+    expect(dash.shootBlockers.every((b: any) => b.canonicalName === 'Midtown Spire Tower')).toBe(true);
   });
 });

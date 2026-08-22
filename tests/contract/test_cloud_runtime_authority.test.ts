@@ -82,10 +82,19 @@ describe('Feature 019: Server CLOUD_MODE Authority and Extraction Integrity', ()
   it('throws PARSING_FAILED in CLOUD_MODE when Gemini client is uninitialized without silent demo fallback', async () => {
     config.executionMode = 'CLOUD_MODE';
     process.env.EXECUTION_MODE = 'CLOUD_MODE';
+    const savedKey = config.geminiApiKey;
+    const savedAi = (scriptParserAgent as any).ai;
+    config.geminiApiKey = undefined;
+    (scriptParserAgent as any).ai = null;
 
-    await expect(
-      scriptParserAgent.parseScriptText('INT. ROOM - DAY\nAlex speaks.', 'FOUNTAIN')
-    ).rejects.toThrow(/Live AI screenplay parser unavailable in CLOUD_MODE/i);
+    try {
+      await expect(
+        scriptParserAgent.parseScriptText('INT. ROOM - DAY\nAlex speaks.', 'FOUNTAIN')
+      ).rejects.toThrow(/Live AI screenplay parser unavailable in CLOUD_MODE/i);
+    } finally {
+      config.geminiApiKey = savedKey;
+      (scriptParserAgent as any).ai = savedAi;
+    }
   });
 
   it('reports verifyFirestoreConnectivity connected: false in CLOUD_MODE if authentic Firestore is absent', async () => {

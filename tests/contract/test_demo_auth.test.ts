@@ -217,7 +217,9 @@ describe('Contract Test: Demo Access Token Protection', () => {
       const projectId = projRes.body.id;
 
       // Demo script load endpoint is public for judges (no token provided) -> reaches handler without 401 Unauthorized
-      const demoRes = await request(app).post(`/api/projects/${projectId}/script/demo`);
+      const demoRes = await request(app)
+        .post(`/api/projects/${projectId}/script/demo`)
+        .send({ autoEvaluate: false });
       expect(demoRes.status).not.toBe(401);
       expect([200, 502]).toContain(demoRes.status);
     });

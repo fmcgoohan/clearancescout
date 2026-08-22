@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient';
+import { formatStatus, formatExplanationText } from '../utils/formatters.js';
 
 export interface OccurrenceItem {
   id: string;
@@ -111,9 +112,9 @@ export function EntityDetailModal({
       case 'NO_ISSUE_SURFACED':
         return { label: '✓ Cleared', color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)' };
       case 'REVIEW_RECOMMENDED':
-        return { label: '⚠️ Review Recommended', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)' };
+        return { label: '⚠️ Review recommended', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)' };
       case 'ACTION_REQUIRED':
-        return { label: '⛔ Action Required', color: '#f87171', bg: 'rgba(248, 113, 113, 0.15)' };
+        return { label: '⛔ Action required', color: '#f87171', bg: 'rgba(248, 113, 113, 0.15)' };
       default:
         return { label: '⏳ Insufficient evidence', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)' };
     }
@@ -343,7 +344,7 @@ export function EntityDetailModal({
                       )}
                       {occ.riskRationale && (
                         <div>
-                          <strong style={{ color: 'var(--text-main)' }}>Rationale:</strong> {occ.riskRationale}
+                          <strong style={{ color: 'var(--text-main)' }}>Rationale:</strong> {formatExplanationText(occ.riskRationale)}
                         </div>
                       )}
                     </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
-import { pluralize, formatStatus, formatCategory } from '../utils/formatters.js';
+import { pluralize, formatStatus, formatCategory, formatExplanationText } from '../utils/formatters.js';
 import { TERMINOLOGY } from '../constants/terminology.js';
 
 export interface ProductionDashboardKPIs {
@@ -548,7 +548,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                                       </span>
                                     </div>
                                     <div style={{ fontSize: '0.75rem', color: '#fca5a5', marginTop: '4px', lineHeight: 1.4 }}>
-                                      {blk.riskRationale}
+                                      {formatExplanationText(blk.riskRationale)}
                                     </div>
                                   </div>
                                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>

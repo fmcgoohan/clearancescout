@@ -36,6 +36,8 @@ describe('Integration: Feature 020 Live Operator Access & First-Run Workflow', (
   it('T002: executes complete unauthenticated 401 gate -> token configuration -> bootstrap & 1-click demo workflow in CLOUD_MODE', async () => {
     config.executionMode = 'CLOUD_MODE';
     config.demoAccessToken = 'judge-pass-2026';
+    config.geminiApiKey = undefined;
+    config.parallelWebApiKey = undefined;
 
     // Step 1: Health check remains public and accessible
     const healthRes = await request(app).get('/api/health');

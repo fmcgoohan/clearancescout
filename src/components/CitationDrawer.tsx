@@ -378,7 +378,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 <span style={{ color: 'var(--text-muted)' }}>Counsel:</span> {latestOverride.counselName}
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', marginBottom: '4px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Override Status:</span> <strong>{latestOverride.overrideStatus}</strong>
+                <span style={{ color: 'var(--text-muted)' }}>Override Status:</span> <strong>{formatStatus(latestOverride.overrideStatus)}</strong>
               </div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                 "{latestOverride.rationale}"
@@ -412,9 +412,9 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                   fontSize: '0.8rem',
                 }}
               >
-                <option value="NO_ISSUE_SURFACED">NO ISSUE SURFACED (Cleared)</option>
-                <option value="REVIEW_RECOMMENDED">REVIEW RECOMMENDED (Coordinator Review)</option>
-                <option value="ACTION_REQUIRED">ACTION REQUIRED (High Risk / Replace)</option>
+                <option value="NO_ISSUE_SURFACED">No issue surfaced (Cleared)</option>
+                <option value="REVIEW_RECOMMENDED">Review recommended (Coordinator Review)</option>
+                <option value="ACTION_REQUIRED">Action required (High Risk / Replace)</option>
               </select>
             </div>
 

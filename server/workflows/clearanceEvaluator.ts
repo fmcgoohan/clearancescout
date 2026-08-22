@@ -201,7 +201,7 @@ export class ClearanceEvaluator {
     };
 
     let isGeminiFallback = false;
-    if (this.ai) {
+    if (this.ai && config.geminiApiKey && config.executionMode === 'CLOUD_MODE') {
       try {
         const prompt = `You are an expert entertainment clearance supervisor. Analyze this screenplay entity occurrence for clearance risks:
 Entity: ${entity.canonicalName}
@@ -288,7 +288,7 @@ Return valid JSON with these fields:
     if (activeMode === 'CLOUD_MODE' && searchResult.provenance === 'FALLBACK_FIXTURE' && !rightsCoverage.isCovered) {
       status = 'INSUFFICIENT_EVIDENCE';
       riskScore = 95;
-      rationale = `Live Parallel Search unavailable in CLOUD_MODE for "${entity.canonicalName}". Evaluated as INSUFFICIENT_EVIDENCE under fail-closed production policy.`;
+      rationale = `Live Parallel Search unavailable in CLOUD_MODE for "${entity.canonicalName}". Evaluated as Insufficient evidence under fail-closed production policy.`;
       contextFlags.length = 0;
       contextFlags.push('EVIDENCE_INSUFFICIENT', 'FALLBACK_RESEARCH_ACTIVE');
       if (isGeminiFallback) {
@@ -538,7 +538,7 @@ Return valid JSON with these fields:
       if (activeMode === 'CLOUD_MODE' && searchResult.provenance === 'FALLBACK_FIXTURE' && !rightsCoverage.isCovered) {
         status = 'INSUFFICIENT_EVIDENCE';
         riskScore = 95;
-        rationale = `Live Parallel Search unavailable in CLOUD_MODE for "${entity.canonicalName}". Evaluated as INSUFFICIENT_EVIDENCE under fail-closed production policy.`;
+        rationale = `Live Parallel Search unavailable in CLOUD_MODE for "${entity.canonicalName}". Evaluated as Insufficient evidence under fail-closed production policy.`;
         contextFlags.length = 0;
         contextFlags.push('EVIDENCE_INSUFFICIENT', 'FALLBACK_RESEARCH_ACTIVE');
       } else if (rightsCoverage.isCovered) {

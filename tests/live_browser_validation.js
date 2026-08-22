@@ -250,11 +250,14 @@ async function runLiveValidation() {
   if (dashDialogText.includes('Shoot Blocker') || dashDialogText.includes('shoot blockers')) {
     throw new Error('Assertion Failed: Operations Dashboard must not contain leftover "Shoot Blocker" operator copy');
   }
-  if (!dashDialogText.includes('An entity may appear in more than one scene')) {
-    throw new Error('Assertion Failed: Operations Dashboard must include the count relationship explanation banner');
+  if (!dashDialogText.includes('An entity may appear multiple times within one or more scenes')) {
+    throw new Error('Assertion Failed: Operations Dashboard must include the updated count relationship explanation banner');
   }
   if (!dashDialogText.includes('Why this blocks shooting')) {
     throw new Error('Assertion Failed: Operations Dashboard must include the "Why this blocks shooting" callout');
+  }
+  if (dashDialogText.includes('INSUFFICIENT_EVIDENCE') || dashDialogText.includes('ACTION_REQUIRED') || dashDialogText.includes('REVIEW_RECOMMENDED')) {
+    throw new Error('Assertion Failed: Operations Dashboard contains raw underscore enum codes');
   }
 
   // Verify Collapsible Scene Groups via Keyboard

@@ -105,6 +105,8 @@ describe('Integration: Judge-Ready 1-Click Demo Workflow & Invariant Preservatio
     const { scriptParserAgent } = await import('../../server/agents/ScriptParserAgent.js');
     const origMode = config.executionMode;
     const origToken = config.demoAccessToken;
+    const origGemini = config.geminiApiKey;
+    const origParallel = config.parallelWebApiKey;
     const parserSpy = vi.spyOn(scriptParserAgent, 'parseScriptText').mockImplementation(async (text: string) => {
       return (scriptParserAgent as any).parseScriptFallback(text);
     });
@@ -112,6 +114,8 @@ describe('Integration: Judge-Ready 1-Click Demo Workflow & Invariant Preservatio
     try {
       config.executionMode = 'CLOUD_MODE';
       config.demoAccessToken = 'judge-pass-2026';
+      config.geminiApiKey = undefined;
+      config.parallelWebApiKey = undefined;
 
       const projRes = await request(app)
         .post('/api/projects')
@@ -141,6 +145,8 @@ describe('Integration: Judge-Ready 1-Click Demo Workflow & Invariant Preservatio
       parserSpy.mockRestore();
       config.executionMode = origMode;
       config.demoAccessToken = origToken;
+      config.geminiApiKey = origGemini;
+      config.parallelWebApiKey = origParallel;
     }
   });
 });

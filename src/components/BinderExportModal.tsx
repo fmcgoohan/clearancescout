@@ -677,7 +677,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                       {rep.targetEntityName || 'Original Entity'}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      Status: <span className="badge badge-ACTION_REQUIRED">ACTION REQUIRED</span>
+                      Status: <span className="badge badge-ACTION_REQUIRED">{formatStatus('ACTION_REQUIRED')}</span>
                     </div>
                     <div className="no-print" style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
                       {onJumpToEvidence && (
