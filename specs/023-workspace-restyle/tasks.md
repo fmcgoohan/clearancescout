@@ -1,133 +1,125 @@
-# Tasks: Feature 023 Workspace Restyle
+# Tasks Breakdown: Feature 023 Workspace Restyle
 
-**Feature**: Workspace Restyle (All Five Surfaces)
-**Branch**: `023-workspace-restyle`
-**Spec**: [`spec.md`](spec.md) | **Plan**: [`plan.md`](plan.md)
+**Feature Branch**: `023-workspace-restyle`  
+**Feature Specification**: [`spec.md`](spec.md)  
+**Implementation Plan**: [`plan.md`](plan.md)  
+**Visual Oracle Reference**: [`mockup-v3.html`](../../mockup-v3.html) (repo root)
 
 ---
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Repository audit, token initialization, and design log baseline verification per Constitution v1.1.0.
+**Purpose**: Establish core design system tokens, typography loading, and static gate scripts matching `mockup-v3.html`.
 
-- [x] T001 Audit `src/` codebase for hardcoded hex colors, raw emoji characters, and un-locked modal scroll handlers
-- [x] T002 [P] Verify `DESIGN_LOG.md` append-only structure and Constitution v1.1.0 entry
+- [ ] T001 Configure CSS theme custom properties (`--bg`, `--panel`, `--panel2`, `--border`, `--border-soft`, `--text`, `--muted`, `--faint`, `--accent`, `--ok`, `--warn`, `--crit`, `--mono`, `--font-sans`) and keyframes (`rise`, `pop`, `pulse`) matching `mockup-v3.html` in `src/index.css`
+- [ ] T002 [P] Configure font loading (`Archivo` variable sans and `IBM Plex Mono`) in `index.html`
+- [ ] T003 [P] Update static gate script to scan `src/**/*.tsx` and `src/**/*.css` for zero emojis, tokenized hex, monospace confinement, infinite animations, reduced motion, and safe HTML entities in `scripts/spec-check.sh`
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Core CSS design tokens, SVG icon library, and body scroll locking hook required by all workspace surfaces.
+**Purpose**: Shared UI primitives and components required by all user stories before surface restyling begins.
 
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete.
-
-- [x] T003 [P] Define sacred status HSL colors, single brand accent, typography variables, and motion custom properties in `src/index.css`
-- [x] T004 [P] Create `useBodyScrollLock.ts` hook in `src/hooks/useBodyScrollLock.ts` supporting nested modal counter and body scroll locking
-- [x] T005 [P] Create lightweight inline stroke SVG icon component library in `src/components/icons/Icons.tsx` (`CheckCircleIcon`, `AlertTriangleIcon`, `XCircleIcon`, `HelpCircleIcon`, `FilmIcon`, `FileTextIcon`, `SearchIcon`, `RefreshCwIcon`, `XIcon`, `ChevronRightIcon`, `UploadIcon`, `DownloadIcon`)
-
-**Checkpoint**: Foundation ready - surface restyling can proceed.
+- [ ] T004 Create unified stroke SVG icon component (`<Icon name="..." />` with stroke-width 1.8) in `src/components/icons/Icon.tsx`
+- [ ] T005 Create shared Modal primitive component and hook (`useModalFocus`) supporting body scroll lock (`document.body.style.overflow = 'hidden'`), Escape key dismissal, and backdrop click handling in `src/components/Modal.tsx` and `src/hooks/useModalFocus.js`
+- [ ] T006 Create shared status badge component (`<StatusBadge />`) pairing HSL status color with explicit text labels (`CLEARED`, `REVIEW RECOMMENDED`, `ACTION REQUIRED`) in `src/components/StatusBadge.tsx`
 
 ---
 
 ## Phase 3: User Story 1 - One-Touch Command Bar & Quota Visibility (Priority: P1) 🎯 MVP
 
-**Goal**: Collapse header into a single command bar answering *Where am I?*, *What is my budget?* (live quota meter with tabular figures), and *What do I do next?* (single primary `.btn-primary` button for open tasks).
+**Goal**: Collapse multi-row header into a single unified command bar with project switcher, live tabular-figure quota meter, and a single primary open-tasks button.
 
-**Independent Test**: Verify command bar contains exactly one `.btn-primary` button, quota numerals use tabular figures (`font-variant-numeric: tabular-nums`), and header flex layout wraps cleanly at 900px width.
+**Independent Test**: Verify command bar contains exactly one `.btn-primary` page-wide, quota numbers use tabular figures (`tabular-nums`), and flex layout wraps cleanly at 900px width without horizontal scroll.
 
-- [x] T006 [P] [US1] Restructure `src/App.tsx` header toolbar into a single flex container command bar (`.header-command-bar`)
-- [x] T007 [P] [US1] Apply `font-variant-numeric: tabular-nums` to quota counter numerals in `src/App.tsx`
-- [x] T008 [US1] Configure single primary `.btn-primary` button page-wide pointing to open-tasks entry point with live count badge in `src/App.tsx`
+- [ ] T007 [US1] Implement unified single-row Header Command Bar with project switcher, live quota meter (`tabular-nums`), and single primary open-tasks button in `src/App.tsx`
+- [ ] T008 [US1] Add responsive flex-wrap CSS styling rules for command bar below 900px viewport width in `src/index.css`
+- [ ] T009 [US1] Add unit test verifying command bar primary button count, quota tabular figures display, and open tasks count badge in `src/tests/CommandBar.test.tsx`
 
-**Checkpoint**: User Story 1 complete - command bar is clean, responsive, and quota-transparent.
+**Checkpoint**: User Story 1 is fully functional and independently testable.
 
 ---
 
 ## Phase 4: User Story 2 - Hero Shooting Readiness & Plain-Language Scene Reasons (Priority: P1)
 
-**Goal**: Render Shooting Readiness Index at display scale (`>= 2.75rem`) with severity edge and per-scene cards containing plain-language, producer-focused unblocking reasons.
+**Goal**: Elevate Shooting Readiness Index to page hero at display scale with a severity border edge and per-scene cards showing plain-language unblocking reasons.
 
-**Independent Test**: Verify readiness index renders as largest text on page and non-cleared scenes show human-readable reasons (e.g. *"Hazard placard artwork needs rights or replacement"*).
+**Independent Test**: Verify readiness index percentage font size is largest on page (`>= 2.75rem`) and non-cleared scenes render human-readable why-blocked text without raw variable names.
 
-- [x] T009 [P] [US2] Redesign Shooting Readiness Index hero card in `src/pages/WorkspacePage.tsx` with display-scale typography (`font-size: 2.75rem`) and high-visibility severity border edge
-- [x] T010 [P] [US2] Update scene breakdown cards in `src/pages/WorkspacePage.tsx` to display standardized status chips, INT/EXT location micro-labels, and plain-language unblocking reasons
+- [ ] T010 [US2] Implement Shooting Readiness Index hero card with display scale percentage (`56px` / `2.75rem`) and high-visibility severity border edge in `src/pages/WorkspacePage.tsx`
+- [ ] T011 [US2] Implement per-scene cards displaying plain-language unblocking reasons (`.scene-why-blocked-reason`), INT/EXT location tags, and status chips in `src/pages/WorkspacePage.tsx`
+- [ ] T012 [US2] Add plain-language unblocking reason formatting logic in `src/utils/formatters.ts`
+- [ ] T013 [US2] Add unit test verifying display scale readiness percentage and plain-language scene reason rendering in `src/tests/ReadinessBand.test.tsx`
 
-**Checkpoint**: User Story 2 complete - shooting readiness and why-blocked reasons take top visual hierarchy.
+**Checkpoint**: User Stories 1 and 2 work independently.
 
 ---
 
 ## Phase 5: User Story 3 - Monospace Screenplay Panel with Dotted Underline Entities (Priority: P1)
 
-**Goal**: Present screenplay manuscript text strictly in a legal monospace zone (`Courier Prime`), rendering detected entities with status-colored dotted underlines and zero background fills.
+**Goal**: Render screenplay text strictly in a legal monospace zone (`IBM Plex Mono`) with status-colored dotted underlines on detected entity occurrences and 100% source text parity.
 
-**Independent Test**: Verify script panel uses monospace typography, source manuscript text is 100% preserved, and occurrences use status-colored dotted underlines with a single legend.
+**Independent Test**: Verify screenplay panel uses monospace typography, entity matches display status-colored dotted underlines without background fills, and source manuscript text is unmodified.
 
-- [x] T011 [P] [US3] Enforce `font-family: var(--font-mono)` (`Courier Prime`) on `.fountain-script` container in `src/components/ScriptViewer.tsx`
-- [x] T012 [P] [US3] Configure entity occurrence highlighting in `src/components/ScriptViewer.tsx` to use `text-decoration: underline dotted var(--status-color)` with `background-color: transparent`
-- [x] T013 [US3] Render single highlight legend explaining underline status colors above screenplay panel in `src/components/ScriptViewer.tsx`
+- [ ] T014 [US3] Configure screenplay manuscript panel (`.script`) with monospace typography (`IBM Plex Mono`) and 100% source content parity in `src/components/ScriptViewer.tsx`
+- [ ] T015 [US3] Implement status-colored dotted underlines (`text-decoration: underline dotted var(--status-color)`) with zero background color fills on detected entity occurrences in `src/components/ScriptViewer.tsx`
+- [ ] T016 [US3] Add single highlight legend for dotted underline status colors above screenplay panel in `src/components/ScriptViewer.tsx`
+- [ ] T017 [US3] Add unit test verifying screenplay monospace styling, dotted underline highlighting, and source script parity in `src/tests/ScriptViewer.test.tsx`
 
-**Checkpoint**: User Story 3 complete - screenplay panel provides legal monospace text fidelity and clean entity highlighting.
+**Checkpoint**: User Stories 1, 2, and 3 work independently.
 
 ---
 
 ## Phase 6: User Story 4 - Scan-First Entity Registry Table (Priority: P1)
 
-**Goal**: Format registry table with bold entity names, category muted sub-lines, chip-plus-word status badges, and domain-meaning right-aligned action buttons (*"2 uses"*, *"Ground"*, *"Compare"*).
+**Goal**: Streamline entity registry table with bold entity names, category sub-lines, chip-plus-word status badges, and right-aligned domain-meaning action buttons.
 
-**Independent Test**: Inspect registry table and verify bold entity title with muted category sub-line context, chip-plus-word status badges, right-aligned domain actions, and zero emoji or monospace text in table chrome.
+**Independent Test**: Verify entity table presents bold titles with sub-line categories, chip-plus-word status badges, domain action buttons (*"2 uses"*, *"Ground"*), and zero emojis or monospace fonts in table chrome.
 
-- [x] T014 [P] [US4] Reformat first column of `src/components/EntityRegistryTable.tsx` with bold entity title (`font-weight: 600`) and category as muted sub-line context (`font-size: 0.75rem`)
-- [x] T015 [P] [US4] Standardize clearance status badges in `src/components/EntityRegistryTable.tsx` to chip-plus-word format matching Readiness Band status vocabulary
-- [x] T016 [P] [US4] Label right-aligned action buttons in `src/components/EntityRegistryTable.tsx` by domain meaning (*"2 uses"*, *"Ground"*, *"Compare"*) and purge all emojis and monospace fonts from table chrome
+- [ ] T018 [US4] Restyle Entity Registry Table with bold entity title, muted category sub-line, chip-plus-word status badges, and right-aligned domain-meaning action buttons in `src/components/EntityRegistryTable.tsx`
+- [ ] T019 [US4] Enforce variable sans typography (`Archivo`) and zero emoji literals in registry table chrome in `src/components/EntityRegistryTable.tsx`
+- [ ] T020 [US4] Add unit test verifying bold entity title formatting, sub-line categories, chip status badges, and action buttons in `src/tests/EntityRegistryTable.test.tsx`
 
-**Checkpoint**: User Story 4 complete - entity registry table is optimized for rapid visual scanning by clearance coordinators.
+**Checkpoint**: User Stories 1 through 4 work independently.
 
 ---
 
 ## Phase 7: User Story 5 - Operations Dashboard & Department Task Center Modals (Priority: P2)
 
-**Goal**: Deliver Operations Dashboard modal with 5 KPI tiles and row-level triage controls, alongside Department Task Center modal supporting department tabs, severity-striped cards, in-place resolution, and body scroll locking.
+**Goal**: Deliver Operations Dashboard modal with 5 KPI tiles and row-level triage actions alongside Department Task Center modal with department tabs and layout-stable in-place task resolution.
 
-**Independent Test**: Open Operations Dashboard or Task Center modal, verify 5 KPI tiles, row-level triage buttons, `document.body.style.overflow = 'hidden'`, and Escape / backdrop / close button dismissal.
+**Independent Test**: Verify Operations Dashboard renders 5 KPI tiles, triage rows carry direct resolve buttons, Department Task Center supports in-place resolve transitions without layout shift, and all modals lock body scroll and dismiss on Escape or backdrop click.
 
-- [x] T017 [P] [US5] Redesign `src/components/ProductionDashboardModal.tsx` to feature 5 KPI tiles and row-level triage resolution buttons for blocking occurrences
-- [x] T018 [P] [US5] Redesign `src/components/ActionListModal.tsx` with department tabs, open counts, severity-striped cards, and layout-stable in-place task resolution
-- [x] T019 [P] [US5] Integrate `useBodyScrollLock` into `useModalFocus.js` and verify body scroll locking (`overflow: hidden`) across all 13 modal overlays
+- [ ] T021 [US5] Migrate Operations Dashboard Modal onto shared `<Modal />` primitive and render 5 KPI tiles plus row-level triage action buttons in `src/components/ProductionDashboardModal.tsx`
+- [ ] T022 [US5] Migrate Department Task Center Modal onto shared `<Modal />` primitive, adding department tabs, open counts, severity-striped cards, and in-place resolve transitions without layout shift in `src/components/ActionListModal.tsx`
+- [ ] T023 [US5] Add unit test verifying 5 KPI tiles, row-level triage actions, department tabs, and layout-stable task resolution in `src/tests/Modals.test.tsx`
 
-**Checkpoint**: User Story 5 complete - modals deliver high-density intelligence with reliable scroll locking and keyboard dismissal.
+**Checkpoint**: All 5 user stories are complete and independently testable.
 
 ---
 
-## Phase 8: Polish & Cross-Cutting Concerns
+## Phase 8: Polish & Cross-Cutting Verification
 
-**Purpose**: Test suite execution, production build validation, live Playwright browser verification, and design log recording.
+**Purpose**: E2E browser assertions, static compliance gate validation, full test suite execution, and design log recording.
 
-- [x] T020 [P] Execute complete automated unit and contract test suite `npm test` and verify 100% pass across all 217 tests
-- [x] T021 [P] Execute clean production build validation via `npm run build`
-- [x] T022 Execute live Playwright browser validation script `tests/live_design_system_validation.js` against local production preview server
-- [x] T023 Append final feature completion and verification evidence to `DESIGN_LOG.md` per Constitution v1.1.0 Article 8
+- [ ] T024 [P] Update Playwright E2E browser validation script to assert modal body scroll lock (`document.body.style.overflow === 'hidden'`), Escape key and backdrop dismissal, and layout-stable task resolve transitions in `tests/live_design_system_validation.js`
+- [ ] T025 Execute `./scripts/spec-check.sh` static gate and fix any remaining emoji literals, hex color strings outside `src/index.css`, or character encoding issues across `src/`
+- [ ] T026 Run complete unit test suite (`npm test`) and production build (`npm run build`) to verify clean compilation and zero test failures
+- [ ] T027 Log design updates, visual conformance verification against `mockup-v3.html`, and test evidence in `DESIGN_LOG.md`
 
 ---
 
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
-- **Setup (Phase 1)**: No dependencies.
-- **Foundational (Phase 2)**: Depends on Setup - BLOCKS all surface restyling stories.
-- **User Stories (Phase 3–7)**: Depend on Foundational phase completion. Can run sequentially or in parallel.
-- **Polish (Phase 8)**: Depends on all user stories complete.
+- **Setup (Phase 1)**: No dependencies — can start immediately
+- **Foundational (Phase 2)**: Depends on Setup completion — BLOCKS all user story implementations
+- **User Stories (Phases 3–7)**: Depend on Foundational phase completion (Phases 3 through 6 are P1; Phase 7 is P2)
+- **Polish (Phase 8)**: Depends on all user story phases being complete
 
----
-
-## Implementation Strategy
-
-### MVP First
-1. Complete Phase 1 (Setup) & Phase 2 (Foundational).
-2. Complete Phase 3 (US1: Command Bar) & Phase 4 (US2: Hero Readiness).
-3. Validate MVP header and readiness band.
-
-### Incremental Delivery
-1. Add Phase 5 (US3: Screenplay Panel).
-2. Add Phase 6 (US4: Entity Registry Table).
-3. Add Phase 7 (US5: Modals & Overlays).
-4. Run Phase 8 (Polish & Live Verification).
+### Parallel Execution Opportunities
+- Tasks T002, T003 in Setup can run in parallel
+- Tasks T004, T005, T006 in Foundational can run in parallel
+- After Phase 2 completes, user story implementations (Phases 3 through 7) can proceed incrementally or in parallel
+- Task T024 (Playwright script) in Polish can run in parallel with T025/T026
