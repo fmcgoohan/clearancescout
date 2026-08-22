@@ -42,6 +42,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadModalInitialMode, setUploadModalInitialMode] = useState<'FILE' | 'PASTE' | 'DEMO'>('FILE');
   const [scriptFormat, setScriptFormat] = useState<'PLAINTEXT' | 'FOUNTAIN' | 'PDF'>('PLAINTEXT');
 
   // Edit / Add modal state
@@ -255,8 +256,6 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       setIsUploading(false);
     }
   };
-
-  const [uploadModalInitialMode, setUploadModalInitialMode] = useState<'FILE' | 'PASTE' | 'DEMO'>('FILE');
 
   const handleLoadSampleScreenplay = () => {
     setUploadModalInitialMode('DEMO');
