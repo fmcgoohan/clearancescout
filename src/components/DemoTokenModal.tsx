@@ -25,6 +25,7 @@ export const DemoTokenModal: React.FC<DemoTokenModalProps> = ({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="token-modal-title"
@@ -43,8 +44,6 @@ export const DemoTokenModal: React.FC<DemoTokenModalProps> = ({
       }}
     >
       <div
-        ref={containerRef}
-        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '460px',

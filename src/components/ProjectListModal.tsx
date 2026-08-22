@@ -131,6 +131,7 @@ export function ProjectListModal({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="project-modal-title"
@@ -150,8 +151,6 @@ export function ProjectListModal({
       }}
     >
       <div
-        ref={containerRef}
-        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '720px',

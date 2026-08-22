@@ -132,6 +132,7 @@ export function EntityDetailModal({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="entity-detail-title"
@@ -151,8 +152,6 @@ export function EntityDetailModal({
       }}
     >
       <div
-        ref={containerRef}
-        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '760px',

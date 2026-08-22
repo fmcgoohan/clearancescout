@@ -167,6 +167,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="action-modal-title"
@@ -189,8 +190,6 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
       }}
     >
       <div
-        ref={containerRef}
-        tabIndex={-1}
         className="glass-panel"
         style={{
           width: '100%',

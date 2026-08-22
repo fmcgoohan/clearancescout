@@ -150,6 +150,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="dashboard-modal-title"
@@ -169,8 +170,6 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
       }}
     >
       <div
-        ref={containerRef}
-        tabIndex={-1}
         style={{
           background: 'var(--bg-secondary, #181926)',
           border: '1px solid var(--border-color, #2d3142)',

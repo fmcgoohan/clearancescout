@@ -117,8 +117,10 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
+      aria-labelledby="item-edit-modal-title"
       style={{
         position: 'fixed',
         top: 0,
@@ -138,8 +140,6 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
       }}
     >
       <div
-        ref={containerRef}
-        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '560px',
@@ -164,7 +164,7 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
           }}
         >
           <div>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
+            <h2 id="item-edit-modal-title" style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
               {isEditing ? `Edit Clearance Item: ${entityToEdit?.canonicalName}` : 'Add New Clearance Item'}
             </h2>
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>

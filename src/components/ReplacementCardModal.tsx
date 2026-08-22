@@ -53,6 +53,7 @@ export const ReplacementCardModal: React.FC<ReplacementCardModalProps> = ({ card
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="replacement-modal-title"
@@ -75,8 +76,6 @@ export const ReplacementCardModal: React.FC<ReplacementCardModalProps> = ({ card
       }}
     >
       <div
-        ref={containerRef}
-        tabIndex={-1}
         className="glass-panel"
         style={{
           width: '600px',

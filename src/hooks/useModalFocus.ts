@@ -66,7 +66,7 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
       previousActiveElementRef.current = document.activeElement;
     }
 
-    const focusTimer = setTimeout(() => {
+    const setInitialFocus = () => {
       if (!containerRef.current) return;
 
       // Priority 1: User explicitly specified initial focus element
@@ -75,8 +75,8 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
         return;
       }
 
-      // Priority 2: Element explicitly tagged with data-autofocus
-      const autoFocusEl = containerRef.current.querySelector<HTMLElement>('[data-autofocus]');
+      // Priority 2: Element explicitly tagged with data-autofocus or autofocus
+      const autoFocusEl = containerRef.current.querySelector<HTMLElement>('[data-autofocus], [autofocus]');
       if (autoFocusEl) {
         autoFocusEl.focus();
         return;
@@ -84,28 +84,43 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
 
       // Priority 3: First meaningful interactive control inside modal
       const focusableElements = getFocusableElements(containerRef.current);
-
       if (focusableElements.length > 0) {
         focusableElements[0].focus();
         return;
       }
 
-      // Priority 4: Focus container itself if tabIndex is set
-      if (containerRef.current.tabIndex !== undefined && containerRef.current.tabIndex >= -1) {
-        containerRef.current.focus();
+      // Priority 4: Heading with tabIndex=-1
+      const heading = containerRef.current.querySelector<HTMLElement>('h1, h2, h3, h4, [role="heading"]');
+      if (heading) {
+        if (!heading.hasAttribute('tabindex')) {
+          heading.setAttribute('tabindex', '-1');
+        }
+        heading.focus();
+        return;
       }
-    }, 20);
+
+      // Priority 5: Focus container itself
+      if (!containerRef.current.hasAttribute('tabindex')) {
+        containerRef.current.setAttribute('tabindex', '-1');
+      }
+      containerRef.current.focus();
+    };
+
+    // Attempt immediately and also in next tick/frame
+    setInitialFocus();
+    const rafId = requestAnimationFrame(setInitialFocus);
+    const timeoutId = setTimeout(setInitialFocus, 10);
 
     return () => {
-      clearTimeout(focusTimer);
+      cancelAnimationFrame(rafId);
+      clearTimeout(timeoutId);
       if (restoreFocus && previousActiveElementRef.current && document.body.contains(previousActiveElementRef.current)) {
-        // Return focus to trigger element
         const prevEl = previousActiveElementRef.current;
         setTimeout(() => {
           if (document.body.contains(prevEl)) {
             prevEl.focus();
           }
-        }, 10);
+        }, 0);
       }
     };
   }, [isOpen, restoreFocus]);
@@ -140,7 +155,7 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
 
-        // If focus somehow escaped the container, redirect back into it
+        // If focus somehow escaped the container or is on the container itself
         if (!containerRef.current.contains(document.activeElement)) {
           e.preventDefault();
           if (e.shiftKey) {
@@ -152,14 +167,17 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
         }
 
         if (e.shiftKey) {
-          // Shift + Tab: if on first element, wrap to last element
-          if (document.activeElement === firstElement) {
+          // Shift + Tab: if on first element or container, wrap to last element
+          if (document.activeElement === firstElement || document.activeElement === containerRef.current) {
             e.preventDefault();
             lastElement.focus();
           }
         } else {
           // Tab: if on last element, wrap to first element
           if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          } else if (document.activeElement === containerRef.current) {
             e.preventDefault();
             firstElement.focus();
           }
@@ -175,3 +193,4 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
 
   return { containerRef };
 }
+

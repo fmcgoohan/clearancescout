@@ -125,6 +125,10 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
 
   return (
     <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Clearance Binder Export"
       style={{
         position: 'fixed',
         top: 0,
@@ -164,8 +168,6 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
         }
       `}</style>
       <div
-        ref={containerRef}
-        tabIndex={-1}
         id="printable-binder-modal"
         className="glass-panel"
         style={{

@@ -114,6 +114,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-label="Side-by-Side Asset Comparison"
@@ -134,8 +135,6 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
       onClick={onClose}
     >
       <div
-        ref={containerRef}
-        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '1000px',

@@ -299,6 +299,7 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="placeholder-modal-title"
@@ -318,8 +319,6 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
       }}
     >
       <div
-        ref={containerRef}
-        tabIndex={-1}
         className="glass-panel"
         style={{
           width: '100%',

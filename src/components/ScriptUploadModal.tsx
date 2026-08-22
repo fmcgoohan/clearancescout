@@ -363,6 +363,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="upload-modal-title"
@@ -383,8 +384,6 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       }}
     >
       <div
-        ref={containerRef}
-        tabIndex={-1}
         className="glass-panel modal-responsive"
         style={{
           width: '640px',
