@@ -119,23 +119,39 @@ async function runLiveKeyboardFocusValidation() {
   await dashBtn.focus();
   await page.keyboard.press('Enter');
   await page.waitForSelector('[role="dialog"][aria-labelledby="dashboard-modal-title"]');
+  await page.waitForTimeout(100);
 
-  const initialFocusInsideDash = await page.evaluate(() => {
+  const dashFocusCheck = await page.evaluate(() => {
     const dialog = document.querySelector('[role="dialog"][aria-labelledby="dashboard-modal-title"]');
-    return dialog ? dialog.contains(document.activeElement) : false;
+    const active = document.activeElement;
+    return {
+      isInside: dialog ? dialog.contains(active) : false,
+      activeTag: active ? active.tagName : 'NULL',
+      activeText: active ? active.textContent : '',
+    };
   });
-  if (!initialFocusInsideDash) {
-    throw new Error('CRITICAL QA DEFECT: Initial focus is OUTSIDE Operations Dashboard!');
+  if (!dashFocusCheck.isInside) {
+    console.error('Operations Dashboard initial focus check details:', dashFocusCheck);
+    throw new Error(`CRITICAL QA DEFECT: Initial focus is OUTSIDE Operations Dashboard! Focus is on: <${dashFocusCheck.activeTag}> "${dashFocusCheck.activeText}"`);
   }
   console.log('  ✓ Initial focus inside Operations Dashboard: true');
 
   for (let i = 0; i < 12; i++) {
     await page.keyboard.press('Tab');
-    const isInside = await page.evaluate(() => {
+    const status = await page.evaluate(() => {
       const dialog = document.querySelector('[role="dialog"][aria-labelledby="dashboard-modal-title"]');
-      return dialog ? dialog.contains(document.activeElement) : false;
+      const active = document.activeElement;
+      return {
+        isInside: dialog ? dialog.contains(active) : false,
+        activeTag: active ? active.tagName : 'NULL',
+        activeText: active ? active.textContent : '',
+        activeOuter: active ? active.outerHTML.slice(0, 150) : '',
+      };
     });
-    if (!isInside) throw new Error('Focus escaped Operations Dashboard during Tab cycle');
+    if (!status.isInside) {
+      console.error('Focus escaped details:', status);
+      throw new Error(`Focus escaped Operations Dashboard during Tab cycle step ${i + 1}. Active element: <${status.activeTag}> ${status.activeText}`);
+    }
   }
   console.log('  ✓ Tab cycle (12 steps) remained strictly trapped inside Operations Dashboard');
 
