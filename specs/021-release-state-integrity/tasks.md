@@ -221,7 +221,7 @@
 - [X] T075 [HIGH] Convert `ProjectRepo.getProjectSnapshot` and `GET /scenes/readiness` to strictly read-only queries (retrieving existing evaluated scene readiness without invoking `sceneRepo.updateSceneReadiness` or emitting timeline events on GET) per FR-011, Constitution II (contradicts)
 - [X] T076 [MEDIUM] Standardize operator-facing terminology across header aria-labels, workspace toolbar (`📋 Department Tasks (N)`), Action Center header, and Operations Dashboard KPI to clearly distinguish Clearance Blockers, Review Recommended, and Department Tasks per FR-019, FR-020 (partial)
 - [X] T077 [HIGH] Strengthen contract test suite in `tests/contract/test_completion_barrier_sync.test.ts` and `tests/contract/test_rendered_sample_load_ui.test.ts` to assert exact 7 department tasks, Elena Vance present, 2 blockers / 5 review distribution, and strictly read-only GET behavior per SC-001..SC-008 (partial)
-- [X] T078 [HIGH] Execute complete rendered browser validation sequence against live/running application, capturing timestamped evidence across initial demo load, replacement, SYNCING progress stage, immediate Complete truth without modal opens, 20-30s idle stability, and reload persistence per SC-001..SC-008 (missing)
+- [ ] T078 [HIGH] Execute complete rendered browser validation sequence against live/running application, capturing timestamped evidence across initial demo load, replacement, SYNCING progress stage, immediate Complete truth without modal opens, 20-30s idle stability, and reload persistence per SC-001..SC-008 (missing)
 
 ---
 
