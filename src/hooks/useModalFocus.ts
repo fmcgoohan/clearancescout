@@ -118,12 +118,20 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
     return () => {
       cancelAnimationFrame(rafId);
       clearTimeout(timeoutId);
-      if (restoreFocus && previousActiveElementRef.current && document.body.contains(previousActiveElementRef.current)) {
+      if (restoreFocus) {
         const prevEl = previousActiveElementRef.current;
-        try {
-          prevEl.focus();
-        } catch {
-          // ignore
+        if (prevEl && document.body.contains(prevEl) && prevEl !== document.body) {
+          try {
+            prevEl.focus();
+            return;
+          } catch {
+            // ignore
+          }
+        }
+        // Fallback focus target: if previous active element is missing or body, focus header or primary workspace control
+        const fallback = document.querySelector<HTMLElement>('#demo-token-button, header button, button.btn-primary, #main-content');
+        if (fallback) {
+          try { fallback.focus(); } catch {}
         }
       }
     };
@@ -165,6 +173,10 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
       modifiedElements.forEach((el) => {
         el.removeAttribute('aria-hidden');
       });
+      // Safety check: ensure #root is never left aria-hidden when no dialogs remain
+      if (rootEl && !document.querySelector('[role="dialog"]:not([aria-hidden="true"])')) {
+        rootEl.removeAttribute('aria-hidden');
+      }
     };
   }, [isOpen]);
 

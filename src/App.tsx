@@ -107,7 +107,10 @@ export default function App() {
     setIsTimelineOpen(true);
   };
 
+  const [initError, setInitError] = useState<string | null>(null);
+
   const bootstrapFromHealth = async () => {
+    setInitError(null);
     let serverMode: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE' = 'DEMO_MODE';
     try {
       const healthRes = await apiFetch('/api/health');
@@ -138,16 +141,19 @@ export default function App() {
       setDemoToken(trimmed);
       setHasTokenConfigured(true);
       setDemoTokenInput(trimmed);
+      userDismissedTokenModalRef.current = false;
+      setAuthError(null);
+      setInitError(null);
+      setIsTokenModalOpen(false);
+      bootstrapFromHealth();
     } else {
       setDemoToken(null);
       setHasTokenConfigured(false);
       setDemoTokenInput('');
+      setAuthError('Demo access token cleared. Enter a valid access token to authenticate.');
+      userDismissedTokenModalRef.current = true;
+      setIsTokenModalOpen(false);
     }
-    userDismissedTokenModalRef.current = false;
-    setAuthError(null);
-    setIsTokenModalOpen(false);
-    // Immediately reload project & workspace bootstrap
-    bootstrapFromHealth();
   };
 
   const handleCloseTokenModal = () => {
@@ -208,6 +214,7 @@ export default function App() {
         setProjectType(data.projectType || 'Movie');
         setExecutionMode(serverExecutionModeRef.current || data.executionMode || 'DEMO_MODE');
         setAuthError(null);
+        setInitError(null);
         setQuotaError(null);
         setProjectSummary({
           entityCount: data.entityCount || 0,
@@ -230,9 +237,12 @@ export default function App() {
         if (!userDismissedTokenModalRef.current) {
           setIsTokenModalOpen(true);
         }
+      } else {
+        setInitError(`Failed to load project details (Server HTTP ${res.status}).`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading project details:', err);
+      setInitError(`Error loading project: ${err?.message || 'Network error'}`);
     }
   };
 
@@ -297,9 +307,13 @@ export default function App() {
         if (!userDismissedTokenModalRef.current) {
           setIsTokenModalOpen(true);
         }
+      } else {
+        const errText = await res.text().catch(() => '');
+        setInitError(`Unable to initialize project workspace (Server HTTP ${res.status}${errText ? `: ${errText}` : ''}).`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error initializing project:', err);
+      setInitError(`Workspace Initialization Failed: ${err?.message || 'Network connection error. Check server connectivity.'}`);
     }
   };
 
@@ -617,6 +631,7 @@ export default function App() {
 
           {/* Demo Token Header Trigger */}
           <button
+            id="demo-token-button"
             className="btn-secondary touch-target"
             aria-label="Configure Demo Access Token"
             style={{
@@ -796,8 +811,40 @@ export default function App() {
                   🔑 Enter Access Token
                 </button>
               </div>
+            ) : initError ? (
+              <div style={{ maxWidth: '520px', margin: '0 auto' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f87171', marginBottom: '12px' }}>
+                  ⚠️ Initialization Error
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '24px' }}>
+                  {initError}
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                  <button
+                    className="btn-primary"
+                    style={{ padding: '10px 24px', fontSize: '0.9rem' }}
+                    onClick={() => bootstrapFromHealth()}
+                  >
+                    🔄 Retry Workspace Initialization
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    style={{ padding: '10px 20px', fontSize: '0.9rem' }}
+                    onClick={handleOpenTokenModal}
+                  >
+                    🔑 Configure Access Token
+                  </button>
+                </div>
+              </div>
             ) : (
-              'Initializing ClearanceScout Workspace...'
+              <div style={{ maxWidth: '480px', margin: '0 auto' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
+                  Initializing ClearanceScout Workspace...
+                </div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  Loading project snapshot, entity registry, and clearance status...
+                </p>
+              </div>
             )}
           </div>
         )}

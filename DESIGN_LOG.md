@@ -98,7 +98,7 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Inescapable 401 Modal Loop**: Background 401 auth events continuously dispatched `clearancescout:auth_required`, re-opening `isTokenModalOpen` every time the user clicked Cancel, Close, or Escape. Added `userDismissedTokenModalRef` in `App.tsx` so explicit user dismissal closes the modal and keeps it closed, updating the header auth banner without trapping the user in a modal re-open loop.
 
 #### 2. Live Verification Evidence
-- **Live Playwright Fresh Load Verification (`scripts/phase1_live_verification.js`)**:
+- **Live Playwright Fresh Load Verification (`scripts/phase1_live_verification.js` & `scripts/phase1_fresh_session_verification.js`)**:
   - Fresh load with cleared storage automatically seeded 3 scenes and 7 entities (`Elena Vance`, `Summit Cola` found: TRUE).
   - Modal rendered with computed style `{ backgroundColor: 'rgb(21, 27, 35)', color: 'rgb(231, 237, 244)', border: '1px solid rgb(36, 46, 58)', display: 'block', visibility: 'visible' }`.
   - Autofocus verified on `#demo-token-input-field`.
@@ -106,6 +106,7 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
   - Cancel button dismissal: PASSED (`isModalOpen: false`).
   - Close (`✕`) button dismissal: PASSED (`isModalOpen: false`).
   - Workspace non-inertness & interactivity after modal close: PASSED.
+  - Robust Error Fallback & Retry UI verified when API calls fail or return non-200.
 - **Unit & Contract Test Suite (`npm test`)**: 94 test files PASSED, 245 total tests PASSED (100% green).
 - **Production Build (`npm run build`)**: PASSED cleanly.
 - **Static Spec Check Gate (`./scripts/spec-check.sh`)**: PASSED cleanly.
