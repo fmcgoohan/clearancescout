@@ -1,8 +1,14 @@
 <!--
 Sync Impact Report:
-- Version change: 1.1.0 → 1.2.0
-- List of modified principles: None
-- Added sections: XIV. Article 9: Target Shipped Architecture (Reference Implementations Are Rendered Oracles)
+- Version change: 1.2.0 → 1.3.0
+- List of modified principles: Expanded Article 6 (Status Is Never Color Alone)
+- Added sections:
+  - XV. Article 10: No Regression in Project-Data Synchronization (NON-NEGOTIABLE)
+  - XVI. Article 11: Accessibility Is a Release Requirement (NON-NEGOTIABLE)
+  - XVII. Article 12: Counts Have One Documented Semantic Source (NON-NEGOTIABLE)
+  - XVIII. Article 13: Every Screen Exposes a Clear Next Action (NON-NEGOTIABLE)
+  - XIX. Article 14: Domain Terminology Is Understandable or Explained (NON-NEGOTIABLE)
+  - XX. Article 15: Responsive Behavior Is Specified, Not Inferred (NON-NEGOTIABLE)
 - Removed sections: None
 - Follow-up TODOs: None
 -->
@@ -83,6 +89,34 @@ Sync Impact Report:
 - When a reference implementation (such as a single self-contained HTML file, vanilla CSS/JS demo, or prototype) is provided as guidance, it defines the intended rendered visual/behavioral outcomes and verification criteria as an oracle, but MUST NOT be interpreted as a mandate to rewrite, replace, or discard the actual shipped application architecture.
 - All specification plans, task breakdowns, and feature deliverables MUST continue to target and integrate cleanly into the real shipped codebase.
 
+### XV. Article 10: No Regression in Project-Data Synchronization (NON-NEGOTIABLE)
+- Processing stages, completion summaries, scenes, canonical entities, clearance statuses, blocking occurrences, and department tasks MUST update atomically and maintain 100% data synchronization across all views.
+- Ingestion progress, processing stage changes, and final completion counts MUST synchronize seamlessly across the primary header, readiness band, clearance item registry, operations dashboard, and department task center.
+
+### XVI. Article 11: Accessibility Is a Release Requirement (NON-NEGOTIABLE)
+- Full compliance with WCAG 2.2 AA standards is a mandatory release gate for all surfaces.
+- All controls MUST support complete keyboard operation, logical focus order, visible focus indicators (`:focus-visible`), modal focus trapping, Escape key dismissal, focus restoration, screen-reader live regions (`role="status"`, `aria-live="polite"`), high contrast, 200% zoom scale without layout clipping, and zero reliance on color alone.
+
+### XVII. Article 12: Counts Have One Documented Semantic Source (NON-NEGOTIABLE)
+- Distinct count semantics MUST be strictly defined and maintained from a single authoritative source:
+  1. **Entities**: Count of unique canonical clearance items.
+  2. **Blocking Occurrences**: Count of appearances across scenes that currently block shooting readiness.
+  3. **Department Tasks**: Count of assigned work items across production departments.
+  4. **Scenes**: Count of screenplay production units.
+- UI elements MUST explicitly clarify that an entity may appear multiple times across scenes, explaining why blocking occurrences can exceed entity tasks.
+
+### XVIII. Article 13: Every Screen Exposes a Clear Next Action (NON-NEGOTIABLE)
+- Every application surface MUST proactively guide operators by identifying and highlighting the contextual recommended next action.
+- The UI MUST prominently answer *"What do I do next?"* by rendering a recommended action card explaining the highest-priority unresolved blocker, why it is recommended, and providing a 1-click resolution path.
+
+### XIX. Article 14: Domain Terminology Is Understandable or Explained (NON-NEGOTIABLE)
+- Primary UI chrome and action controls MUST use domain-appropriate production terminology (e.g., *"Research"* / *"Verify Evidence"* instead of *"Ground"*, *"Clearance Items"* instead of *"Canonical Entity Registry"*, *"Screenplay Intake & Clearance"* instead of *"Multi-Format Script Ingestion"*).
+- Technical implementation terms and specialist concepts MUST be relegated to tooltips or advanced detail views, or accompanied by supporting explanatory text.
+
+### XX. Article 15: Responsive Behavior Is Specified, Not Inferred (NON-NEGOTIABLE)
+- Layout behavior MUST be explicitly specified and tested across three target breakpoints: Wide Desktop (>=1200px side-by-side), Medium Tablet (768px–1199px resizable or collapsible split pane), and Narrow Mobile (<768px stacked layout).
+- Responsive layouts MUST preserve primary action visibility, prevent clipped action columns, eliminate horizontal body scrolling, and ensure modals fit within the viewport with internal scrolling.
+
 ## System Architecture & Operational Constraints
 
 ### Deterministic Calculation & Reasoning Pattern
@@ -103,4 +137,4 @@ Sync Impact Report:
   - **PATCH**: Wording clarifications, typo fixes, or non-semantic formatting updates.
 - All Pull Requests, architectural specs (`spec.md`), implementation plans (`plan.md`), and task breakdowns (`tasks.md`) MUST explicitly comply with all principles defined in this constitution.
 
-**Version**: 1.2.0 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-08-23
+**Version**: 1.3.0 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-08-23
