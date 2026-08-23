@@ -11,9 +11,9 @@
 
 **Purpose**: Establish core design system tokens, typography loading, and static gate scripts matching `mockup-v3.html`.
 
-- [ ] T001 Configure CSS theme custom properties (`--bg`, `--panel`, `--panel2`, `--border`, `--border-soft`, `--text`, `--muted`, `--faint`, `--accent`, `--ok`, `--warn`, `--crit`, `--mono`, `--font-sans`) and keyframes (`rise`, `pop`, `pulse`) matching `mockup-v3.html` in `src/index.css`
-- [ ] T002 [P] Configure font loading (`Archivo` variable sans and `IBM Plex Mono`) in `index.html`
-- [ ] T003 [P] Update static gate script to scan `src/**/*.tsx` and `src/**/*.css` for zero emojis, tokenized hex, monospace confinement, infinite animations, reduced motion, and safe HTML entities in `scripts/spec-check.sh`
+- [x] T001 Configure CSS theme custom properties (`--bg`, `--panel`, `--panel2`, `--border`, `--border-soft`, `--text`, `--muted`, `--faint`, `--accent`, `--ok`, `--warn`, `--crit`, `--mono`, `--font-sans`) and keyframes (`rise`, `pop`, `pulse`) matching `mockup-v3.html` in `src/index.css`
+- [x] T002 [P] Configure font loading (`Archivo` variable sans and `IBM Plex Mono`) in `index.html`
+- [x] T003 [P] Update static gate script to scan `src/**/*.tsx` and `src/**/*.css` for zero emojis, tokenized hex, monospace confinement, infinite animations, reduced motion, and safe HTML entities in `scripts/spec-check.sh`
 
 ---
 
@@ -21,9 +21,9 @@
 
 **Purpose**: Shared UI primitives and components required by all user stories before surface restyling begins.
 
-- [ ] T004 Create unified stroke SVG icon component (`<Icon name="..." />` with stroke-width 1.8) in `src/components/icons/Icon.tsx`
-- [ ] T005 Create shared Modal primitive component and hook (`useModalFocus`) supporting body scroll lock (`document.body.style.overflow = 'hidden'`), Escape key dismissal, and backdrop click handling in `src/components/Modal.tsx` and `src/hooks/useModalFocus.js`
-- [ ] T006 Create shared status badge component (`<StatusBadge />`) pairing HSL status color with explicit text labels (`CLEARED`, `REVIEW RECOMMENDED`, `ACTION REQUIRED`) in `src/components/StatusBadge.tsx`
+- [x] T004 Create unified stroke SVG icon component (`<Icon name="..." />` with stroke-width 1.8) in `src/components/icons/Icon.tsx`
+- [x] T005 Create shared Modal primitive component and hook (`useModalFocus`) supporting body scroll lock (`document.body.style.overflow = 'hidden'`), Escape key dismissal, and backdrop click handling in `src/components/Modal.tsx` and `src/hooks/useModalFocus.js`
+- [x] T006 Create shared status badge component (`<StatusBadge />`) pairing HSL status color with explicit text labels (`CLEARED`, `REVIEW RECOMMENDED`, `ACTION REQUIRED`) in `src/components/StatusBadge.tsx`
 
 ---
 
@@ -33,9 +33,9 @@
 
 **Independent Test**: Verify command bar contains exactly one `.btn-primary` page-wide, quota numbers use tabular figures (`tabular-nums`), and flex layout wraps cleanly at 900px width without horizontal scroll.
 
-- [ ] T007 [US1] Implement unified single-row Header Command Bar with project switcher, live quota meter (`tabular-nums`), and single primary open-tasks button in `src/App.tsx`
-- [ ] T008 [US1] Add responsive flex-wrap CSS styling rules for command bar below 900px viewport width in `src/index.css`
-- [ ] T009 [US1] Add unit test verifying command bar primary button count, quota tabular figures display, and open tasks count badge in `src/tests/CommandBar.test.tsx`
+- [x] T007 [US1] Implement unified single-row Header Command Bar with project switcher, live quota meter (`tabular-nums`), and single primary open-tasks button in `src/App.tsx`
+- [x] T008 [US1] Add responsive flex-wrap CSS styling rules for command bar below 900px viewport width in `src/index.css`
+- [x] T009 [US1] Add unit test verifying command bar primary button count, quota tabular figures display, and open tasks count badge in `src/tests/CommandBar.test.tsx`
 
 **Checkpoint**: User Story 1 is fully functional and independently testable.
 
@@ -47,10 +47,10 @@
 
 **Independent Test**: Verify readiness index percentage font size is largest on page (`>= 2.75rem`) and non-cleared scenes render human-readable why-blocked text without raw variable names.
 
-- [ ] T010 [US2] Implement Shooting Readiness Index hero card with display scale percentage (`56px` / `2.75rem`) and high-visibility severity border edge in `src/pages/WorkspacePage.tsx`
-- [ ] T011 [US2] Implement per-scene cards displaying plain-language unblocking reasons (`.scene-why-blocked-reason`), INT/EXT location tags, and status chips in `src/pages/WorkspacePage.tsx`
-- [ ] T012 [US2] Add plain-language unblocking reason formatting logic in `src/utils/formatters.ts`
-- [ ] T013 [US2] Add unit test verifying display scale readiness percentage and plain-language scene reason rendering in `src/tests/ReadinessBand.test.tsx`
+- [x] T010 [US2] Implement Shooting Readiness Index hero card with display scale percentage (`56px` / `2.75rem`) and high-visibility severity border edge in `src/pages/WorkspacePage.tsx`
+- [x] T011 [US2] Implement per-scene cards displaying plain-language unblocking reasons (`.scene-why-blocked-reason`), INT/EXT location tags, and status chips in `src/pages/WorkspacePage.tsx`
+- [x] T012 [US2] Add plain-language unblocking reason formatting logic in `src/utils/formatters.ts`
+- [x] T013 [US2] Add unit test verifying display scale readiness percentage and plain-language scene reason rendering in `src/tests/ReadinessBand.test.tsx`
 
 **Checkpoint**: User Stories 1 and 2 work independently.
 
@@ -62,10 +62,10 @@
 
 **Independent Test**: Verify screenplay panel uses monospace typography, entity matches display status-colored dotted underlines without background fills, and source manuscript text is unmodified.
 
-- [ ] T014 [US3] Configure screenplay manuscript panel (`.script`) with monospace typography (`IBM Plex Mono`) and 100% source content parity in `src/components/ScriptViewer.tsx`
-- [ ] T015 [US3] Implement status-colored dotted underlines (`text-decoration: underline dotted var(--status-color)`) with zero background color fills on detected entity occurrences in `src/components/ScriptViewer.tsx`
-- [ ] T016 [US3] Add single highlight legend for dotted underline status colors above screenplay panel in `src/components/ScriptViewer.tsx`
-- [ ] T017 [US3] Add unit test verifying screenplay monospace styling, dotted underline highlighting, and source script parity in `src/tests/ScriptViewer.test.tsx`
+- [x] T014 [US3] Configure screenplay manuscript panel (`.script`) with monospace typography (`IBM Plex Mono`) and 100% source content parity in `src/components/ScriptViewer.tsx`
+- [x] T015 [US3] Implement status-colored dotted underlines (`text-decoration: underline dotted var(--status-color)`) with zero background color fills on detected entity occurrences in `src/components/ScriptViewer.tsx`
+- [x] T016 [US3] Add single highlight legend for dotted underline status colors above screenplay panel in `src/components/ScriptViewer.tsx`
+- [x] T017 [US3] Add unit test verifying screenplay monospace styling, dotted underline highlighting, and source script parity in `src/tests/ScriptViewer.test.tsx`
 
 **Checkpoint**: User Stories 1, 2, and 3 work independently.
 
@@ -77,9 +77,9 @@
 
 **Independent Test**: Verify entity table presents bold titles with sub-line categories, chip-plus-word status badges, domain action buttons (*"2 uses"*, *"Ground"*), and zero emojis or monospace fonts in table chrome.
 
-- [ ] T018 [US4] Restyle Entity Registry Table with bold entity title, muted category sub-line, chip-plus-word status badges, and right-aligned domain-meaning action buttons in `src/components/EntityRegistryTable.tsx`
-- [ ] T019 [US4] Enforce variable sans typography (`Archivo`) and zero emoji literals in registry table chrome in `src/components/EntityRegistryTable.tsx`
-- [ ] T020 [US4] Add unit test verifying bold entity title formatting, sub-line categories, chip status badges, and action buttons in `src/tests/EntityRegistryTable.test.tsx`
+- [x] T018 [US4] Restyle Entity Registry Table with bold entity title, muted category sub-line, chip-plus-word status badges, and right-aligned domain-meaning action buttons in `src/components/EntityRegistryTable.tsx`
+- [x] T019 [US4] Enforce variable sans typography (`Archivo`) and zero emoji literals in registry table chrome in `src/components/EntityRegistryTable.tsx`
+- [x] T020 [US4] Add unit test verifying bold entity title formatting, sub-line categories, chip status badges, and action buttons in `src/tests/EntityRegistryTable.test.tsx`
 
 **Checkpoint**: User Stories 1 through 4 work independently.
 
@@ -91,9 +91,9 @@
 
 **Independent Test**: Verify Operations Dashboard renders 5 KPI tiles, triage rows carry direct resolve buttons, Department Task Center supports in-place resolve transitions without layout shift, and all modals lock body scroll and dismiss on Escape or backdrop click.
 
-- [ ] T021 [US5] Migrate Operations Dashboard Modal onto shared `<Modal />` primitive and render 5 KPI tiles plus row-level triage action buttons in `src/components/ProductionDashboardModal.tsx`
-- [ ] T022 [US5] Migrate Department Task Center Modal onto shared `<Modal />` primitive, adding department tabs, open counts, severity-striped cards, and in-place resolve transitions without layout shift in `src/components/ActionListModal.tsx`
-- [ ] T023 [US5] Add unit test verifying 5 KPI tiles, row-level triage actions, department tabs, and layout-stable task resolution in `src/tests/Modals.test.tsx`
+- [x] T021 [US5] Migrate Operations Dashboard Modal onto shared `<Modal />` primitive and render 5 KPI tiles plus row-level triage action buttons in `src/components/ProductionDashboardModal.tsx`
+- [x] T022 [US5] Migrate Department Task Center Modal onto shared `<Modal />` primitive, adding department tabs, open counts, severity-striped cards, and in-place resolve transitions without layout shift in `src/components/ActionListModal.tsx`
+- [x] T023 [US5] Add unit test verifying 5 KPI tiles, row-level triage actions, department tabs, and layout-stable task resolution in `src/tests/Modals.test.tsx`
 
 **Checkpoint**: All 5 user stories are complete and independently testable.
 
@@ -103,10 +103,10 @@
 
 **Purpose**: E2E browser assertions, static compliance gate validation, full test suite execution, and design log recording.
 
-- [ ] T024 [P] Update Playwright E2E browser validation script to assert modal body scroll lock (`document.body.style.overflow === 'hidden'`), Escape key and backdrop dismissal, and layout-stable task resolve transitions in `tests/live_design_system_validation.js`
-- [ ] T025 Execute `./scripts/spec-check.sh` static gate and fix any remaining emoji literals, hex color strings outside `src/index.css`, or character encoding issues across `src/`
-- [ ] T026 Run complete unit test suite (`npm test`) and production build (`npm run build`) to verify clean compilation and zero test failures
-- [ ] T027 Log design updates, visual conformance verification against `mockup-v3.html`, and test evidence in `DESIGN_LOG.md`
+- [x] T024 [P] Update Playwright E2E browser validation script to assert modal body scroll lock (`document.body.style.overflow === 'hidden'`), Escape key and backdrop dismissal, and layout-stable task resolve transitions in `tests/live_design_system_validation.js`
+- [x] T025 Execute `./scripts/spec-check.sh` static gate and fix any remaining emoji literals, hex color strings outside `src/index.css`, or character encoding issues across `src/`
+- [x] T026 Run complete unit test suite (`npm test`) and production build (`npm run build`) to verify clean compilation and zero test failures
+- [x] T027 Log design updates, visual conformance verification against `mockup-v3.html`, and test evidence in `DESIGN_LOG.md`
 
 ---
 
