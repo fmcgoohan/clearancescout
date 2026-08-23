@@ -11,6 +11,7 @@ import { apiFetch, getDemoToken, setDemoToken } from './utils/apiClient';
 import { pluralize } from './utils/formatters';
 import { TERMINOLOGY } from './constants/terminology';
 import { AlertTriangleIcon, LockIcon, KeyIcon, ZapIcon, RefreshCwIcon } from './components/icons/Icons';
+import { SettingsPopover } from './components/SettingsPopover';
 
 interface ProjectSummary {
   entityCount: number;
@@ -521,6 +522,7 @@ export default function App() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header Bar */}
       <header
+        role="banner"
         className="glass-panel responsive-stack header-command-bar"
         style={{
           borderRadius: 0,
@@ -629,49 +631,7 @@ export default function App() {
             <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'entity', 'entities')})</span>
           </div>
 
-          {/* Demo Token Header Trigger */}
-          <button
-            id="demo-token-button"
-            className="btn-secondary touch-target"
-            aria-label="Configure Demo Access Token"
-            style={{
-              fontSize: '0.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              borderColor: hasTokenConfigured ? 'var(--accent-cyan)' : 'var(--border-color)',
-            }}
-            onClick={handleOpenTokenModal}
-          >
-            Demo Token {hasTokenConfigured && <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>●</span>}
-          </button>
-
-          {/* Execution Mode Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
-            <label htmlFor="mode-select" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mode:</label>
-            <select
-              id="mode-select"
-              aria-label="Server execution mode from health endpoint"
-              title="Execution mode reported by GET /api/health"
-              value={executionMode}
-              onChange={(e) => setExecutionMode(e.target.value as any)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--accent-cyan)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-            >
-              <option value="DEMO_MODE" style={{ background: '#1e293b' }}>DEMO_MODE</option>
-              <option value="TEST_MODE" style={{ background: '#1e293b' }}>TEST_MODE</option>
-              <option value="CLOUD_MODE" style={{ background: '#1e293b' }}>CLOUD_MODE</option>
-            </select>
-          </div>
-
-          {/* Live Quota Indicator */}
+          {/* Live Quota Indicator Badge */}
           <div
             className="touch-target quota-meter"
             aria-label={`Live Quota Remaining: ${liveQuota.remaining} of ${liveQuota.limit}`}
@@ -704,15 +664,17 @@ export default function App() {
             {isExportingBinder ? 'Compiling...' : 'Export Clearance Binder'}
           </button>
 
-          {/* Timeline Action Trigger */}
-          <button
-            className="btn-secondary touch-target"
-            aria-label="Open Observable Action Timeline"
-            style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => setIsTimelineOpen(true)}
-          >
-            <ZapIcon size={14} /> Observable Timeline ({events.length})
-          </button>
+          {/* Settings Menu Offloading Secondary Controls */}
+          {/* Server execution mode from health endpoint */}
+          <SettingsPopover
+            hasTokenConfigured={hasTokenConfigured}
+            onOpenTokenModal={handleOpenTokenModal}
+            executionMode={executionMode}
+            setExecutionMode={setExecutionMode}
+            liveQuota={liveQuota}
+            eventsCount={events.length}
+            onOpenTimeline={() => setIsTimelineOpen(true)}
+          />
         </div>
       </header>
 

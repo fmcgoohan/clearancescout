@@ -113,3 +113,27 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Unit & Contract Test Suite (`npm test`)**: 94 test files PASSED, 245 total tests PASSED (100% green).
 - **Production Build (`npm run build`)**: PASSED cleanly.
 
+
+### Phase 2: Terminology, Header, Navigation & Workflow Hierarchy Simplification
+
+**Date**: August 24, 2026  
+**Spec Version**: `specs/025-phase2-simplification/spec.md` (Constitution `v1.4.0`)  
+
+#### 1. Scope & Implementation Summary
+- **Constitution Article 16 Amendment**: Formally amended the project constitution (`v1.4.0`) to establish rules for streamlined header controls, popover offloading for secondary controls, 4-tab section navigation, and contextual next-action recommendation.
+- **Header & Settings Popover Offloading (`SettingsPopover.tsx`)**: Streamlined `App.tsx` header bar by offloading administrative & setup controls (Demo Access Token trigger, execution mode selector, quota meter details, observable event timeline trigger) into a dedicated accessible popover (`SettingsPopover.tsx`) triggered by a clean SVG gear button (`SettingsIcon`).
+- **Contextual Recommended Next Action (`RecommendedActionCard.tsx`)**: Refactored the top-level Action Card with a strict 5-tier deterministic priority cascade:
+  1. `No Screenplay Ingested` -> `Add Screenplay` trigger
+  2. `Review N Clearance Blockers` -> `Research {target}` trigger + tab switch to Clearance Items with `ACTION_REQUIRED` filter
+  3. `Review N Recommended Items` -> `Research {target}` trigger + tab switch to Clearance Items with `REVIEW_RECOMMENDED` filter
+  4. `View N Department Tasks` -> Switch tab to Tasks
+  5. `All Clearance Items Cleared` -> `Export Clearance Binder` trigger
+- **4-Tab Workspace Section Navigation (`WorkspacePage.tsx`)**: Replaced fragmented views with 4 section tabs (`Overview`, `Screenplay`, `Clearance Items`, `Tasks`) with accessible `role="tablist"` and keyboard navigation.
+- **Terminology & Density Standardisation**: Standardized "Ground/Grounding" terminology to "Research" in UI strings, filters, and action buttons. Preserved compact table density for entity registry and scene lists.
+
+#### 2. Verification Evidence
+- **Static Spec Check Gate (`./scripts/spec-check.sh`)**: PASSED cleanly (0 raw emojis in UI chrome, animations compliant, focus-visible present).
+- **Automated Vitest Suite (`npm test`)**: All 94 test files / 245 tests PASSED (100% green).
+- **Live Playwright Session (`scratch/phase2_live_verification.js`)**: Real browser testing verified header layout, Settings popover open/close & Escape key dismissal, Demo Token modal triggering from Settings popover, 4-tab section navigation switching, and Recommended Action priority cascade.
+
+

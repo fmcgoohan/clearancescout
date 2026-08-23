@@ -23,6 +23,7 @@ out/
 logs/
 
 # Testing
+scratch/
 coverage/
 
 # IDE / OS / Tooling

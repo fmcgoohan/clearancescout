@@ -103,6 +103,10 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   // Responsive Panel Collapse State
   const [isScriptCollapsed, setIsScriptCollapsed] = useState(false);
 
+  // Phase 2 Workspace Section Tab Navigation State
+  const [activeTab, setActiveTab] = useState<'overview' | 'screenplay' | 'clearance' | 'tasks'>('overview');
+  const [activeStatusFilter, setActiveStatusFilter] = useState<string>('ALL');
+
   // Ingestion feedback toast banner (Feature 021)
   const [ingestionToast, setIngestionToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
 
@@ -375,11 +379,106 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Workspace Section Navigation Bar (User Story 17) */}
+      <div
+        role="tablist"
+        aria-label="Workspace Sections"
+        style={{
+          display: 'flex',
+          gap: '8px',
+          borderBottom: '1px solid var(--border-color)',
+          paddingBottom: '12px',
+          marginBottom: '4px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <button
+          role="tab"
+          id="tab-overview"
+          aria-selected={activeTab === 'overview'}
+          aria-controls="section-overview"
+          className={`btn-secondary touch-target ${activeTab === 'overview' ? 'tab-active' : ''}`}
+          onClick={() => setActiveTab('overview')}
+          style={{
+            background: activeTab === 'overview' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+            borderColor: activeTab === 'overview' ? 'var(--accent-cyan)' : 'var(--border-color)',
+            color: activeTab === 'overview' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'overview' ? 700 : 500,
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+          }}
+        >
+          Overview
+        </button>
+        <button
+          role="tab"
+          id="tab-screenplay"
+          aria-selected={activeTab === 'screenplay'}
+          aria-controls="section-screenplay"
+          className={`btn-secondary touch-target ${activeTab === 'screenplay' ? 'tab-active' : ''}`}
+          onClick={() => setActiveTab('screenplay')}
+          style={{
+            background: activeTab === 'screenplay' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+            borderColor: activeTab === 'screenplay' ? 'var(--accent-cyan)' : 'var(--border-color)',
+            color: activeTab === 'screenplay' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'screenplay' ? 700 : 500,
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+          }}
+        >
+          Screenplay ({scenes.length} {pluralize(scenes.length, 'scene', 'scenes')})
+        </button>
+        <button
+          role="tab"
+          id="tab-clearance"
+          aria-selected={activeTab === 'clearance'}
+          aria-controls="section-clearance"
+          className={`btn-secondary touch-target ${activeTab === 'clearance' ? 'tab-active' : ''}`}
+          onClick={() => setActiveTab('clearance')}
+          style={{
+            background: activeTab === 'clearance' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+            borderColor: activeTab === 'clearance' ? 'var(--accent-cyan)' : 'var(--border-color)',
+            color: activeTab === 'clearance' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'clearance' ? 700 : 500,
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+          }}
+        >
+          Clearance Items ({entities.length})
+        </button>
+        <button
+          role="tab"
+          id="tab-tasks"
+          aria-selected={activeTab === 'tasks'}
+          aria-controls="section-tasks"
+          className={`btn-secondary touch-target ${activeTab === 'tasks' ? 'tab-active' : ''}`}
+          onClick={() => setActiveTab('tasks')}
+          style={{
+            background: activeTab === 'tasks' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+            borderColor: activeTab === 'tasks' ? 'var(--accent-cyan)' : 'var(--border-color)',
+            color: activeTab === 'tasks' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'tasks' ? 700 : 500,
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+          }}
+        >
+          Tasks ({openActionsCount > 0 ? `${openActionsCount} Open` : '0 Open'})
+        </button>
+      </div>
+
       {/* Upload & Controls Panel */}
       <div className="glass-panel responsive-stack" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
-            Multi-Format Script Ingestion & 5-Category Resolution
+            Screenplay Intake & 5-Category Resolution
           </h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Extract scenes, highlight in-line occurrences, and review legal counsel overrides.
@@ -399,7 +498,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               gap: '6px',
             }}
           >
-            🎬 Load Sample Screenplay
+            <FilmIcon size={16} />
+            <span>Load Sample Screenplay</span>
           </button>
 
           <select
@@ -715,8 +815,18 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       {/* Recommended Next Action Area (UX Redesign Requirement Area 1) */}
       <RecommendedActionCard
         entities={entities}
+        hasScreenplay={scenes.length > 0}
+        departmentTasksCount={openActionsCount}
+        onSelectTab={(tab, filter) => {
+          setActiveTab(tab);
+          if (filter) setActiveStatusFilter(filter);
+        }}
+        onOpenUploadModal={() => {
+          setUploadModalInitialMode('FILE');
+          setIsUploadModalOpen(true);
+        }}
+        onExportBinder={onExportBinder}
         onResearchItem={(id) => onEvaluateClearance(id)}
-        onOpenDashboard={() => setIsDashboardModalOpen(true)}
       />
 
 
