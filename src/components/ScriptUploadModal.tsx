@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { apiFetch } from '../utils/apiClient.js';
 import { useModalFocus } from '../hooks/useModalFocus.js';
 import {
@@ -387,7 +388,9 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
     }
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
       ref={containerRef}
       role="dialog"
@@ -900,6 +903,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

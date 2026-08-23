@@ -129,7 +129,7 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
     };
   }, [isOpen, restoreFocus]);
 
-  // 1.5. Manage background accessibility tree inertness (set aria-hidden on top-level body siblings)
+  // 1.5. Manage background accessibility tree inertness (set aria-hidden on top-level body siblings and #root)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -138,6 +138,7 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
 
     const modifiedElements: HTMLElement[] = [];
 
+    // Check direct body children (#root and top-level siblings)
     Array.from(document.body.children).forEach((child) => {
       if (child instanceof HTMLElement && child !== container && !child.contains(container)) {
         if (!child.hasAttribute('aria-hidden')) {
@@ -146,6 +147,19 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
         }
       }
     });
+
+    // Fallback safeguard: if container is rendered inside #root, mark siblings within #root as aria-hidden
+    const rootEl = document.getElementById('root');
+    if (rootEl && rootEl.contains(container)) {
+      Array.from(rootEl.children).forEach((child) => {
+        if (child instanceof HTMLElement && child !== container && !child.contains(container)) {
+          if (!child.hasAttribute('aria-hidden')) {
+            child.setAttribute('aria-hidden', 'true');
+            modifiedElements.push(child);
+          }
+        }
+      });
+    }
 
     return () => {
       modifiedElements.forEach((el) => {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useModalFocus } from '../hooks/useModalFocus';
 
 interface DemoTokenModalProps {
@@ -19,11 +20,13 @@ export const DemoTokenModal: React.FC<DemoTokenModalProps> = ({
   const { containerRef } = useModalFocus<HTMLDivElement>({
     isOpen,
     onClose,
+    canCloseOnEscape: true,
   });
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
       ref={containerRef}
       role="dialog"
@@ -83,6 +86,7 @@ export const DemoTokenModal: React.FC<DemoTokenModalProps> = ({
             </label>
             <input
               id="demo-token-input-field"
+              data-autofocus
               type="password"
               value={tokenInput}
               onChange={(e) => onTokenInputChange(e.target.value)}
@@ -134,6 +138,8 @@ export const DemoTokenModal: React.FC<DemoTokenModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
+

@@ -54,8 +54,35 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
   - **Limitation Logged**: The execution context runs inside a non-interactive background process lacking macOS System Accessibility privacy grants (`System Settings > Privacy & Security > Accessibility`). Attempting programmatic VoiceOver control causes macOS TCC security to block execution.
   - **Authoritative ARIA Evidence**: Confirmed 100% DOM/ARIA tree accessibility coverage in prior automated pass (4 landmark regions, 0 unlabelled buttons, `aria-live="polite"` dynamic processing announcements, `aria-modal="true"` dialog focus traps, background inertness).
 
+
 ---
 
-## Feature 023 Workspace Restyle Record
+## Phase 1: Demo Token Modal Root-Cause Fix & Cross-Modal Verification
 
-The ClearanceScout workspace was restyled across all five primary workspace surfaces in strict accordance with Constitution v1.2.0 and the visual/behavioral outcomes defined in `mockup-v3.html`.
+**Date**: August 23, 2026  
+**Phase**: Phase 1 Modal Fix (Brief: `docs/phase1-modal-fix-phase2-ux-simplification-brief.md`)  
+
+### Root-Cause Analysis
+1. **Portal Stacking Context Divergence**: `DemoTokenModal` previously rendered inline inside `#root` rather than portaling directly to `document.body`. When rendered inside complex DOM hierarchies or sticky containers, it shared the stacking context of `#root`.
+2. **Initial Focus Landing**: The close button `✕` previously received initial focus instead of the access token text input `#demo-token-input-field`.
+
+### Phase 1 Resolution & Contract Enforcement
+1. **Top-Level Portal Rendering**: Updated `DemoTokenModal.tsx`, `ScriptUploadModal.tsx`, and `Modal.tsx` to render overlay containers directly via `createPortal(..., document.body)`.
+2. **Initial Auto-Focus**: Added `data-autofocus` attribute to `#demo-token-input-field` so focus lands directly inside the input control upon dialog open.
+3. **Dual-Layer Background Inertness**: Enhanced `useModalFocus.ts` to query direct children of `document.body` (and fall back to `#root` siblings) and set `aria-hidden="true"` while any modal is open, restoring it on close or unmount.
+4. **Keyboard & Escape Dismissal**: Confirmed `Escape` key keydown listener, `Cancel` button click handler, backdrop click, and `✕` close button click reliably call `onClose()`.
+
+### Verification Evidence & Test Coverage
+- **Dedicated Phase 1 Contract Test Suite (`tests/contract/test_phase1_demo_token_and_cross_modal_contract.test.tsx`)**: 17/17 tests PASSED cleanly.
+  - `demo_token_dialog_renders_above_backdrop`: PASSED
+  - `demo_token_dialog_background_is_inert`: PASSED
+  - `demo_token_dialog_traps_focus`: PASSED
+  - `demo_token_escape_closes`: PASSED
+  - `demo_token_cancel_closes`: PASSED
+  - `demo_token_close_restores_trigger_focus`: PASSED
+  - Cross-modal contract verification passed for all 12 major dialog surfaces (`DemoTokenModal`, `ScriptUploadModal`, `ProjectListModal`, `ProductionDashboardModal`, `ActionListModal`, `EntityDetailModal`, `PlaceholderManagerModal`, `RightsModal`, `ItemEditModal`, `ReplacementCardModal`, `ComparisonModal`, `BinderExportModal`).
+- **Full Test Suite (`npm test`)**: 94 test files PASSED, 245 total tests PASSED (100% green).
+- **TypeScript Compilation (`npm run build`)**: PASSED cleanly (0 errors, Vite production bundle generated).
+- **Static Spec Check Gate (`./scripts/spec-check.sh`)**: PASSED cleanly.
+- **Live Modal Reproduction Script (`tests/reproduce_demo_token_modal.js`)**: PASSED cleanly against local application server (DOM rect `460x280`, `#demo-token-input-field` active element, `#root` `aria-hidden="true"`, Escape dismissal confirmed).
+

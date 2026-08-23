@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useModalFocus } from '../hooks/useModalFocus';
 import { Icon } from './icons/Icon';
 
@@ -32,8 +33,9 @@ export const Modal: React.FC<ModalProps> = ({
   });
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
       className="overlay open"
       onClick={(e) => {
@@ -134,7 +136,8 @@ export const Modal: React.FC<ModalProps> = ({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
