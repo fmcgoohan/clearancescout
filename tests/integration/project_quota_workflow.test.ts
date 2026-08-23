@@ -8,6 +8,7 @@ describe('Integration: Project Research Limits Lifecycle & Exhaustion Workflow (
     // 1. Create two isolated projects in CLOUD_MODE
     const proj1Res = await request(app)
       .post('/api/projects')
+      .set('x-demo-token', 'test-token')
       .send({
         title: 'Project Alpha (Quota Testing)',
         productionCompany: 'Alpha Studios',
@@ -19,6 +20,7 @@ describe('Integration: Project Research Limits Lifecycle & Exhaustion Workflow (
 
     const proj2Res = await request(app)
       .post('/api/projects')
+      .set('x-demo-token', 'test-token')
       .send({
         title: 'Project Beta (Quota Testing)',
         productionCompany: 'Beta Pictures',
@@ -50,6 +52,7 @@ describe('Integration: Project Research Limits Lifecycle & Exhaustion Workflow (
     // 3. Add an entity to Project Alpha and exhaust remaining quota
     const entRes = await request(app)
       .post(`/api/projects/${proj1Id}/entities`)
+      .set('x-demo-token', 'test-token')
       .send({
         canonicalName: 'Neon Beverage',
         entityCategory: 'PRODUCT',
@@ -65,6 +68,7 @@ describe('Integration: Project Research Limits Lifecycle & Exhaustion Workflow (
     // 4. Trigger evaluation on exhausted Project Alpha -> 429 Too Many Requests
     const evalRes = await request(app)
       .post(`/api/projects/${proj1Id}/clearance/evaluate`)
+      .set('x-demo-token', 'test-token')
       .send({ canonicalEntityIds: [entityId] });
 
     expect(evalRes.status).toBe(429);
@@ -74,6 +78,7 @@ describe('Integration: Project Research Limits Lifecycle & Exhaustion Workflow (
     // 5. Trigger replacement on exhausted Project Alpha -> 429 Too Many Requests
     const repRes = await request(app)
       .post(`/api/projects/${proj1Id}/replacements/generate`)
+      .set('x-demo-token', 'test-token')
       .send({ canonicalEntityId: entityId, eraAesthetic: 'Modern Cinematic' });
 
     expect(repRes.status).toBe(429);

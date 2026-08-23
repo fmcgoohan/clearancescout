@@ -1,9 +1,9 @@
 # Feature Specification: ClearanceScout UX Redesign
 
 **Feature Branch**: `024-ux-redesign`  
-**Version**: `v0.24.1-ux-redesign` (Phase 1 Hotfix Specification Enforced)  
+**Version**: `v0.24.2-ux-redesign` (Phase 1 Hotfix Regression & Accessibility Safeguards Enforced)  
 **Created**: 2026-08-23  
-**Updated**: 2026-08-23  
+**Updated**: 2026-08-24  
 **Status**: Approved (Phase 1 Hotfix Regression Codified)  
 **Input**: UX Redesign Brief (`docs/ux-redesign-brief.md`) & Phase 1 QA Brief (`docs/phase1-modal-fix-phase2-ux-simplification-brief.md`)  
 
@@ -232,6 +232,9 @@ The redesign MUST preserve and non-regress all existing system capabilities:
 - **AC-13.2**: Opening `DemoTokenModal` renders a fully opaque, high-contrast panel (`#151B23`) with autofocus landing on the access token input (`#demo-token-input-field`).
 - **AC-13.3**: Pressing `Escape`, clicking `Cancel`, or clicking `✕` dismisses `DemoTokenModal`, restoring full focus and interactivity to `#root` without leaving a blocking backdrop overlay.
 - **AC-13.4**: When `DemoTokenModal` is explicitly dismissed by the user, subsequent 401 authentication events update the header status banner (`"Authentication Required"`) but DO NOT forcibly re-open the modal loop.
+- **AC-13.5 (2026-08-24)**: When workspace initialization encounters API or network errors, `App.tsx` MUST display a clear `Initialization Error` fallback card with a `"Retry Workspace Initialization"` button and a `"Configure Access Token"` button (rendered with SVG icons, zero raw emojis per Article 3), preventing unhandled loading stalls.
+- **AC-13.6 (2026-08-24)**: When a modal is closed and the previously focused trigger element is missing or `document.body`, `useModalFocus.ts` MUST fall back to focusing a designated workspace trigger (`#demo-token-button`, `header button`, or `#main-content`) rather than stranding focus on `document.body`.
+- **AC-13.7 (2026-08-24)**: `useModalFocus.ts` MUST perform a cleanup safety check upon modal unmount to ensure `#root` is never left with `aria-hidden="true"` when no active dialogs remain.
 
 ---
 
@@ -244,4 +247,4 @@ The redesign will be deemed complete when:
 4. 200% zoom and responsive viewport tests pass at 1200px, 900px, 768px, and 375px.
 5. Bundled demo script reliably yields 3 scenes, 7 entities, and 7 department tasks.
 6. `DESIGN_LOG.md` is appended with version `1.3.0` changes and verification evidence.
-7. Phase 1 Hotfix regression suite (`scripts/phase1_live_verification.js` and `tests/contract/test_phase1_demo_token_and_cross_modal_contract.test.tsx`) passes 100% clean for opaque modal surface rendering, autofocus, clean dismissal, and automatic initial screenplay seeding on fresh load.
+7. Phase 1 Hotfix regression suite (`scripts/phase1_fresh_session_verification.js` and `tests/contract/test_phase1_demo_token_and_cross_modal_contract.test.tsx`) passes 100% clean for opaque modal surface rendering, autofocus, clean dismissal, fallback error UI, and automatic initial screenplay seeding on fresh load.

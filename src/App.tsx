@@ -10,7 +10,7 @@ import { useTimelineSSE } from './hooks/useTimelineSSE';
 import { apiFetch, getDemoToken, setDemoToken } from './utils/apiClient';
 import { pluralize } from './utils/formatters';
 import { TERMINOLOGY } from './constants/terminology';
-import { AlertTriangleIcon } from './components/icons/Icons';
+import { AlertTriangleIcon, LockIcon, KeyIcon, ZapIcon, RefreshCwIcon } from './components/icons/Icons';
 
 interface ProjectSummary {
   entityCount: number;
@@ -711,7 +711,7 @@ export default function App() {
             style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
             onClick={() => setIsTimelineOpen(true)}
           >
-            ⚡ Observable Timeline ({events.length})
+            <ZapIcon size={14} /> Observable Timeline ({events.length})
           </button>
         </div>
       </header>
@@ -797,24 +797,24 @@ export default function App() {
           <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
             {authError ? (
               <div style={{ maxWidth: '480px', margin: '0 auto' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f87171', marginBottom: '12px' }}>
-                  🔒 Authentication Required
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f87171', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <LockIcon size={20} /> Authentication Required
                 </div>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '24px' }}>
                   Production CLOUD_MODE requires an authorized Demo Access Token to access projects, observable timeline streams, and clearance workflows.
                 </p>
                 <button
                   className="btn-primary"
-                  style={{ padding: '10px 24px', fontSize: '0.9rem' }}
+                  style={{ padding: '10px 24px', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                   onClick={handleOpenTokenModal}
                 >
-                  🔑 Enter Access Token
+                  <KeyIcon size={16} /> Enter Access Token
                 </button>
               </div>
             ) : initError ? (
               <div style={{ maxWidth: '520px', margin: '0 auto' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f87171', marginBottom: '12px' }}>
-                  ⚠️ Initialization Error
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f87171', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <AlertTriangleIcon size={20} /> Initialization Error
                 </div>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '24px' }}>
                   {initError}
@@ -822,17 +822,17 @@ export default function App() {
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                   <button
                     className="btn-primary"
-                    style={{ padding: '10px 24px', fontSize: '0.9rem' }}
+                    style={{ padding: '10px 24px', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                     onClick={() => bootstrapFromHealth()}
                   >
-                    🔄 Retry Workspace Initialization
+                    <RefreshCwIcon size={16} /> Retry Workspace Initialization
                   </button>
                   <button
                     className="btn-secondary"
-                    style={{ padding: '10px 20px', fontSize: '0.9rem' }}
+                    style={{ padding: '10px 20px', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                     onClick={handleOpenTokenModal}
                   >
-                    🔑 Configure Access Token
+                    <KeyIcon size={16} /> Configure Access Token
                   </button>
                 </div>
               </div>

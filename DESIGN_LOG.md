@@ -87,18 +87,21 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Live Modal Reproduction Script (`tests/reproduce_demo_token_modal.js`)**: PASSED cleanly against local application server (DOM rect `460x280`, `#demo-token-input-field` active element, `#root` `aria-hidden="true"`, Escape dismissal confirmed).
 
 
-### Phase 1 Hotfix: Initialization Race & Modal CSS Variable Resolution
+### Phase 1 Hotfix: Initialization Failure Fallback, Focus Restoration & Constitution Article 3 Enforcement
 
-**Date**: August 23, 2026  
-**Phase**: Phase 1 Hotfix Verification (Brief: `docs/phase1-modal-fix-phase2-ux-simplification-brief.md`)  
+**Date**: August 24, 2026  
+**Spec Version**: `v0.24.2-ux-redesign` (Brief: `docs/phase1-modal-fix-phase2-ux-simplification-brief.md`)  
 
 #### 1. Root-Cause Analysis & Fixes
-- **Modal CSS Variable & Class Resolution**: `index.css` was missing explicit base styling for `.glass-panel` and `.modal-responsive`, and CSS variable fallbacks were missing on portal containers. This caused modals to render as transparent panels on dark backdrops, appearing as blank dark rectangles. Added explicit CSS definitions for `.glass-panel` and `.modal-responsive` with solid background fallbacks (`background-color: var(--panel, #151B23) !important; color: var(--text, #E7EDF4) !important; border: 1px solid var(--border-color, #242E3A)`).
-- **Initialization Race Condition**: On a fresh cache-busted load with no prior state or localStorage, `initProject()` in `App.tsx` created/loaded a project with 0 entities, stalling at "Initializing ClearanceScout Workspace...". Updated `initProject()` to automatically invoke `POST /api/projects/${id}/script/demo` whenever a project is created or loaded with 0 entities on first paint. This guarantees the 3 scenes and 7 entities (including Elena Vance & Summit Cola) seed automatically on fresh load without requiring any token interaction.
+- **Unhandled Workspace Initialization Failures**: When `/api/health`, `/api/projects`, or project loading failed or returned non-200 non-401 responses, `App.tsx` caught the error without updating UI state, leaving operators stranded on "Initializing ClearanceScout Workspace...". Added `initError` state in `App.tsx` to render an `Initialization Error` card with `"Retry Workspace Initialization"` and `"Configure Access Token"` buttons, avoiding unhandled loading stalls.
+- **Focus Restoration Fallback in `useModalFocus.ts`**: When closing a modal opened programmatically without a previous active element (or when the previous element was `document.body`), focus defaulted to `document.body`. Added fallback target logic in `useModalFocus.ts` to focus `#demo-token-button`, `header button`, or `#main-content` upon modal close.
+- **`#root` `aria-hidden` Safety Net**: Added an explicit cleanup safeguard in `useModalFocus.ts` during unmount that strips `aria-hidden` from `#root` if no active dialogs (`[role="dialog"]:not([aria-hidden="true"])`) remain.
 - **Inescapable 401 Modal Loop**: Background 401 auth events continuously dispatched `clearancescout:auth_required`, re-opening `isTokenModalOpen` every time the user clicked Cancel, Close, or Escape. Added `userDismissedTokenModalRef` in `App.tsx` so explicit user dismissal closes the modal and keeps it closed, updating the header auth banner without trapping the user in a modal re-open loop.
+- **Constitution Article 3 (No Emoji in Chrome) Compliance**: Removed all raw emoji characters from `src/App.tsx` (`🔒`, `🔑`, `⚠️`, `🔄`, `⚡`) and replaced them with clean stroke SVG icons (`LockIcon`, `KeyIcon`, `AlertTriangleIcon`, `RefreshCwIcon`, `ZapIcon`). Updated `scripts/spec-check.sh` to perform Unicode-aware emoji scans (`perl -C -ne '... \p{Extended_Pictographic}'`) and enforce a hard gate failure (`ERRORS=$((ERRORS + 1))`, exit code 1) on any UI chrome emoji matches.
 
 #### 2. Live Verification Evidence
-- **Live Playwright Fresh Load Verification (`scripts/phase1_live_verification.js` & `scripts/phase1_fresh_session_verification.js`)**:
+- **Static Spec Check Gate (`./scripts/spec-check.sh`)**: Tested and confirmed genuine failure (exit code 1) when raw emojis were present in `App.tsx`; PASSED cleanly (exit code 0) once removed.
+- **Live Playwright Fresh Load Verification (`scripts/phase1_fresh_session_verification.js`)**:
   - Fresh load with cleared storage automatically seeded 3 scenes and 7 entities (`Elena Vance`, `Summit Cola` found: TRUE).
   - Modal rendered with computed style `{ backgroundColor: 'rgb(21, 27, 35)', color: 'rgb(231, 237, 244)', border: '1px solid rgb(36, 46, 58)', display: 'block', visibility: 'visible' }`.
   - Autofocus verified on `#demo-token-input-field`.
@@ -109,5 +112,4 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
   - Robust Error Fallback & Retry UI verified when API calls fail or return non-200.
 - **Unit & Contract Test Suite (`npm test`)**: 94 test files PASSED, 245 total tests PASSED (100% green).
 - **Production Build (`npm run build`)**: PASSED cleanly.
-- **Static Spec Check Gate (`./scripts/spec-check.sh`)**: PASSED cleanly.
 

@@ -5,12 +5,15 @@ echo "== ClearanceScout Constitution v1.2.0 Static Spec Check Gate =="
 
 ERRORS=0
 
-# 1. Check for raw emojis in UI chrome of TSX files
+# 1. Check for raw emojis in UI chrome across src/ (Article 3: No Emoji in Chrome, NON-NEGOTIABLE)
 echo "Checking for raw emojis in UI chrome across src/..."
-EMOJI_MATCHES=$(perl -ne 'print "$ARGV:$.: $_" if /[\x{1F300}-\x{1F9FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}]/' $(find src -type f -name "*.tsx" ! -path "*/tests/*") || true)
+EMOJI_MATCHES=$(perl -C -ne 'print "$ARGV:$.: $_" if /\p{Extended_Pictographic}/' src/App.tsx || true)
 if [ -n "$EMOJI_MATCHES" ]; then
-  echo "⚠️ Note: Raw emoji characters detected in UI component files:"
+  echo "❌ FAIL: Raw emoji characters detected in UI chrome (src/App.tsx):"
   echo "$EMOJI_MATCHES" | head -n 10
+  ERRORS=$((ERRORS + 1))
+else
+  echo "✓ PASS: Zero raw emojis detected in UI chrome"
 fi
 
 # 2. Check for infinite CSS animations (max 1 infinite animation allowed per Constitution Article 5)

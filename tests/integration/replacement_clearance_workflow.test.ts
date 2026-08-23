@@ -44,7 +44,9 @@ describe('Integration: Replacement Brand Candidate Self-Clearance Workflow', () 
     expect(porscheRepRes.body.citations.length).toBeGreaterThanOrEqual(1);
 
     // 4. Verify entity in registry now has replacementCard attached
-    const entitiesRes = await request(app).get(`/api/projects/${projectId}/entities`);
+    const entitiesRes = await request(app)
+      .get(`/api/projects/${projectId}/entities`)
+      .set('x-demo-token', 'test-token');
     expect(entitiesRes.status).toBe(200);
     const updatedPorsche = entitiesRes.body.find((e: any) => e.id === porscheEntity.id);
     expect(updatedPorsche.replacementCard).toBeDefined();
@@ -53,6 +55,7 @@ describe('Integration: Replacement Brand Candidate Self-Clearance Workflow', () 
     // 5. Test 3-Attempt Bounding & Escalation for Colliding Entity
     const collScriptRes = await request(app)
       .post(`/api/projects/${projectId}/script`)
+      .set('x-demo-token', 'test-token')
       .send({
         scriptText: 'INT. WAREHOUSE - NIGHT\nJordan checks a box of [COLLISION] Goods.',
         format: 'PLAINTEXT',
@@ -61,6 +64,7 @@ describe('Integration: Replacement Brand Candidate Self-Clearance Workflow', () 
 
     const collRepRes = await request(app)
       .post(`/api/projects/${projectId}/replacements/generate`)
+      .set('x-demo-token', 'test-token')
       .send({
         canonicalEntityId: collidingEntity.id,
         eraAesthetic: 'Modern Industrial',
@@ -73,7 +77,9 @@ describe('Integration: Replacement Brand Candidate Self-Clearance Workflow', () 
     expect(collRepRes.body.clearanceStatus).not.toBe('NO_ISSUE_SURFACED');
 
     // 6. Verify Timeline events recorded strictly authorized event types
-    const timelineRes = await request(app).get(`/api/projects/${projectId}/timeline`);
+    const timelineRes = await request(app)
+      .get(`/api/projects/${projectId}/timeline`)
+      .set('x-demo-token', 'test-token');
     expect(timelineRes.status).toBe(200);
     const timelineTypes = timelineRes.body.events.map((e: any) => e.eventType);
     expect(timelineTypes).toContain('REPLACEMENT_ATTEMPT');

@@ -123,3 +123,22 @@ export const UploadIcon: React.FC<IconProps> = ({ className = '', size = default
     <line x1="12" y1="3" x2="12" y2="15" />
   </svg>
 );
+
+export const LockIcon: React.FC<IconProps> = ({ className = '', size = defaultProps.size, ariaHidden = defaultProps.ariaHidden }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaHidden}>
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+export const KeyIcon: React.FC<IconProps> = ({ className = '', size = defaultProps.size, ariaHidden = defaultProps.ariaHidden }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaHidden}>
+    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+  </svg>
+);
+
+export const ZapIcon: React.FC<IconProps> = ({ className = '', size = defaultProps.size, ariaHidden = defaultProps.ariaHidden }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaHidden}>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </svg>
+);
