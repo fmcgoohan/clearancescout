@@ -136,4 +136,12 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Automated Vitest Suite (`npm test`)**: All 94 test files / 245 tests PASSED (100% green).
 - **Live Playwright Session (`scratch/phase2_live_verification.js`)**: Real browser testing verified header layout, Settings popover open/close & Escape key dismissal, Demo Token modal triggering from Settings popover, 4-tab section navigation switching, and Recommended Action priority cascade.
 
+#### 3. AC-15.1 Domain Terminology Convergence Hotfix
+- **`BinderExportModal.tsx`**: Updated stale headings and summary text to `"Clearance Items Registry"` and `"5-Category Clearance Items & Risk Assessments"`, and updated provenance text to `"LIVE RESEARCH PROVENANCE"`.
+- **`EntityRegistryTable.tsx`**: Updated screen-reader `aria-label` to `"Clearance Items Registry"` and table header `<th>` to `"Clearance Item"`.
+- **`terminology.ts`**: Updated code documentation comments to align with `"Clearance Item Clearance State"`.
+- **`ReadinessBand.test.tsx`**: Tightened title assertion regex from `/Screenplay Intake|Multi-Format Script Ingestion/i` to strictly `/Screenplay Intake/i` to enforce strict regression protection.
+- **Verification Sweep**: Full grep sweep confirmed 0 remaining occurrences of `"Canonical Entity Registry"`, `"Multi-Format Script Ingestion"`, and `"Observable Timeline"` in non-test `src/` application code.
+
+
 

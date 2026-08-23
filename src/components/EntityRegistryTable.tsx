@@ -481,12 +481,12 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
       ) : (
         <div className="responsive-table-container">
           <table
-            aria-label="Canonical Entity Clearance Registry"
+            aria-label="Clearance Items Registry"
             style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}
           >
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                <th style={{ padding: '10px 12px' }}>Canonical Entity</th>
+                <th style={{ padding: '10px 12px' }}>Clearance Item</th>
                 <th style={{ padding: '10px 12px' }}>Category</th>
                 <th style={{ padding: '10px 12px' }}>Clearance Status</th>
                 <th style={{ padding: '10px 12px', textAlign: 'right' }}>Actions</th>

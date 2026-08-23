@@ -4,7 +4,7 @@
  * Invariants:
  * 1. Same concept = same label across Header, Registry, Action Center, Dashboard, Timeline, and Binder.
  * 2. Distinct model objects retain distinct, grounded labels:
- *    - Canonical Entity Clearance State: 'Cleared', 'Review Recommended', 'Action Required', 'Insufficient evidence'
+ *    - Clearance Item Clearance State: 'Cleared', 'Review Recommended', 'Action Required', 'Insufficient evidence'
  *    - Operational Tasks: 'Department Tasks' (or 'Entity Tasks')
  *    - Scene Breakdown: 'Blocking Occurrences' (occurrence-level blockers in specific scenes)
  * 3. The 7 / 7 / 8 relationship:

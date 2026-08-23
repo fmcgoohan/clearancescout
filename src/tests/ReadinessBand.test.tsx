@@ -18,7 +18,7 @@ describe('Shooting Readiness & Plain-Language Reasons (User Story 2)', () => {
     render(<WorkspacePage {...mockProps} />);
 
     // Check title presence
-    const titles = screen.getAllByText(/Screenplay Intake|Multi-Format Script Ingestion/i);
+    const titles = screen.getAllByText(/Screenplay Intake/i);
     expect(titles.length).toBeGreaterThan(0);
   });
 });

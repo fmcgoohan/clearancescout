@@ -269,7 +269,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                 }}
               >
                 {isLive
-                  ? 'LIVE RESEARCH GROUNDING PROVENANCE'
+                  ? 'LIVE RESEARCH PROVENANCE'
                   : isFallback
                   ? 'CLOUD BENCHMARK FALLBACK PROVENANCE'
                   : isMixed
@@ -278,7 +278,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                 {isLive
-                  ? 'All research citations verified via live Google Search / Parallel API grounding.'
+                  ? 'All research citations verified via live Google Search & Parallel API.'
                   : isFallback
                   ? 'Parallel API unavailable. Evidence verified via deterministic cloud benchmark fallback fixture.'
                   : isMixed
@@ -595,11 +595,11 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
           </div>
         )}
 
-        {/* Canonical Entity Clearance Registry */}
+        {/* Clearance Items Registry */}
         {binder.canonicalEntities && binder.canonicalEntities.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-cyan)', margin: 0 }}>
-              Canonical Entity Clearance Registry ({binder.canonicalEntities.length})
+              Clearance Items Registry ({binder.canonicalEntities.length})
             </h4>
             <div style={{ maxHeight: '220px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {binder.canonicalEntities.map((ent: any) => (
@@ -807,7 +807,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
           <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Included Binder Dossiers</h4>
           <ul style={{ fontSize: '0.8rem', color: 'var(--text-main)', paddingLeft: '20px', lineHeight: '1.6' }}>
             <li>Complete Scene Breakdown & Character Dialogue Mapping ({binder.scenes.length} scenes)</li>
-            <li>5-Category Canonical Entity Registry & Risk Assessments ({binder.canonicalEntities.length} entities)</li>
+            <li>5-Category Clearance Items & Risk Assessments ({binder.canonicalEntities.length} entities)</li>
             <li>
               Research Citations Index ({binder.citationsIndex.length} citations
               {binder.provenanceSummary && ` — ${binder.provenanceSummary.liveCount} Live, ${binder.provenanceSummary.demoCount} Demo, ${binder.provenanceSummary.fallbackCount} Fallback`})
