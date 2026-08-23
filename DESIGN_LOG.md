@@ -86,3 +86,27 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Static Spec Check Gate (`./scripts/spec-check.sh`)**: PASSED cleanly.
 - **Live Modal Reproduction Script (`tests/reproduce_demo_token_modal.js`)**: PASSED cleanly against local application server (DOM rect `460x280`, `#demo-token-input-field` active element, `#root` `aria-hidden="true"`, Escape dismissal confirmed).
 
+
+### Phase 1 Hotfix: Initialization Race & Modal CSS Variable Resolution
+
+**Date**: August 23, 2026  
+**Phase**: Phase 1 Hotfix Verification (Brief: `docs/phase1-modal-fix-phase2-ux-simplification-brief.md`)  
+
+#### 1. Root-Cause Analysis & Fixes
+- **Modal CSS Variable & Class Resolution**: `index.css` was missing explicit base styling for `.glass-panel` and `.modal-responsive`, and CSS variable fallbacks were missing on portal containers. This caused modals to render as transparent panels on dark backdrops, appearing as blank dark rectangles. Added explicit CSS definitions for `.glass-panel` and `.modal-responsive` with solid background fallbacks (`background-color: var(--panel, #151B23) !important; color: var(--text, #E7EDF4) !important; border: 1px solid var(--border-color, #242E3A)`).
+- **Initialization Race Condition**: On a fresh cache-busted load with no prior state or localStorage, `initProject()` in `App.tsx` created/loaded a project with 0 entities, stalling at "Initializing ClearanceScout Workspace...". Updated `initProject()` to automatically invoke `POST /api/projects/${id}/script/demo` whenever a project is created or loaded with 0 entities on first paint. This guarantees the 3 scenes and 7 entities (including Elena Vance & Summit Cola) seed automatically on fresh load without requiring any token interaction.
+- **Inescapable 401 Modal Loop**: Background 401 auth events continuously dispatched `clearancescout:auth_required`, re-opening `isTokenModalOpen` every time the user clicked Cancel, Close, or Escape. Added `userDismissedTokenModalRef` in `App.tsx` so explicit user dismissal closes the modal and keeps it closed, updating the header auth banner without trapping the user in a modal re-open loop.
+
+#### 2. Live Verification Evidence
+- **Live Playwright Fresh Load Verification (`scripts/phase1_live_verification.js`)**:
+  - Fresh load with cleared storage automatically seeded 3 scenes and 7 entities (`Elena Vance`, `Summit Cola` found: TRUE).
+  - Modal rendered with computed style `{ backgroundColor: 'rgb(21, 27, 35)', color: 'rgb(231, 237, 244)', border: '1px solid rgb(36, 46, 58)', display: 'block', visibility: 'visible' }`.
+  - Autofocus verified on `#demo-token-input-field`.
+  - Escape key dismissal: PASSED (`isModalOpen: false`).
+  - Cancel button dismissal: PASSED (`isModalOpen: false`).
+  - Close (`✕`) button dismissal: PASSED (`isModalOpen: false`).
+  - Workspace non-inertness & interactivity after modal close: PASSED.
+- **Unit & Contract Test Suite (`npm test`)**: 94 test files PASSED, 245 total tests PASSED (100% green).
+- **Production Build (`npm run build`)**: PASSED cleanly.
+- **Static Spec Check Gate (`./scripts/spec-check.sh`)**: PASSED cleanly.
+

@@ -53,7 +53,10 @@ export const DemoTokenModal: React.FC<DemoTokenModalProps> = ({
           padding: '24px',
           borderRadius: '12px',
           border: '1px solid var(--border-color)',
+          background: 'var(--panel, #151B23)',
+          color: 'var(--text, #E7EDF4)',
           outline: 'none',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

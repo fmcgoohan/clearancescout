@@ -130,6 +130,8 @@ export default function App() {
     await initProject(serverMode);
   };
 
+  const userDismissedTokenModalRef = useRef<boolean>(false);
+
   const handleSaveToken = (tokenToSave: string) => {
     const trimmed = tokenToSave.trim();
     if (trimmed) {
@@ -141,17 +143,31 @@ export default function App() {
       setHasTokenConfigured(false);
       setDemoTokenInput('');
     }
+    userDismissedTokenModalRef.current = false;
     setAuthError(null);
     setIsTokenModalOpen(false);
     // Immediately reload project & workspace bootstrap
     bootstrapFromHealth();
   };
 
+  const handleCloseTokenModal = () => {
+    userDismissedTokenModalRef.current = true;
+    setIsTokenModalOpen(false);
+  };
+
+  const handleOpenTokenModal = () => {
+    userDismissedTokenModalRef.current = false;
+    setDemoTokenInput(getDemoToken() || '');
+    setIsTokenModalOpen(true);
+  };
+
   // Listen for 401 auth required events from apiClient
   useEffect(() => {
     const handleAuthRequired = () => {
       setAuthError('Authentication Required: Configure Demo Access Token to access CLOUD_MODE.');
-      setIsTokenModalOpen(true);
+      if (!userDismissedTokenModalRef.current) {
+        setIsTokenModalOpen(true);
+      }
     };
 
     window.addEventListener('clearancescout:auth_required', handleAuthRequired);
@@ -171,7 +187,7 @@ export default function App() {
         } else if (isTimelineOpen) {
           setIsTimelineOpen(false);
         } else if (isTokenModalOpen) {
-          setIsTokenModalOpen(false);
+          handleCloseTokenModal();
         } else if (isProjectModalOpen) {
           setIsProjectModalOpen(false);
         }
@@ -211,7 +227,9 @@ export default function App() {
       } else if (res.status === 401) {
         const errData = await res.json().catch(() => ({}));
         setAuthError(errData.error || 'Authentication Required: Demo Access Token required.');
-        setIsTokenModalOpen(true);
+        if (!userDismissedTokenModalRef.current) {
+          setIsTokenModalOpen(true);
+        }
       }
     } catch (err) {
       console.error('Error loading project details:', err);
@@ -224,13 +242,28 @@ export default function App() {
       if (listRes.ok) {
         const listData = await listRes.json();
         if (listData.projects && listData.projects.length > 0) {
-          await loadProjectDetails(listData.projects[0].id);
+          const firstProj = listData.projects[0];
+          // Auto-seed demo screenplay if project is empty so 3 scenes and 7 entities load automatically
+          if (!firstProj.entityCount || firstProj.entityCount === 0) {
+            try {
+              await apiFetch(`/api/projects/${firstProj.id}/script/demo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
+              });
+            } catch (seedErr) {
+              console.error('Error auto-seeding demo screenplay:', seedErr);
+            }
+          }
+          await loadProjectDetails(firstProj.id);
           return;
         }
       } else if (listRes.status === 401) {
         const errData = await listRes.json().catch(() => ({}));
         setAuthError(errData.error || 'Authentication Required: Demo Access Token required.');
-        setIsTokenModalOpen(true);
+        if (!userDismissedTokenModalRef.current) {
+          setIsTokenModalOpen(true);
+        }
         return;
       }
 
@@ -247,11 +280,23 @@ export default function App() {
       });
       if (res.ok) {
         const data = await res.json();
+        // Auto-seed demo screenplay on new project creation
+        try {
+          await apiFetch(`/api/projects/${data.id}/script/demo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
+          });
+        } catch (seedErr) {
+          console.error('Error seeding demo screenplay on new project:', seedErr);
+        }
         await loadProjectDetails(data.id);
       } else if (res.status === 401) {
         const errData = await res.json().catch(() => ({}));
         setAuthError(errData.error || 'Authentication Required: Demo Access Token required.');
-        setIsTokenModalOpen(true);
+        if (!userDismissedTokenModalRef.current) {
+          setIsTokenModalOpen(true);
+        }
       }
     } catch (err) {
       console.error('Error initializing project:', err);
@@ -581,10 +626,7 @@ export default function App() {
               gap: '6px',
               borderColor: hasTokenConfigured ? 'var(--accent-cyan)' : 'var(--border-color)',
             }}
-            onClick={() => {
-              setDemoTokenInput(getDemoToken() || '');
-              setIsTokenModalOpen(true);
-            }}
+            onClick={handleOpenTokenModal}
           >
             Demo Token {hasTokenConfigured && <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>●</span>}
           </button>
@@ -749,7 +791,7 @@ export default function App() {
                 <button
                   className="btn-primary"
                   style={{ padding: '10px 24px', fontSize: '0.9rem' }}
-                  onClick={() => setIsTokenModalOpen(true)}
+                  onClick={handleOpenTokenModal}
                 >
                   🔑 Enter Access Token
                 </button>
@@ -764,7 +806,7 @@ export default function App() {
       {/* Demo Access Token Settings Modal */}
       <DemoTokenModal
         isOpen={isTokenModalOpen}
-        onClose={() => setIsTokenModalOpen(false)}
+        onClose={handleCloseTokenModal}
         tokenInput={demoTokenInput}
         onTokenInputChange={setDemoTokenInput}
         onSaveToken={handleSaveToken}
