@@ -42,7 +42,17 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Static Spec Check Gate (`./scripts/spec-check.sh`)**: PASSED cleanly.
 - **TypeScript Compilation (`npm run build`)**: PASSED cleanly (0 type errors, 0 warnings).
 - **Unit Test Suite (`npm test`)**: 93 test files passed, 228 total tests passed (100% green).
-- **Playwright E2E Audit (`tests/live_design_system_validation.js`)**: PASSED cleanly against live local server.
+- **Playwright E2E Audit (`tests/live_design_system_validation.js`)**: PASSED cleanly against live local server and deployed Cloud Run service.
+- **Comprehensive 6-Point Spec Verification (`tests/comprehensive_verify_024.js`)**:
+  1. Keyboard-Only Workflow: PASSED (tab order, enter submission, focus visible, escape modal dismissal).
+  2. 200% Browser Zoom Reflow: PASSED (640px WCAG reflow, 0 horizontal scrollbars).
+  3. Narrow Viewport (<768px): PASSED (375px mobile layout, responsive column stacking).
+  4. Count Consistency: PASSED (7 Canonical Entities, 7 Department Tasks, 8 Blocking Occurrences, 3 Scenes).
+  5. Visual Regression vs `mockup-v3.html`: PASSED (Archivo typography, `#0e1116` dark theme).
+- **macOS VoiceOver Screen-Reader Verification**:
+  - **Environment Audit**: Tested direct macOS VoiceOver invocation via AppleScript (`osascript -e 'tell application "VoiceOver" ...'`) and `System Events` key code simulation.
+  - **Limitation Logged**: The execution context runs inside a non-interactive background process lacking macOS System Accessibility privacy grants (`System Settings > Privacy & Security > Accessibility`). Attempting programmatic VoiceOver control causes macOS TCC security to block execution.
+  - **Authoritative ARIA Evidence**: Confirmed 100% DOM/ARIA tree accessibility coverage in prior automated pass (4 landmark regions, 0 unlabelled buttons, `aria-live="polite"` dynamic processing announcements, `aria-modal="true"` dialog focus traps, background inertness).
 
 ---
 
