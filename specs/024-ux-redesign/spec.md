@@ -1,9 +1,11 @@
 # Feature Specification: ClearanceScout UX Redesign
 
 **Feature Branch**: `024-ux-redesign`  
+**Version**: `v0.24.1-ux-redesign` (Phase 1 Hotfix Specification Enforced)  
 **Created**: 2026-08-23  
-**Status**: Proposed  
-**Input**: UX Redesign Brief (`docs/ux-redesign-brief.md`)  
+**Updated**: 2026-08-23  
+**Status**: Approved (Phase 1 Hotfix Regression Codified)  
+**Input**: UX Redesign Brief (`docs/ux-redesign-brief.md`) & Phase 1 QA Brief (`docs/phase1-modal-fix-phase2-ux-simplification-brief.md`)  
 
 ---
 
@@ -104,6 +106,11 @@ The redesign MUST preserve and non-regress all existing system capabilities:
   - Contextual empty-state guidance.
   - Tooltips explaining specialist concepts (red scenes, insufficient evidence, rights vs placeholders vs counsel overrides).
   - Dismissible *"How clearance works"* info banner.
+
+### Area 11: Demo Token Settings & Workspace Initialization (Defect Prevention)
+- **R11.1**: **Modal Background Opacity & Variable Fallback**: All modals (including `DemoTokenModal`) MUST render with a 100% solid, opaque surface background (`var(--panel, #151B23)`) and explicit border/text fallbacks, ensuring zero transparency or blank dark box rendering over backdrop overlays.
+- **R11.2**: **Automatic Workspace Initial Seeding**: On a fresh cache-busted load with zero prior project state or 0 entities, the workspace initialization pipeline MUST automatically seed the default demo screenplay (3 scenes, 7 entities) without stalling on *"Initializing ClearanceScout Workspace..."* and without requiring manual modal interaction.
+- **R11.3**: **Non-Blocking Token Modal Dismissal**: Explicit user dismissal (`Escape`, `Cancel` button, `✕` close button) of `DemoTokenModal` MUST suppress automatic modal re-open loops triggered by background 401 auth events, updating inline auth indicators while keeping the primary workspace background interactive and accessible.
 
 ---
 
@@ -216,14 +223,25 @@ The redesign MUST preserve and non-regress all existing system capabilities:
 - **AC-12.3**: Status changes and ingestion progress are announced politely via `role="status"` and `aria-live="polite"`.
 - **AC-12.4**: Page layout supports 200% zoom scale without horizontal scrollbars or text clipping.
 
+### User Story 13: Demo Access Token & Workspace Bootstrap Defect Prevention (Priority: P1)
+**As a** system operator,  
+**I want** the workspace to reliably initialize and the Demo Token modal to render with solid opacity and dismiss cleanly without re-open loops,  
+**So that** I am never stranded on an uninitialized screen or locked behind an inescapable blank modal overlay.
+
+- **AC-13.1**: On a fresh, cache-busted load with cleared storage, project initialization automatically seeds 3 scenes and 7 entities (`Elena Vance`, `Summit Cola`), displaying the workspace on first paint without stalling.
+- **AC-13.2**: Opening `DemoTokenModal` renders a fully opaque, high-contrast panel (`#151B23`) with autofocus landing on the access token input (`#demo-token-input-field`).
+- **AC-13.3**: Pressing `Escape`, clicking `Cancel`, or clicking `✕` dismisses `DemoTokenModal`, restoring full focus and interactivity to `#root` without leaving a blocking backdrop overlay.
+- **AC-13.4**: When `DemoTokenModal` is explicitly dismissed by the user, subsequent 401 authentication events update the header status banner (`"Authentication Required"`) but DO NOT forcibly re-open the modal loop.
+
 ---
 
 ## Verification & Acceptance Gate
 
 The redesign will be deemed complete when:
 1. `scripts/spec-check.sh` passes with 0 violations over `src/`.
-2. All 12 user stories pass automated component, integration, and Playwright E2E tests.
+2. All 13 user stories pass automated component, integration, and Playwright E2E tests.
 3. VoiceOver screen reader testing passes for ingestion, navigation, and modal flows.
 4. 200% zoom and responsive viewport tests pass at 1200px, 900px, 768px, and 375px.
 5. Bundled demo script reliably yields 3 scenes, 7 entities, and 7 department tasks.
 6. `DESIGN_LOG.md` is appended with version `1.3.0` changes and verification evidence.
+7. Phase 1 Hotfix regression suite (`scripts/phase1_live_verification.js` and `tests/contract/test_phase1_demo_token_and_cross_modal_contract.test.tsx`) passes 100% clean for opaque modal surface rendering, autofocus, clean dismissal, and automatic initial screenplay seeding on fresh load.
