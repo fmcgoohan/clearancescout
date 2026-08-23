@@ -1,0 +1,119 @@
+# Feature Specification: ClearanceScout Phase 2 Workflow & Terminology Simplification
+
+**Feature Branch**: `025-phase2-simplification`  
+**Version**: `v0.25.0-phase2-propose` (Draft Proposal for Human Approval)  
+**Created**: 2026-08-24  
+**Updated**: 2026-08-24  
+**Status**: Proposal / Pending Human Approval (PROPOSE Stage)  
+**Input**: Two-Phase QA Brief (`docs/phase1-modal-fix-phase2-ux-simplification-brief.md`) & Constitution Articles 13, 14, 16 Proposal  
+**Oracle Visual Reference**: `mockup-v3.html` (repo root) per Constitution Article 9  
+
+---
+
+## Objective & Product Outcome
+
+Simplify ClearanceScout into a guided, production-clearance workspace that presents existing functionality as an intuitive workflow without expanding product scope or modifying underlying data models.
+
+An operator entering ClearanceScout MUST be able to immediately answer from the rendered interface:
+1. *What project am I in?*
+2. *What is its clearance state?*
+3. *What requires my attention?*
+4. *What should I do next?*
+5. *Where is the screenplay, clearance items, and departmental work?*
+
+---
+
+## User Stories & Acceptance Criteria
+
+### User Story 14: Contextual Primary Recommended Next Action (Priority: P1)
+**As a** line producer or clearance operator,  
+**I want** a single prominent card that highlights the single highest-priority next step based on live project state,  
+**So that** I immediately know what to do next without evaluating rows of equal-weight action buttons.
+
+- **AC-14.1**: The workspace MUST render exactly one primary contextual recommendation card driven by a deterministic project-state cascade:
+  1. `No Screenplay` -> `"Add Screenplay"` (opens intake modal).
+  2. `Blockers > 0` -> `"Review X Clearance Blockers"` (navigates to `Clearance Items` filtered by `Action Required`).
+  3. `Blockers == 0 & Reviews > 0` -> `"Review Y Recommended Items"` (navigates to `Clearance Items` filtered by `Review Recommended`).
+  4. `Blockers == 0 & Reviews == 0 & Tasks > 0` -> `"View Z Department Tasks"` (navigates to `Tasks` tab).
+  5. `Ready` -> `"Export Clearance Binder"` (opens Binder Export drawer).
+- **AC-14.2**: Clicking the recommendation's primary action button MUST execute a 1-click jump directly to the target view with appropriate filters applied.
+- **AC-14.3**: For verified project state (2 Action Required, 5 Review Recommended, 7 Department Tasks), the primary recommendation MUST display `"Review 2 Clearance Blockers"`.
+
+---
+
+### User Story 15: Production Domain Terminology & Status Vocabulary Convergence (Priority: P1)
+**As a** clearance professional,  
+**I want** the workspace chrome to use film/TV clearance terminology and consistent status labels,  
+**So that** I can navigate the application without deciphering software engineering terms.
+
+- **AC-15.1**: Primary UI chrome MUST replace technical phrases with domain terminology:
+  - `"Multi-Format Script Ingestion & 5-Category Resolution"` -> `"Screenplay Intake"`
+  - `"Canonical Entity Registry"` -> `"Clearance Items"`
+  - `"Ground"` / `"Grounding"` -> `"Research"` or `"Run Clearance Check"`
+  - `"Observable Timeline"` -> `"Activity"`
+- **AC-15.2**: Status vocabulary across all badges, cards, filters, and reasons MUST converge on four standard domain terms:
+  - `Cleared`
+  - `Insufficient evidence`
+  - `Review recommended`
+  - `Action required`
+- **AC-15.3**: Technical terms (`canonicalEntityId`, `GROUNDING_ATTEMPT`) MUST be strictly confined to technical tooltips and provenance drawers.
+
+---
+
+### User Story 16: Streamlined Header & Secondary Administrative Settings Menu (Priority: P1)
+**As a** clearance operator,  
+**I want** a clean, uncluttered header bar with secondary administrative controls housed in a menu,  
+**So that** operational diagnostics do not compete with primary workflow controls.
+
+- **AC-16.1**: The top header bar MUST keep immediately visible only:
+  1. ClearanceScout logo & Project Switcher dropdown
+  2. Primary Section Navigation tabs (`Overview`, `Screenplay`, `Clearance Items`, `Tasks`)
+  3. Shooting Readiness Index Badge
+  4. Secondary Settings/More Menu Trigger (`"Settings"` button)
+- **AC-16.2**: Opening the Settings menu MUST render a lightweight popover/modal containing secondary administrative controls:
+  - Demo Access Token configuration trigger
+  - Execution Mode pill indicator (`CLOUD_MODE` / `DEMO_MODE`)
+  - Live Research Quota counter
+  - Activity & Event Log viewer trigger
+- **AC-16.3**: The Settings menu popover MUST be 100% keyboard accessible (Tab, Space/Enter, Escape to dismiss, focus restoration).
+
+---
+
+### User Story 17: Bounded Workspace Section Navigation (Priority: P1/P2)
+**As an** operator,  
+**I want** clear section tabs (`Overview`, `Screenplay`, `Clearance Items`, `Tasks`),  
+**So that** I can focus on specific workflow areas without endlessly scrolling a single long page.
+
+- **AC-17.1**: The workspace MUST provide four section navigation tabs:
+  - **Overview**: Shooting Readiness hero, Contextual Primary Recommendation, Key Blockers summary.
+  - **Screenplay**: Screenplay Intake trigger, Monospace Script Viewer, Scene Navigator, Occurrence highlighter.
+  - **Clearance Items**: Entity Table, search/filter controls, Research & Replacement actions.
+  - **Tasks**: Department Task Center & Operations Dashboard.
+- **AC-17.2**: Switching tabs MUST update the displayed workspace view instantly without resetting state or re-fetching synchronized project data.
+- **AC-17.3**: Tab navigation MUST implement proper ARIA roles (`role="tablist"`, `role="tab"`, `role="tabpanel"`) and support Left/Right arrow key switching.
+
+---
+
+### User Story 18: Preserved Entity Registry & Re-Verified Cross-Modal Contract (Priority: P0/P1)
+**As a** system operator,  
+**I want** the scan-first Entity Registry density and all 11 modal dialog behaviors to remain 100% compliant,  
+**So that** UX simplification does not cause accessibility or modal focus regressions.
+
+- **AC-18.1**: Entity table rows MUST retain low action density: 1 primary action button, occurrences shortcut, secondary overflow menu (`...`), and `"Showing 7 of 7 entities"`.
+- **AC-18.2**: All 11 modal dialogs MUST be re-verified against the modal focus contract (visible above backdrop, background inert, focus trapped, Escape/Cancel dismisses, focus restored).
+
+---
+
+## Verification & Acceptance Gate
+
+Phase 2 implementation will be deemed complete when:
+1. `./scripts/spec-check.sh` passes with 0 violations across `src/`.
+2. All unit, contract, and integration test suites pass 100% green.
+3. First-time user validation confirms all 8 operator questions are clearly answered from rendered UI alone.
+4. Rendered Playwright tests verify:
+   - `action_required_state_shows_blocker_recommendation`
+   - `recommended_action_opens_correct_filtered_view`
+   - `ground_is_not_exposed_as_primary_operator_label`
+   - `status_vocabulary_is_consistent`
+   - `header_settings_menu_keyboard_accessible`
+   - `section_navigation_tabs_keyboard_accessible`
