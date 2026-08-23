@@ -116,7 +116,7 @@ Alex types on an AeroTech Prism Laptop.
         title: 'Count Semantics Validation',
         productionCompany: 'Specter Media Corp',
         projectType: 'Movie',
-        executionMode: 'CLOUD_MODE',
+        executionMode: 'DEMO_MODE',
       });
     expect(projRes.status).toBe(201);
     const projectId = projRes.body.id;

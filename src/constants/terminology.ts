@@ -37,9 +37,18 @@ export const TERMINOLOGY = {
 
   // 6. Department Routing Explanations
   DEPARTMENT_ROUTING_REASONS: {
-    LEGAL_COUNSEL: 'Assigned to Legal Counsel for trademark investigation, rights licensing, or counsel review.',
-    ART_DEPT: 'Assigned to Art Department for prop graphic fictionalization or period replacement.',
-    LOCATIONS: 'Assigned to Locations Department for filming permits and site owner clearance.',
-    PRODUCTION_MGMT: 'Assigned to Production Management for scene scheduling and cross-department clearance.',
+    LEGAL_COUNSEL: 'Routed to Legal Counsel for trademark research, rights review, or clearance evaluation.',
+    ART_DEPT: 'Routed to Art Dept for graphic replacement or prop clearance modification.',
+    LOCATIONS: 'Routed to Locations Dept for location release or venue permit verification.',
+    CLEARANCE_TEAM: 'Routed to Clearance Team for general evidence collection.',
   } as Record<string, string>,
-} as const;
+
+  // 7. UX Redesign Operator Domain Labels
+  CLEARANCE_ITEMS_LABEL: 'Clearance Items',
+  CLEARANCE_ITEMS_HEADER: 'Clearance Items ("Clear Once, Recognize Everywhere")',
+  RESEARCH_ACTION_LABEL: 'Research',
+  RESEARCH_EVIDENCE_LABEL: 'Verify Evidence',
+  SCREENPLAY_INTAKE_LABEL: 'Screenplay Intake & Clearance',
+  RECOMMENDED_ACTION_LABEL: 'Recommended Next Action',
+};
+

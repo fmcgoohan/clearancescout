@@ -115,7 +115,7 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
   });
 
   it('proves clicking Load Sample Screenplay opens visible modal with exact 7 entities derived from fixture and product taxonomy', async () => {
-    const { getByRole, getByLabelText, getByText } = render(
+    const { getByRole, getByLabelText, getByText, getAllByText } = render(
       React.createElement(WorkspacePage, {
         projectId: 'proj-sample-qa',
         onEvaluateClearance: () => {},
@@ -155,7 +155,7 @@ describe('Rendered UI QA: Load Bundled Fictional Demo Screenplay, 7-Entity Truth
     expect(dialog.textContent).toContain('Graphic Prop');
 
     // 5. Ingesting triggers progress without stalling
-    const ingestBtn = getByText(/Load Bundled Demo Screenplay|Ingest Screenplay/i);
+    const ingestBtn = (dialog.querySelector('button.btn-primary') || getAllByText(/Load Bundled Demo Screenplay/i)[1]) as HTMLElement;
     expect(ingestBtn).toBeDefined();
 
     (global.fetch as any).mockImplementationOnce((url: string) => {

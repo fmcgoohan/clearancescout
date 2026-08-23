@@ -323,10 +323,11 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
               <div style={{ color: 'var(--text-muted)' }}>
                 <SearchIcon size={20} />
               </div>
-              <div style={{ color: 'var(--text-main)', fontWeight: 600 }}>No Grounded Citations Recorded</div>
+              <div style={{ color: 'var(--text-main)', fontWeight: 600 }}>No Research Citations Recorded</div>
               <div style={{ fontSize: '0.75rem' }}>
-                No grounded research citations surfaced for this entity. Click 'Ground' in the workspace registry to evaluate research.
+                No research citations surfaced for this entity. Click 'Research' in the workspace table to evaluate research.
               </div>
+
             </div>
           )}
 

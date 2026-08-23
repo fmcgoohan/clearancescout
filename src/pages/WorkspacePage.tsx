@@ -22,6 +22,11 @@ import {
   HelpCircleIcon,
   XIcon,
 } from '../components/icons/Icons';
+import { RecommendedActionCard } from '../components/RecommendedActionCard';
+import { OnboardingBanner } from '../components/OnboardingBanner';
+import { Icon } from '../components/icons/Icon';
+
+
 
 interface WorkspacePageProps {
   projectId: string;
@@ -95,8 +100,12 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   // Operations Dashboard modal state (Phase 9)
   const [isDashboardModalOpen, setIsDashboardModalOpen] = useState(false);
 
+  // Responsive Panel Collapse State
+  const [isScriptCollapsed, setIsScriptCollapsed] = useState(false);
+
   // Ingestion feedback toast banner (Feature 021)
   const [ingestionToast, setIngestionToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+
 
   // Batch research hook
   const { progress: batchProgress, startBatchResearch } = useBatchResearch(
@@ -695,16 +704,59 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         </div>
       )}
 
-      {/* Main Grid Workspace - Responsive Stacking */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
-        <ScriptViewer
-          scenes={scenes}
-          entities={entities}
-          overrides={overrides}
-          selectedSceneId={selectedSceneId}
-          onSelectScene={setSelectedSceneId}
-          onEntityClick={(entityId, sceneId) => onOpenCounselReview(entityId, sceneId)}
-        />
+      {/* Onboarding & Guidance Banner (UX Redesign Requirement Area 10) */}
+      <OnboardingBanner
+        onOpenDemo={() => {
+          setUploadModalInitialMode('DEMO');
+          setIsUploadModalOpen(true);
+        }}
+      />
+
+      {/* Recommended Next Action Area (UX Redesign Requirement Area 1) */}
+      <RecommendedActionCard
+        entities={entities}
+        onResearchItem={(id) => onEvaluateClearance(id)}
+        onOpenDashboard={() => setIsDashboardModalOpen(true)}
+      />
+
+
+      {/* Main Grid Workspace - Responsive Split View & Panel Collapse */}
+      <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => setIsScriptCollapsed(!isScriptCollapsed)}
+          aria-expanded={!isScriptCollapsed}
+          aria-label={isScriptCollapsed ? 'Expand Screenplay Panel' : 'Collapse Screenplay Panel'}
+          style={{
+            fontSize: '0.8rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '6px',
+            borderColor: 'var(--border-subtle, #232d42)',
+            color: 'var(--text-muted, #9ca3af)',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+          }}
+        >
+          <Icon name="document" size={14} />
+          <span>{isScriptCollapsed ? 'Expand Screenplay Panel' : 'Collapse Screenplay Panel'}</span>
+        </button>
+
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isScriptCollapsed ? '1fr' : 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
+        {!isScriptCollapsed && (
+          <ScriptViewer
+            scenes={scenes}
+            entities={entities}
+            overrides={overrides}
+            selectedSceneId={selectedSceneId}
+            onSelectScene={setSelectedSceneId}
+            onEntityClick={(entityId, sceneId) => onOpenCounselReview(entityId, sceneId)}
+          />
+        )}
         <EntityRegistryTable
           entities={entities}
           scenes={scenes}
@@ -737,6 +789,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           isEvaluating={isEvaluating}
         />
       </div>
+
 
       {/* Item Add / Edit Modal */}
       <ItemEditModal

@@ -34,7 +34,7 @@ describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger'
   });
 
   it('renders WorkspacePage, clicks Upload Screenplay button, and opens the visibly styled ScriptUploadModal', async () => {
-    const { getByRole, queryByRole, getByLabelText, getByText } = render(
+    const { getByRole, queryByRole, getByLabelText, getByText, getAllByText } = render(
       React.createElement(WorkspacePage, {
         projectId: 'proj-cyberfall-2026',
         onEvaluateClearance: () => {},
@@ -86,8 +86,9 @@ describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger'
     // 8. Verify tab switching to "Paste Screenplay Text"
     const pasteTab = getByText(/Paste Screenplay Text/i);
     fireEvent.click(pasteTab);
-    expect(getByText(/Screenplay Format/i)).toBeDefined();
+    expect(getAllByText(/Screenplay Format/i)[0]).toBeDefined();
     expect(dialog.querySelector('textarea')).not.toBeNull();
+
 
     // 9. Close modal via Cancel button and verify it unmounts from DOM
     const cancelButton = getByText('Cancel');

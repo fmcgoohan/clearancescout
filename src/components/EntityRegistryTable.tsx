@@ -33,6 +33,9 @@ export interface CanonicalEntity {
   };
   replacementCard?: any;
   occurrenceCount?: number;
+  occurrences?: any[];
+  departmentTasks?: string[];
+  evidenceCount?: number;
 }
 
 export interface SceneFilterOption {
@@ -219,7 +222,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
             <h3 style={{ fontSize: '1rem', color: 'var(--accent-cyan)', margin: 0 }}>
-              Canonical Entity Registry ("Clear Once, Recognize Everywhere")
+              Clearance Items ("Clear Once, Recognize Everywhere")
             </h3>
             {onAddItem && (
               <button
@@ -235,10 +238,10 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                   gap: '4px',
                 }}
               >
-                <span>Add Item</span>
+                <span>+ Add Item</span>
               </button>
             )}
-            {onEvaluateBatch && (
+            {onEvaluateBatch && pendingEntities.length > 0 && (
               <button
                 className="btn-secondary"
                 onClick={() =>
@@ -246,22 +249,18 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                     pendingEntities.map((e) => ({ id: e.id, canonicalName: e.canonicalName }))
                   )
                 }
-                disabled={isEvaluating || batchProgress?.isActive || pendingEntities.length === 0}
+                disabled={isEvaluating || batchProgress?.isActive}
                 style={{
                   fontSize: '0.75rem',
                   padding: '3px 10px',
-                  borderColor: pendingEntities.length > 0 ? 'var(--accent-cyan)' : 'var(--border-color)',
-                  color: pendingEntities.length > 0 ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                  cursor: pendingEntities.length === 0 || batchProgress?.isActive ? 'not-allowed' : 'pointer',
+                  borderColor: 'var(--accent-cyan)',
+                  color: 'var(--accent-cyan)',
+                  cursor: batchProgress?.isActive ? 'not-allowed' : 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
                 }}
-                title={
-                  pendingEntities.length === 0
-                    ? 'All entities already have completed clearance evaluations.'
-                    : `Run clearance research on ${pendingEntities.length} pending entities`
-                }
+                title={`Run clearance research on ${pendingEntities.length} pending entities`}
               >
                 <SearchIcon size={14} />
                 <span>
@@ -271,6 +270,25 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                 </span>
               </button>
             )}
+            {onEvaluateBatch && pendingEntities.length === 0 && (
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  padding: '3px 10px',
+                  borderRadius: '4px',
+                  backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                  color: 'var(--status-cleared, #22c55e)',
+                  border: '1px solid rgba(34, 197, 94, 0.25)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontWeight: 600,
+                }}
+              >
+                <CheckCircleIcon size={14} /> All Items Researched
+              </span>
+            )}
+
           </div>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Showing {filteredEntities.length} of {pluralize(entities.length, 'entity', 'entities')}
@@ -650,7 +668,8 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             disabled={isEvaluating || isItemInActiveBatch}
                             title="Evaluate clearance research"
                           >
-                            {isEvaluating || isItemInActiveBatch ? 'Researching...' : 'Ground'}
+                            {isEvaluating || isItemInActiveBatch ? 'Researching...' : 'Research'}
+
                           </button>
                         )}
 
