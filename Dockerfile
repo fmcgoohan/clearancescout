@@ -24,7 +24,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=8080
-ENV EXECUTION_MODE=CLOUD_MODE
+ENV EXECUTION_MODE=DEMO_MODE
 
 # Install only production dependencies
 COPY package*.json ./

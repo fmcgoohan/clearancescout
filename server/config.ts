@@ -31,6 +31,8 @@ export function loadConfig(): AppConfig {
     }
   }
 
+
+
   return {
     executionMode,
     port,
