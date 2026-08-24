@@ -523,7 +523,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                   (itemProgress?.status === 'QUEUED' || itemProgress?.status === 'RESEARCHING');
 
                 return (
-                  <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <tr key={e.id} data-entity-row={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '12px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -685,6 +685,8 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                           </button>
                         ) : (
                           <button
+                            data-entity-id={e.id}
+                            aria-label={`Research ${e.canonicalName}`}
                             className="btn-secondary touch-target"
                             style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                             onClick={() => onEvaluateClearance(e.id)}
@@ -692,7 +694,6 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             title="Evaluate clearance research"
                           >
                             {isEvaluating || isItemInActiveBatch ? 'Researching...' : 'Research'}
-
                           </button>
                         )}
 

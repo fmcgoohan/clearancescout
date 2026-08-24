@@ -389,6 +389,7 @@ export function ProjectListModal({
                     return (
                       <div
                         key={proj.id}
+                        data-project-id={proj.id}
                         onClick={() => {
                           onSelectProject(proj.id);
                           onClose();

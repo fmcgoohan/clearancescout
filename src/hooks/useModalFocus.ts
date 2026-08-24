@@ -23,6 +23,11 @@ export interface UseModalFocusOptions {
    * Whether to restore focus to trigger when modal closes. Default is true.
    */
   restoreFocus?: boolean;
+  /**
+   * Preferred semantic return target resolver if original trigger is unmounted/missing.
+   * Return a focusable HTMLElement or query string.
+   */
+  resolveReturnTarget?: () => HTMLElement | string | null | undefined;
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -81,6 +86,7 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
   initialFocusRef,
   canCloseOnEscape = true,
   restoreFocus = true,
+  resolveReturnTarget,
 }: UseModalFocusOptions) {
   const containerRef = useRef<T>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
@@ -159,6 +165,8 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
       clearTimeout(timeoutId);
       if (restoreFocus) {
         const prevEl = previousActiveElementRef.current;
+
+        // 1. Same-panel mounted trigger element check
         if (prevEl && document.body.contains(prevEl) && prevEl !== document.body && prevEl !== document.documentElement) {
           try {
             prevEl.focus();
@@ -167,7 +175,27 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
             // ignore
           }
         }
-        // Fallback target: if prevEl was unmounted or missing, search by aria-label or id
+
+        // 2. Custom semantic return target resolver if provided
+        if (resolveReturnTarget) {
+          try {
+            const resolved = resolveReturnTarget();
+            let resolvedEl: HTMLElement | null = null;
+            if (typeof resolved === 'string') {
+              resolvedEl = document.querySelector<HTMLElement>(resolved);
+            } else if (resolved instanceof HTMLElement) {
+              resolvedEl = resolved;
+            }
+            if (resolvedEl && document.body.contains(resolvedEl)) {
+              resolvedEl.focus();
+              return;
+            }
+          } catch (e) {
+            console.warn('Error executing resolveReturnTarget in useModalFocus:', e);
+          }
+        }
+
+        // 3. Fallback target: search by aria-label or id of previous element
         const ariaLabel = prevEl?.getAttribute('aria-label');
         const id = prevEl?.id;
         if (id) {
@@ -178,19 +206,24 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
         }
         if (ariaLabel) {
           try {
-            const matchedByAria = document.querySelector<HTMLElement>(`[aria-label="${CSS.escape(ariaLabel)}"]`);
+            const safeAria = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(ariaLabel) : ariaLabel;
+            const matchedByAria = document.querySelector<HTMLElement>(`[aria-label="${safeAria}"]`);
             if (matchedByAria && document.body.contains(matchedByAria)) {
               matchedByAria.focus();
               return;
             }
           } catch {}
         }
-        // Sensible main workspace fallback target (never header/project-switcher)
-        const fallback = document.querySelector<HTMLElement>(
-          '#main-content, [role="tablist"] button[aria-selected="true"], [role="region"] button, main button'
-        );
-        if (fallback) {
-          try { fallback.focus(); } catch {}
+
+        // 4. Priority workspace fallback target: selected tab button or main content (never header/project-switcher)
+        const activeTabButton = document.querySelector<HTMLElement>('[role="tablist"] button[aria-selected="true"]');
+        if (activeTabButton && document.body.contains(activeTabButton)) {
+          try { activeTabButton.focus(); return; } catch {}
+        }
+
+        const mainContent = document.querySelector<HTMLElement>('#main-content, main');
+        if (mainContent && document.body.contains(mainContent)) {
+          try { mainContent.focus(); return; } catch {}
         }
       }
     };

@@ -57,10 +57,11 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
     badgeColor = 'var(--status-action, #ef4444)';
     badgeBg = 'rgba(239, 68, 68, 0.12)';
     handleClick = () => {
+      if (onSelectTab) {
+        onSelectTab('clearance', 'ACTION_REQUIRED');
+      }
       if (onResearchItem && target) {
         onResearchItem(target.id);
-      } else if (onSelectTab) {
-        onSelectTab('clearance', 'ACTION_REQUIRED');
       }
     };
   } else if (reviewsCount > 0) {
@@ -73,10 +74,11 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
     badgeColor = 'var(--status-review, #f59e0b)';
     badgeBg = 'rgba(245, 158, 11, 0.12)';
     handleClick = () => {
+      if (onSelectTab) {
+        onSelectTab('clearance', 'REVIEW_RECOMMENDED');
+      }
       if (onResearchItem && target) {
         onResearchItem(target.id);
-      } else if (onSelectTab) {
-        onSelectTab('clearance', 'REVIEW_RECOMMENDED');
       }
     };
   } else if (departmentTasksCount > 0) {

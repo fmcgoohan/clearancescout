@@ -30,7 +30,7 @@ describe('OnboardingBanner Component', () => {
     fireEvent.click(dismissBtns[0]);
 
     expect(handleDismiss).toHaveBeenCalled();
-    expect(localStorage.getItem('clearancescout_onboarding_dismissed')).toBe('true');
+    expect(localStorage.getItem('clearancescout:onboarding:v1:default')).toBe('true');
     expect(screen.queryByRole('region', { name: /How Clearance Scout Works/i })).toBeNull();
   });
 });

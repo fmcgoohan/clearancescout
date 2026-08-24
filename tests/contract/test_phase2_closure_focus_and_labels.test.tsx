@@ -159,21 +159,147 @@ describe('Phase 2 Closure Verification', () => {
     expect(document.activeElement).toBe(triggerBtn);
   });
 
-  it('ONBOARDING PERSISTENCE: onboarding dismissal persists across localStorage reloads', () => {
-    const { unmount } = render(<OnboardingBanner />);
+  it('FIX 1 (CROSS-PANEL): restores focus to Clearance Items target when Overview trigger unmounts', async () => {
+    const CrossPanelHarness = () => {
+      const [activeTab, setActiveTab] = React.useState<'overview' | 'clearance'>('overview');
+      const [isOpen, setIsOpen] = React.useState(false);
 
-    expect(screen.getByText(/Automated Screenplay Clearance/i)).toBeDefined();
+      return (
+        <div>
+          <button id="project-switcher" type="button">Switch Project</button>
+          <div role="tablist">
+            <button
+              id="tab-overview"
+              role="tab"
+              aria-selected={activeTab === 'overview'}
+              onClick={() => setActiveTab('overview')}
+            >
+              Overview
+            </button>
+            <button
+              id="tab-clearance"
+              role="tab"
+              aria-selected={activeTab === 'clearance'}
+              onClick={() => setActiveTab('clearance')}
+            >
+              Clearance Items
+            </button>
+          </div>
 
-    const dismissBtn = screen.getByRole('button', { name: 'Got it, dismiss' });
-    fireEvent.click(dismissBtn);
+          {activeTab === 'overview' && (
+            <button
+              id="overview-rec-btn"
+              type="button"
+              aria-label="Research Nocturne of the Wild"
+              onClick={() => {
+                setActiveTab('clearance');
+                setIsOpen(true);
+              }}
+            >
+              Research Nocturne of the Wild
+            </button>
+          )}
 
-    expect(screen.queryByText(/Automated Screenplay Clearance/i)).toBeNull();
-    expect(localStorage.getItem('clearancescout_onboarding_dismissed')).toBe('true');
+          {activeTab === 'clearance' && (
+            <div id="clearance-table">
+              <button
+                data-entity-id="ent-ee6ff3e4"
+                aria-label="Research Nocturne of the Wild"
+                onClick={() => setIsOpen(true)}
+              >
+                Research
+              </button>
+            </div>
+          )}
 
-    unmount();
+          <CitationDrawer
+            projectId="proj-123"
+            canonicalEntityId="ent-ee6ff3e4"
+            entityName="Nocturne of the Wild"
+            citations={[]}
+            isOpen={isOpen}
+            onClose={() => setIsOpen(false)}
+          />
+        </div>
+      );
+    };
 
-    // Re-render simulates page reload / tab switch
-    render(<OnboardingBanner />);
-    expect(screen.queryByText(/Automated Screenplay Clearance/i)).toBeNull();
+    render(<CrossPanelHarness />);
+
+    const overviewBtn = screen.getByRole('button', { name: 'Research Nocturne of the Wild' });
+    overviewBtn.focus();
+    fireEvent.click(overviewBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeDefined();
+    });
+
+    // Dismiss drawer via Escape
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    // Assert focus restored to mounted Research button in Clearance Items (or tab-clearance), NOT project-switcher!
+    const targetInClearance = screen.getByRole('button', { name: 'Research Nocturne of the Wild' });
+    expect(document.activeElement).toBe(targetInClearance);
+    expect(document.activeElement?.id).not.toBe('project-switcher');
+  });
+
+  describe('Project-Scoped Onboarding Persistence', () => {
+    it('persists dismissal per project and isolates project A from project B', () => {
+      const { unmount } = render(<OnboardingBanner projectId="project-A" />);
+
+      expect(screen.getByText(/Automated Screenplay Clearance/i)).toBeDefined();
+
+      const dismissBtn = screen.getByRole('button', { name: 'Dismiss clearance guide' });
+      fireEvent.click(dismissBtn);
+
+      expect(screen.queryByText(/Automated Screenplay Clearance/i)).toBeNull();
+      expect(localStorage.getItem('clearancescout:onboarding:v1:project-A')).toBe('true');
+
+      unmount();
+
+      // Project B should still show onboarding banner
+      const { unmount: unmountB } = render(<OnboardingBanner projectId="project-B" />);
+      expect(screen.getByText(/Automated Screenplay Clearance/i)).toBeDefined();
+      unmountB();
+
+      // Returning to Project A should remain dismissed
+      render(<OnboardingBanner projectId="project-A" />);
+      expect(screen.queryByText(/Automated Screenplay Clearance/i)).toBeNull();
+    });
+
+    it('recomputes dismissal state dynamically when projectId prop changes', () => {
+      const { rerender } = render(<OnboardingBanner projectId="project-A" />);
+
+      const dismissBtn = screen.getByRole('button', { name: 'Dismiss clearance guide' });
+      fireEvent.click(dismissBtn);
+      expect(screen.queryByText(/Automated Screenplay Clearance/i)).toBeNull();
+
+      // Switch prop to project-B
+      rerender(<OnboardingBanner projectId="project-B" />);
+      expect(screen.getByText(/Automated Screenplay Clearance/i)).toBeDefined();
+
+      // Switch prop back to project-A
+      rerender(<OnboardingBanner projectId="project-A" />);
+      expect(screen.queryByText(/Automated Screenplay Clearance/i)).toBeNull();
+    });
+
+    it('retires legacy flat key and handles storage failure gracefully', () => {
+      localStorage.setItem('clearancescout_onboarding_dismissed', 'true');
+
+      // Legacy flat key should not dismiss onboarding for project-X
+      render(<OnboardingBanner projectId="project-X" />);
+      expect(screen.getByText(/Automated Screenplay Clearance/i)).toBeDefined();
+
+      // Dismissing project-X retires legacy flat key
+      const dismissBtn = screen.getByRole('button', { name: 'Dismiss clearance guide' });
+      fireEvent.click(dismissBtn);
+
+      expect(localStorage.getItem('clearancescout_onboarding_dismissed')).toBeNull();
+      expect(localStorage.getItem('clearancescout:onboarding:v1:project-X')).toBe('true');
+    });
   });
 });

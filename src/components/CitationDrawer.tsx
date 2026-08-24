@@ -64,6 +64,32 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
   const { containerRef } = useModalFocus<HTMLElement>({
     isOpen,
     onClose,
+    resolveReturnTarget: () => {
+      const escape = (str: string) => (typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(str) : str);
+      // Priority 1: Research button for this specific entity in Clearance Items table
+      if (canonicalEntityId) {
+        const btnById = document.querySelector<HTMLElement>(
+          `button[data-entity-id="${escape(canonicalEntityId)}"]`
+        );
+        if (btnById) return btnById;
+      }
+      if (entityName) {
+        const btnByName = document.querySelector<HTMLElement>(
+          `button[aria-label="Research ${escape(entityName)}"], button[aria-label="Review ${escape(entityName)}"]`
+        );
+        if (btnByName) return btnByName;
+      }
+      // Priority 2: Entity row in table
+      if (canonicalEntityId) {
+        const row = document.querySelector<HTMLElement>(`[data-entity-row="${escape(canonicalEntityId)}"]`);
+        if (row) return row;
+      }
+      // Priority 3: Selected Clearance Items tab button
+      const clearanceTab = document.querySelector<HTMLElement>('#tab-clearance, [role="tab"][aria-selected="true"]');
+      if (clearanceTab) return clearanceTab;
+
+      return null;
+    },
   });
 
   const [activeTab, setActiveTab] = useState<'PROVENANCE' | 'OVERRIDE'>('PROVENANCE');

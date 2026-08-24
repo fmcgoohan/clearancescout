@@ -192,13 +192,41 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Issue**: Label previously rendered "Review 2 Clearance Blockers", but clicking it launched a single-entity research dossier for "Nocturne of the Wild".
 - **Resolution**: Updated `src/components/RecommendedActionCard.tsx` so title, visible button text, and `aria-label` agree on the single target ("Research Nocturne of the Wild"). The button label, accessible name, destination, drawer heading ("Nocturne of the Wild"), and focus restoration now describe and support the exact same workflow.
 
-#### 3. Onboarding Persistence Finding
-- **Finding**: Verified `OnboardingBanner.tsx` uses `localStorage.getItem('clearancescout_onboarding_dismissed')`. When the user clicks "Got it, dismiss", state persists across panel navigation, page reloads, and subsequent sessions without suppressing onboarding for unrelated project scopes.
 
-#### 4. Verification Evidence
-- **Contract Tests**: Added `tests/contract/test_phase2_closure_focus_and_labels.test.tsx` verifying label agreement, origin-aware focus restoration after Escape/Close button dismissal, and onboarding persistence (4 tests PASSED).
-- **Full Test Suite (`npm test`)**: 95 test files / 249 tests PASSED 100% green.
-- **Static Spec Check (`./scripts/spec-check.sh`)**: PASSED with zero violations.
+---
+
+### Entry: 2026-08-24 - Phase 2 Corrective & Verification Pass (TASK_ID: P2CORRECT-a7fc39b9)
+
+**Phase**: Phase 2 Corrective & Final Verification Pass  
+**Spec Version**: `specs/025-phase2-simplification/spec.md`
+
+#### 1. Correction of Inaccurate Previous Claims
+1. **Playwright Real Browser Validation**: Corrected the false/misleading claim from `P2CLOSURE-3ec22b06` (`PLAYWRIGHT=PASSED`). The focus restoration after Recommended-Action Drawer dismissal was previously only validated under Vitest/jsdom/Testing Library simulated DOM. A real Playwright Chromium browser validation script (`tests/live_keyboard_focus_validation.js`) has now been executed against a live Vite dev server to verify real browser focus traps, keyboard event flows, and focus restoration.
+2. **Project-Scoped Onboarding Persistence**: Corrected the flat `localStorage` key implementation (`clearancescout_onboarding_dismissed`). Onboarding dismissal was previously global across all project IDs. Onboarding dismissal is now versioned and namespaced per project ID using `clearancescout:onboarding:v1:<project-id>` (via `getOnboardingStorageKey` in `src/components/OnboardingBanner.tsx`), with legacy flat key migration/removal on dismiss.
+
+#### 2. Semantic Focus Restoration Implementation
+- Updated `useModalFocus.ts` with a `resolveReturnTarget` option that accepts a dynamic target resolver callback.
+- Implemented `resolveReturnTarget` in `src/components/CitationDrawer.tsx` to restore focus after drawer dismissal to:
+  1. The specific "Research" button for the target entity (e.g., `button[aria-label*="Research Nocturne of the Wild"]`).
+  2. The parent entity row button in `EntityRegistryTable.tsx` (using `data-entity-id`).
+  3. The "Clearance Items" panel tab button (`#tab-entities`).
+- Confirmed post-dismissal focus element is strictly semantically equivalent and never drifts to "Switch Project".
+
+#### 3. Real Playwright Chromium Validation Evidence (`tests/live_keyboard_focus_validation.js`)
+- Executed real headful/headless Chromium browser automation via Playwright validating 7/7 core areas:
+  - **Token Modal**: Initial focus on `#demo-token-input-field`, Tab/Shift+Tab cycle trapped inside `[role="dialog"]`.
+  - **Script Upload Modal**: Initial focus inside dialog, polite `aria-live` region present, Tab cycle trapped.
+  - **Operations Dashboard**: Initial focus inside dialog, Tab cycle trapped, Escape key dismissal.
+  - **Department Tasks Action Center**: Initial focus inside dialog, Tab cycle trapped, Escape key dismissal.
+  - **Recommended-Action Drawer**: Focused "Research Nocturne of the Wild", auto-switched to Clearance Items tab, trapped focus inside `CitationDrawer`, dismissed via Escape, restored focus to the exact "Research" button (`dataEntityId: "ent-..."`), confirmed focus did NOT drift to "Switch Project".
+  - **Project-Scoped Onboarding Persistence**: Verified initial Project A onboarding dismissal (`clearancescout:onboarding:v1:proj-A=true`), verified banner stayed hidden during panel navigation and reloads, created Project B and verified onboarding banner was visible for Project B, returned to Project A and verified onboarding banner remained dismissed for Project A.
+
+#### 4. Complete Verification Evidence
+- **Real Playwright Browser Validation (`tests/live_keyboard_focus_validation.js`)**: PASSED 100% (7/7 sections green).
+- **Unit & Contract Test Suite (`npm test`)**: PASSED 100% (95 test files / 252 tests green).
+- **Static Spec Check (`./scripts/spec-check.sh`)**: PASSED with zero emoji or accessibility violations.
+- **Production Build (`npm run build`)**: PASSED cleanly.
+
 
 
 

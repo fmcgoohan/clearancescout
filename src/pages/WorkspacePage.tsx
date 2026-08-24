@@ -625,6 +625,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         >
           {/* Onboarding & Guidance Banner */}
           <OnboardingBanner
+            projectId={projectId}
             onOpenDemo={() => {
               setUploadModalInitialMode('DEMO');
               setIsUploadModalOpen(true);

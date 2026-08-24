@@ -211,6 +211,11 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         setProjectId(data.id);
+        try {
+          localStorage.setItem('clearancescout_active_project_id', data.id);
+        } catch (e) {
+          /* ignore */
+        }
         setProjectTitle(data.title);
         setProjectType(data.projectType || 'Movie');
         setExecutionMode(serverExecutionModeRef.current || data.executionMode || 'DEMO_MODE');
@@ -253,11 +258,12 @@ export default function App() {
       if (listRes.ok) {
         const listData = await listRes.json();
         if (listData.projects && listData.projects.length > 0) {
-          const firstProj = listData.projects[0];
+          const storedId = localStorage.getItem('clearancescout_active_project_id');
+          const targetProj = (storedId && listData.projects.find((p: any) => p.id === storedId)) || listData.projects[0];
           // Auto-seed demo screenplay if project is empty so 3 scenes and 7 entities load automatically
-          if (!firstProj.entityCount || firstProj.entityCount === 0) {
+          if (!targetProj.entityCount || targetProj.entityCount === 0) {
             try {
-              await apiFetch(`/api/projects/${firstProj.id}/script/demo`, {
+              await apiFetch(`/api/projects/${targetProj.id}/script/demo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
@@ -266,7 +272,7 @@ export default function App() {
               console.error('Error auto-seeding demo screenplay:', seedErr);
             }
           }
-          await loadProjectDetails(firstProj.id);
+          await loadProjectDetails(targetProj.id);
           return;
         }
       } else if (listRes.status === 401) {

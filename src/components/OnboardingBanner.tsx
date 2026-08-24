@@ -2,23 +2,50 @@ import React, { useState, useEffect } from 'react';
 import { Icon } from './icons/Icon';
 
 export interface OnboardingBannerProps {
+  projectId?: string;
   onDismiss?: () => void;
   onOpenDemo?: () => void;
 }
 
-export const OnboardingBanner: React.FC<OnboardingBannerProps> = ({ onDismiss, onOpenDemo }) => {
+const ONBOARDING_VERSION = 'v1';
+
+export function getOnboardingStorageKey(projectId?: string): string {
+  const safeId = projectId ? projectId.trim() : 'default';
+  return `clearancescout:onboarding:${ONBOARDING_VERSION}:${safeId}`;
+}
+
+export function isProjectOnboardingDismissed(projectId?: string): boolean {
+  try {
+    const key = getOnboardingStorageKey(projectId);
+    return localStorage.getItem(key) === 'true';
+  } catch (e) {
+    console.warn('Unable to access localStorage for onboarding state:', e);
+    return false;
+  }
+}
+
+export function setProjectOnboardingDismissed(projectId?: string): void {
+  try {
+    const key = getOnboardingStorageKey(projectId);
+    localStorage.setItem(key, 'true');
+    // Retire legacy flat key if present so it doesn't pollute global scope
+    localStorage.removeItem('clearancescout_onboarding_dismissed');
+  } catch (e) {
+    console.warn('Unable to write localStorage for onboarding state:', e);
+  }
+}
+
+export const OnboardingBanner: React.FC<OnboardingBannerProps> = ({ projectId, onDismiss, onOpenDemo }) => {
   const [isDismissed, setIsDismissed] = useState<boolean>(() => {
-    return localStorage.getItem('clearancescout_onboarding_dismissed') === 'true';
+    return isProjectOnboardingDismissed(projectId);
   });
 
   useEffect(() => {
-    if (localStorage.getItem('clearancescout_onboarding_dismissed') === 'true') {
-      setIsDismissed(true);
-    }
-  }, []);
+    setIsDismissed(isProjectOnboardingDismissed(projectId));
+  }, [projectId]);
 
   const handleDismiss = () => {
-    localStorage.setItem('clearancescout_onboarding_dismissed', 'true');
+    setProjectOnboardingDismissed(projectId);
     setIsDismissed(true);
     if (onDismiss) onDismiss();
   };
@@ -31,6 +58,7 @@ export const OnboardingBanner: React.FC<OnboardingBannerProps> = ({ onDismiss, o
     <div
       role="region"
       aria-label="How Clearance Scout Works"
+      data-project-id={projectId}
       className="card-surface"
       style={{
         padding: '1.25rem 1.5rem',
