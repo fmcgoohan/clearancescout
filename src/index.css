@@ -216,37 +216,53 @@ button {
   animation: pulse 2.4s ease-in-out infinite;
 }
 
-.btn {
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btn,
+.btn-primary,
+.btn-secondary {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  background: var(--panel2);
-  border: 1px solid var(--border);
-  color: var(--text);
+  background: var(--panel2, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  color: var(--text, #f3f4f6);
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s;
 }
 
-.btn:hover {
-  border-color: var(--accent);
+.btn:hover,
+.btn-secondary:hover {
+  border-color: var(--accent, #38bdf8);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.btn:active {
+.btn:active,
+.btn-secondary:active,
+.btn-primary:active {
   transform: scale(0.97);
 }
 
-.btn.primary {
-  background: var(--accent);
+.btn.primary,
+.btn-primary {
+  background: var(--accent, #38bdf8);
   color: #05070a;
-  border-color: var(--accent);
+  border-color: var(--accent, #38bdf8);
   font-weight: 700;
 }
 
-.btn.primary:hover {
+.btn.primary:hover,
+.btn-primary:hover {
   filter: brightness(1.1);
+  background: #38bdf8;
 }
 
 .btn .badge {

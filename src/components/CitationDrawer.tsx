@@ -166,6 +166,11 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
           <h3 style={{ fontSize: '1.2rem', color: 'var(--text-main)', margin: '4px 0 0' }}>
             {entityName}
           </h3>
+          {canonicalEntityId && canonicalEntityId !== entityName && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+              System ID: <code style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{canonicalEntityId}</code>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
             <span className={`badge badge-${currentStatus}`}>
               {formatStatus(currentStatus)}

@@ -137,11 +137,12 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Live Playwright Session (`scratch/phase2_live_verification.js`)**: Real browser testing verified header layout, Settings popover open/close & Escape key dismissal, Demo Token modal triggering from Settings popover, 4-tab section navigation switching, and Recommended Action priority cascade.
 
 #### 3. AC-15.1 Domain Terminology Convergence Hotfix
-- **`BinderExportModal.tsx`**: Updated stale headings and summary text to `"Clearance Items Registry"` and `"5-Category Clearance Items & Risk Assessments"`, and updated provenance text to `"LIVE RESEARCH PROVENANCE"`.
-- **`EntityRegistryTable.tsx`**: Updated screen-reader `aria-label` to `"Clearance Items Registry"` and table header `<th>` to `"Clearance Item"`.
-- **`terminology.ts`**: Updated code documentation comments to align with `"Clearance Item Clearance State"`.
-- **`ReadinessBand.test.tsx`**: Tightened title assertion regex from `/Screenplay Intake|Multi-Format Script Ingestion/i` to strictly `/Screenplay Intake/i` to enforce strict regression protection.
-- **Verification Sweep**: Full grep sweep confirmed 0 remaining occurrences of `"Canonical Entity Registry"`, `"Multi-Format Script Ingestion"`, and `"Observable Timeline"` in non-test `src/` application code.
+#### 4. P2REVIEW UX Hotfixes (2026-08-24)
+- **Real Tab-Panel Content Switching (AC-17.4)**: Refactored `WorkspacePage.tsx` to render distinct `<section role="tabpanel">` views per tab (`Overview`, `Screenplay`, `Clearance Items`, `Tasks`). Switching tabs now genuinely changes the visible viewport content instead of only updating tab state.
+- **Human-Readable Research Drawer Headings (AC-15.4)**: Updated `App.tsx` (`handleEvaluateClearance`) and `CitationDrawer.tsx` so research dossier titles display the human-readable entity display name (`entityName`, e.g., `"Nocturne of the Wild"`). Confined raw internal system IDs (`canonicalEntityId`, e.g., `"ent-ee6ff3e4"`) to secondary system metadata tags.
+- **Button System CSS Reset & Styling (Item 3)**: Added `.btn-primary`, `.btn-secondary`, and base `button` font/layout resets in `src/index.css`. All action controls (`Switch Project`, `Export Clearance Binder`, `Settings`, `Upload Screenplay`, `Department Tasks`, `Operations Dashboard`) now render with polished dark theme button styles.
+- **Copy & Label Cleanup**: Corrected Screenplay tab label from `"Screenplay (3 3 scenes)"` to `"Screenplay (3 scenes)"`, updated heading to `"Screenplay Intake & Clearance Review"`, and simplified header title/subtitle to remove duplicate phrase phrasing.
+- **Onboarding Dismissal Persistence**: Updated `OnboardingBanner.tsx` to initialize `isDismissed` state synchronously from `localStorage`, ensuring returning users do not experience banner re-appearance on page reloads.
 
 
 

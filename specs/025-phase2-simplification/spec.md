@@ -104,6 +104,13 @@ An operator entering ClearanceScout MUST be able to immediately answer from the 
 
 ---
 
+## Article 7 Mandatory Regression Clauses (Codified 2026-08-24)
+
+- **AC-17.4 (Tab Panel Content Switching Guarantee)**: Section navigation tabs (`Overview`, `Screenplay`, `Clearance Items`, `Tasks`) MUST render distinct, verifiable DOM panel content per tab wrapped in valid `role="tabpanel"` containers. Switching tabs MUST NOT leave viewport content unchanged. Automated tests MUST assert tab-specific rendered DOM content (e.g. presence/absence of tab-specific section headings and controls), not merely class names or `aria-selected` attributes.
+- **AC-15.4 (Human-Readable Research Drawer Headings)**: Research/dossier drawer headings (`CitationDrawer`) MUST display the human-readable entity display name (e.g., `"Nocturne of the Wild"`). Raw internal entity IDs (e.g., `"ent-ee6ff3e4"`) MUST be strictly confined to secondary metadata tags (`System ID: ent-...`) and MUST NOT appear as primary drawer title headings.
+
+---
+
 ## Verification & Acceptance Gate
 
 Phase 2 implementation will be deemed complete when:
@@ -117,3 +124,4 @@ Phase 2 implementation will be deemed complete when:
    - `status_vocabulary_is_consistent`
    - `header_settings_menu_keyboard_accessible`
    - `section_navigation_tabs_keyboard_accessible`
+

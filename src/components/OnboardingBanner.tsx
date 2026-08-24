@@ -7,11 +7,12 @@ export interface OnboardingBannerProps {
 }
 
 export const OnboardingBanner: React.FC<OnboardingBannerProps> = ({ onDismiss, onOpenDemo }) => {
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isDismissed, setIsDismissed] = useState<boolean>(() => {
+    return localStorage.getItem('clearancescout_onboarding_dismissed') === 'true';
+  });
 
   useEffect(() => {
-    const dismissed = localStorage.getItem('clearancescout_onboarding_dismissed');
-    if (dismissed === 'true') {
+    if (localStorage.getItem('clearancescout_onboarding_dismissed') === 'true') {
       setIsDismissed(true);
     }
   }, []);

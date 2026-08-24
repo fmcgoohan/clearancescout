@@ -430,7 +430,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             cursor: 'pointer',
           }}
         >
-          Screenplay ({scenes.length} {pluralize(scenes.length, 'scene', 'scenes')})
+          Screenplay ({pluralize(scenes.length, 'scene', 'scenes')})
         </button>
         <button
           role="tab"
@@ -470,15 +470,15 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             cursor: 'pointer',
           }}
         >
-          Tasks ({openActionsCount > 0 ? `${openActionsCount} Open` : '0 Open'})
+          Department Tasks ({openActionsCount > 0 ? `${openActionsCount} Open` : '0 Open'})
         </button>
       </div>
 
-      {/* Upload & Controls Panel */}
+      {/* Upload & Controls Panel - Always visible for top-level operational actions */}
       <div className="glass-panel responsive-stack" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
-            Screenplay Intake & 5-Category Resolution
+            Screenplay Intake & Clearance Review
           </h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Extract scenes, highlight in-line occurrences, and review legal counsel overrides.
@@ -614,250 +614,277 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         </div>
       )}
 
-      {/* Hero Readiness Index Card (Constitution v1.1.0 Article 4: The Hero Is the Answer) */}
-      {scenes.length > 0 && readinessSummary && (
-        <div
-          className="glass-panel hero-animate"
-          style={{
-            padding: '20px 24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '20px',
-            background: 'var(--bg-secondary)',
-            borderLeft:
-              readinessSummary.redScenesCount > 0
-                ? '6px solid var(--status-action)'
-                : readinessSummary.workingClearScenesCount > 0
-                ? '6px solid var(--status-review)'
-                : '6px solid var(--status-no-issue)',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-          }}
+      {/* Tab Panels with Real Content Switching */}
+      {activeTab === 'overview' && (
+        <section
+          role="tabpanel"
+          id="section-overview"
+          aria-labelledby="tab-overview"
+          tabIndex={0}
+          style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: 700 }}>
-              Film Production Readiness Metrics
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                {pluralize(readinessSummary?.totalScenes ?? scenes.length, 'Scene')} Total
-              </span>
-              <span
-                style={{
-                  fontSize: '0.8rem',
-                  padding: '4px 10px',
-                  borderRadius: '16px',
-                  background: 'var(--status-no-issue-bg)',
-                  color: 'var(--status-no-issue)',
-                  border: '1px solid var(--status-no-issue-border)',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <CheckCircleIcon size={14} />
-                <span>Final Clear: {readinessSummary.finalClearScenesCount}</span>
-              </span>
-              <span
-                style={{
-                  fontSize: '0.8rem',
-                  padding: '4px 10px',
-                  borderRadius: '16px',
-                  background: 'var(--status-review-bg)',
-                  color: 'var(--status-review)',
-                  border: '1px solid var(--status-review-border)',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <AlertTriangleIcon size={14} />
-                <span>Working Clear: {readinessSummary.workingClearScenesCount}</span>
-              </span>
-              <span
-                style={{
-                  fontSize: '0.8rem',
-                  padding: '4px 10px',
-                  borderRadius: '16px',
-                  background: 'var(--status-action-bg)',
-                  color: 'var(--status-action)',
-                  border: '1px solid var(--status-action-border)',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-                className={readinessSummary.redScenesCount > 0 ? 'pulse-block-signal' : ''}
-              >
-                <XCircleIcon size={14} />
-                <span>Red (Blocked): {readinessSummary.redScenesCount}</span>
-              </span>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-              background: 'rgba(255, 255, 255, 0.03)',
-              padding: '12px 20px',
-              borderRadius: '10px',
-              border: '1px solid var(--border-color)',
+          {/* Onboarding & Guidance Banner */}
+          <OnboardingBanner
+            onOpenDemo={() => {
+              setUploadModalInitialMode('DEMO');
+              setIsUploadModalOpen(true);
             }}
-          >
-            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', fontWeight: 600 }}>
-              Shooting Readiness Index
-            </div>
+          />
+
+          {/* Recommended Next Action Area */}
+          <RecommendedActionCard
+            entities={entities}
+            hasScreenplay={scenes.length > 0}
+            departmentTasksCount={openActionsCount}
+            onSelectTab={(tab, filter) => {
+              setActiveTab(tab);
+              if (filter) setActiveStatusFilter(filter);
+            }}
+            onOpenUploadModal={() => {
+              setUploadModalInitialMode('FILE');
+              setIsUploadModalOpen(true);
+            }}
+            onExportBinder={onExportBinder}
+            onResearchItem={(id) => onEvaluateClearance(id)}
+          />
+
+          {/* Hero Readiness Index Card */}
+          {scenes.length > 0 && readinessSummary && (
             <div
+              className="glass-panel hero-animate"
               style={{
-                fontSize: '2.75rem',
-                fontWeight: 900,
-                lineHeight: 1,
-                color:
-                  readinessSummary.overallReadinessPercentage === 100
-                    ? 'var(--status-no-issue)'
-                    : readinessSummary.redScenesCount > 0
-                    ? 'var(--status-action)'
-                    : 'var(--status-review)',
-                marginTop: '4px',
+                padding: '20px 24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '20px',
+                background: 'var(--bg-secondary)',
+                borderLeft:
+                  readinessSummary.redScenesCount > 0
+                    ? '6px solid var(--status-action)'
+                    : readinessSummary.workingClearScenesCount > 0
+                    ? '6px solid var(--status-review)'
+                    : '6px solid var(--status-no-issue)',
+                borderRadius: '12px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
               }}
             >
-              {readinessSummary.overallReadinessPercentage}%
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Per-Scene Readiness Reason Cards Grid (Feature 023 Section 2) */}
-      {scenes.length > 0 && (
-        <div className="scene-readiness-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-          {scenes.map((s) => {
-            const isRed = s.readinessStatus === 'RED';
-            const isWorking = s.readinessStatus === 'WORKING_CLEAR';
-            const borderColor = isRed ? 'var(--status-action)' : isWorking ? 'var(--status-review)' : 'var(--status-no-issue)';
-            const bgColor = isRed ? 'var(--status-action-bg)' : isWorking ? 'var(--status-review-bg)' : 'var(--status-no-issue-bg)';
-            const textColor = isRed ? 'var(--status-action)' : isWorking ? 'var(--status-review)' : 'var(--status-no-issue)';
-            const borderChip = isRed ? 'var(--status-action-border)' : isWorking ? 'var(--status-review-border)' : 'var(--status-no-issue-border)';
-            const statusLabel = isRed ? 'BLOCKS SHOOTING' : isWorking ? 'WORKING CLEAR' : 'FINAL CLEAR';
-
-            return (
-              <div
-                key={s.id}
-                className="glass-panel scene-readiness-card"
-                onClick={() => setSelectedSceneId(s.id)}
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: '8px',
-                  background: 'var(--bg-card)',
-                  borderLeft: `6px solid ${borderColor}`,
-                  borderTop: '1px solid var(--border-color)',
-                  borderRight: '1px solid var(--border-color)',
-                  borderBottom: '1px solid var(--border-color)',
-                  cursor: 'pointer',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                      SCENE {s.sceneNumber}
-                    </span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                      {s.locationType || (s.heading?.startsWith('EXT') ? 'EXT' : 'INT')} • {s.timeOfDay || 'DAY'}
-                    </span>
-                  </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: 700 }}>
+                  Film Production Readiness Metrics
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                    {pluralize(readinessSummary?.totalScenes ?? scenes.length, 'Scene')} Total
+                  </span>
                   <span
                     style={{
-                      fontSize: '0.65rem',
-                      padding: '2px 8px',
-                      borderRadius: '12px',
-                      background: bgColor,
-                      color: textColor,
-                      border: `1px solid ${borderChip}`,
-                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      padding: '4px 10px',
+                      borderRadius: '16px',
+                      background: 'var(--status-no-issue-bg)',
+                      color: 'var(--status-no-issue)',
+                      border: '1px solid var(--status-no-issue-border)',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
                     }}
                   >
-                    {statusLabel}
+                    <CheckCircleIcon size={14} />
+                    <span>Final Clear: {readinessSummary.finalClearScenesCount}</span>
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.8rem',
+                      padding: '4px 10px',
+                      borderRadius: '16px',
+                      background: 'var(--status-review-bg)',
+                      color: 'var(--status-review)',
+                      border: '1px solid var(--status-review-border)',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <AlertTriangleIcon size={14} />
+                    <span>Working Clear: {readinessSummary.workingClearScenesCount}</span>
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.8rem',
+                      padding: '4px 10px',
+                      borderRadius: '16px',
+                      background: 'var(--status-action-bg)',
+                      color: 'var(--status-action)',
+                      border: '1px solid var(--status-action-border)',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                    className={readinessSummary.redScenesCount > 0 ? 'pulse-block-signal' : ''}
+                  >
+                    <XCircleIcon size={14} />
+                    <span>Red (Blocked): {readinessSummary.redScenesCount}</span>
                   </span>
                 </div>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>
-                  {s.heading}
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-end',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  padding: '12px 20px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                }}
+              >
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  Shooting Readiness Index
                 </div>
                 <div
-                  className="scene-why-blocked-reason"
                   style={{
-                    fontSize: '0.78rem',
-                    color: isRed ? '#fca5a5' : isWorking ? '#fde68a' : 'var(--text-muted)',
-                    lineHeight: 1.4,
+                    fontSize: '2.75rem',
+                    fontWeight: 900,
+                    lineHeight: 1,
+                    color:
+                      readinessSummary.overallReadinessPercentage === 100
+                        ? 'var(--status-no-issue)'
+                        : readinessSummary.redScenesCount > 0
+                        ? 'var(--status-action)'
+                        : 'var(--status-review)',
+                    marginTop: '4px',
                   }}
                 >
-                  {getPlainLanguageSceneReason(s)}
+                  {readinessSummary.overallReadinessPercentage}%
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
+
+          {/* Per-Scene Readiness Reason Cards Grid */}
+          {scenes.length > 0 && (
+            <div className="scene-readiness-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+              {scenes.map((s) => {
+                const isRed = s.readinessStatus === 'RED';
+                const isWorking = s.readinessStatus === 'WORKING_CLEAR';
+                const borderColor = isRed ? 'var(--status-action)' : isWorking ? 'var(--status-review)' : 'var(--status-no-issue)';
+                const bgColor = isRed ? 'var(--status-action-bg)' : isWorking ? 'var(--status-review-bg)' : 'var(--status-no-issue-bg)';
+                const textColor = isRed ? 'var(--status-action)' : isWorking ? 'var(--status-review)' : 'var(--status-no-issue)';
+                const borderChip = isRed ? 'var(--status-action-border)' : isWorking ? 'var(--status-review-border)' : 'var(--status-no-issue-border)';
+                const statusLabel = isRed ? 'BLOCKS SHOOTING' : isWorking ? 'WORKING CLEAR' : 'FINAL CLEAR';
+
+                return (
+                  <div
+                    key={s.id}
+                    className="glass-panel scene-readiness-card"
+                    onClick={() => {
+                      setSelectedSceneId(s.id);
+                      setActiveTab('screenplay');
+                    }}
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: '8px',
+                      background: 'var(--bg-card)',
+                      borderLeft: `6px solid ${borderColor}`,
+                      borderTop: '1px solid var(--border-color)',
+                      borderRight: '1px solid var(--border-color)',
+                      borderBottom: '1px solid var(--border-color)',
+                      cursor: 'pointer',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                          SCENE {s.sceneNumber}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          {s.locationType || (s.heading?.startsWith('EXT') ? 'EXT' : 'INT')} • {s.timeOfDay || 'DAY'}
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          background: bgColor,
+                          color: textColor,
+                          border: `1px solid ${borderChip}`,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>
+                      {s.heading}
+                    </div>
+                    <div
+                      className="scene-why-blocked-reason"
+                      style={{
+                        fontSize: '0.78rem',
+                        color: isRed ? '#fca5a5' : isWorking ? '#fde68a' : 'var(--text-muted)',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {getPlainLanguageSceneReason(s)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Overview Entity Registry Table */}
+          <EntityRegistryTable
+            entities={entities}
+            scenes={scenes}
+            selectedSceneId={selectedSceneId}
+            initialStatusFilter={activeStatusFilter}
+            onEvaluateClearance={onEvaluateClearance}
+            onEvaluateBatch={startBatchResearch}
+            batchProgress={batchProgress}
+            onRetryResearch={handleRetryResearch}
+            onGenerateReplacement={onGenerateReplacement}
+            onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
+            onOpenRightsModal={(entityId, entityName) => {
+              setRightsEntityId(entityId);
+              setRightsEntityName(entityName);
+              setIsRightsModalOpen(true);
+            }}
+            onOpenPlaceholderModal={(entityId, entityName, entityCategory) => {
+              setPlaceholderEntityId(entityId);
+              setPlaceholderEntityName(entityName);
+              setPlaceholderEntityCategory(entityCategory || 'BRAND');
+              setIsPlaceholderModalOpen(true);
+            }}
+            onOpenComparison={handleOpenComparison}
+            onViewOccurrences={(entityId) => {
+              setSelectedDetailEntityId(entityId);
+              setIsDetailModalOpen(true);
+            }}
+            onEditItem={handleOpenEditModal}
+            onDeleteItem={handleDeleteItem}
+            onAddItem={handleOpenAddModal}
+            isEvaluating={isEvaluating}
+          />
+        </section>
       )}
 
-      {/* Onboarding & Guidance Banner (UX Redesign Requirement Area 10) */}
-      <OnboardingBanner
-        onOpenDemo={() => {
-          setUploadModalInitialMode('DEMO');
-          setIsUploadModalOpen(true);
-        }}
-      />
-
-      {/* Recommended Next Action Area (UX Redesign Requirement Area 1) */}
-      <RecommendedActionCard
-        entities={entities}
-        hasScreenplay={scenes.length > 0}
-        departmentTasksCount={openActionsCount}
-        onSelectTab={(tab, filter) => {
-          setActiveTab(tab);
-          if (filter) setActiveStatusFilter(filter);
-        }}
-        onOpenUploadModal={() => {
-          setUploadModalInitialMode('FILE');
-          setIsUploadModalOpen(true);
-        }}
-        onExportBinder={onExportBinder}
-        onResearchItem={(id) => onEvaluateClearance(id)}
-      />
-
-
-      {/* Main Grid Workspace - Responsive Split View & Panel Collapse */}
-      <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => setIsScriptCollapsed(!isScriptCollapsed)}
-          aria-expanded={!isScriptCollapsed}
-          aria-label={isScriptCollapsed ? 'Expand Screenplay Panel' : 'Collapse Screenplay Panel'}
-          style={{
-            fontSize: '0.8rem',
-            padding: '0.35rem 0.75rem',
-            borderRadius: '6px',
-            borderColor: 'var(--border-subtle, #232d42)',
-            color: 'var(--text-muted, #9ca3af)',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-          }}
+      {activeTab === 'screenplay' && (
+        <section
+          role="tabpanel"
+          id="section-screenplay"
+          aria-labelledby="tab-screenplay"
+          tabIndex={0}
+          style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
         >
-          <Icon name="document" size={14} />
-          <span>{isScriptCollapsed ? 'Expand Screenplay Panel' : 'Collapse Screenplay Panel'}</span>
-        </button>
-
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: isScriptCollapsed ? '1fr' : 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
-        {!isScriptCollapsed && (
           <ScriptViewer
             scenes={scenes}
             entities={entities}
@@ -866,39 +893,90 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             onSelectScene={setSelectedSceneId}
             onEntityClick={(entityId, sceneId) => onOpenCounselReview(entityId, sceneId)}
           />
-        )}
-        <EntityRegistryTable
-          entities={entities}
-          scenes={scenes}
-          selectedSceneId={selectedSceneId}
-          onEvaluateClearance={onEvaluateClearance}
-          onEvaluateBatch={startBatchResearch}
-          batchProgress={batchProgress}
-          onRetryResearch={handleRetryResearch}
-          onGenerateReplacement={onGenerateReplacement}
-          onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
-          onOpenRightsModal={(entityId, entityName) => {
-            setRightsEntityId(entityId);
-            setRightsEntityName(entityName);
-            setIsRightsModalOpen(true);
-          }}
-          onOpenPlaceholderModal={(entityId, entityName, entityCategory) => {
-            setPlaceholderEntityId(entityId);
-            setPlaceholderEntityName(entityName);
-            setPlaceholderEntityCategory(entityCategory || 'BRAND');
-            setIsPlaceholderModalOpen(true);
-          }}
-          onOpenComparison={handleOpenComparison}
-          onViewOccurrences={(entityId) => {
-            setSelectedDetailEntityId(entityId);
-            setIsDetailModalOpen(true);
-          }}
-          onEditItem={handleOpenEditModal}
-          onDeleteItem={handleDeleteItem}
-          onAddItem={handleOpenAddModal}
-          isEvaluating={isEvaluating}
-        />
-      </div>
+        </section>
+      )}
+
+      {activeTab === 'clearance' && (
+        <section
+          role="tabpanel"
+          id="section-clearance"
+          aria-labelledby="tab-clearance"
+          tabIndex={0}
+          style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
+        >
+          <EntityRegistryTable
+            entities={entities}
+            scenes={scenes}
+            selectedSceneId={selectedSceneId}
+            initialStatusFilter={activeStatusFilter}
+            onEvaluateClearance={onEvaluateClearance}
+            onEvaluateBatch={startBatchResearch}
+            batchProgress={batchProgress}
+            onRetryResearch={handleRetryResearch}
+            onGenerateReplacement={onGenerateReplacement}
+            onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
+            onOpenRightsModal={(entityId, entityName) => {
+              setRightsEntityId(entityId);
+              setRightsEntityName(entityName);
+              setIsRightsModalOpen(true);
+            }}
+            onOpenPlaceholderModal={(entityId, entityName, entityCategory) => {
+              setPlaceholderEntityId(entityId);
+              setPlaceholderEntityName(entityName);
+              setPlaceholderEntityCategory(entityCategory || 'BRAND');
+              setIsPlaceholderModalOpen(true);
+            }}
+            onOpenComparison={handleOpenComparison}
+            onViewOccurrences={(entityId) => {
+              setSelectedDetailEntityId(entityId);
+              setIsDetailModalOpen(true);
+            }}
+            onEditItem={handleOpenEditModal}
+            onDeleteItem={handleDeleteItem}
+            onAddItem={handleOpenAddModal}
+            isEvaluating={isEvaluating}
+          />
+        </section>
+      )}
+
+      {activeTab === 'tasks' && (
+        <section
+          role="tabpanel"
+          id="section-tasks"
+          aria-labelledby="tab-tasks"
+          tabIndex={0}
+          style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
+        >
+          <div className="glass-panel" style={{ padding: '24px', borderRadius: '12px' }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
+              Department Action Center & Operations
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              Manage department-specific clearance assignments across Art Dept, Legal Counsel, Locations, and Production Management.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <button
+                className="btn-primary touch-target"
+                aria-label="Open Department Action Center"
+                onClick={() => setIsActionModalOpen(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <FileTextIcon size={16} />
+                <span>Open Department Action Center ({openActionsCount} Tasks Open)</span>
+              </button>
+              <button
+                className="btn-secondary touch-target"
+                aria-label="Open Production Operations Dashboard"
+                onClick={() => setIsDashboardModalOpen(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' }}
+              >
+                <LayersIcon size={16} />
+                <span>Open Operations Dashboard</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
 
       {/* Item Add / Edit Modal */}

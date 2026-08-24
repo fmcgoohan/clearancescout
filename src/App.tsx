@@ -456,7 +456,8 @@ export default function App() {
         if (asm) {
           setSelectedEntityId(entityId);
           setCitations(asm.citations || []);
-          setCitationEntityName(asm.canonicalEntityId);
+          const matchedEntity = projectEntities.find((e) => e.id === entityId);
+          setCitationEntityName(matchedEntity?.canonicalName || asm.canonicalName || asm.entityName || asm.canonicalEntityId || entityId);
           setCitationRationale(asm.legalRationale);
           setIsCitationOpen(true);
         }
@@ -586,7 +587,7 @@ export default function App() {
               </span>
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              ClearanceScout · Production Clearance Workspace
+              ClearanceScout Platform
             </span>
           </div>
         </div>

@@ -108,6 +108,7 @@ export interface EntityRegistryTableProps {
   onEditItem?: (entity: CanonicalEntity) => void;
   onDeleteItem?: (entityId: string) => void;
   onAddItem?: () => void;
+  initialStatusFilter?: string;
   isEvaluating: boolean;
 }
 
@@ -115,6 +116,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   entities,
   scenes = [],
   selectedSceneId,
+  initialStatusFilter,
   onEvaluateClearance,
   onEvaluateBatch,
   batchProgress,
@@ -131,10 +133,17 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   isEvaluating,
 }) => {
   const [filter, setFilter] = useState<RegistryFilterState>({
-    status: 'ALL',
+    status: (initialStatusFilter as any) || 'ALL',
     category: 'ALL',
     sceneId: 'ALL',
   });
+
+  // Sync status filter if initialStatusFilter changes
+  useEffect(() => {
+    if (initialStatusFilter) {
+      setFilter((prev) => ({ ...prev, status: initialStatusFilter as any }));
+    }
+  }, [initialStatusFilter]);
 
   // Sync sceneId when selectedSceneId changes from external ScriptViewer
   useEffect(() => {

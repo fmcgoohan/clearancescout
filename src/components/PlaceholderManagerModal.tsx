@@ -108,7 +108,8 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
 
       let scenesList: Array<{ id: string; sceneNumber: number; heading: string; occurrences?: any[] }> = [];
       if (scenesRes.ok) {
-        scenesList = await scenesRes.json();
+        const scenesData = await scenesRes.json();
+        scenesList = Array.isArray(scenesData) ? scenesData : scenesData?.scenes || [];
         setAvailableScenes(scenesList.map((s) => ({ id: s.id, sceneNumber: s.sceneNumber, heading: s.heading })));
 
         const occs: Array<{ id: string; sceneId: string; sceneNumber: number; heading: string; scriptLineNumber?: number; excerptText?: string }> = [];
