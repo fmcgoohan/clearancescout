@@ -4,12 +4,18 @@ import { app } from '../../server/index.js';
 import { extractTitleFromScriptText } from '../../server/agents/ScriptParserAgent.js';
 
 describe('Contract: User Story 24 - Persisted Production Title & Header Synchronization', () => {
-  it('should extract title from Fountain/Plaintext screenplay text', () => {
+  it('should extract and title-case titles from Fountain/Plaintext screenplay text', () => {
     const text1 = `TITLE: THE NEON HORIZON\nAUTHOR: Team\n\nINT. PENTHOUSE - NIGHT\nAlex drinks Summit Cola.`;
     expect(extractTitleFromScriptText(text1)).toBe('The Neon Horizon');
 
-    const text2 = `Title: Cyberfall\nAuthor: Jane Doe\n\nEXT. CITY - DAY\nCar drives by.`;
-    expect(extractTitleFromScriptText(text2)).toBe('Cyberfall');
+    const text2 = `TITLE: CYBERPUNK NIGHTS\nAUTHOR: Writer\n\nEXT. ALLEY - NIGHT`;
+    expect(extractTitleFromScriptText(text2)).toBe('Cyberpunk Nights');
+
+    const text3 = `TITLE: THE RECKONING OF THE NIGHT\nAUTHOR: Writer`;
+    expect(extractTitleFromScriptText(text3)).toBe('The Reckoning of the Night');
+
+    const text4 = `Title: Cyberfall\nAuthor: Jane Doe\n\nEXT. CITY - DAY\nCar drives by.`;
+    expect(extractTitleFromScriptText(text4)).toBe('Cyberfall');
   });
 
   it('should update generic project title to extracted script title during screenplay upload', async () => {

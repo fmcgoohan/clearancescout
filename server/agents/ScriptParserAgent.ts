@@ -3,15 +3,31 @@ import { config } from '../config.js';
 import { EntityCategory } from '../repositories/EntityRepo.js';
 import zlib from 'zlib';
 
+export function toTitleCase(str: string): string {
+  const minorWords = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'nor', 'of', 'on', 'or', 'so', 'the', 'to', 'up', 'yet']);
+  const words = str.toLowerCase().split(/\s+/);
+  return words
+    .map((word, index) => {
+      if (!word) return '';
+      if (index > 0 && index < words.length - 1 && minorWords.has(word)) {
+        return word;
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+}
+
 export function extractTitleFromScriptText(scriptText: string): string | null {
   if (!scriptText) return null;
   const match = scriptText.match(/^TITLE:\s*(.+)$/im) || scriptText.match(/^Title:\s*(.+)$/im);
   if (match && match[1]) {
     let title = match[1].trim().replace(/^["']|["']$/g, '').trim();
-    if (title.toUpperCase() === 'THE NEON HORIZON') {
-      title = 'The Neon Horizon';
+    if (title) {
+      if (title === title.toUpperCase() && /[A-Z]/.test(title)) {
+        title = toTitleCase(title);
+      }
+      return title;
     }
-    if (title) return title;
   }
   return null;
 }
