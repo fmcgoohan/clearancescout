@@ -890,6 +890,10 @@ export default function App() {
       <ProjectListModal
         isOpen={isProjectModalOpen}
         activeProjectId={projectId}
+        activeProjectTitle={projectTitle}
+        activeProjectType={projectType}
+        activeExecutionMode={executionMode}
+        activeProjectSummary={projectSummary}
         onSelectProject={(selectedId) => loadProjectDetails(selectedId)}
         onClose={() => setIsProjectModalOpen(false)}
       />

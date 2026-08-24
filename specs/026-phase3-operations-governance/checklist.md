@@ -8,8 +8,8 @@
 ## Project Directory & Header Title Synchronization
 
 - [x] **CHK001**: Header title displays the persisted production name (e.g. *"The Neon Horizon"*) dynamically derived from active project metadata (`AC-24.1`, `AC-24.2`).
-- [ ] **CHK002**: `ProjectListModal` includes the currently open workspace project with an `"Active Workspace"` badge (`AC-20.1`).
-- [ ] **CHK003**: `ProjectListModal` falls back to displaying the active project when list fetch returns empty array or error, eliminating `"No production projects found"` contradiction (`AC-20.2`).
+- [x] **CHK002**: `ProjectListModal` includes the currently open workspace project with an `"Active Workspace"` badge (`AC-20.1`).
+- [x] **CHK003**: `ProjectListModal` falls back to displaying the active project when list fetch returns empty array or error, eliminating `"No production projects found"` contradiction (`AC-20.2`).
 
 ## Department Task Totals & Locations Reconciliation
 

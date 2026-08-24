@@ -23,6 +23,16 @@ export interface ProjectListItem {
 interface ProjectListModalProps {
   isOpen: boolean;
   activeProjectId: string | null;
+  activeProjectTitle?: string;
+  activeProjectType?: 'Movie' | 'TV Show' | 'Commercial';
+  activeExecutionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
+  activeProjectSummary?: {
+    entityCount: number;
+    clearedCount: number;
+    actionRequiredCount: number;
+    reviewRecommendedCount: number;
+    researchRequiredCount?: number;
+  };
   onSelectProject: (projectId: string) => void;
   onClose: () => void;
 }
@@ -30,6 +40,10 @@ interface ProjectListModalProps {
 export function ProjectListModal({
   isOpen,
   activeProjectId,
+  activeProjectTitle,
+  activeProjectType,
+  activeExecutionMode,
+  activeProjectSummary,
   onSelectProject,
   onClose,
 }: ProjectListModalProps) {
@@ -370,65 +384,93 @@ export function ProjectListModal({
             </form>
           ) : (
             <div>
-              {isLoading ? (
-                <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  Loading studio projects...
-                </div>
-              ) : projects.length === 0 ? (
-                <div style={{ padding: '32px', textAlign: 'center' }}>
-                  <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>No production projects found.</p>
-                  <button className="btn-primary" onClick={() => setIsCreating(true)}>
-                    Create First Project
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {projects.map((proj) => {
-                    const badge = getTypeBadge(proj.projectType);
-                    const isActive = proj.id === activeProjectId;
-                    return (
-                      <div
-                        key={proj.id}
-                        data-project-id={proj.id}
-                        onClick={() => {
-                          onSelectProject(proj.id);
-                          onClose();
-                        }}
-                        style={{
-                          padding: '16px 20px',
-                          borderRadius: '10px',
-                          background: isActive ? 'rgba(56, 189, 248, 0.1)' : 'rgba(0,0,0,0.25)',
-                          border: `1px solid ${isActive ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          transition: 'all 0.2s ease',
-                          gap: '16px',
-                        }}
-                        className="touch-target"
-                      >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{proj.title}</h3>
-                            <span
-                              style={{
-                                fontSize: '0.7rem',
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                background: badge.bg,
-                                color: badge.color,
-                                fontWeight: 600,
-                              }}
-                            >
-                              {badge.label}
-                            </span>
-                            {isActive && (
-                              <span style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
-                                ● Current
+              {(() => {
+                let effectiveProjects = [...projects];
+                if (activeProjectId && !effectiveProjects.some((p) => p.id === activeProjectId)) {
+                  const fallbackActiveItem: ProjectListItem = {
+                    id: activeProjectId,
+                    title: activeProjectTitle || 'Active Workspace',
+                    productionCompany: 'Current Workspace',
+                    scriptVersion: 'v1.0-Active',
+                    projectType: activeProjectType || 'Movie',
+                    executionMode: activeExecutionMode || 'DEMO_MODE',
+                    entityCount: activeProjectSummary?.entityCount || 0,
+                    clearedCount: activeProjectSummary?.clearedCount || 0,
+                    actionRequiredCount: activeProjectSummary?.actionRequiredCount || 0,
+                    reviewRecommendedCount: activeProjectSummary?.reviewRecommendedCount || 0,
+                    createdAt: new Date().toISOString(),
+                  };
+                  effectiveProjects = [fallbackActiveItem, ...effectiveProjects];
+                }
+
+                if (isLoading) {
+                  return (
+                    <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      Loading studio projects...
+                    </div>
+                  );
+                }
+
+                if (effectiveProjects.length === 0) {
+                  return (
+                    <div style={{ padding: '32px', textAlign: 'center' }}>
+                      <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>No production projects found.</p>
+                      <button className="btn-primary" onClick={() => setIsCreating(true)}>
+                        Create First Project
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {effectiveProjects.map((proj) => {
+                      const badge = getTypeBadge(proj.projectType);
+                      const isActive = proj.id === activeProjectId;
+                      return (
+                        <div
+                          key={proj.id}
+                          data-project-id={proj.id}
+                          data-active-workspace={isActive ? 'true' : 'false'}
+                          onClick={() => {
+                            onSelectProject(proj.id);
+                            onClose();
+                          }}
+                          style={{
+                            padding: '16px 20px',
+                            borderRadius: '10px',
+                            background: isActive ? 'rgba(56, 189, 248, 0.1)' : 'rgba(0,0,0,0.25)',
+                            border: `1px solid ${isActive ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 0.2s ease',
+                            gap: '16px',
+                          }}
+                          className="touch-target"
+                        >
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                              <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{proj.title}</h3>
+                              <span
+                                style={{
+                                  fontSize: '0.7rem',
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  background: badge.bg,
+                                  color: badge.color,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {badge.label}
                               </span>
-                            )}
-                          </div>
+                              {isActive && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
+                                  ● Active Workspace
+                                </span>
+                              )}
+                            </div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '12px', alignItems: 'center' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><BuildingIcon size={12} /> {proj.productionCompany}</span>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><FileTextIcon size={12} /> {proj.scriptVersion}</span>
@@ -451,7 +493,8 @@ export function ProjectListModal({
                     );
                   })}
                 </div>
-              )}
+              );
+            })()}
             </div>
           )}
         </div>

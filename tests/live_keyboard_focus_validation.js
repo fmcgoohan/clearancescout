@@ -410,7 +410,37 @@ async function runLiveKeyboardFocusValidation() {
     throw new Error('HYDRATION DEFECT: Workspace failed to display 7 entities and 3 scenes after hydration!');
   }
 
-  console.log('=== All Live Keyboard, Focus Restoration, Project-Scoped Onboarding, and Snapshot Hydration Validation PASSED 100% ===');
+  // 8. Test Project Directory Coherence & Active Workspace Fallback (US20 - AC-20.1 & AC-20.2)
+  console.log('[9/9] Testing Project Directory Coherence & Active Workspace Fallback (US20)...');
+  const switchProjBtn = await page.waitForSelector('button[aria-label="Switch Project"], button:has-text("Switch Project")');
+  await switchProjBtn.click();
+
+  const directoryModal = await page.waitForSelector('[role="dialog"][aria-labelledby="project-modal-title"]');
+  console.log('  ✓ Project Directory modal opened');
+
+  const directoryText = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"][aria-labelledby="project-modal-title"]');
+    return dialog ? dialog.innerText : '';
+  });
+
+  const showsActiveBadge = directoryText.includes('● Active Workspace');
+  const showsNoProjectsFound = directoryText.includes('No production projects found.');
+
+  console.log('  ✓ Active workspace project clearly indicated with "● Active Workspace":', showsActiveBadge);
+  console.log('  ✓ "No production projects found" contradiction eliminated:', !showsNoProjectsFound);
+
+  if (!showsActiveBadge) {
+    throw new Error('US20 DEFECT: Project Directory modal failed to indicate active workspace with "● Active Workspace" badge!');
+  }
+  if (showsNoProjectsFound) {
+    throw new Error('US20 DEFECT: Project Directory modal displayed "No production projects found." contradiction!');
+  }
+
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[role="dialog"][aria-labelledby="project-modal-title"]', { state: 'detached' });
+  console.log('  ✓ Project Directory modal closed via Escape');
+
+  console.log('=== All Live Keyboard, Focus Restoration, Project-Scoped Onboarding, Snapshot Hydration, and Project Directory Coherence Validation PASSED 100% ===');
   await browser.close();
 }
 

@@ -10,8 +10,8 @@
 - [x] **T002-P3**: Update `App.tsx` and `CommandBar.tsx` to synchronize `{projectTitle}` dynamically from active project metadata rather than static generic branding. (Satisfied: `App.tsx`)
 
 ## Phase 2: Project Directory & Active Workspace Coherence (US20)
-- [ ] **T003-P3**: Pass `activeProjectId` and `activeProjectTitle` to `ProjectListModal.tsx` and add active indicator badge on currently loaded workspace project.
-- [ ] **T004-P3**: Implement fallback in `ProjectListModal.tsx` to render the active workspace project card when `projects.length === 0` or upon unhandled fetch error, eliminating the *"No production projects found"* contradiction.
+- [x] **T003-P3**: Pass `activeProjectId` and `activeProjectTitle` to `ProjectListModal.tsx` and add active indicator badge on currently loaded workspace project. (Satisfied: `App.tsx`, `ProjectListModal.tsx`)
+- [x] **T004-P3**: Implement fallback in `ProjectListModal.tsx` to render the active workspace project card when `projects.length === 0` or upon unhandled fetch error, eliminating the *"No production projects found"* contradiction. (Satisfied: `ProjectListModal.tsx`)
 
 ## Phase 3: Reconciled Department Task Totals & Locations Coverage (US21)
 - [ ] **T005-P3**: Update `ProductionDashboardModal.tsx` Open Department Tasks tile to render the full 4-department additive breakdown: `Art: {ART_DEPT} | Legal: {LEGAL_COUNSEL} | Locations: {LOCATIONS} | Prod: {PRODUCTION_MGMT}`.
