@@ -92,13 +92,15 @@ export class DashboardEngine {
       throw err;
     }
 
-    const [readinessSummary, entities, rights, placeholders, openActions] = await Promise.all([
+    const [readinessSummary, entities, rights, placeholders, allActions] = await Promise.all([
       sceneReadinessEngine.getProjectReadinessSummaryReadOnly(projectId),
       entityRepo.getEntitiesByProject(projectId),
       rightsRepo.getRightsByProject(projectId),
       placeholderRepo.getPlaceholdersByProject(projectId),
-      actionNotificationRepo.getActionsByProject(projectId, { status: 'OPEN' }),
+      actionNotificationRepo.getActionsByProject(projectId),
     ]);
+
+    const activeActions = allActions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
 
     const entityMap = new Map(entities.map((e) => [e.id, e]));
 
@@ -157,10 +159,10 @@ export class DashboardEngine {
 
     // 4. Department Actions Summary
     const departmentActionsSummary = {
-      ART_DEPT: openActions.filter((a) => a.targetDepartment === 'ART_DEPT').length,
-      LEGAL_COUNSEL: openActions.filter((a) => a.targetDepartment === 'LEGAL_COUNSEL').length,
-      LOCATIONS: openActions.filter((a) => a.targetDepartment === 'LOCATIONS').length,
-      PRODUCTION_MGMT: openActions.filter((a) => a.targetDepartment === 'PRODUCTION_MGMT' || a.targetDepartment === 'CLEARANCE_TEAM').length,
+      ART_DEPT: activeActions.filter((a) => a.targetDepartment === 'ART_DEPT').length,
+      LEGAL_COUNSEL: activeActions.filter((a) => a.targetDepartment === 'LEGAL_COUNSEL').length,
+      LOCATIONS: activeActions.filter((a) => a.targetDepartment === 'LOCATIONS').length,
+      PRODUCTION_MGMT: activeActions.filter((a) => a.targetDepartment === 'PRODUCTION_MGMT' || a.targetDepartment === 'CLEARANCE_TEAM').length,
     };
 
     // 5. Scene Readiness Distribution
@@ -194,7 +196,7 @@ export class DashboardEngine {
       criticalBlockersCount: shootBlockers.length,
       activePlaceholdersCount: activePlaceholders.length,
       rightsExpiringSoonCount: expiringRights.length,
-      pendingActionsCount: openActions.length,
+      pendingActionsCount: activeActions.length,
     };
 
     return {

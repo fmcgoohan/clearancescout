@@ -152,6 +152,18 @@ async function runLiveKeyboardFocusValidation() {
   }
   console.log('  ✓ Tab cycle (12 steps) remained strictly trapped inside Operations Dashboard');
 
+  // Assert 4-department additive breakdown in Open Department Tasks tile
+  const dashboardText = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"][aria-labelledby="dashboard-modal-title"]');
+    return dialog ? dialog.innerText : '';
+  });
+
+  const has4DeptBreakdown = dashboardText.includes('Art: 1 | Legal: 9 | Locations: 1 | Prod: 0');
+  console.log('  ✓ Open Department Tasks tile displays full 4-department breakdown (Art: 1 | Legal: 9 | Locations: 1 | Prod: 0):', has4DeptBreakdown);
+  if (!has4DeptBreakdown) {
+    throw new Error('US21 DEFECT: Operations Dashboard Open Department Tasks tile failed to display full 4-department breakdown!');
+  }
+
   await page.keyboard.press('Escape');
   await page.waitForSelector('[role="dialog"][aria-labelledby="dashboard-modal-title"]', { state: 'detached' });
   console.log('  ✓ Escape closed Operations Dashboard');
@@ -417,6 +429,7 @@ async function runLiveKeyboardFocusValidation() {
 
   const directoryModal = await page.waitForSelector('[role="dialog"][aria-labelledby="project-modal-title"]');
   console.log('  ✓ Project Directory modal opened');
+  await page.waitForSelector('[data-project-id]', { timeout: 5000 });
 
   const directoryText = await page.evaluate(() => {
     const dialog = document.querySelector('[role="dialog"][aria-labelledby="project-modal-title"]');

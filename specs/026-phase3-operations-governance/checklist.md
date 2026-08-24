@@ -13,9 +13,9 @@
 
 ## Department Task Totals & Locations Reconciliation
 
-- [ ] **CHK004**: Open Department Tasks tile in `ProductionDashboardModal` renders all 4 active departments: `Art: 1 | Legal: 9 | Locations: 1 | Prod: 0` (`AC-21.1`).
-- [ ] **CHK005**: Department task breakdown sums additively to exactly 11 tasks ($1 + 9 + 1 + 0 = 11$) derived from single `ActionNotificationRepo` query (`AC-21.2`, `AC-21.3`).
-- [ ] **CHK006**: "Alerts" / Notifications are treated as an event-driven notification layer rather than an additive department (`AC-21.4`).
+- [x] **CHK004**: Open Department Tasks tile in `ProductionDashboardModal` renders all 4 active departments: `Art: 1 | Legal: 9 | Locations: 1 | Prod: 0` (`AC-21.1`).
+- [x] **CHK005**: Department task breakdown sums additively to exactly 11 tasks ($1 + 9 + 1 + 0 = 11$) derived from single `ActionNotificationRepo` query (`AC-21.2`, `AC-21.3`).
+- [x] **CHK006**: "Alerts" / Notifications are treated as an event-driven notification layer rather than an additive department (`AC-21.4`).
 
 ## Operational Task Ownership & Auditable Activity History
 

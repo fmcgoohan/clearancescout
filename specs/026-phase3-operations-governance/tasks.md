@@ -14,8 +14,8 @@
 - [x] **T004-P3**: Implement fallback in `ProjectListModal.tsx` to render the active workspace project card when `projects.length === 0` or upon unhandled fetch error, eliminating the *"No production projects found"* contradiction. (Satisfied: `ProjectListModal.tsx`)
 
 ## Phase 3: Reconciled Department Task Totals & Locations Coverage (US21)
-- [ ] **T005-P3**: Update `ProductionDashboardModal.tsx` Open Department Tasks tile to render the full 4-department additive breakdown: `Art: {ART_DEPT} | Legal: {LEGAL_COUNSEL} | Locations: {LOCATIONS} | Prod: {PRODUCTION_MGMT}`.
-- [ ] **T006-P3**: Verify backend `dashboardEngine.ts` and frontend component derive all department counts dynamically from the single `ActionNotificationRepo` collection query (`status: OPEN | IN_PROGRESS`), asserting the total sums to exactly 11.
+- [x] **T005-P3**: Update `ProductionDashboardModal.tsx` Open Department Tasks tile to render the full 4-department additive breakdown: `Art: {ART_DEPT} | Legal: {LEGAL_COUNSEL} | Locations: {LOCATIONS} | Prod: {PRODUCTION_MGMT}`. (Satisfied: `ProductionDashboardModal.tsx`)
+- [x] **T006-P3**: Verify backend `dashboardEngine.ts` and frontend component derive all department counts dynamically from the single `ActionNotificationRepo` collection query (`status: OPEN | IN_PROGRESS`), asserting the total sums to exactly 11. (Satisfied: `dashboardEngine.ts`, `test_department_task_totals.test.tsx`)
 
 ## Phase 4: Operational Task Ownership & Auditable Activity History (US22)
 - [ ] **T007-P3**: Extend `ClearanceActionItem` in `ActionNotificationRepo.ts` with `assignee`, `dueDate`, `isOverdue`, and `activityHistory: ActionAuditEvent[]`.
