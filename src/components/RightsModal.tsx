@@ -214,7 +214,7 @@ export function RightsModal({
         >
           <div>
             <h2 id="rights-modal-title" style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-              📜 Rights & License Agreements: {entityName}
+              Rights & License Agreements: {entityName}
             </h2>
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               Record territorial rights grants, distribution windows, expiration dates, and restrictive covenants.
@@ -310,7 +310,7 @@ export function RightsModal({
                             color: '#38bdf8',
                           }}
                         >
-                          🌍 {r.territory}
+                          {r.territory}
                         </span>
                         <span
                           style={{
@@ -321,7 +321,7 @@ export function RightsModal({
                             color: '#c084fc',
                           }}
                         >
-                          📺 {r.mediaWindow}
+                          {r.mediaWindow}
                         </span>
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -339,7 +339,7 @@ export function RightsModal({
                       style={{ fontSize: '0.75rem', padding: '4px 8px', color: '#f87171' }}
                       onClick={() => handleDeleteRights(r.id)}
                     >
-                      🗑️ Revoke
+                      Revoke
                     </button>
                   </div>
                 ))}
@@ -358,7 +358,7 @@ export function RightsModal({
             }}
           >
             <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '14px', margin: '0 0 14px' }}>
-              ➕ Attach New Rights / License Agreement
+              Attach New Rights / License Agreement
             </h3>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>

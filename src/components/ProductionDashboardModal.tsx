@@ -384,7 +384,6 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                   gap: '8px',
                 }}
               >
-                <span style={{ fontSize: '0.9rem' }}>ℹ️</span>
                 <span>
                   <strong>Count Relationship:</strong> {TERMINOLOGY.COUNT_RELATIONSHIP_EXPLANATION}
                 </span>
@@ -400,7 +399,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                 }}
               >
                 <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '12px' }}>
-                  🎬 Scene Readiness Overview
+                  Scene Readiness Overview
                 </div>
                 <div
                   style={{
@@ -627,7 +626,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                   }}
                 >
                   <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '10px' }}>
-                    ⏳ Upcoming Rights Expirations (≤ 90 Days)
+                    Upcoming Rights Expirations (≤ 90 Days)
                   </div>
                   {data.expiringRights.length === 0 ? (
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -679,7 +678,7 @@ export const ProductionDashboardModal: React.FC<ProductionDashboardModalProps> =
                   }}
                 >
                   <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '10px' }}>
-                    🎨 Active Production Placeholders
+                    Active Production Placeholders
                   </div>
                   {data.activePlaceholders.length === 0 ? (
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>

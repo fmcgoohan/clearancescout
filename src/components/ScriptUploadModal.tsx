@@ -547,7 +547,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               transition: 'all 0.2s ease',
             }}
           >
-            🎭 Bundled Demo Screenplay
+            Bundled Demo Screenplay
           </button>
         </div>
 
@@ -567,7 +567,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               }}
             >
               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-cyan)' }}>
-                🔄 Screenplay Re-Ingest Strategy
+                Screenplay Re-Ingest Strategy
               </div>
               <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--text-main)' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
@@ -614,7 +614,6 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                <span style={{ fontSize: '1rem', lineHeight: 1 }}>⚠️</span>
                 <div>
                   <strong style={{ display: 'inline-block', marginRight: '4px' }}>
                     {errorCode ? `[${errorCode}] ` : ''}
@@ -630,7 +629,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                   className="btn-secondary touch-target"
                   style={{ padding: '4px 10px', fontSize: '0.75rem', borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fff' }}
                 >
-                  ↻ Retry Ingestion
+                  Retry Ingestion
                 </button>
               </div>
             </div>
@@ -649,7 +648,6 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.2rem' }}>🎬</span>
                 <strong style={{ fontSize: '1rem', color: 'var(--text-main)' }}>The Neon Horizon (Demo Screenplay)</strong>
               </div>
               <p style={{ fontSize: '0.85rem', color: '#cbd5e1', margin: 0, lineHeight: 1.5 }}>
@@ -657,31 +655,31 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '8px', fontSize: '0.8rem', color: 'var(--text-main)' }}>
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>💻 AeroTech Prism Laptop</span>
+                  <span>AeroTech Prism Laptop</span>
                   <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 600, background: 'rgba(56,189,248,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Brand</span>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>🥤 Summit Cola</span>
+                  <span>Summit Cola</span>
                   <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 600, background: 'rgba(56,189,248,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Brand</span>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>👤 Elena Vance</span>
+                  <span>Elena Vance</span>
                   <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 600, background: 'rgba(251,191,36,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Public Figure</span>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>🎵 Nocturne of the Wild</span>
+                  <span>Nocturne of the Wild</span>
                   <span style={{ fontSize: '0.65rem', color: '#c084fc', fontWeight: 600, background: 'rgba(192,132,252,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Art & Music</span>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>🚗 Veloce GT</span>
+                  <span>Veloce GT</span>
                   <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 600, background: 'rgba(56,189,248,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Brand</span>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>🏢 Midtown Spire Tower</span>
+                  <span>Midtown Spire Tower</span>
                   <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: 600, background: 'rgba(52,211,153,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Proprietary Location</span>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>⚠️ Titan Industrial Hazard Placard</span>
+                  <span>Titan Industrial Hazard Placard</span>
                   <span style={{ fontSize: '0.65rem', color: '#f87171', fontWeight: 600, background: 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Graphic Prop</span>
                 </div>
               </div>
@@ -748,7 +746,6 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ fontSize: '2rem' }}>📁</div>
                     <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>
                       Drag & drop screenplay file here, or browse
                     </div>

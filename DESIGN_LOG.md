@@ -144,5 +144,35 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Copy & Label Cleanup**: Corrected Screenplay tab label from `"Screenplay (3 3 scenes)"` to `"Screenplay (3 scenes)"`, updated heading to `"Screenplay Intake & Clearance Review"`, and simplified header title/subtitle to remove duplicate phrase phrasing.
 - **Onboarding Dismissal Persistence**: Updated `OnboardingBanner.tsx` to initialize `isDismissed` state synchronously from `localStorage`, ensuring returning users do not experience banner re-appearance on page reloads.
 
+### Systemic Constitution Article 3 (No Emoji in Chrome) Remediation Sweep
+
+**Date**: August 24, 2026  
+**Spec Version**: `specs/025-phase2-simplification/spec.md` (Constitution `v1.4.0`, AC-3.1)  
+
+#### 1. Scope & Implementation Summary
+- **Expanded Static Check Gate (`scripts/spec-check.sh`)**: Upgraded the static check script to recursively search all `.ts` and `.tsx` files in `src/` (excluding `tests/`) using Unicode-aware regex (`perl -C -ne '/\p{Extended_Pictographic}/'`).
+- **Iconography Expansion (`src/components/icons/Icons.tsx`)**: Added clean SVG stroke components (`AlertTriangleIcon`, `BuildingIcon`, `FileTextIcon`, `ZapIcon`, `PlusIcon`, `FilmIcon`, `TvIcon`, `MegaphoneIcon`, `EditIcon`, `PaletteIcon`, `ScaleIcon`, `SparklesIcon`, `TrashIcon`).
+- **Systemic Remediation across 13 UI Components**:
+  1. `ProjectListModal.tsx`: Replaced TV/Commercial/Movie type emojis, error prefix, dropdown options, and company/script/mode icons with clean SVG icons/text.
+  2. `CitationDrawer.tsx`: Replaced warning badges, source link prefix, and override submit button emojis.
+  3. `ReplacementCardModal.tsx`: Replaced escalation warning and acceptance indicator emojis.
+  4. `PlaceholderManagerModal.tsx`: Replaced drawer title, clearance tier indicators, and scope dropdown emojis.
+  5. `EntityRegistryTable.tsx`: Replaced header and row action emojis.
+  6. `TimelineDrawer.tsx`: Replaced title and event type emojis.
+  7. `ActionListModal.tsx`: Replaced task icon emojis.
+  8. `BinderExportModal.tsx`: Replaced header and tier indicator emojis.
+  9. `ComparisonModal.tsx`: Replaced provenance badges, header title, counsel override, and escalation emojis.
+  10. `DemoTokenModal.tsx`: Replaced key icon emoji in header title.
+  11. `EntityDetailModal.tsx`: Replaced status badge, parent, alias, and action button emojis.
+  12. `RightsModal.tsx`: Replaced title, territory, media window, revoke, and attach rights emojis.
+  13. `ProductionDashboardModal.tsx`: Replaced info, scene readiness, rights expiration, and placeholder emojis.
+  14. `ScriptUploadModal.tsx`: Replaced demo screenplay, re-ingest strategy, error warning, entity category, and folder emojis.
+
+#### 2. Verification Evidence
+- **Raw Perl -C Emoji Audit**: Verified 100% zero matches across all non-test `src/**/*.ts(x)` files.
+- **Static Spec Check Gate (`./scripts/spec-check.sh`)**: PASSED cleanly.
+- **Automated Test Suite (`npm test`)**: All 94 test files / 245 tests PASSED (100% green).
+- **Production Build (`npm run build`)**: PASSED cleanly.
+
 
 

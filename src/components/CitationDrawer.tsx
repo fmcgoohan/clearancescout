@@ -6,6 +6,8 @@ import {
   SearchIcon,
   CheckCircleIcon,
   XIcon,
+  AlertTriangleIcon,
+  ScaleIcon,
 } from './icons/Icons';
 
 export type ProvenanceType = 'PARALLEL_LIVE' | 'DEMO_FIXTURE' | 'FALLBACK_FIXTURE';
@@ -276,7 +278,8 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 color: 'var(--status-action)',
               }}
             >
-              <strong>⚠️ Cloud Fallback Active:</strong> Live Parallel search API was unavailable. Displaying deterministic benchmark fallback fixture.
+              <AlertTriangleIcon size={14} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
+              <strong>Cloud Fallback Active:</strong> Live Parallel search API was unavailable. Displaying deterministic benchmark fallback fixture.
             </div>
           )}
 
@@ -306,7 +309,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 }`,
               }}
             >
-              {isLive ? '● PARALLEL LIVE' : isFallback ? '⚠️ FALLBACK FIXTURE' : '● DEMO FIXTURE'}
+              {isLive ? '● PARALLEL LIVE' : isFallback ? 'FALLBACK FIXTURE' : '● DEMO FIXTURE'}
             </span>
           </div>
 
@@ -377,7 +380,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
                 rel="noopener noreferrer"
                 style={{ fontSize: '0.75rem', color: 'var(--accent-blue)', wordBreak: 'break-all' }}
               >
-                🔗 {c.sourceUrl}
+                {c.sourceUrl}
               </a>
             </div>
           ))}
@@ -531,9 +534,10 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
               type="submit"
               className="btn-primary"
               disabled={isSubmitting || !counselName.trim() || !overrideRationale.trim()}
-              style={{ marginTop: '8px' }}
+              style={{ marginTop: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
             >
-              {isSubmitting ? 'Saving Override...' : '⚖️ Apply Authoritative Legal Override'}
+              <ScaleIcon size={14} />
+              {isSubmitting ? 'Saving Override...' : 'Apply Authoritative Legal Override'}
             </button>
           </form>
         </div>

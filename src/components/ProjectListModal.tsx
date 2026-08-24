@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient';
 import { useModalFocus } from '../hooks/useModalFocus';
+import { AlertTriangleIcon, BuildingIcon, FileTextIcon, ZapIcon, PlusIcon, FilmIcon, TvIcon, MegaphoneIcon } from './icons/Icons';
 
 export interface ProjectListItem {
   id: string;
@@ -120,12 +121,12 @@ export function ProjectListModal({
   const getTypeBadge = (type?: string) => {
     switch (type) {
       case 'TV Show':
-        return { label: '📺 TV Show', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)' };
+        return { label: 'TV Show', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)' };
       case 'Commercial':
-        return { label: '📢 Commercial', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)' };
+        return { label: 'Commercial', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)' };
       case 'Movie':
       default:
-        return { label: '🎬 Movie', color: '#818cf8', bg: 'rgba(129, 140, 248, 0.15)' };
+        return { label: 'Movie', color: '#818cf8', bg: 'rgba(129, 140, 248, 0.15)' };
     }
   };
 
@@ -220,7 +221,8 @@ export function ProjectListModal({
                 fontSize: '0.85rem',
               }}
             >
-              ⚠️ {error}
+              <AlertTriangleIcon size={14} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
+              {error}
             </div>
           )}
 
@@ -316,9 +318,9 @@ export function ProjectListModal({
                       cursor: 'pointer',
                     }}
                   >
-                    <option value="Movie">🎬 Feature Film (Movie)</option>
-                    <option value="TV Show">📺 Episodic Series (TV Show)</option>
-                    <option value="Commercial">📢 Commercial Spot</option>
+                    <option value="Movie">Feature Film (Movie)</option>
+                    <option value="TV Show">Episodic Series (TV Show)</option>
+                    <option value="Commercial">Commercial Spot</option>
                   </select>
                 </div>
 
@@ -426,10 +428,10 @@ export function ProjectListModal({
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '12px' }}>
-                            <span>🏢 {proj.productionCompany}</span>
-                            <span>📜 {proj.scriptVersion}</span>
-                            <span>⚡ {proj.executionMode}</span>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><BuildingIcon size={12} /> {proj.productionCompany}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><FileTextIcon size={12} /> {proj.scriptVersion}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ZapIcon size={12} /> {proj.executionMode}</span>
                           </div>
                         </div>
 

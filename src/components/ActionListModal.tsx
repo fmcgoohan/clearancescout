@@ -287,11 +287,11 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {[
               { key: 'ALL', label: `All Actions (${openCount})` },
-              { key: 'ART_DEPT', label: `🎨 Art Dept (${artCount})` },
-              { key: 'LEGAL_COUNSEL', label: `⚖️ Legal Counsel (${legalCount})` },
-              { key: 'LOCATIONS', label: `📍 Locations (${locCount})` },
-              { key: 'PRODUCTION_MGMT', label: `🎬 Production (${prodCount})` },
-              { key: 'NOTIFICATIONS', label: `🔔 Alerts (${unreadNotifsCount})` },
+              { key: 'ART_DEPT', label: `Art Dept (${artCount})` },
+              { key: 'LEGAL_COUNSEL', label: `Legal Counsel (${legalCount})` },
+              { key: 'LOCATIONS', label: `Locations (${locCount})` },
+              { key: 'PRODUCTION_MGMT', label: `Production (${prodCount})` },
+              { key: 'NOTIFICATIONS', label: `Alerts (${unreadNotifsCount})` },
             ].map((tab) => (
               <button
                 key={tab.key}

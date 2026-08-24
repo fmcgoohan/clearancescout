@@ -9,6 +9,12 @@ import {
   XCircleIcon,
   HelpCircleIcon,
   ChevronRightIcon,
+  ZapIcon,
+  EditIcon,
+  PaletteIcon,
+  ScaleIcon,
+  SparklesIcon,
+  TrashIcon,
 } from './icons/Icons';
 
 export type ClearanceStatusType = 'NO_ISSUE_SURFACED' | 'REVIEW_RECOMMENDED' | 'ACTION_REQUIRED' | 'INSUFFICIENT_EVIDENCE';
@@ -337,8 +343,16 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '0.8rem' }}>
-            <span style={{ fontWeight: 600, color: 'var(--accent-cyan)' }}>
-              {batchProgress.isActive ? '⚡ Multi-Item Clearance Research in Progress' : '✅ Batch Clearance Research Completed'}
+            <span style={{ fontWeight: 600, color: 'var(--accent-cyan)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              {batchProgress.isActive ? (
+                <>
+                  <ZapIcon size={14} /> Multi-Item Clearance Research in Progress
+                </>
+              ) : (
+                <>
+                  <CheckCircleIcon size={14} /> Batch Clearance Research Completed
+                </>
+              )}
             </span>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
               {batchProgress.completed} of {batchProgress.total} Evaluated • Concurrency: {batchProgress.activeCount} / 2
@@ -453,7 +467,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
       {/* Main Table or Empty State */}
       {(!entities || entities.length === 0) ? (
         <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          No canonical entities registered. Parse a script or click "➕ Add Item" to populate the registry.
+          No canonical entities registered. Parse a script or click "+ Add Item" to populate the registry.
         </div>
       ) : filteredEntities.length === 0 ? (
         <div
@@ -484,7 +498,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
             onClick={handleClearFilters}
             style={{ fontSize: '0.75rem', padding: '6px 14px', borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' }}
           >
-            🔄 Reset All Filters
+            Reset All Filters
           </button>
         </div>
       ) : (
@@ -757,7 +771,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                                     onEditItem(e);
                                   }}
                                 >
-                                  ✏️ Edit Details
+                                  <EditIcon size={12} /> Edit Details
                                 </button>
                               )}
 
@@ -783,7 +797,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                                     onOpenRightsModal(e.id, e.canonicalName);
                                   }}
                                 >
-                                  📜 Contractual Rights
+                                  <ScaleIcon size={12} /> Contractual Rights
                                 </button>
                               )}
 
@@ -809,7 +823,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                                     onOpenPlaceholderModal(e.id, e.canonicalName, e.entityCategory);
                                   }}
                                 >
-                                  🎨 Attach Placeholder
+                                  <PaletteIcon size={12} /> Attach Placeholder
                                 </button>
                               )}
 
@@ -835,7 +849,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                                     onOpenCounselReview(e.id);
                                   }}
                                 >
-                                  ⚖️ Counsel Review & Override
+                                  <ScaleIcon size={12} /> Counsel Review & Override
                                 </button>
                               )}
 
@@ -861,7 +875,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                                     onGenerateReplacement(e.id);
                                   }}
                                 >
-                                  ✨ Generate Fictional Replacement
+                                  <SparklesIcon size={12} /> Generate Fictional Replacement
                                 </button>
                               )}
 
@@ -890,7 +904,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                                     }
                                   }}
                                 >
-                                  🗑️ Delete Item
+                                  <TrashIcon size={12} /> Delete Item
                                 </button>
                               )}
                             </div>

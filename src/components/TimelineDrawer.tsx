@@ -125,7 +125,7 @@ export const TimelineDrawer: React.FC<TimelineDrawerProps> = ({
           }}
         >
           <span style={{ color: 'var(--accent-cyan)' }}>
-            🎯 Focused on: <strong>{activeFocus}</strong> ({filteredEvents.length} events)
+            Focused on: <strong>{activeFocus}</strong> ({filteredEvents.length} events)
           </span>
           {onClearTargetEntity && (
             <button

@@ -7,10 +7,10 @@ ERRORS=0
 
 # 1. Check for raw emojis in UI chrome across src/ (Article 3: No Emoji in Chrome, NON-NEGOTIABLE)
 echo "Checking for raw emojis in UI chrome across src/..."
-EMOJI_MATCHES=$(perl -C -ne 'print "$ARGV:$.: $_" if /\p{Extended_Pictographic}/' src/App.tsx || true)
+EMOJI_MATCHES=$(perl -C -ne 'print "$ARGV:$.: $_" if /\p{Extended_Pictographic}/' $(find src -type f \( -name "*.ts" -o -name "*.tsx" \) ! -path "*/tests/*" ! -name "*.test.*") || true)
 if [ -n "$EMOJI_MATCHES" ]; then
-  echo "❌ FAIL: Raw emoji characters detected in UI chrome (src/App.tsx):"
-  echo "$EMOJI_MATCHES" | head -n 10
+  echo "❌ FAIL: Raw emoji characters detected in UI chrome:"
+  echo "$EMOJI_MATCHES" | head -n 20
   ERRORS=$((ERRORS + 1))
 else
   echo "✓ PASS: Zero raw emojis detected in UI chrome"

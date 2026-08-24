@@ -206,13 +206,13 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
           </div>
           <div className="no-print" style={{ display: 'flex', gap: '8px' }}>
             <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={handlePrintPdf}>
-              🖨️ Print PDF
+              Print PDF
             </button>
             <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={handleDownloadMarkdown}>
-              📝 Markdown (.md)
+              Markdown (.md)
             </button>
             <button className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={handleDownloadJson}>
-              ⬇ JSON
+              Download JSON
             </button>
             <button
               onClick={onClose}
@@ -257,9 +257,6 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.2rem' }}>
-              {isLive ? '🌐' : isFallback ? '⚠️' : isMixed ? '🔀' : '🧪'}
-            </span>
             <div>
               <div
                 style={{
@@ -336,7 +333,6 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
             >
               {copiedDigest ? '✓ Copied' : 'Copy Checksum'}
             </button>
-            <span style={{ fontSize: '1.2rem' }}>🔒</span>
           </div>
         </div>
 
@@ -401,10 +397,10 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
               className={activeTab === tab ? 'btn-primary' : 'btn-secondary'}
               style={{ fontSize: '0.75rem', padding: '4px 12px' }}
             >
-              {tab === 'ALL' && '📑 Full Binder'}
-              {tab === 'SCENES' && `🎬 Scene Schedule (${binder.sceneReadinessSchedule?.length || 0})`}
-              {tab === 'RIGHTS' && `📜 Rights Catalog (${binder.rightsAgreements?.length || 0})`}
-              {tab === 'PLACEHOLDERS' && `🎨 Placeholders (${binder.placeholders?.length || 0})`}
+              {tab === 'ALL' && 'Full Binder'}
+              {tab === 'SCENES' && `Scene Schedule (${binder.sceneReadinessSchedule?.length || 0})`}
+              {tab === 'RIGHTS' && `Rights Catalog (${binder.rightsAgreements?.length || 0})`}
+              {tab === 'PLACEHOLDERS' && `Placeholders (${binder.placeholders?.length || 0})`}
               {tab === 'ACTIONS' && `Unresolved Actions (${binder.unresolvedActions?.length || 0})`}
             </button>
           ))}
@@ -496,7 +492,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '0.7rem', color: r.isPerpetual ? '#34d399' : '#fbbf24' }}>
-                      {r.isPerpetual ? '♾️ Perpetual' : `Exp: ${r.expirationDate || 'N/A'}`}
+                      {r.isPerpetual ? 'Perpetual' : `Exp: ${r.expirationDate || 'N/A'}`}
                     </span>
                     <span className="badge badge-NO_ISSUE_SURFACED" style={{ fontSize: '0.65rem' }}>
                       {r.status}
@@ -649,7 +645,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                         style={{ fontSize: '0.7rem', padding: '3px 8px' }}
                         onClick={() => onJumpToTimeline(ent.id, ent.canonicalName)}
                       >
-                        📜 View Timeline
+                        View Timeline
                       </button>
                     )}
                   </div>
@@ -714,7 +710,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                           style={{ fontSize: '0.7rem', padding: '3px 8px' }}
                           onClick={() => onJumpToTimeline(rep.canonicalEntityId || rep.id, rep.targetEntityName || 'Original Entity')}
                         >
-                          📜 View Timeline
+                          View Timeline
                         </button>
                       )}
                     </div>
@@ -733,7 +729,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                     </div>
                     {rep.selfClearanceResult === 'ESCALATED_TO_COUNSEL' && (
                       <div style={{ fontSize: '0.7rem', color: '#fbbf24', marginTop: '4px', fontWeight: 600 }}>
-                        ⚖️ Escalated to Legal Counsel
+                        Escalated to Legal Counsel
                       </div>
                     )}
                     <div className="no-print" style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
@@ -760,7 +756,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
                           style={{ fontSize: '0.7rem', padding: '3px 8px' }}
                           onClick={() => onJumpToTimeline(rep.canonicalEntityId || rep.id, rep.fictionalBrandName)}
                         >
-                          📜 View Timeline
+                          View Timeline
                         </button>
                       )}
                     </div>
@@ -822,10 +818,10 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
             Close
           </button>
           <button className="btn-secondary" onClick={handlePrintPdf}>
-            🖨️ Print / Save to PDF
+            Print / Save to PDF
           </button>
           <button className="btn-primary" onClick={handleDownloadJson}>
-            ⬇ Download Auditable Binder (.JSON)
+            Download Auditable Binder (.JSON)
           </button>
         </div>
       </div>

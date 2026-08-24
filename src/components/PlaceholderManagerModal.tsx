@@ -348,7 +348,7 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
         >
           <div>
             <h2 id="placeholder-modal-title" style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>
-              🎨 Fictional Replacement & Placeholder Manager
+              Fictional Replacement & Placeholder Manager
             </h2>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
               Target Entity: <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{entityName}</span>
@@ -399,7 +399,7 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
                 >
                   <div>
                     <div style={{ fontSize: '0.85rem', fontWeight: 600, color: existingPlaceholder.clearanceTier === 'FINAL_CLEARED' ? '#34d399' : '#fbbf24' }}>
-                      Current Clearance Tier: {existingPlaceholder.clearanceTier === 'FINAL_CLEARED' ? '🟢 FINAL CLEARED (Locked)' : '🟡 TEMP APPROVED (On-Set Shoot)'}
+                      Current Clearance Tier: {existingPlaceholder.clearanceTier === 'FINAL_CLEARED' ? 'FINAL CLEARED (Locked)' : 'TEMP APPROVED (On-Set Shoot)'}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                       Approved by {existingPlaceholder.approvedBy} on {new Date(existingPlaceholder.approvalDate).toLocaleDateString()}
@@ -473,8 +473,8 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
                       fontSize: '0.82rem',
                     }}
                   >
-                    <option value="TEMP_APPROVED">🟡 TEMP_APPROVED (On-Set Shooting)</option>
-                    <option value="FINAL_CLEARED">🟢 FINAL_CLEARED (Picture Lock & Distribution)</option>
+                    <option value="TEMP_APPROVED">TEMP_APPROVED (On-Set Shooting)</option>
+                    <option value="FINAL_CLEARED">FINAL_CLEARED (Picture Lock & Distribution)</option>
                   </select>
                 </div>
               </div>
@@ -499,9 +499,9 @@ export const PlaceholderManagerModal: React.FC<PlaceholderManagerModalProps> = (
                         fontSize: '0.82rem',
                       }}
                     >
-                      <option value="SELECTED_SCENES">🎯 Selected Scene(s) Scope (Default)</option>
-                      <option value="SINGLE_OCCURRENCE">📍 Single Occurrence Scope</option>
-                      <option value="PROJECT_WIDE">🌐 Project-Wide Scope (All Scenes)</option>
+                      <option value="SELECTED_SCENES">Selected Scene(s) Scope (Default)</option>
+                      <option value="SINGLE_OCCURRENCE">Single Occurrence Scope</option>
+                      <option value="PROJECT_WIDE">Project-Wide Scope (All Scenes)</option>
                     </select>
                   </div>
 

@@ -135,7 +135,7 @@ export const ReplacementCardModal: React.FC<ReplacementCardModalProps> = ({ card
             <div style={{ fontSize: '0.8rem', fontWeight: 700, color: isAccepted ? '#34d399' : '#fbbf24' }}>
               {isAccepted
                 ? `✓ Self-Clearance Verified (Attempt ${totalAttempts} of 3)`
-                : `⚠️ Escalated to Legal Counsel (3 Attempts Failed)`}
+                : `Escalated to Legal Counsel (3 Attempts Failed)`}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
               {isAccepted
@@ -196,7 +196,7 @@ export const ReplacementCardModal: React.FC<ReplacementCardModalProps> = ({ card
           <div>
             <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Non-Infringement Rationale</h4>
             <p style={{ fontSize: '0.85rem', color: isAccepted ? 'var(--status-no-issue)' : '#fbbf24', lineHeight: '1.4' }}>
-              {isAccepted ? '✓' : '⚖️'} {card.nonInfringementRationale}
+              {isAccepted ? '✓ ' : ''}{card.nonInfringementRationale}
             </p>
           </div>
 

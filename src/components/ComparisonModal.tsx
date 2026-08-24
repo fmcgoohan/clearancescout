@@ -94,19 +94,19 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
       case 'PARALLEL_LIVE':
         return (
           <span style={{ fontSize: '0.65rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.4)', borderRadius: '4px', padding: '1px 5px' }}>
-            🌐 Live Search
+            Live Search
           </span>
         );
       case 'FALLBACK_FIXTURE':
         return (
           <span style={{ fontSize: '0.65rem', background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', border: '1px solid rgba(251, 191, 36, 0.4)', borderRadius: '4px', padding: '1px 5px' }}>
-            ⚠️ Fallback Fixture
+            Fallback Fixture
           </span>
         );
       default:
         return (
           <span style={{ fontSize: '0.65rem', background: 'rgba(148, 163, 184, 0.15)', color: '#94a3b8', border: '1px solid rgba(148, 163, 184, 0.4)', borderRadius: '4px', padding: '1px 5px' }}>
-            🧪 Demo Fixture
+            Demo Fixture
           </span>
         );
     }
@@ -157,7 +157,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span>⚖️ Side-by-Side Asset Comparison</span>
+              <span>Side-by-Side Asset Comparison</span>
               <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--accent-cyan)' }}>
                 Original Entity vs. Fictional Replacement
               </span>
@@ -233,7 +233,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
                 {data.original.isOverridden && data.original.latestOverride && (
                   <div style={{ fontSize: '0.75rem', background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.4)', borderRadius: '6px', padding: '8px' }}>
-                    <div style={{ color: '#34d399', fontWeight: 600 }}>⚖️ Legal Counsel Override Active:</div>
+                    <div style={{ color: '#34d399', fontWeight: 600 }}>Legal Counsel Override Active:</div>
                     <div style={{ color: 'var(--text-main)', marginTop: '2px' }}>"{data.original.latestOverride.rationale}"</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: '2px' }}>— {data.original.latestOverride.counselName}</div>
                   </div>
@@ -293,11 +293,11 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                 {/* Escalation Banner or Cleared Notice */}
                 {data.replacement.isEscalated ? (
                   <div style={{ fontSize: '0.75rem', background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.5)', borderRadius: '6px', padding: '8px 10px', color: '#fbbf24' }}>
-                    <strong>⚖️ Counsel Review Required:</strong> Automated self-clearance exhausted 3 attempts. Production counsel review required prior to sign-off.
+                    <strong>Counsel Review Required:</strong> Automated self-clearance exhausted 3 attempts. Production counsel review required prior to sign-off.
                   </div>
                 ) : (
                   <div style={{ fontSize: '0.75rem', background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.4)', borderRadius: '6px', padding: '8px 10px', color: '#34d399' }}>
-                    <strong>✅ Autonomous Self-Clearance Passed:</strong> Candidate brand confirmed non-infringing with zero commercial collisions on attempt #{data.replacement.attemptsCount}.
+                    <strong>Autonomous Self-Clearance Passed:</strong> Candidate brand confirmed non-infringing with zero commercial collisions on attempt #{data.replacement.attemptsCount}.
                   </div>
                 )}
 
@@ -344,7 +344,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                 onClick={() => setShowHistory(!showHistory)}
               >
                 <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>🔄 Candidate Self-Clearance Attempt History ({data.attemptHistory.length} Attempts)</span>
+                  <span>Candidate Self-Clearance Attempt History ({data.attemptHistory.length} Attempts)</span>
                 </div>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                   {showHistory ? '▲ Hide' : '▼ Show Details'}

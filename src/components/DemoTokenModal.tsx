@@ -60,7 +60,7 @@ export const DemoTokenModal: React.FC<DemoTokenModalProps> = ({
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 id="token-modal-title" style={{ fontSize: '1.1rem', fontWeight: 700 }}>🔑 Demo Access Token</h3>
+          <h3 id="token-modal-title" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Demo Access Token</h3>
           <button
             aria-label="Close Demo Access Token dialog"
             onClick={onClose}

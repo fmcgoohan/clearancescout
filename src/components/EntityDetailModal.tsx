@@ -116,13 +116,13 @@ export function EntityDetailModal({
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'NO_ISSUE_SURFACED':
-        return { label: '✓ Cleared', color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)' };
+        return { label: 'Cleared', color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)' };
       case 'REVIEW_RECOMMENDED':
-        return { label: '⚠️ Review recommended', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)' };
+        return { label: 'Review recommended', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)' };
       case 'ACTION_REQUIRED':
-        return { label: '⛔ Action required', color: '#f87171', bg: 'rgba(248, 113, 113, 0.15)' };
+        return { label: 'Action required', color: '#f87171', bg: 'rgba(248, 113, 113, 0.15)' };
       default:
-        return { label: '⏳ Insufficient evidence', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)' };
+        return { label: 'Insufficient evidence', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)' };
     }
   };
 
@@ -203,13 +203,13 @@ export function EntityDetailModal({
                     fontWeight: 600,
                   }}
                 >
-                  🏢 Parent: {parentEntityName} ({relationshipType || 'BRAND_PRODUCT'})
+                  Parent: {parentEntityName} ({relationshipType || 'BRAND_PRODUCT'})
                 </span>
               )}
             </div>
             {aliases.length > 0 && (
               <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#f472b6' }}>
-                🏷️ Aliases: {aliases.join(', ')}
+                Aliases: {aliases.join(', ')}
               </p>
             )}
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -226,7 +226,7 @@ export function EntityDetailModal({
                 }}
                 style={{ padding: '6px 12px', fontSize: '0.85rem', color: '#34d399', borderColor: 'rgba(52, 211, 153, 0.4)' }}
               >
-                📜 Rights
+                Rights
               </button>
             )}
             {onOpenPlaceholderModal && (
@@ -238,7 +238,7 @@ export function EntityDetailModal({
                 }}
                 style={{ padding: '6px 12px', fontSize: '0.85rem', color: 'var(--accent-cyan)', borderColor: 'rgba(0, 240, 255, 0.4)' }}
               >
-                🎨 Placeholder
+                Placeholder
               </button>
             )}
             <button
@@ -365,7 +365,7 @@ export function EntityDetailModal({
                         onClick={() => handleEvaluateOccurrence(occ.id)}
                         disabled={isEvaluating}
                       >
-                        {isEvaluating ? 'Evaluating...' : '⚡ Evaluate Occurrence'}
+                        {isEvaluating ? 'Evaluating...' : 'Evaluate Occurrence'}
                       </button>
                       {onOpenCounselReview && (
                         <button
@@ -376,7 +376,7 @@ export function EntityDetailModal({
                             onClose();
                           }}
                         >
-                          ⚖️ Counsel Review
+                          Counsel Review
                         </button>
                       )}
                     </div>
