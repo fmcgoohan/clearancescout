@@ -30,3 +30,9 @@
 - [x] **T012**: Run full unit, contract, and integration test suite (`npm test`).
 - [x] **T013**: Execute fresh-session Playwright verification for Phase 2 spec acceptance tests.
 - [x] **T014**: Log Phase 2 findings and test evidence in `DESIGN_LOG.md`.
+
+## Phase 7: Cross-Panel Focus Restoration & Project-Scoped Onboarding Verification (AC-18.3, AC-18.4, AC-18.5)
+- [x] **T015**: Implement deterministic fallback focus resolver in `useModalFocus.ts` and `CitationDrawer.tsx` restoring focus to target entity Research button -> row heading -> Clearance Items tab upon drawer close per AC-18.3.
+- [x] **T016**: Implement versioned project-namespaced onboarding dismissal keys (`clearancescout:onboarding:v1:<project-id>`) and persistent active project ID in `App.tsx` and `OnboardingBanner.tsx` per AC-18.4.
+- [x] **T017**: Execute real Chromium browser validation suite (`tests/live_keyboard_focus_validation.js`) verifying focus traps, cross-panel focus restoration, and project-scoped onboarding persistence 100% green per AC-18.5.
+

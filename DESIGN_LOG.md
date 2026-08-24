@@ -228,6 +228,44 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Production Build (`npm run build`)**: PASSED cleanly.
 
 
+---
+
+### Entry: 2026-08-24 - Phase 2 Installed SpecKit Workflow Alignment (TASK_ID: P2SPECKIT-5bfc3564)
+
+**Phase**: Phase 2 SDD & SpecKit Formal Workflow Integration  
+**Spec Version**: `specs/025-phase2-simplification/spec.md` (Constitution v1.4.0)  
+
+#### 1. SpecKit Workflow Discovery & Alignment
+- **Installed Workflow Infrastructure**: Inspected `.specify/workflows/workflow-registry.json`, `.specify/workflows/speckit/workflow.yml`, `.specify/scripts/bash/`, `.specify/templates/`, `.specify/memory/constitution.md`, and `.agents/skills/speckit-*`.
+- **Target Feature Confirmation**: Confirmed `specs/025-phase2-simplification/` is the authoritative Phase 2 SpecKit feature directory.
+- **Artifact Retro-Fit & Enhancement**:
+  - `specs/025-phase2-simplification/spec.md`: Updated with `AC-18.3` (Cross-Panel Focus Restoration Guarantee with 3-tier fallback order), `AC-18.4` (Project-Scoped Onboarding Persistence with `clearancescout:onboarding:v1:<project-id>` keys), and `AC-18.5` (Real Rendered Playwright Chromium Browser Gate).
+  - `specs/025-phase2-simplification/plan.md`: Added Section 5 (Focus Resolver & Project Keying Architecture), Section 6 (File Modification Plan), and Section 7 (Requirement -> Task -> Test Traceability Matrix).
+  - `specs/025-phase2-simplification/tasks.md`: Appended `Phase 7: Cross-Panel Focus Restoration & Project-Scoped Onboarding Verification` (`T015`, `T016`, `T017`).
+  - `specs/025-phase2-simplification/checklist.md`: Generated reviewer quality checklist CHK001–CHK011 covering cross-panel focus, onboarding isolation, and test evidence labeling accuracy.
+
+#### 2. Requirement -> Task -> Test Traceability Matrix
+
+| Requirement / Acceptance Criteria | Implementation Component(s) | Task ID | Automated Test File & Target | Test Type |
+|---|---|---|---|---|
+| **AC-14.1–14.3** (Recommended Next Action Cascade) | `RecommendedActionCard.tsx`, `WorkspacePage.tsx` | T005, T006 | `tests/live_keyboard_focus_validation.js` [Section 6] | Playwright (Chromium) |
+| **AC-15.1–15.4** (Domain Terminology & Human Headings) | `CommandBar.tsx`, `EntityRegistryTable.tsx`, `CitationDrawer.tsx` | T007, T008 | `tests/contract/test_phase2_closure_focus_and_labels.test.tsx` | Vitest / jsdom |
+| **AC-16.1–16.3** (Streamlined Header & Settings Popover) | `CommandBar.tsx`, `SettingsPopover.tsx` | T001, T002, T003 | `tests/live_keyboard_focus_validation.js` [Section 2] | Playwright (Chromium) |
+| **AC-17.1–17.4** (Section Tab Panel Switching) | `WorkspacePage.tsx`, `CommandBar.tsx` | T004 | `tests/contract/test_phase2_closure_focus_and_labels.test.tsx` | Vitest / jsdom |
+| **AC-18.1–18.2** (Entity Scan Density & Modal Contract) | `EntityRegistryTable.tsx`, `useModalFocus.ts` | T009, T010 | `tests/live_keyboard_focus_validation.js` [Sections 2-5] | Playwright (Chromium) |
+| **AC-18.3** (Cross-Panel Focus Restoration) | `useModalFocus.ts`, `CitationDrawer.tsx` | T015 | `tests/live_keyboard_focus_validation.js` [Section 6] | Playwright (Chromium) |
+| **AC-18.4** (Project-Scoped Onboarding Isolation) | `OnboardingBanner.tsx`, `App.tsx`, `ProjectListModal.tsx` | T016 | `tests/live_keyboard_focus_validation.js` [Section 7] | Playwright (Chromium) |
+| **AC-18.5** (Real Browser Verification Gate) | `live_keyboard_focus_validation.js` | T017 | `tests/live_keyboard_focus_validation.js` | Playwright (Chromium) |
+| **AC-3.1** (Systemic Emoji Chrome Sweep) | `src/` UI Chrome components | T011 | `./scripts/spec-check.sh` | Static Spec Check Script |
+
+#### 3. Verification & Test Evidence
+- **Real Playwright Chromium Browser Suite (`node tests/live_keyboard_focus_validation.js`)**: PASSED 100% (7/7 sections green).
+- **Unit & Contract Tests (`npm test`)**: PASSED 100% (95/95 test files, 252/252 tests green under Vitest/jsdom).
+- **Static Spec Check Gate (`./scripts/spec-check.sh`)**: PASSED cleanly.
+- **SpecKit Quality Checklist (`specs/025-phase2-simplification/checklist.md`)**: 11/11 criteria satisfied (`[x]`).
+
+
+
 
 
 

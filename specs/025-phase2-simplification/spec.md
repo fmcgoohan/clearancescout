@@ -109,8 +109,23 @@ An operator entering ClearanceScout MUST be able to immediately answer from the 
 - **AC-17.4 (Tab Panel Content Switching Guarantee)**: Section navigation tabs (`Overview`, `Screenplay`, `Clearance Items`, `Tasks`) MUST render distinct, verifiable DOM panel content per tab wrapped in valid `role="tabpanel"` containers. Switching tabs MUST NOT leave viewport content unchanged. Automated tests MUST assert tab-specific rendered DOM content (e.g. presence/absence of tab-specific section headings and controls), not merely class names or `aria-selected` attributes.
 - **AC-15.4 (Human-Readable Research Drawer Headings)**: Research/dossier drawer headings (`CitationDrawer`) MUST display the human-readable entity display name (e.g., `"Nocturne of the Wild"`). Raw internal entity IDs (e.g., `"ent-ee6ff3e4"`) MUST be strictly confined to secondary metadata tags (`System ID: ent-...`) and MUST NOT appear as primary drawer title headings.
 - **AC-3.1 (Systemic Emoji Chrome Sweep & Static Check Enforcement)**: All UI chrome components across the entire `src/` directory MUST be 100% free of raw emoji characters in visible strings and markup, using SVG icon components or plain text per Constitution Article 3. The static check gate (`./scripts/spec-check.sh`) MUST recursively scan all `.ts` and `.tsx` files under `src/` with Unicode-aware regex (`perl -C -ne '/\p{Extended_Pictographic}/'`) and fail with exit code 1 if any raw emojis are detected.
-- **AC-18.3 (Semantic Drawer Focus Restoration Guarantee)**: Dismissing slide-over drawers (e.g. `CitationDrawer`) MUST restore focus to the most semantically equivalent mounted control (e.g. the specific target "Research" button, entity row, or Clearance Items tab), and MUST NOT drift to header buttons (e.g., "Switch Project").
-- **AC-18.4 (Project-Scoped Onboarding Persistence Guarantee)**: Onboarding banner dismissal MUST be stored under versioned namespaced keys per project ID (`clearancescout:onboarding:v1:<project-id>`). Dismissing onboarding in Project A MUST NOT suppress onboarding when navigating to or creating an unrelated Project B.
+- **AC-18.3 (Cross-Panel Focus Restoration Guarantee)**: 
+  - Activating the Overview recommendation ("Research Nocturne of the Wild") MUST switch section tabs from `Overview` to `Clearance Items` and open the research drawer (`CitationDrawer`).
+  - Because the originating trigger button on `Overview` becomes unmounted during the tab transition, closing the drawer MUST restore focus using a deterministic fallback resolver in this exact priority order:
+    1. Nocturne's mounted "Research" button on the active `Clearance Items` panel (e.g. `button[aria-label*="Research Nocturne of the Wild"]`);
+    2. The target Nocturne entity row heading or focusable row container (`[data-entity-id="..."]`);
+    3. The active "Clearance Items" tab button (`#tab-entities`).
+  - Focus MUST NEVER drift or fall back to unrelated header controls (such as `"Switch Project"`).
+  - Same-panel dialogs and modals (e.g. `DemoTokenModal`, `ScriptUploadModal`, `OperationsDashboardModal`) MUST continue restoring focus to their still-mounted trigger buttons upon dismissal.
+  - Department Task Center (`ActionListModal`) focus restoration MUST NOT regress.
+  - The visible button text ("Research"), accessible name (`aria-label="Research Nocturne of the Wild"`), supporting card copy, and single-entity research dossier destination MUST strictly agree on the target entity ("Nocturne of the Wild").
+- **AC-18.4 (Project-Scoped Onboarding Persistence Guarantee)**: 
+  - Onboarding banner dismissal MUST be persisted using versioned, project-namespaced keys in `localStorage`: `clearancescout:onboarding:v1:<project-id>`.
+  - Dismissing the onboarding banner in Project A MUST NOT suppress onboarding when navigating to or creating an unrelated Project B.
+  - Active project selection MUST be persisted across page reloads (`clearancescout_active_project_id`).
+- **AC-18.5 (Real Rendered Browser Verification Gate)**:
+  - Cross-panel focus restoration, modal focus trapping, and project-scoped onboarding persistence MUST be validated using a real Chromium browser automation test (`tests/live_keyboard_focus_validation.js`).
+  - Vitest / jsdom simulated DOM unit tests MUST be strictly and accurately labeled as Vitest/jsdom simulated tests in test logs and documentation, and MUST NOT be claimed as Playwright or rendered-browser evidence.
 
 ---
 
@@ -118,13 +133,15 @@ An operator entering ClearanceScout MUST be able to immediately answer from the 
 
 Phase 2 implementation will be deemed complete when:
 1. `./scripts/spec-check.sh` passes with 0 violations across `src/`.
-2. All unit, contract, and integration test suites pass 100% green.
+2. All unit, contract, and integration test suites pass 100% green under Vitest/jsdom.
 3. First-time user validation confirms all 8 operator questions are clearly answered from rendered UI alone.
-4. Rendered Playwright tests verify:
-   - `action_required_state_shows_blocker_recommendation`
-   - `recommended_action_opens_correct_filtered_view`
-   - `ground_is_not_exposed_as_primary_operator_label`
-   - `status_vocabulary_is_consistent`
-   - `header_settings_menu_keyboard_accessible`
-   - `section_navigation_tabs_keyboard_accessible`
+4. Real Playwright Chromium browser validation (`node tests/live_keyboard_focus_validation.js`) passes 100% across all 7 verification sections:
+   - `demo_token_modal_focus_trap_and_escape`
+   - `script_upload_modal_focus_trap_and_live_region`
+   - `operations_dashboard_modal_focus_trap_and_escape`
+   - `department_tasks_action_center_focus_trap_and_escape`
+   - `recommended_action_drawer_cross_panel_focus_restoration`
+   - `project_scoped_onboarding_persistence_and_isolation`
+   - `active_project_id_restoration_across_reloads`
+
 

@@ -49,6 +49,18 @@
   - **`Tasks`**: Department Task Center + Operations Dashboard.
 - **Accessibility**: ARIA `tablist`/`tab`/`tabpanel` markup with ArrowLeft/ArrowRight key handling.
 
+### 5. Cross-Panel Focus Resolver & Onboarding Keying (`src/hooks/useModalFocus.ts`, `src/components/CitationDrawer.tsx`, `src/components/OnboardingBanner.tsx`, `src/App.tsx`)
+- **Cross-Panel Focus Resolver**:
+  - `useModalFocus` updated to support `resolveReturnTarget?: () => HTMLElement | null` callback during unmount cleanup.
+  - `CitationDrawer` provides a dynamic focus resolver that evaluates available target elements in order:
+    1. `button[aria-label="Research Nocturne of the Wild"]` (now mounted in `Clearance Items` panel);
+    2. `[data-entity-id="ent-..."]` (the Nocturne row container);
+    3. `#tab-entities` (the Clearance Items tab button).
+  - Guarantees focus does NOT drift to header controls like "Switch Project".
+- **Project-Scoped Onboarding Keying**:
+  - `OnboardingBanner` keys dismissal per project ID: `clearancescout:onboarding:v1:<project-id>`.
+  - `App.tsx` persists active project selection across page reloads in `clearancescout_active_project_id`.
+
 ---
 
 ## File Modification Plan
@@ -63,7 +75,33 @@
    - Add section tab state, render section views, update terminology.
 5. **`src/components/EntityRegistryTable.tsx`**:
    - Update `"Ground"` -> `"Research"` label, preserve scan density.
-6. **`src/components/icons/Icons.tsx`**:
-   - Add `SettingsIcon` SVG if missing.
-7. **`tests/` & `scripts/`**:
-   - Add unit/integration tests for User Stories 14-18 and verify `spec-check.sh` and Playwright scripts.
+6. **`src/components/CitationDrawer.tsx`**:
+   - Pass dynamic `resolveReturnTarget` callback to `useModalFocus` for deterministic cross-panel focus restoration.
+7. **`src/hooks/useModalFocus.ts`**:
+   - Support `resolveReturnTarget` callback in cleanup phase.
+8. **`src/components/OnboardingBanner.tsx`**:
+   - Implement namespaced, versioned `localStorage` keying per project ID.
+9. **`src/App.tsx`**:
+   - Persist and restore `clearancescout_active_project_id` in `localStorage`.
+10. **`src/components/ProjectListModal.tsx`**:
+    - Add `data-project-id` attributes to project selection cards.
+11. **`tests/` & `scripts/`**:
+    - `tests/live_keyboard_focus_validation.js`: Real Playwright Chromium browser validation suite.
+    - `tests/contract/test_phase2_closure_focus_and_labels.test.tsx`: Vitest/jsdom unit contract tests.
+
+---
+
+## Requirement -> Task -> Test Traceability Matrix
+
+| Requirement / Acceptance Criteria | Implementation Component(s) | Task ID | Automated Test File & Target | Test Type |
+|---|---|---|---|---|
+| **AC-14.1–14.3** (Recommended Next Action Cascade) | `RecommendedActionCard.tsx`, `WorkspacePage.tsx` | T005, T006 | `tests/live_keyboard_focus_validation.js` [Section 6] | Playwright (Chromium) |
+| **AC-15.1–15.4** (Domain Terminology & Human Headings) | `CommandBar.tsx`, `EntityRegistryTable.tsx`, `CitationDrawer.tsx` | T007, T008 | `tests/contract/test_phase2_closure_focus_and_labels.test.tsx` | Vitest / jsdom |
+| **AC-16.1–16.3** (Streamlined Header & Settings Popover) | `CommandBar.tsx`, `SettingsPopover.tsx` | T001, T002, T003 | `tests/live_keyboard_focus_validation.js` [Section 2] | Playwright (Chromium) |
+| **AC-17.1–17.4** (Section Tab Panel Switching) | `WorkspacePage.tsx`, `CommandBar.tsx` | T004 | `tests/contract/test_phase2_closure_focus_and_labels.test.tsx` | Vitest / jsdom |
+| **AC-18.1–18.2** (Entity Scan Density & Modal Contract) | `EntityRegistryTable.tsx`, `useModalFocus.ts` | T009, T010 | `tests/live_keyboard_focus_validation.js` [Sections 2-5] | Playwright (Chromium) |
+| **AC-18.3** (Cross-Panel Focus Restoration) | `useModalFocus.ts`, `CitationDrawer.tsx` | T015 | `tests/live_keyboard_focus_validation.js` [Section 6] | Playwright (Chromium) |
+| **AC-18.4** (Project-Scoped Onboarding Isolation) | `OnboardingBanner.tsx`, `App.tsx`, `ProjectListModal.tsx` | T016 | `tests/live_keyboard_focus_validation.js` [Section 7] | Playwright (Chromium) |
+| **AC-18.5** (Real Browser Verification Gate) | `live_keyboard_focus_validation.js` | T017 | `tests/live_keyboard_focus_validation.js` | Playwright (Chromium) |
+| **AC-3.1** (Systemic Emoji Chrome Sweep) | `src/` UI Chrome components | T011 | `./scripts/spec-check.sh` | Static Spec Check Script |
+
