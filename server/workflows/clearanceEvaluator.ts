@@ -111,6 +111,7 @@ export class ClearanceEvaluator {
       throw err;
     }
 
+
     // Emit RESEARCH_RETRY_STARTED observable timeline event
     timelineEmitter.emit(projectId, 'RESEARCH_RETRY_STARTED', `Research Retry Initiated: ${entity.canonicalName}`, {
       entityId: entity.id,

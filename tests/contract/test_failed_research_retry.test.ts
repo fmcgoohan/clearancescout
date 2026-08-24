@@ -53,7 +53,7 @@ describe('Contract: Failed Research Retry API', () => {
     const projectId = projRes.body.id;
 
     const entRes = await request(app).post(`/api/projects/${projectId}/entities`).send({
-      canonicalName: 'Generic Water Bottle',
+      canonicalName: 'Summit Cola',
       entityCategory: 'BRAND',
     });
     const entityId = entRes.body.id;

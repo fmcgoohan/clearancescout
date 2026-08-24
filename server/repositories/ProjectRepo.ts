@@ -80,6 +80,22 @@ export class ProjectRepo {
     };
   }
 
+  async updateProject(id: string, updates: Partial<ProjectData>): Promise<ProjectData | null> {
+    const docRef = await this.db.doc(`projects/${id}`);
+    const snap = await docRef.get();
+    if (!snap.exists) return null;
+
+    const existing = snap.data() as ProjectData;
+    const now = new Date().toISOString();
+    const updated: ProjectData = {
+      ...existing,
+      ...updates,
+      updatedAt: now,
+    };
+    await docRef.set(updated);
+    return updated;
+  }
+
   async listProjects(): Promise<ProjectData[]> {
     const colRef = await this.db.collection('projects');
     const snap = await colRef.get();

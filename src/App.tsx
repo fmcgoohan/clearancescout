@@ -331,6 +331,9 @@ export default function App() {
 
   const refreshProjectSummary = async (id: string, snapshot?: any) => {
     if (snapshot && Array.isArray(snapshot.entities)) {
+      if (snapshot.project?.title) {
+        setProjectTitle(snapshot.project.title);
+      }
       const entities = snapshot.entities;
       const clearedCount = entities.filter((e: any) => e.overallClearanceStatus === 'NO_ISSUE_SURFACED').length;
       const actionRequiredCount = entities.filter((e: any) => e.overallClearanceStatus === 'ACTION_REQUIRED').length;
@@ -349,6 +352,9 @@ export default function App() {
       const res = await apiFetch(`/api/projects/${id}`);
       if (res.ok) {
         const data = await res.json();
+        if (data.title) {
+          setProjectTitle(data.title);
+        }
         setProjectSummary({
           entityCount: data.entityCount || 0,
           clearedCount: data.clearedCount || 0,

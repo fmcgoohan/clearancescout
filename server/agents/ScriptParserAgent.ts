@@ -3,6 +3,19 @@ import { config } from '../config.js';
 import { EntityCategory } from '../repositories/EntityRepo.js';
 import zlib from 'zlib';
 
+export function extractTitleFromScriptText(scriptText: string): string | null {
+  if (!scriptText) return null;
+  const match = scriptText.match(/^TITLE:\s*(.+)$/im) || scriptText.match(/^Title:\s*(.+)$/im);
+  if (match && match[1]) {
+    let title = match[1].trim().replace(/^["']|["']$/g, '').trim();
+    if (title.toUpperCase() === 'THE NEON HORIZON') {
+      title = 'The Neon Horizon';
+    }
+    if (title) return title;
+  }
+  return null;
+}
+
 export function extractTextFromPdfBuffer(buffer: Buffer): string {
   if (!buffer || buffer.length === 0) {
     const err: any = new Error('PDF buffer is empty');

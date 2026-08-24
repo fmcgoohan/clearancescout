@@ -2,7 +2,7 @@ import { projectRepo } from '../repositories/ProjectRepo.js';
 import { sceneRepo, SceneData } from '../repositories/SceneRepo.js';
 import { entityRepo, CanonicalEntityData } from '../repositories/EntityRepo.js';
 import { actionNotificationRepo } from '../repositories/ActionNotificationRepo.js';
-import { scriptParserAgent, ParsedScene } from '../agents/ScriptParserAgent.js';
+import { scriptParserAgent, ParsedScene, extractTitleFromScriptText } from '../agents/ScriptParserAgent.js';
 import { entityResolutionEngine } from './entityResolutionEngine.js';
 import { clearanceEvaluator } from './clearanceEvaluator.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
@@ -24,6 +24,16 @@ export class CanonicalRegistryWorkflow {
   ): Promise<WorkflowResult> {
     const project = await projectRepo.getProject(projectId);
     const executionMode = project?.executionMode;
+
+    const genericDefaultTitles = [
+      'Production Project Workspace',
+      'Clearance Workspace',
+    ];
+
+    const extractedTitle = extractTitleFromScriptText(scriptText);
+    if (extractedTitle && project && genericDefaultTitles.includes(project.title)) {
+      await projectRepo.updateProject(projectId, { title: extractedTitle });
+    }
 
     timelineEmitter.emit(projectId, 'DOCUMENT_QUERY', `Parsing Script Content (${format})`, {
       scriptLength: scriptText.length,

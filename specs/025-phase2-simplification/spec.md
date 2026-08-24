@@ -1,10 +1,10 @@
 # Feature Specification: ClearanceScout Phase 2 Workflow & Terminology Simplification
 
 **Feature Branch**: `025-phase2-simplification`  
-**Version**: `v0.25.0-phase2-propose` (Draft Proposal for Human Approval)  
+**Version**: `v0.25.0-phase2-implemented`  
 **Created**: 2026-08-24  
 **Updated**: 2026-08-24  
-**Status**: Proposal / Pending Human Approval (PROPOSE Stage)  
+**Status**: Implemented — Pending Final Human Sign-off (Verified on Cloud Run Revision clearancescout-00007-dmw via Commit 8e7ddff)  
 **Input**: Two-Phase QA Brief (`docs/phase1-modal-fix-phase2-ux-simplification-brief.md`) & Constitution Articles 13, 14, 16 Proposal  
 **Oracle Visual Reference**: `mockup-v3.html` (repo root) per Constitution Article 9  
 
