@@ -45,6 +45,35 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
   });
 }
 
+// Global listener to track the last user-interacted control (click/keydown)
+let lastInteractedControl: HTMLElement | null = null;
+if (typeof window !== 'undefined') {
+  window.addEventListener(
+    'click',
+    (e) => {
+      if (e.target instanceof HTMLElement) {
+        const control = e.target.closest<HTMLElement>(
+          'button, a, input, select, textarea, [role="button"], [tabindex]'
+        );
+        lastInteractedControl = control || e.target;
+      }
+    },
+    true
+  );
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      if ((e.key === 'Enter' || e.key === ' ') && e.target instanceof HTMLElement) {
+        const control = e.target.closest<HTMLElement>(
+          'button, a, input, select, textarea, [role="button"], [tabindex]'
+        );
+        lastInteractedControl = control || e.target;
+      }
+    },
+    true
+  );
+}
+
 export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
   isOpen,
   onClose,
@@ -64,10 +93,20 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
     if (!isOpen) return;
 
     // Capture the trigger or currently focused element
-    if (triggerRef?.current) {
+    if (triggerRef?.current && document.body.contains(triggerRef.current)) {
       previousActiveElementRef.current = triggerRef.current;
-    } else if (document.activeElement instanceof HTMLElement) {
+    } else if (
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement !== document.body &&
+      document.activeElement !== document.documentElement
+    ) {
       previousActiveElementRef.current = document.activeElement;
+    } else if (
+      lastInteractedControl instanceof HTMLElement &&
+      document.body.contains(lastInteractedControl) &&
+      lastInteractedControl !== document.body
+    ) {
+      previousActiveElementRef.current = lastInteractedControl;
     }
 
     const setInitialFocus = () => {
@@ -120,7 +159,7 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
       clearTimeout(timeoutId);
       if (restoreFocus) {
         const prevEl = previousActiveElementRef.current;
-        if (prevEl && document.body.contains(prevEl) && prevEl !== document.body) {
+        if (prevEl && document.body.contains(prevEl) && prevEl !== document.body && prevEl !== document.documentElement) {
           try {
             prevEl.focus();
             return;
@@ -128,8 +167,28 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
             // ignore
           }
         }
-        // Fallback focus target: if previous active element is missing or body, focus header or primary workspace control
-        const fallback = document.querySelector<HTMLElement>('#demo-token-button, header button, button.btn-primary, #main-content');
+        // Fallback target: if prevEl was unmounted or missing, search by aria-label or id
+        const ariaLabel = prevEl?.getAttribute('aria-label');
+        const id = prevEl?.id;
+        if (id) {
+          const matchedById = document.getElementById(id);
+          if (matchedById && document.body.contains(matchedById)) {
+            try { matchedById.focus(); return; } catch {}
+          }
+        }
+        if (ariaLabel) {
+          try {
+            const matchedByAria = document.querySelector<HTMLElement>(`[aria-label="${CSS.escape(ariaLabel)}"]`);
+            if (matchedByAria && document.body.contains(matchedByAria)) {
+              matchedByAria.focus();
+              return;
+            }
+          } catch {}
+        }
+        // Sensible main workspace fallback target (never header/project-switcher)
+        const fallback = document.querySelector<HTMLElement>(
+          '#main-content, [role="tablist"] button[aria-selected="true"], [role="region"] button, main button'
+        );
         if (fallback) {
           try { fallback.focus(); } catch {}
         }

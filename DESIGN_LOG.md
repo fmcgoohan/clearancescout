@@ -174,5 +174,32 @@ Feature 024 UX Redesign comprehensively upgrades ClearanceScout to a production-
 - **Automated Test Suite (`npm test`)**: All 94 test files / 245 tests PASSED (100% green).
 - **Production Build (`npm run build`)**: PASSED cleanly.
 
+---
+
+### Entry: 2026-08-24 - Phase 2 Closure Pass (TASK_ID: P2CLOSURE-3ec22b06)
+
+**Phase**: Phase 2 Final Closure & Focus/Label Alignment  
+**Spec Version**: `specs/025-phase2-simplification/spec.md`
+
+#### 1. Root Cause & Focus Restoration Fix
+- **Root Cause**: When opening slide-over drawers (e.g. `CitationDrawer`) after clicking the recommended action button, `isEvaluating` or asynchronous data fetching re-rendered the workspace, causing `document.activeElement` to drift or blur. On dismissal (via Escape or Close button `✕`), `useModalFocus` checked `previousActiveElementRef.current`, found `document.body`, and fell back to `header button` (the Project Switcher button).
+- **Fix Implemented**:
+  1. Updated `src/hooks/useModalFocus.ts` with global user interaction tracking (`lastInteractedControl`) to capture the exact originating control on click/keydown before any async re-renders.
+  2. Implemented origin-aware fallback matching by `aria-label` or `id` if the original element node was unmounted during drawer interaction.
+  3. Replaced top-level header fallback with a main workspace container fallback (`#main-content`, active tab button, or workspace button).
+
+#### 2. Recommended Action Label & Target Alignment
+- **Issue**: Label previously rendered "Review 2 Clearance Blockers", but clicking it launched a single-entity research dossier for "Nocturne of the Wild".
+- **Resolution**: Updated `src/components/RecommendedActionCard.tsx` so title, visible button text, and `aria-label` agree on the single target ("Research Nocturne of the Wild"). The button label, accessible name, destination, drawer heading ("Nocturne of the Wild"), and focus restoration now describe and support the exact same workflow.
+
+#### 3. Onboarding Persistence Finding
+- **Finding**: Verified `OnboardingBanner.tsx` uses `localStorage.getItem('clearancescout_onboarding_dismissed')`. When the user clicks "Got it, dismiss", state persists across panel navigation, page reloads, and subsequent sessions without suppressing onboarding for unrelated project scopes.
+
+#### 4. Verification Evidence
+- **Contract Tests**: Added `tests/contract/test_phase2_closure_focus_and_labels.test.tsx` verifying label agreement, origin-aware focus restoration after Escape/Close button dismissal, and onboarding persistence (4 tests PASSED).
+- **Full Test Suite (`npm test`)**: 95 test files / 249 tests PASSED 100% green.
+- **Static Spec Check (`./scripts/spec-check.sh`)**: PASSED with zero violations.
+
+
 
 

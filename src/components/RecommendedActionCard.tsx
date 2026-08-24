@@ -47,33 +47,35 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
     handleClick = () => onOpenUploadModal?.();
   } else if (blockersCount > 0) {
     const target = actionRequiredItems[0];
-    title = `Review ${blockersCount} Clearance Blocker${blockersCount > 1 ? 's' : ''}`;
-    rationale = `${blockersCount} clearance item${blockersCount > 1 ? 's' : ''} require action. Start with ${target?.canonicalName || 'uncleared item'}.`;
-    buttonLabel = `Review ${blockersCount} Clearance Blocker${blockersCount > 1 ? 's' : ''}`;
-    ariaLabel = target ? `Research ${target.canonicalName}` : buttonLabel;
+    const targetName = target?.canonicalName || 'Uncleared Item';
+    title = target ? `Research ${targetName}` : `Review ${blockersCount} Clearance Blocker${blockersCount > 1 ? 's' : ''}`;
+    rationale = target
+      ? `${blockersCount} clearance item${blockersCount > 1 ? 's' : ''} require action. Start with ${targetName}.`
+      : `${blockersCount} clearance item${blockersCount > 1 ? 's' : ''} require action.`;
+    buttonLabel = target ? `Research ${targetName}` : `Review ${blockersCount} Clearance Blocker${blockersCount > 1 ? 's' : ''}`;
+    ariaLabel = buttonLabel;
     badgeColor = 'var(--status-action, #ef4444)';
     badgeBg = 'rgba(239, 68, 68, 0.12)';
     handleClick = () => {
       if (onResearchItem && target) {
         onResearchItem(target.id);
-      }
-      if (onSelectTab) {
+      } else if (onSelectTab) {
         onSelectTab('clearance', 'ACTION_REQUIRED');
       }
     };
   } else if (reviewsCount > 0) {
     const target = reviewRecommendedItems[0];
-    title = `Review ${reviewsCount} Recommended Item${reviewsCount > 1 ? 's' : ''}`;
-    rationale = `1 item recommended for review: ${target?.canonicalName || 'item'}.`;
-    buttonLabel = `Review ${reviewsCount} Recommended Item${reviewsCount > 1 ? 's' : ''}`;
-    ariaLabel = target ? `Research ${target.canonicalName}` : buttonLabel;
+    const targetName = target?.canonicalName || 'Item';
+    title = target ? `Research ${targetName}` : `Review ${reviewsCount} Recommended Item${reviewsCount > 1 ? 's' : ''}`;
+    rationale = `1 item recommended for review: ${targetName}.`;
+    buttonLabel = target ? `Research ${targetName}` : `Review ${reviewsCount} Recommended Item${reviewsCount > 1 ? 's' : ''}`;
+    ariaLabel = buttonLabel;
     badgeColor = 'var(--status-review, #f59e0b)';
     badgeBg = 'rgba(245, 158, 11, 0.12)';
     handleClick = () => {
       if (onResearchItem && target) {
         onResearchItem(target.id);
-      }
-      if (onSelectTab) {
+      } else if (onSelectTab) {
         onSelectTab('clearance', 'REVIEW_RECOMMENDED');
       }
     };
