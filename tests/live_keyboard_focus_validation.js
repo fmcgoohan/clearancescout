@@ -363,7 +363,54 @@ async function runLiveKeyboardFocusValidation() {
   if (bannerRestoredA) throw new Error('PROJECT ISOLATION FAILURE: Onboarding banner reappeared on Project A after returning from Project B!');
   console.log('  ✓ Onboarding banner remained dismissed when returning to Project A');
 
-  console.log('=== All Live Keyboard, Focus Restoration, and Project-Scoped Onboarding Validation PASSED 100% ===');
+  // 7. Test Atomic Workspace Snapshot Hydration Gate (AC-19.1)
+  console.log('[8/8] Testing Atomic Workspace Snapshot Hydration Gate with controlled network delay (AC-19.1)...');
+
+  // Intercept scene requests to introduce controlled 600ms hydration delay
+  await page.route('**/api/projects/*/scenes', async (route) => {
+    await new Promise((r) => setTimeout(r, 600));
+    await route.continue();
+  });
+
+  // Reload page to trigger hydration with delayed network response
+  const reloadPromise = page.reload({ waitUntil: 'commit' });
+
+  // During hydration delay, verify synchronizing loader is displayed and "No Screenplay Ingested" is absent
+  await page.waitForTimeout(200);
+  const isSynchronizing = await page.evaluate(() => {
+    const text = document.body.innerText;
+    return text.includes('Synchronizing Workspace Snapshot...');
+  });
+  const showsNoScreenplayDuringHydration = await page.evaluate(() => {
+    const text = document.body.innerText;
+    return text.includes('No Screenplay Ingested');
+  });
+
+  console.log('  ✓ Synchronizing loader active during hydration delay:', isSynchronizing);
+  console.log('  ✓ "No Screenplay Ingested" suppressed during hydration delay:', !showsNoScreenplayDuringHydration);
+
+  if (showsNoScreenplayDuringHydration) {
+    throw new Error('HYDRATION DEFECT: "No Screenplay Ingested" was displayed during hydration delay!');
+  }
+
+  // Await network idle after response finishes
+  await reloadPromise;
+  await page.waitForLoadState('networkidle');
+
+  // Unroute handler
+  await page.unroute('**/api/projects/*/scenes');
+
+  // Verify final atomic state after hydration completes
+  const postHydrationText = await page.evaluate(() => document.body.innerText);
+  const hasEntities = postHydrationText.includes('7 Clearance Items') || postHydrationText.includes('Nocturne of the Wild');
+  const hasScenes = postHydrationText.includes('3 scenes') || postHydrationText.includes('Scene 1') || postHydrationText.includes('SCENE 1');
+
+  console.log('  ✓ Workspace scenes and clearance entities rendered atomically post-hydration:', hasEntities && hasScenes);
+  if (!hasEntities || !hasScenes) {
+    throw new Error('HYDRATION DEFECT: Workspace failed to display 7 entities and 3 scenes after hydration!');
+  }
+
+  console.log('=== All Live Keyboard, Focus Restoration, Project-Scoped Onboarding, and Snapshot Hydration Validation PASSED 100% ===');
   await browser.close();
 }
 

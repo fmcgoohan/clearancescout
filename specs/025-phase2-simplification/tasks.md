@@ -36,3 +36,11 @@
 - [x] **T016**: Implement versioned project-namespaced onboarding dismissal keys (`clearancescout:onboarding:v1:<project-id>`) and persistent active project ID in `App.tsx` and `OnboardingBanner.tsx` per AC-18.4.
 - [x] **T017**: Execute real Chromium browser validation suite (`tests/live_keyboard_focus_validation.js`) verifying focus traps, cross-panel focus restoration, and project-scoped onboarding persistence 100% green per AC-18.5.
 
+## Phase 8: Live Focus Fix, Snapshot Hydration Boundary & Cloud Run Deployment (AC-18.3, AC-19.1)
+- [ ] **T018**: Enhance `useModalFocus.ts`, `CitationDrawer.tsx`, and `EntityRegistryTable.tsx` with mount-detection focus restoration and ensure `data-entity-id` is on all primary buttons.
+- [ ] **T019**: Implement unified snapshot hydration boundary (`isLoadingWorkspace`) in `WorkspacePage.tsx` and `App.tsx` to prevent mixed sync state during project loading per AC-19.1.
+- [ ] **T020**: Extend Playwright automation suite (`tests/live_keyboard_focus_validation.js`) with controlled hydration delay tests for AC-19.1.
+- [ ] **T021**: Deploy updated container build to Cloud Run service `clearancescout` via `gcloud builds submit` and `gcloud run deploy`.
+- [ ] **T022**: Execute real Playwright Chromium browser validation suite against live Cloud Run URL (`https://clearancescout-n3tcx4jcbq-uc.a.run.app`) and record live evidence.
+
+

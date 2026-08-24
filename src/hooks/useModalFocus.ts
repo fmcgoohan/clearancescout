@@ -166,64 +166,85 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
       if (restoreFocus) {
         const prevEl = previousActiveElementRef.current;
 
-        // 1. Same-panel mounted trigger element check
-        if (prevEl && document.body.contains(prevEl) && prevEl !== document.body && prevEl !== document.documentElement) {
-          try {
-            prevEl.focus();
-            return;
-          } catch {
-            // ignore
-          }
-        }
-
-        // 2. Custom semantic return target resolver if provided
-        if (resolveReturnTarget) {
-          try {
-            const resolved = resolveReturnTarget();
-            let resolvedEl: HTMLElement | null = null;
-            if (typeof resolved === 'string') {
-              resolvedEl = document.querySelector<HTMLElement>(resolved);
-            } else if (resolved instanceof HTMLElement) {
-              resolvedEl = resolved;
+        const attemptRestore = (): boolean => {
+          // 1. Same-panel mounted trigger element check
+          if (prevEl && document.body.contains(prevEl) && prevEl !== document.body && prevEl !== document.documentElement) {
+            try {
+              prevEl.focus();
+              if (document.activeElement === prevEl) return true;
+            } catch {
+              // ignore
             }
-            if (resolvedEl && document.body.contains(resolvedEl)) {
-              resolvedEl.focus();
-              return;
-            }
-          } catch (e) {
-            console.warn('Error executing resolveReturnTarget in useModalFocus:', e);
           }
-        }
 
-        // 3. Fallback target: search by aria-label or id of previous element
-        const ariaLabel = prevEl?.getAttribute('aria-label');
-        const id = prevEl?.id;
-        if (id) {
-          const matchedById = document.getElementById(id);
-          if (matchedById && document.body.contains(matchedById)) {
-            try { matchedById.focus(); return; } catch {}
-          }
-        }
-        if (ariaLabel) {
-          try {
-            const safeAria = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(ariaLabel) : ariaLabel;
-            const matchedByAria = document.querySelector<HTMLElement>(`[aria-label="${safeAria}"]`);
-            if (matchedByAria && document.body.contains(matchedByAria)) {
-              matchedByAria.focus();
-              return;
+          // 2. Custom semantic return target resolver if provided
+          if (resolveReturnTarget) {
+            try {
+              const resolved = resolveReturnTarget();
+              let resolvedEl: HTMLElement | null = null;
+              if (typeof resolved === 'string') {
+                resolvedEl = document.querySelector<HTMLElement>(resolved);
+              } else if (resolved instanceof HTMLElement) {
+                resolvedEl = resolved;
+              }
+              if (resolvedEl && document.body.contains(resolvedEl)) {
+                resolvedEl.focus();
+                if (document.activeElement === resolvedEl) return true;
+              }
+            } catch (e) {
+              console.warn('Error executing resolveReturnTarget in useModalFocus:', e);
             }
-          } catch {}
-        }
+          }
 
-        // 4. Priority workspace fallback target: selected tab button or main content (never header/project-switcher)
-        const activeTabButton = document.querySelector<HTMLElement>('[role="tablist"] button[aria-selected="true"]');
-        if (activeTabButton && document.body.contains(activeTabButton)) {
-          try { activeTabButton.focus(); return; } catch {}
-        }
+          // 3. Fallback target: search by aria-label or id of previous element
+          const ariaLabel = prevEl?.getAttribute('aria-label');
+          const id = prevEl?.id;
+          if (id) {
+            const matchedById = document.getElementById(id);
+            if (matchedById && document.body.contains(matchedById)) {
+              try {
+                matchedById.focus();
+                if (document.activeElement === matchedById) return true;
+              } catch {}
+            }
+          }
+          if (ariaLabel) {
+            try {
+              const safeAria = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(ariaLabel) : ariaLabel;
+              const matchedByAria = document.querySelector<HTMLElement>(`[aria-label="${safeAria}"]`);
+              if (matchedByAria && document.body.contains(matchedByAria)) {
+                matchedByAria.focus();
+                if (document.activeElement === matchedByAria) return true;
+              }
+            } catch {}
+          }
 
-        const mainContent = document.querySelector<HTMLElement>('#main-content, main');
-        if (mainContent && document.body.contains(mainContent)) {
-          try { mainContent.focus(); return; } catch {}
+          // 4. Priority workspace fallback target: selected tab button or main content (never header/project-switcher)
+          const activeTabButton = document.querySelector<HTMLElement>('[role="tablist"] button[aria-selected="true"]');
+          if (activeTabButton && document.body.contains(activeTabButton)) {
+            try {
+              activeTabButton.focus();
+              if (document.activeElement === activeTabButton) return true;
+            } catch {}
+          }
+
+          const mainContent = document.querySelector<HTMLElement>('#main-content, main');
+          if (mainContent && document.body.contains(mainContent)) {
+            try {
+              mainContent.focus();
+              if (document.activeElement === mainContent) return true;
+            } catch {}
+          }
+
+          return false;
+        };
+
+        if (!attemptRestore()) {
+          requestAnimationFrame(() => {
+            if (!attemptRestore()) {
+              setTimeout(attemptRestore, 20);
+            }
+          });
         }
       }
     };

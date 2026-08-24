@@ -659,6 +659,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                         {/* Primary Action 1: Research / Compare / Ground */}
                         {e.replacementCard && onOpenComparison ? (
                           <button
+                            data-entity-id={e.id}
                             className="btn-secondary touch-target"
                             style={{ fontSize: '0.75rem', padding: '4px 8px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
                             onClick={() => onOpenComparison(e.id)}
@@ -669,6 +670,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                           </button>
                         ) : e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE' ? (
                           <button
+                            data-entity-id={e.id}
                             className="btn-secondary touch-target"
                             style={{ fontSize: '0.75rem', padding: '4px 8px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
                             onClick={() => {

@@ -106,6 +106,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   // Phase 2 Workspace Section Tab Navigation State
   const [activeTab, setActiveTab] = useState<'overview' | 'screenplay' | 'clearance' | 'tasks'>('overview');
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>('ALL');
+  const [isHydrating, setIsHydrating] = useState<boolean>(true);
 
   // Ingestion feedback toast banner (Feature 021)
   const [ingestionToast, setIngestionToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
@@ -153,6 +154,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
   const fetchWorkspaceData = async () => {
     if (!projectId) return;
+    setIsHydrating(true);
     try {
       const [scenesRes, entitiesRes, readinessRes, actionsRes] = await Promise.all([
         apiFetch(`/api/projects/${projectId}/scenes`),
@@ -161,23 +163,25 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         apiFetch(`/api/projects/${projectId}/actions?status=OPEN`),
       ]);
 
+      let openCount = 0;
       if (actionsRes.ok) {
         const actionsData = await actionsRes.json();
-        setOpenActionsCount(Array.isArray(actionsData) ? actionsData.length : 0);
+        openCount = Array.isArray(actionsData) ? actionsData.length : 0;
       }
 
+      let readinessSummaryData: any = null;
       let readinessMap = new Map<string, any>();
       if (readinessRes.ok) {
-        const readinessData = await readinessRes.json();
-        setReadinessSummary(readinessData);
-        if (Array.isArray(readinessData.scenes)) {
-          readinessData.scenes.forEach((s: any) => readinessMap.set(s.sceneId, s));
+        readinessSummaryData = await readinessRes.json();
+        if (Array.isArray(readinessSummaryData.scenes)) {
+          readinessSummaryData.scenes.forEach((s: any) => readinessMap.set(s.sceneId, s));
         }
       }
 
+      let mappedScenes: Scene[] = [];
       if (scenesRes.ok) {
         const scenesData: Scene[] = await scenesRes.json();
-        const mappedScenes = scenesData.map((s) => {
+        mappedScenes = scenesData.map((s) => {
           const readiness = readinessMap.get(s.id);
           return {
             ...s,
@@ -185,16 +189,16 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             readinessDetails: readiness || s.readinessDetails,
           };
         });
-        setScenes(mappedScenes);
       }
 
+      let fetchedEntities: any[] = [];
+      let fetchedOverrides: any[] = [];
       if (entitiesRes.ok) {
-        const entitiesData = await entitiesRes.json();
-        setEntities(entitiesData);
+        fetchedEntities = await entitiesRes.json();
 
         // Fetch all entity overrides in parallel
         try {
-          const overridePromises = entitiesData.map(async (ent: any) => {
+          const overridePromises = fetchedEntities.map(async (ent: any) => {
             try {
               const ovrRes = await apiFetch(`/api/projects/${projectId}/entities/${ent.id}/overrides`);
               if (ovrRes.ok) {
@@ -207,16 +211,26 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             return [];
           });
           const nestedOverrides = await Promise.all(overridePromises);
-          setOverrides(nestedOverrides.flat());
+          fetchedOverrides = nestedOverrides.flat();
         } catch {
           // ignore
         }
       }
+
+      // Apply all state updates atomically in the same batch
+      setOpenActionsCount(openCount);
+      setReadinessSummary(readinessSummaryData);
+      setScenes(mappedScenes);
+      setEntities(fetchedEntities);
+      setOverrides(fetchedOverrides);
+
       if (onRefreshProjectSummary) {
         await Promise.resolve(onRefreshProjectSummary());
       }
     } catch (err) {
       console.error('Failed to fetch workspace data:', err);
+    } finally {
+      setIsHydrating(false);
     }
   };
 
@@ -249,6 +263,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     if (snapshot.actionsSummary) {
       setOpenActionsCount(snapshot.actionsSummary.openActions || 0);
     }
+    setIsHydrating(false);
     onRefreshProjectSummary?.(snapshot);
   };
 
@@ -633,21 +648,55 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           />
 
           {/* Recommended Next Action Area */}
-          <RecommendedActionCard
-            entities={entities}
-            hasScreenplay={scenes.length > 0}
-            departmentTasksCount={openActionsCount}
-            onSelectTab={(tab, filter) => {
-              setActiveTab(tab);
-              if (filter) setActiveStatusFilter(filter);
-            }}
-            onOpenUploadModal={() => {
-              setUploadModalInitialMode('FILE');
-              setIsUploadModalOpen(true);
-            }}
-            onExportBinder={onExportBinder}
-            onResearchItem={(id) => onEvaluateClearance(id)}
-          />
+          {isHydrating ? (
+            <div
+              className="glass-panel"
+              style={{
+                padding: '24px 28px',
+                borderRadius: '12px',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+              }}
+            >
+              <div
+                style={{
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  background: 'var(--accent-cyan)',
+                  boxShadow: '0 0 12px var(--accent-cyan)',
+                  animation: 'pulse 1.5s infinite ease-in-out',
+                }}
+              />
+              <div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Synchronizing Workspace Snapshot...
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Loading screenplay scenes, clearance items, and shooting readiness index.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <RecommendedActionCard
+              entities={entities}
+              hasScreenplay={scenes.length > 0}
+              departmentTasksCount={openActionsCount}
+              onSelectTab={(tab, filter) => {
+                setActiveTab(tab);
+                if (filter) setActiveStatusFilter(filter);
+              }}
+              onOpenUploadModal={() => {
+                setUploadModalInitialMode('FILE');
+                setIsUploadModalOpen(true);
+              }}
+              onExportBinder={onExportBinder}
+              onResearchItem={(id) => onEvaluateClearance(id)}
+            />
+          )}
 
           {/* Hero Readiness Index Card */}
           {scenes.length > 0 && readinessSummary && (
