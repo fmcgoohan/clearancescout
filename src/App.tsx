@@ -456,8 +456,22 @@ export default function App() {
         if (asm) {
           setSelectedEntityId(entityId);
           setCitations(asm.citations || []);
-          const matchedEntity = projectEntities.find((e) => e.id === entityId);
-          setCitationEntityName(matchedEntity?.canonicalName || asm.canonicalName || asm.entityName || asm.canonicalEntityId || entityId);
+          let resolvedName = asm.canonicalName || asm.entityName || asm.canonicalEntityId;
+          if (!resolvedName || resolvedName === entityId) {
+            try {
+              const entRes = await apiFetch(`/api/projects/${projectId}/entities`);
+              if (entRes.ok) {
+                const entitiesData = await entRes.json();
+                const matchedEntity = entitiesData.find((e: any) => e.id === entityId);
+                if (matchedEntity?.canonicalName) {
+                  resolvedName = matchedEntity.canonicalName;
+                }
+              }
+            } catch (e) {
+              // ignore fetch error
+            }
+          }
+          setCitationEntityName(resolvedName || entityId);
           setCitationRationale(asm.legalRationale);
           setIsCitationOpen(true);
         }
