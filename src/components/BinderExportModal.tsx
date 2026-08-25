@@ -86,6 +86,8 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
   onJumpToEvidence,
   onJumpToTimeline,
 }) => {
+  if (!isOpen) return null;
+
   const [activeTab, setActiveTab] = React.useState<'ALL' | 'SCENES' | 'RIGHTS' | 'PLACEHOLDERS' | 'ACTIONS'>('ALL');
   const [copiedDigest, setCopiedDigest] = React.useState(false);
 
@@ -360,6 +362,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
             </button>
             <button
               onClick={onClose}
+              aria-label="Close Binder Export Modal"
               style={{
                 background: 'transparent',
                 border: 'none',

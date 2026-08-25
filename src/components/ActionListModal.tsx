@@ -202,8 +202,20 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
   };
 
   const handleUpdateDueDate = async (actionId: string, dueDateStr: string) => {
+    const isOverdueCalc = Boolean(
+      dueDateStr &&
+      new Date(dueDateStr).getTime() < Date.now()
+    );
     setActions((prev) =>
-      prev.map((a) => (a.id === actionId ? { ...a, dueDate: dueDateStr || undefined } : a))
+      prev.map((a) =>
+        a.id === actionId
+          ? {
+              ...a,
+              dueDate: dueDateStr || undefined,
+              isOverdue: isOverdueCalc && a.status !== 'RESOLVED' && a.status !== 'DISMISSED',
+            }
+          : a
+      )
     );
 
     try {
