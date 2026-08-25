@@ -28,30 +28,35 @@ actionRouter.get('/projects/:id/actions', async (req: Request, res: Response, ne
   }
 });
 
-// PATCH /projects/:id/actions/:actionId - Update action status (e.g. mark IN_PROGRESS, RESOLVED, DISMISSED)
+// PATCH /projects/:id/actions/:actionId - Update action item (status, assignee, due date, audit entry)
 actionRouter.patch('/projects/:id/actions/:actionId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id: projectId, actionId } = req.params;
-    const { status, resolutionTrigger } = req.body;
+    const { status, assignee, dueDate, resolutionTrigger, actor, reason } = req.body;
 
-    if (!status) {
-      return res.status(400).json({ error: 'status is required.' });
+    if (!status && assignee === undefined && dueDate === undefined) {
+      return res.status(400).json({ error: 'At least one of status, assignee, or dueDate must be provided.' });
     }
 
-    const updated = await actionNotificationRepo.updateActionStatus(
-      projectId,
-      actionId,
-      status as ActionStatus,
-      resolutionTrigger
-    );
+    const updated = await actionNotificationRepo.updateActionItem(projectId, actionId, {
+      status: status as ActionStatus,
+      assignee,
+      dueDate,
+      resolutionTrigger,
+      actor,
+      reason,
+    });
 
     if (!updated) {
       return res.status(404).json({ error: `Action item ${actionId} not found.` });
     }
 
-    timelineEmitter.emit(projectId, 'STATE_TRANSITION', `Action Item Status: ${updated.status}`, {
+    timelineEmitter.emit(projectId, 'STATE_TRANSITION', `Action Item Updated: ${updated.title} (${updated.status})`, {
       actionId: updated.id,
       status: updated.status,
+      assignee: updated.assignee,
+      dueDate: updated.dueDate,
+      isOverdue: updated.isOverdue,
       title: updated.title,
       targetDepartment: updated.targetDepartment,
     });

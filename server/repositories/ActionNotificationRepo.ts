@@ -18,6 +18,30 @@ export type DepartmentTarget =
 
 export type ActionPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 export type ActionStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'DISMISSED';
+export type ActionAuditEventType =
+  | 'CREATED'
+  | 'ASSIGNED'
+  | 'REASSIGNED'
+  | 'DUE_DATE_CHANGED'
+  | 'STATUS_CHANGED'
+  | 'RESOLVED'
+  | 'REOPENED';
+
+export interface ActionAuditEvent {
+  id: string;
+  timestamp: string;
+  actor: string;
+  eventType: ActionAuditEventType;
+  beforeState?: string;
+  afterState?: string;
+  description: string;
+}
+
+export interface ActionAssignee {
+  id: string;
+  name: string;
+  role: string;
+}
 
 export interface ClearanceActionItem {
   id: string;
@@ -33,11 +57,29 @@ export interface ClearanceActionItem {
   description: string;
   priority: ActionPriority;
   status: ActionStatus;
+  assignee?: ActionAssignee;
+  dueDate?: string;
+  isOverdue?: boolean;
+  activityHistory?: ActionAuditEvent[];
   resolutionTrigger?: string;
   resolutionReason?: string;
   resolvedAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export function decorateActionOverdue(action: ClearanceActionItem): ClearanceActionItem {
+  let isOverdue = false;
+  if (action.dueDate && action.status !== 'RESOLVED' && action.status !== 'DISMISSED') {
+    const dueMs = new Date(action.dueDate).getTime();
+    if (!isNaN(dueMs) && dueMs < Date.now()) {
+      isOverdue = true;
+    }
+  }
+  return {
+    ...action,
+    isOverdue,
+  };
 }
 
 export interface ClearanceNotification {
@@ -79,18 +121,30 @@ export class ActionNotificationRepo {
   ): Promise<ClearanceActionItem> {
     const id = `act-${uuidv4().slice(0, 8)}`;
     const now = new Date().toISOString();
+    const initialStatus = input.status || 'OPEN';
+
+    const initialAuditEvent: ActionAuditEvent = {
+      id: `audit-${uuidv4().slice(0, 8)}`,
+      timestamp: now,
+      actor: input.assignee?.name ? `${input.assignee.name} (${input.assignee.role})` : 'System Dispatcher',
+      eventType: 'CREATED',
+      afterState: initialStatus,
+      description: `Task created for ${input.targetDepartment || 'department'}: "${input.title}"`,
+    };
+
     const actionItem: ClearanceActionItem = {
       id,
       projectId,
       ...input,
-      status: input.status || 'OPEN',
+      status: initialStatus,
+      activityHistory: input.activityHistory && input.activityHistory.length > 0 ? input.activityHistory : [initialAuditEvent],
       createdAt: now,
       updatedAt: now,
     };
 
     const col = await this.getActionsCollection(projectId);
     await col.doc(id).set(actionItem);
-    return actionItem;
+    return decorateActionOverdue(actionItem);
   }
 
   async createAction(
@@ -114,13 +168,13 @@ export class ActionNotificationRepo {
     const col = await this.getActionsCollection(projectId);
     const snap = await col.doc(actionId).get();
     if (!snap.exists) return null;
-    return snap.data() as ClearanceActionItem;
+    return decorateActionOverdue(snap.data() as ClearanceActionItem);
   }
 
   async getActionsByProject(projectId: string, filter?: ActionFilter): Promise<ClearanceActionItem[]> {
     const col = await this.getActionsCollection(projectId);
     const snap = await col.get();
-    let actions: ClearanceActionItem[] = snap.docs.map((doc: any) => doc.data() as ClearanceActionItem);
+    let actions: ClearanceActionItem[] = snap.docs.map((doc: any) => decorateActionOverdue(doc.data() as ClearanceActionItem));
 
     if (filter) {
       if (filter.status) {
@@ -152,11 +206,17 @@ export class ActionNotificationRepo {
     });
   }
 
-  async updateActionStatus(
+  async updateActionItem(
     projectId: string,
     actionId: string,
-    status: ActionStatus,
-    resolutionTrigger?: string
+    updates: {
+      assignee?: ActionAssignee | null;
+      dueDate?: string | null;
+      status?: ActionStatus;
+      resolutionTrigger?: string;
+      actor?: string;
+      reason?: string;
+    }
   ): Promise<ClearanceActionItem | null> {
     const col = await this.getActionsCollection(projectId);
     const docRef = col.doc(actionId);
@@ -165,17 +225,141 @@ export class ActionNotificationRepo {
 
     const current = snap.data() as ClearanceActionItem;
     const now = new Date().toISOString();
+    const actorName = updates.actor || 'Legal Operations';
+    const newAuditEvents: ActionAuditEvent[] = [];
+    const existingHistory: ActionAuditEvent[] = current.activityHistory && current.activityHistory.length > 0
+      ? current.activityHistory
+      : [
+          {
+            id: `audit-${uuidv4().slice(0, 8)}`,
+            timestamp: current.createdAt || now,
+            actor: 'System Dispatcher',
+            eventType: 'CREATED',
+            afterState: current.status,
+            description: `Task created: "${current.title}"`,
+          },
+        ];
+
+    let nextAssignee = current.assignee;
+    if (updates.assignee !== undefined) {
+      const prevAssigneeStr = current.assignee ? `${current.assignee.name} (${current.assignee.role})` : 'Unassigned';
+      if (updates.assignee === null) {
+        nextAssignee = undefined;
+        newAuditEvents.push({
+          id: `audit-${uuidv4().slice(0, 8)}`,
+          timestamp: now,
+          actor: actorName,
+          eventType: 'REASSIGNED',
+          beforeState: prevAssigneeStr,
+          afterState: 'Unassigned',
+          description: `Unassigned task (previously ${prevAssigneeStr})`,
+        });
+      } else {
+        nextAssignee = updates.assignee;
+        const newAssigneeStr = `${nextAssignee.name} (${nextAssignee.role})`;
+        if (!current.assignee) {
+          newAuditEvents.push({
+            id: `audit-${uuidv4().slice(0, 8)}`,
+            timestamp: now,
+            actor: actorName,
+            eventType: 'ASSIGNED',
+            beforeState: 'Unassigned',
+            afterState: newAssigneeStr,
+            description: `Assigned task to ${newAssigneeStr}`,
+          });
+        } else if (
+          current.assignee.id !== nextAssignee.id ||
+          current.assignee.name !== nextAssignee.name ||
+          current.assignee.role !== nextAssignee.role
+        ) {
+          newAuditEvents.push({
+            id: `audit-${uuidv4().slice(0, 8)}`,
+            timestamp: now,
+            actor: actorName,
+            eventType: 'REASSIGNED',
+            beforeState: prevAssigneeStr,
+            afterState: newAssigneeStr,
+            description: `Reassigned task from ${prevAssigneeStr} to ${newAssigneeStr}`,
+          });
+        }
+      }
+    }
+
+    let nextDueDate = current.dueDate;
+    if (updates.dueDate !== undefined) {
+      const prevDue = current.dueDate || 'None';
+      const newDue = updates.dueDate || 'None';
+      if (prevDue !== newDue) {
+        nextDueDate = updates.dueDate || undefined;
+        newAuditEvents.push({
+          id: `audit-${uuidv4().slice(0, 8)}`,
+          timestamp: now,
+          actor: actorName,
+          eventType: 'DUE_DATE_CHANGED',
+          beforeState: prevDue,
+          afterState: newDue,
+          description: updates.reason
+            ? `Updated due date from ${prevDue} to ${newDue} (${updates.reason})`
+            : `Updated due date from ${prevDue} to ${newDue}`,
+        });
+      }
+    }
+
+    let nextStatus = current.status;
+    if (updates.status !== undefined && updates.status !== current.status) {
+      const prevStatus = current.status;
+      nextStatus = updates.status;
+      let eventType: ActionAuditEventType = 'STATUS_CHANGED';
+      if (nextStatus === 'RESOLVED') {
+        eventType = 'RESOLVED';
+      } else if (prevStatus === 'RESOLVED' && (nextStatus === 'OPEN' || nextStatus === 'IN_PROGRESS')) {
+        eventType = 'REOPENED';
+      }
+
+      const desc = updates.resolutionTrigger || updates.reason
+        ? `Status changed from ${prevStatus} to ${nextStatus}: ${updates.resolutionTrigger || updates.reason}`
+        : `Status changed from ${prevStatus} to ${nextStatus}`;
+
+      newAuditEvents.push({
+        id: `audit-${uuidv4().slice(0, 8)}`,
+        timestamp: now,
+        actor: actorName,
+        eventType,
+        beforeState: prevStatus,
+        afterState: nextStatus,
+        description: desc,
+      });
+    }
+
+    const updatedHistory = [...existingHistory, ...newAuditEvents];
+
     const updated: ClearanceActionItem = {
       ...current,
-      status,
-      resolutionTrigger: resolutionTrigger || current.resolutionTrigger,
-      resolutionReason: resolutionTrigger || current.resolutionReason || current.resolutionTrigger,
-      resolvedAt: status === 'RESOLVED' ? now : current.resolvedAt,
+      status: nextStatus,
+      assignee: nextAssignee,
+      dueDate: nextDueDate,
+      resolutionTrigger: updates.resolutionTrigger || current.resolutionTrigger,
+      resolutionReason: updates.resolutionTrigger || updates.reason || current.resolutionReason,
+      resolvedAt: nextStatus === 'RESOLVED' ? (current.resolvedAt || now) : (nextStatus !== current.status ? undefined : current.resolvedAt),
+      activityHistory: updatedHistory,
       updatedAt: now,
     };
 
     await docRef.set(updated);
-    return updated;
+    return decorateActionOverdue(updated);
+  }
+
+  async updateActionStatus(
+    projectId: string,
+    actionId: string,
+    status: ActionStatus,
+    resolutionTrigger?: string
+  ): Promise<ClearanceActionItem | null> {
+    return await this.updateActionItem(projectId, actionId, {
+      status,
+      resolutionTrigger,
+      actor: 'System / Coordinator',
+    });
   }
 
   async resolveActionsForEntity(

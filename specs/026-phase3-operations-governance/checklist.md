@@ -19,9 +19,9 @@
 
 ## Operational Task Ownership & Auditable Activity History
 
-- [ ] **CHK007**: Every department task supports assignee assignment/reassignment (`AC-22.1`).
-- [ ] **CHK008**: Tasks with `dueDate < now` and status $\neq$ `RESOLVED`/`DISMISSED` render a prominent `OVERDUE` badge (`AC-22.2`).
-- [ ] **CHK009**: Task mutations append immutable `ActionAuditEvent` entries to `activityHistory` timeline (`AC-22.3`, `AC-22.4`).
+- [x] **CHK007**: Every department task supports assignee assignment/reassignment (`AC-22.1`).
+- [x] **CHK008**: Tasks with `dueDate < now` and status $\neq$ `RESOLVED`/`DISMISSED` render a prominent `OVERDUE` badge (`AC-22.2`).
+- [x] **CHK009**: Task mutations append immutable `ActionAuditEvent` entries to `activityHistory` timeline (`AC-22.3`, `AC-22.4`).
 
 ## Trustworthy Visible Binder-Export Feedback
 

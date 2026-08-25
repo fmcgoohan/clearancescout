@@ -9,6 +9,22 @@ import {
   XIcon,
 } from './icons/Icons';
 
+export interface ActionAssignee {
+  id: string;
+  name: string;
+  role: string;
+}
+
+export interface ActionAuditEvent {
+  id: string;
+  timestamp: string;
+  actor: string;
+  eventType: 'CREATED' | 'ASSIGNED' | 'REASSIGNED' | 'DUE_DATE_CHANGED' | 'STATUS_CHANGED' | 'RESOLVED' | 'REOPENED';
+  beforeState?: string;
+  afterState?: string;
+  description: string;
+}
+
 export interface ClearanceActionItem {
   id: string;
   projectId: string;
@@ -23,6 +39,10 @@ export interface ClearanceActionItem {
   description: string;
   priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'DISMISSED';
+  assignee?: ActionAssignee;
+  dueDate?: string;
+  isOverdue?: boolean;
+  activityHistory?: ActionAuditEvent[];
   resolutionTrigger?: string;
   resolvedAt?: string;
   createdAt: string;
@@ -60,6 +80,8 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'RESOLVED'>('OPEN');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [expandedHistory, setExpandedHistory] = useState<Record<string, boolean>>({});
+  const [assigneeDrafts, setAssigneeDrafts] = useState<Record<string, string>>({});
 
   const { containerRef } = useModalFocus<HTMLDivElement>({
     isOpen,
@@ -109,6 +131,100 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
 
   if (!isOpen) return null;
 
+  const toggleHistory = (actionId: string) => {
+    setExpandedHistory((prev) => ({
+      ...prev,
+      [actionId]: !prev[actionId],
+    }));
+  };
+
+  const getAssigneeValue = (act: ClearanceActionItem) => {
+    if (assigneeDrafts[act.id] !== undefined) {
+      return assigneeDrafts[act.id];
+    }
+    return act.assignee?.name || '';
+  };
+
+  const handleAssigneeChange = (actionId: string, value: string) => {
+    setAssigneeDrafts((prev) => ({
+      ...prev,
+      [actionId]: value,
+    }));
+  };
+
+  const handleAssigneeCommit = (act: ClearanceActionItem) => {
+    const draftVal = assigneeDrafts[act.id];
+    if (draftVal === undefined) return;
+
+    const currentVal = act.assignee?.name || '';
+    if (draftVal.trim() === currentVal.trim()) {
+      setAssigneeDrafts((prev) => {
+        const next = { ...prev };
+        delete next[act.id];
+        return next;
+      });
+      return;
+    }
+
+    handleUpdateAssignee(act.id, draftVal, act.assignee?.role || 'Coordinator');
+  };
+
+  const handleUpdateAssignee = async (actionId: string, name: string, role: string = 'Coordinator') => {
+    const trimmed = name.trim();
+    const assigneeObj = trimmed ? { id: `usr-${trimmed.toLowerCase().replace(/\s+/g, '-')}`, name: trimmed, role } : null;
+
+    setActions((prev) =>
+      prev.map((a) => (a.id === actionId ? { ...a, assignee: assigneeObj || undefined } : a))
+    );
+    setAssigneeDrafts((prev) => {
+      const next = { ...prev };
+      delete next[actionId];
+      return next;
+    });
+
+    try {
+      const res = await apiFetch(`/api/projects/${projectId}/actions/${actionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assignee: assigneeObj,
+          actor: 'Legal Coordinator',
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setActions((prev) => prev.map((a) => (a.id === actionId ? updated : a)));
+        onActionUpdated?.();
+      }
+    } catch (err) {
+      console.error('Failed to update assignee:', err);
+    }
+  };
+
+  const handleUpdateDueDate = async (actionId: string, dueDateStr: string) => {
+    setActions((prev) =>
+      prev.map((a) => (a.id === actionId ? { ...a, dueDate: dueDateStr || undefined } : a))
+    );
+
+    try {
+      const res = await apiFetch(`/api/projects/${projectId}/actions/${actionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dueDate: dueDateStr || null,
+          actor: 'Legal Coordinator',
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setActions((prev) => prev.map((a) => (a.id === actionId ? updated : a)));
+        onActionUpdated?.();
+      }
+    } catch (err) {
+      console.error('Failed to update due date:', err);
+    }
+  };
+
   const handleUpdateStatus = async (actionId: string, newStatus: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'DISMISSED') => {
     // Optimistic in-place update without layout shift
     setActions((prev) =>
@@ -131,9 +247,12 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
         body: JSON.stringify({
           status: newStatus,
           resolutionTrigger: newStatus === 'RESOLVED' ? 'MANUAL_COORDINATOR_SIGN_OFF' : undefined,
+          actor: 'Legal Coordinator',
         }),
       });
       if (res.ok) {
+        const updated = await res.json();
+        setActions((prev) => prev.map((a) => (a.id === actionId ? updated : a)));
         onActionUpdated?.();
       }
     } catch (err) {
@@ -488,6 +607,22 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                         {formatStatus(act.status)}
                       </span>
                     )}
+                    {act.isOverdue && (
+                      <span
+                        data-overdue="true"
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(239, 68, 68, 0.25)',
+                          color: '#f87171',
+                          border: '1px solid #ef4444',
+                        }}
+                      >
+                        OVERDUE
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>
                     {act.title}
@@ -503,6 +638,97 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                   {act.resolutionTrigger && (
                     <div style={{ fontSize: '0.72rem', color: '#34d399', marginTop: '4px' }}>
                       Resolved via: {formatStatus(act.resolutionTrigger)}
+                    </div>
+                  )}
+
+                  {/* Task Ownership & Due Date Controls */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px', flexWrap: 'wrap', fontSize: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Assignee:</span>
+                      <input
+                        type="text"
+                        aria-label={`Assignee Name for ${act.title}`}
+                        placeholder="Assignee Name"
+                        value={getAssigneeValue(act)}
+                        onChange={(e) => handleAssigneeChange(act.id, e.target.value)}
+                        onBlur={() => handleAssigneeCommit(act)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        style={{
+                          background: 'rgba(0,0,0,0.3)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          color: 'var(--text-main)',
+                          fontSize: '0.75rem',
+                          width: '140px',
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Due:</span>
+                      <input
+                        type="date"
+                        aria-label={`Due Date for ${act.title}`}
+                        value={act.dueDate ? act.dueDate.slice(0, 10) : ''}
+                        onChange={(e) => handleUpdateDueDate(act.id, e.target.value)}
+                        style={{
+                          background: 'rgba(0,0,0,0.3)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          color: 'var(--text-main)',
+                          fontSize: '0.75rem',
+                        }}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => toggleHistory(act.id)}
+                      style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                    >
+                      {expandedHistory[act.id] ? 'Hide Audit History' : `Audit History (${act.activityHistory?.length || 0})`}
+                    </button>
+                  </div>
+
+                  {/* Expandable Activity History Timeline */}
+                  {expandedHistory[act.id] && (
+                    <div
+                      data-audit-history="true"
+                      style={{
+                        marginTop: '10px',
+                        padding: '10px 12px',
+                        background: 'rgba(0,0,0,0.25)',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-color)',
+                        fontSize: '0.73rem',
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                        Audit Trail ({act.activityHistory?.length || 0} events)
+                      </div>
+                      {(!act.activityHistory || act.activityHistory.length === 0) ? (
+                        <div style={{ color: 'var(--text-muted)' }}>No audit history recorded.</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {act.activityHistory.map((evt) => (
+                            <div key={evt.id} style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+                              <span style={{ color: 'var(--accent-cyan)', fontFamily: 'monospace', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+                                {new Date(evt.timestamp).toLocaleString()}
+                              </span>
+                              <span style={{ fontWeight: 600, color: '#38bdf8' }}>[{evt.eventType}]</span>
+                              <span style={{ color: 'var(--text-muted)' }}>{evt.actor}:</span>
+                              <span style={{ color: 'var(--text-main)' }}>{evt.description}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

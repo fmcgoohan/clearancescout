@@ -198,6 +198,57 @@ async function runLiveKeyboardFocusValidation() {
   }
   console.log('  ✓ Tab cycle (10 steps) remained strictly trapped inside Action Center');
 
+  // --- US22 Task Ownership, Due Date, Overdue, Audit History & Keystroke-Flood Regression Sub-Checks ---
+  // Sub-check 1: Type assignee name character-by-character and blur/tab away
+  const assigneeInput = await page.waitForSelector('input[aria-label^="Assignee Name for"]');
+  await assigneeInput.click();
+  await assigneeInput.type('Sarah Jenkins');
+  await page.keyboard.press('Tab'); // Trigger blur & focus shift
+  await page.waitForTimeout(300);
+  console.log('  ✓ Sub-check 1: Typed "Sarah Jenkins" character-by-character into Assignee input and blurred');
+
+  // Sub-check 2: Due date input & past date OVERDUE badge trigger
+  const dueDateInput = await page.waitForSelector('input[aria-label^="Due Date for"]');
+  await dueDateInput.fill('2025-01-01');
+  await dueDateInput.evaluate(e => e.dispatchEvent(new Event('change', { bubbles: true })));
+  await page.waitForTimeout(300);
+
+  const overdueBadge = await page.waitForSelector('[data-overdue="true"]');
+  const overdueText = await overdueBadge.textContent();
+  const showsOverdueBadge = overdueText.includes('OVERDUE');
+  console.log('  ✓ Sub-check 2: Set past due date (2025-01-01) and verified OVERDUE badge rendered:', showsOverdueBadge);
+  if (!showsOverdueBadge) {
+    throw new Error('US22 DEFECT: OVERDUE badge failed to render for past due task!');
+  }
+
+  // Sub-check 3: Expand audit history and verify CREATED / ASSIGNED / DUE_DATE_CHANGED events and NO keystroke flooding
+  const auditBtn = await page.waitForSelector('button:has-text("Audit History")');
+  await auditBtn.click();
+  const auditTrail = await page.waitForSelector('[data-audit-history="true"]');
+  const auditText = await auditTrail.textContent();
+  const assignedMatches = (auditText.match(/\[ASSIGNED\]/g) || []).length;
+  const hasAuditEvents = assignedMatches === 1 && auditText.includes('DUE_DATE_CHANGED');
+  console.log('  ✓ Sub-check 3: Expanded Audit Trail, confirmed exact 1 ASSIGNED event (no keystroke flooding, count = ' + assignedMatches + ') and DUE_DATE_CHANGED event:', hasAuditEvents);
+  if (!hasAuditEvents) {
+    throw new Error('US22 DEFECT: Audit trail timeline failed to display exact 1 ASSIGNED event or DUE_DATE_CHANGED event! Count was ' + assignedMatches);
+  }
+
+  // Sub-check 4: Reload page and verify persistence of assignee & due date & audit trail
+  await page.reload({ waitUntil: 'networkidle' });
+  const tasksTabReloaded = await page.waitForSelector('#tab-tasks');
+  await tasksTabReloaded.click();
+  const actionBtnReloaded = await page.waitForSelector('button[aria-label="Open Department Action Center"]');
+  await actionBtnReloaded.click();
+  await page.waitForSelector('[role="dialog"][aria-labelledby="action-modal-title"]');
+  await page.waitForSelector('input[aria-label^="Assignee Name for"]');
+
+  const reloadedAssigneeVal = await page.$eval('input[aria-label^="Assignee Name for"]', el => el.value);
+  const reloadedDueDateVal = await page.$eval('input[aria-label^="Due Date for"]', el => el.value);
+  console.log('  ✓ Sub-check 4: Verified assignee ("' + reloadedAssigneeVal + '") and due date ("' + reloadedDueDateVal + '") persisted after page reload');
+  if (reloadedAssigneeVal !== 'Sarah Jenkins' || reloadedDueDateVal !== '2025-01-01') {
+    throw new Error('US22 DEFECT: Assignee or Due Date failed to persist across page reload!');
+  }
+
   await page.keyboard.press('Escape');
   await page.waitForSelector('[role="dialog"][aria-labelledby="action-modal-title"]', { state: 'detached' });
   console.log('  ✓ Escape closed Action Center');

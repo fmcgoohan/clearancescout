@@ -18,9 +18,9 @@
 - [x] **T006-P3**: Verify backend `dashboardEngine.ts` and frontend component derive all department counts dynamically from the single `ActionNotificationRepo` collection query (`status: OPEN | IN_PROGRESS`), asserting the total sums to exactly 11. (Satisfied: `dashboardEngine.ts`, `test_department_task_totals.test.tsx`)
 
 ## Phase 4: Operational Task Ownership & Auditable Activity History (US22)
-- [ ] **T007-P3**: Extend `ClearanceActionItem` in `ActionNotificationRepo.ts` with `assignee`, `dueDate`, `isOverdue`, and `activityHistory: ActionAuditEvent[]`.
-- [ ] **T008-P3**: Add `PATCH /api/projects/:projectId/actions/:actionId` route in `actionRoutes.ts` to support updating assignee, due date, status, and logging `ActionAuditEvent` entries to `activityHistory`.
-- [ ] **T009-P3**: Update `ActionListModal.tsx` and `ProductionDashboardModal.tsx` to render assignee controls, editable due date picker, `OVERDUE` badge for overdue open tasks, and expandable audit history timeline per task.
+- [x] **T007-P3**: Extend `ClearanceActionItem` in `ActionNotificationRepo.ts` with `assignee`, `dueDate`, `isOverdue`, and `activityHistory: ActionAuditEvent[]`. (Satisfied: `ActionNotificationRepo.ts`)
+- [x] **T008-P3**: Add `PATCH /api/projects/:projectId/actions/:actionId` route in `actionRoutes.ts` to support updating assignee, due date, status, and logging `ActionAuditEvent` entries to `activityHistory`. (Satisfied: `actionRoutes.ts`)
+- [x] **T009-P3**: Update `ActionListModal.tsx` and `ProductionDashboardModal.tsx` to render assignee controls, editable due date picker, `OVERDUE` badge for overdue open tasks, and expandable audit history timeline per task. (Satisfied: `ActionListModal.tsx`, `ProductionDashboardModal.tsx`)
 
 ## Phase 5: Trustworthy Visible Binder-Export Feedback (US23)
 - [ ] **T010-P3**: Enhance `binderRoutes.ts` to provide preflight readiness status (`PREFLIGHT_CHECKING`) checking total scenes, blockers, and warnings prior to export.
