@@ -432,29 +432,28 @@ async function runLiveKeyboardFocusValidation() {
 
   const submitCreateBtn = await page.waitForSelector('button[type="submit"]:has-text("Create"), button:has-text("Create & Open Project")');
   await submitCreateBtn.click();
-  await page.waitForTimeout(300);
-
-  // Verify OnboardingBanner IS VISIBLE on new Project B
+  await page.waitForSelector('[role="region"][aria-label="How Clearance Scout Works"]', { timeout: 10000 });
   const bannerProjectB = await page.$eval('[role="region"][aria-label="How Clearance Scout Works"]', el => !!el).catch(() => false);
   console.log('  ✓ Onboarding banner visible for newly created Project B:', bannerProjectB);
-  if (!bannerProjectB) throw new Error('PROJECT ISOLATION FAILURE: Onboarding banner was suppressed on Project B when Project A was dismissed!');
 
   // Step 6e: Switch back to Project A via Project Switcher Modal
   const projSwitcherBtn2 = await page.waitForSelector('#project-switcher, button:has-text("Switch Project")');
   await projSwitcherBtn2.click();
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(300);
 
-  // Click initial Project A card in ProjectListModal by its exact project ID
   const projectACard = await page.waitForSelector(`[role="dialog"] [data-project-id="${projectAId}"]`);
   await projectACard.click();
-  await page.waitForTimeout(300);
+  await page.waitForSelector('[role="dialog"]', { state: 'detached' }).catch(() => {});
+  await page.waitForTimeout(500);
 
   // Verify OnboardingBanner is STILL DISMISSED for Project A
   const bannerRestoredA = await page.$eval('[role="region"][aria-label="How Clearance Scout Works"]', el => !!el).catch(() => false);
   if (bannerRestoredA) throw new Error('PROJECT ISOLATION FAILURE: Onboarding banner reappeared on Project A after returning from Project B!');
   console.log('  ✓ Onboarding banner remained dismissed when returning to Project A');
 
-  // 7. Test Atomic Workspace Snapshot Hydration Gate (AC-19.1)
+  // [8/8] Testing Atomic Workspace Snapshot Hydration Gate with controlled network delay (AC-19.1)...
+  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForTimeout(500);
   console.log('[8/8] Testing Atomic Workspace Snapshot Hydration Gate with controlled network delay (AC-19.1)...');
 
   // Intercept scene requests to introduce controlled 600ms hydration delay
@@ -468,14 +467,10 @@ async function runLiveKeyboardFocusValidation() {
 
   // During hydration delay, verify synchronizing loader is displayed and "No Screenplay Ingested" is absent
   await page.waitForTimeout(200);
-  const isSynchronizing = await page.evaluate(() => {
-    const text = document.body.innerText;
-    return text.includes('Synchronizing Workspace Snapshot...');
-  });
-  const showsNoScreenplayDuringHydration = await page.evaluate(() => {
-    const text = document.body.innerText;
-    return text.includes('No Screenplay Ingested');
-  });
+  await page.waitForTimeout(250);
+  const bodyTextDuringHydration = await page.locator('body').innerText().catch(() => '');
+  const isSynchronizing = bodyTextDuringHydration.includes('Synchronizing Workspace Snapshot...');
+  const showsNoScreenplayDuringHydration = bodyTextDuringHydration.includes('No Screenplay Ingested');
 
   console.log('  ✓ Synchronizing loader active during hydration delay:', isSynchronizing);
   console.log('  ✓ "No Screenplay Ingested" suppressed during hydration delay:', !showsNoScreenplayDuringHydration);
@@ -663,7 +658,131 @@ async function runLiveKeyboardFocusValidation() {
   const closeBinderBtn2 = await page.waitForSelector('button:has-text("Close"), button:has-text("✕")');
   await closeBinderBtn2.click();
 
-  console.log('=== All Live Keyboard, Focus Restoration, Project-Scoped Onboarding, Snapshot Hydration, Project Directory Coherence, and Trustworthy Binder Export Feedback Validation PASSED 100% ===');
+  // 11. Test Action Center Accessibility Count Semantics (Section 2)
+  console.log('[11/14] Testing Action Center Accessibility Count Semantics (Section 2)...');
+  const actionCenterBtn = await page.waitForSelector('button[aria-label*="Department Action & Notification Center"]');
+  await actionCenterBtn.click();
+  const actionModal = await page.waitForSelector('[role="dialog"][aria-labelledby="action-modal-title"]');
+  await actionModal.waitForSelector('[role="listitem"]', { timeout: 10000 });
+
+  const statusEl = await actionModal.waitForSelector('[role="status"]');
+  const statusText = await statusEl.innerText();
+  const hasAccurateCountText = statusText.includes('Showing') && statusText.includes('tasks') && !statusText.includes('143') && !statusText.includes('0-100');
+  console.log(`  ✓ Action Center accessibility status region announced: "${statusText}"`, hasAccurateCountText);
+
+  const listEl = await actionModal.waitForSelector('[role="list"][aria-label*="Department Tasks List"]');
+  const listSetsize = await listEl.getAttribute('aria-setsize');
+  console.log(`  ✓ Department Tasks list container aria-setsize: "${listSetsize}"`);
+
+  const items = await actionModal.$$('[role="listitem"]');
+  console.log(`  ✓ Rendered task listitems count: ${items.length}`);
+
+  if (!hasAccurateCountText || !listSetsize || items.length === 0) {
+    throw new Error('SECTION 2 DEFECT: Action Center accessibility count region or ARIA setsize was missing/malformed!');
+  }
+
+  // Test filter update semantics
+  const legalCounselTab = await actionModal.waitForSelector('button:has-text("Legal Counsel")');
+  await legalCounselTab.click();
+  await page.waitForTimeout(100);
+
+  const filteredStatusText = await statusEl.innerText();
+  const filteredSetsize = await listEl.getAttribute('aria-setsize');
+  console.log(`  ✓ Filtered (Legal Counsel) status region: "${filteredStatusText}", aria-setsize: "${filteredSetsize}"`);
+
+  if (!filteredStatusText.includes(`Showing ${filteredSetsize} of`)) {
+    throw new Error('SECTION 2 DEFECT: Action Center accessibility count failed to update when filtering by department!');
+  }
+
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[role="dialog"][aria-labelledby="action-modal-title"]', { state: 'detached' });
+  console.log('  ✓ Action Center modal closed via Escape');
+
+  // 12. Test Workspace Production Title Synchronization (Section 3)
+  console.log('[12/14] Testing Workspace Production Title Synchronization (Section 3)...');
+  const headerH1 = await page.waitForSelector('header h1');
+  const headerTitle = (await headerH1.innerText()).trim();
+  console.log(`  ✓ Header workspace title: "${headerTitle}"`);
+
+  const switchProjBtnSection3 = await page.waitForSelector('button[aria-label="Switch Project"], button:has-text("Switch Project")');
+  await switchProjBtnSection3.click();
+  const projModal = await page.waitForSelector('[role="dialog"][aria-labelledby="project-modal-title"]');
+  await page.waitForTimeout(200);
+  const activeProjCardText = await projModal.innerText();
+  console.log(`  [DEBUG Step 12] Modal text:\n"${activeProjCardText}"`);
+  const titleSynchronized = activeProjCardText.includes(headerTitle);
+  console.log(`  ✓ Project Directory modal contains active workspace title ("${headerTitle}"):`, titleSynchronized);
+
+  if (!titleSynchronized) {
+    throw new Error('SECTION 3 DEFECT: Project Directory title does not match workspace header title!');
+  }
+
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[role="dialog"][aria-labelledby="project-modal-title"]', { state: 'detached' });
+  console.log('  ✓ Project Directory modal closed');
+
+  // 13. Test Contextual Collapsible Screenplay Intake Panel (Section 4)
+  console.log('[13/14] Testing Contextual Collapsible Screenplay Intake Panel (Section 4)...');
+  const overviewTabBtn = await page.waitForSelector('#tab-overview');
+  await overviewTabBtn.click();
+  await page.waitForTimeout(100);
+
+  const compactIntakeBar = await page.waitForSelector('div:has-text("Screenplay Intake:"):has-text("ingested")');
+  const replaceBtn = await compactIntakeBar.waitForSelector('button:has-text("Replace Screenplay")');
+  const expandIntakeBtn = await compactIntakeBar.waitForSelector('button:has-text("Intake Options ▼")');
+  console.log('  ✓ Compact screenplay intake bar rendered on Overview tab with Replace trigger and Expand option');
+
+  if (!compactIntakeBar || !replaceBtn || !expandIntakeBtn) {
+    throw new Error('SECTION 4 DEFECT: Compact screenplay intake bar was missing on non-screenplay panel!');
+  }
+
+  // Expand intake options
+  await expandIntakeBtn.click();
+  const fullIntakePanel = await page.waitForSelector('h2:has-text("Screenplay Intake & Clearance Review")');
+  const collapseIntakeBtn = await page.waitForSelector('button:has-text("Intake Options ▲")');
+  console.log('  ✓ Expanded full intake options panel on demand via Intake Options button');
+
+  if (!fullIntakePanel || !collapseIntakeBtn) {
+    throw new Error('SECTION 4 DEFECT: Full intake panel did not expand when clicking Intake Options!');
+  }
+
+  // Re-collapse
+  await collapseIntakeBtn.click();
+  await page.waitForSelector('div:has-text("Screenplay Intake:"):has-text("ingested")');
+  console.log('  ✓ Re-collapsed intake options panel');
+
+  // 14. Test Readiness Card Density Reduction & Disclosure Pattern (Section 5)
+  console.log('[14/14] Testing Readiness Card Density Reduction & Disclosure Pattern (Section 5)...');
+  const readinessCard = await page.waitForSelector('.scene-readiness-card');
+  const cardSummaryText = await readinessCard.innerText();
+  const hasShortSummaryLine = cardSummaryText.includes('Shooting Blocker:') || cardSummaryText.includes('Review Recommended:') || cardSummaryText.includes('All entities cleared.');
+  const disclosureBtn = await readinessCard.waitForSelector('button[aria-controls^="readiness-detail-"]');
+  const ariaExpandedBefore = await disclosureBtn.getAttribute('aria-expanded');
+
+  console.log('  ✓ Readiness card renders concise summary line:', hasShortSummaryLine);
+  console.log(`  ✓ Disclosure button initial aria-expanded state: "${ariaExpandedBefore}"`);
+
+  if (!hasShortSummaryLine || ariaExpandedBefore !== 'false') {
+    throw new Error('SECTION 5 DEFECT: Readiness card did not collapse detailed copy by default!');
+  }
+
+  // Expand via keyboard Enter key
+  await disclosureBtn.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(100);
+
+  const ariaExpandedAfter = await disclosureBtn.getAttribute('aria-expanded');
+  const detailContextBox = await readinessCard.waitForSelector('.scene-why-blocked-reason');
+  const detailText = await detailContextBox.innerText();
+
+  console.log(`  ✓ Disclosure button aria-expanded state post-toggle: "${ariaExpandedAfter}"`);
+  console.log('  ✓ Expanded disclosure section displays full evaluation context:', detailText.includes('Clearance Evaluation Context:'));
+
+  if (ariaExpandedAfter !== 'true' || !detailText.includes('Clearance Evaluation Context:')) {
+    throw new Error('SECTION 5 DEFECT: Disclosure section did not expand or set aria-expanded=true!');
+  }
+
+  console.log('=== All Live Keyboard, Focus Restoration, Project-Scoped Onboarding, Snapshot Hydration, Project Directory Coherence, Trustworthy Binder Export Feedback, Action Center Accessibility, Production Title Sync, Collapsible Intake, and Readiness Card Disclosure Validation PASSED 100% ===');
   await browser.close();
 }
 

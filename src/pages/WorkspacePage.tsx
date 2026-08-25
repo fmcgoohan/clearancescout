@@ -103,6 +103,38 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   // Responsive Panel Collapse State
   const [isScriptCollapsed, setIsScriptCollapsed] = useState(false);
 
+  // Contextual Collapsible Screenplay Intake State (Section 4)
+  const [isIntakeCollapsed, setIsIntakeCollapsed] = useState<boolean>(() => {
+    if (!projectId) return true;
+    const stored = localStorage.getItem(`clearancescout:intake_collapsed:v1:${projectId}`);
+    return stored !== null ? stored === 'true' : true;
+  });
+
+  // Readiness card disclosure state (Section 5)
+  const [expandedReadiness, setExpandedReadiness] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (projectId) {
+      const stored = localStorage.getItem(`clearancescout:intake_collapsed:v1:${projectId}`);
+      setIsIntakeCollapsed(stored !== null ? stored === 'true' : true);
+    }
+  }, [projectId]);
+
+  const toggleIntakeCollapsed = () => {
+    setIsIntakeCollapsed((prev) => {
+      const next = !prev;
+      if (projectId) {
+        localStorage.setItem(`clearancescout:intake_collapsed:v1:${projectId}`, String(next));
+      }
+      return next;
+    });
+  };
+
+  const toggleReadinessCard = (sceneId: string, e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    setExpandedReadiness((prev) => ({ ...prev, [sceneId]: !prev[sceneId] }));
+  };
+
   // Phase 2 Workspace Section Tab Navigation State
   const [activeTab, setActiveTab] = useState<'overview' | 'screenplay' | 'clearance' | 'tasks'>('overview');
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>('ALL');
@@ -489,103 +521,183 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         </button>
       </div>
 
-      {/* Upload & Controls Panel - Always visible for top-level operational actions */}
-      <div className="glass-panel responsive-stack" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
-            Screenplay Intake & Clearance Review
-          </h2>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Extract scenes, highlight in-line occurrences, and review legal counsel overrides.
-          </p>
+      {/* Screenplay Intake Panel — Contextual & Collapsible on Operational Panels (Section 4) */}
+      {activeTab !== 'screenplay' && scenes.length > 0 && isIntakeCollapsed ? (
+        <div className="glass-panel" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FileTextIcon size={18} className="text-cyan-400" />
+            <span style={{ fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}>
+              Screenplay Intake: <span style={{ color: 'var(--accent-cyan)' }}>{scenes.length} {pluralize(scenes.length, 'scene', 'scenes')} ingested</span>
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              className="btn-secondary touch-target"
+              aria-label="Replace Screenplay File"
+              onClick={() => {
+                setUploadModalInitialMode('FILE');
+                setIsUploadModalOpen(true);
+              }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <FilmIcon size={14} />
+              <span>Replace Screenplay</span>
+            </button>
+            <button
+              className="btn-secondary touch-target"
+              aria-label={`Open Department Action & Notification Center (${openActionsCount} Department Tasks)`}
+              onClick={() => setIsActionModalOpen(true)}
+              style={{
+                fontSize: '0.78rem',
+                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: openActionsCount > 0 ? '1px solid var(--status-action)' : '1px solid var(--border-color)',
+                color: openActionsCount > 0 ? 'var(--status-action)' : 'var(--text-main)',
+              }}
+            >
+              <FileTextIcon size={14} />
+              <span>Department Tasks ({openActionsCount})</span>
+            </button>
+            <button
+              className="btn-secondary touch-target"
+              aria-label="Open Production Operations Dashboard"
+              onClick={() => setIsDashboardModalOpen(true)}
+              style={{
+                fontSize: '0.78rem',
+                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderColor: 'var(--accent-cyan)',
+                color: 'var(--accent-cyan)',
+              }}
+            >
+              <LayersIcon size={14} />
+              <span>Operations Dashboard</span>
+            </button>
+            <button
+              className="btn-secondary touch-target"
+              aria-label="Expand Full Intake Options"
+              aria-expanded={false}
+              onClick={toggleIntakeCollapsed}
+              style={{ fontSize: '0.78rem', padding: '6px 10px', color: 'var(--text-muted)' }}
+            >
+              Intake Options ▼
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            className="btn-secondary touch-target"
-            aria-label="Load Bundled Fictional Demo Screenplay"
-            onClick={handleLoadSampleScreenplay}
-            disabled={isUploading}
-            style={{
-              borderColor: 'var(--accent-cyan)',
-              color: 'var(--accent-cyan)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <FilmIcon size={16} />
-            <span>Load Sample Screenplay</span>
-          </button>
+      ) : (
+        <div className="glass-panel responsive-stack" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>
+              Screenplay Intake & Clearance Review
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+              Extract scenes, highlight in-line occurrences, and review legal counsel overrides.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              className="btn-secondary touch-target"
+              aria-label="Load Bundled Fictional Demo Screenplay"
+              onClick={handleLoadSampleScreenplay}
+              disabled={isUploading}
+              style={{
+                borderColor: 'var(--accent-cyan)',
+                color: 'var(--accent-cyan)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <FilmIcon size={16} />
+              <span>Load Sample Screenplay</span>
+            </button>
 
-          <select
-            aria-label="Select screenplay format"
-            value={scriptFormat}
-            onChange={(e) => setScriptFormat(e.target.value as any)}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '6px',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-main)',
-              border: '1px solid var(--border-color)',
-              fontSize: '0.8rem',
-              minHeight: '38px',
-            }}
-          >
-            <option value="PLAINTEXT">Plaintext (.txt)</option>
-            <option value="FOUNTAIN">Fountain (.fountain)</option>
-            <option value="PDF">Screenplay PDF (.pdf)</option>
-          </select>
+            <select
+              aria-label="Select screenplay format"
+              value={scriptFormat}
+              onChange={(e) => setScriptFormat(e.target.value as any)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '6px',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-main)',
+                border: '1px solid var(--border-color)',
+                fontSize: '0.8rem',
+                minHeight: '38px',
+              }}
+            >
+              <option value="PLAINTEXT">Plaintext (.txt)</option>
+              <option value="FOUNTAIN">Fountain (.fountain)</option>
+              <option value="PDF">Screenplay PDF (.pdf)</option>
+            </select>
 
-          <button
-            className="btn-primary touch-target"
-            aria-label="Upload Screenplay File (.fountain, .txt, .pdf)"
-            onClick={() => {
-              setUploadModalInitialMode('FILE');
-              setIsUploadModalOpen(true);
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <FilmIcon size={16} />
-            <span>Upload Screenplay</span>
-          </button>
+            <button
+              className="btn-primary touch-target"
+              aria-label="Upload Screenplay File (.fountain, .txt, .pdf)"
+              onClick={() => {
+                setUploadModalInitialMode('FILE');
+                setIsUploadModalOpen(true);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <FilmIcon size={16} />
+              <span>Upload Screenplay</span>
+            </button>
 
-          <button
-            className="btn-secondary touch-target"
-            aria-label={`Open Department Action & Notification Center (${openActionsCount} Department Tasks)`}
-            onClick={() => setIsActionModalOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              border: openActionsCount > 0 ? '1px solid var(--status-action)' : '1px solid var(--border-color)',
-              color: openActionsCount > 0 ? 'var(--status-action)' : 'var(--text-main)',
-            }}
-          >
-            <FileTextIcon size={16} />
-            <span>Department Tasks ({openActionsCount})</span>
-          </button>
+            <button
+              className="btn-secondary touch-target"
+              aria-label={`Open Department Action & Notification Center (${openActionsCount} Department Tasks)`}
+              onClick={() => setIsActionModalOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: openActionsCount > 0 ? '1px solid var(--status-action)' : '1px solid var(--border-color)',
+                color: openActionsCount > 0 ? 'var(--status-action)' : 'var(--text-main)',
+              }}
+            >
+              <FileTextIcon size={16} />
+              <span>Department Tasks ({openActionsCount})</span>
+            </button>
 
-          <button
-            className="btn-secondary touch-target"
-            aria-label="Open Production Operations Dashboard"
-            onClick={() => setIsDashboardModalOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              borderColor: 'var(--accent-cyan)',
-              color: 'var(--accent-cyan)',
-            }}
-          >
-            <LayersIcon size={16} />
-            <span>Operations Dashboard</span>
-          </button>
+            <button
+              className="btn-secondary touch-target"
+              aria-label="Open Production Operations Dashboard"
+              onClick={() => setIsDashboardModalOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderColor: 'var(--accent-cyan)',
+                color: 'var(--accent-cyan)',
+              }}
+            >
+              <LayersIcon size={16} />
+              <span>Operations Dashboard</span>
+            </button>
+
+            {activeTab !== 'screenplay' && scenes.length > 0 && (
+              <button
+                className="btn-secondary touch-target"
+                aria-label="Collapse Intake Options"
+                aria-expanded={true}
+                onClick={toggleIntakeCollapsed}
+                style={{ fontSize: '0.78rem', padding: '6px 10px', color: 'var(--text-muted)' }}
+              >
+                Intake Options ▲
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Accessible Ingestion Success Toast Banner (Feature 021) */}
       {ingestionToast && (
@@ -817,7 +929,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             </div>
           )}
 
-          {/* Per-Scene Readiness Reason Cards Grid */}
+          {/* Per-Scene Readiness Reason Cards Grid (Section 5 Density Reduction) */}
           {scenes.length > 0 && (
             <div className="scene-readiness-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
               {scenes.map((s) => {
@@ -828,15 +940,18 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                 const textColor = isRed ? 'var(--status-action)' : isWorking ? 'var(--status-review)' : 'var(--status-no-issue)';
                 const borderChip = isRed ? 'var(--status-action-border)' : isWorking ? 'var(--status-review-border)' : 'var(--status-no-issue-border)';
                 const statusLabel = isRed ? 'BLOCKS SHOOTING' : isWorking ? 'WORKING CLEAR' : 'FINAL CLEAR';
+                const isExpanded = Boolean(expandedReadiness[s.id]);
+
+                const summaryText = isRed
+                  ? 'Shooting Blocker: Action item(s) require legal resolution prior to filming.'
+                  : isWorking
+                  ? 'Review Recommended: Item(s) pending clearance verification.'
+                  : 'All entities cleared. Ready for production filming.';
 
                 return (
                   <div
                     key={s.id}
                     className="glass-panel scene-readiness-card"
-                    onClick={() => {
-                      setSelectedSceneId(s.id);
-                      setActiveTab('screenplay');
-                    }}
                     style={{
                       padding: '14px 16px',
                       borderRadius: '8px',
@@ -845,7 +960,6 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                       borderTop: '1px solid var(--border-color)',
                       borderRight: '1px solid var(--border-color)',
                       borderBottom: '1px solid var(--border-color)',
-                      cursor: 'pointer',
                       transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                     }}
                   >
@@ -872,19 +986,79 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                         {statusLabel}
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>
+
+                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>
                       {s.heading}
                     </div>
+
+                    {/* Short Blocker / Review Summary Line */}
                     <div
-                      className="scene-why-blocked-reason"
                       style={{
-                        fontSize: '0.78rem',
+                        fontSize: '0.76rem',
                         color: isRed ? '#fca5a5' : isWorking ? '#fde68a' : 'var(--text-muted)',
                         lineHeight: 1.4,
+                        marginBottom: '8px',
                       }}
                     >
-                      {getPlainLanguageSceneReason(s)}
+                      {summaryText}
                     </div>
+
+                    {/* Disclosure Trigger Button */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        aria-expanded={isExpanded}
+                        aria-controls={`readiness-detail-${s.id}`}
+                        aria-label={`Toggle full readiness details for Scene ${s.sceneNumber}`}
+                        onClick={(e) => toggleReadinessCard(s.id, e)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleReadinessCard(s.id, e);
+                          }
+                        }}
+                        style={{ fontSize: '0.72rem', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <span>{isExpanded ? 'Hide Details ▲' : 'View Full Details ▼'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        aria-label={`Jump to Scene ${s.sceneNumber} in Screenplay`}
+                        onClick={() => {
+                          setSelectedSceneId(s.id);
+                          setActiveTab('screenplay');
+                        }}
+                        style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                      >
+                        View Scene →
+                      </button>
+                    </div>
+
+                    {/* Expandable Detailed Explanation Section */}
+                    {isExpanded && (
+                      <div
+                        id={`readiness-detail-${s.id}`}
+                        className="scene-why-blocked-reason"
+                        style={{
+                          marginTop: '8px',
+                          padding: '8px 10px',
+                          background: 'rgba(0,0,0,0.25)',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border-color)',
+                          fontSize: '0.75rem',
+                          color: 'var(--text-main)',
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', fontSize: '0.7rem' }}>
+                          Clearance Evaluation Context:
+                        </div>
+                        {getPlainLanguageSceneReason(s)}
+                      </div>
+                    )}
                   </div>
                 );
               })}

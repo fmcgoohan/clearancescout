@@ -28,6 +28,9 @@ export class CanonicalRegistryWorkflow {
     const genericDefaultTitles = [
       'Production Project Workspace',
       'Clearance Workspace',
+      'ClearanceScout Production Clearance Workspace',
+      'Untitled Production Workspace',
+      'Untitled Production',
     ];
 
     const extractedTitle = extractTitleFromScriptText(scriptText);

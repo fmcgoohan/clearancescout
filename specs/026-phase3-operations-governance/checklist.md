@@ -35,3 +35,11 @@
 - [x] **CHK014**: `./scripts/spec-check.sh` passes with zero static constitution or emoji violations.
 - [x] **CHK015**: Vitest unit and contract suite (`npm test`) passes 100% green across 95+ test files.
 - [x] **CHK016**: Real Playwright Chromium automation (`tests/live_keyboard_focus_validation.js`) passes 100% green against both local server (`http://localhost:3001`) AND live Cloud Run deployment (`https://clearancescout-n3tcx4jcbq-uc.a.run.app`).
+
+## Phase 3 Approval & Final Refinements
+
+- [x] **CHK017**: Action Center status region announces exact logical count (`"Showing X of Y department tasks"`), task container uses `role="list"` with `aria-setsize`, and items use `role="listitem"` with `aria-posinset` and `aria-setsize` (`AC-25.1`, `AC-25.2`).
+- [x] **CHK018**: Filtering in Action Center updates announced status text via `aria-live="polite"` (`AC-25.3`).
+- [x] **CHK019**: Screenplay intake controls collapse into compact bar (`"Screenplay Intake: X scenes ingested"`) on operational tabs when scenes exist, and remain expanded on Screenplay tab (`AC-26.1`, `AC-26.2`).
+- [x] **CHK020**: Scene readiness cards lead with identity, readiness badge, and 1-line summary, placing detailed evaluation text inside an accessible disclosure (`aria-expanded`) (`AC-27.1`, `AC-27.2`).
+

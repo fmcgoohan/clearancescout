@@ -193,6 +193,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
   it('proves completion_counts_equal_committed_active_snapshot', async () => {
     const projRes = await request(app)
       .post('/api/projects')
+      .set('x-demo-token', 'judge-pass-2026')
       .send({
         title: 'Completion Count Invariant Test',
         productionCompany: 'Entrant Studio',
@@ -203,6 +204,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
     const res = await request(app)
       .post(`/api/projects/${projectId}/script/demo`)
+      .set('x-demo-token', 'judge-pass-2026')
       .send({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true });
 
     expect(res.status).toBe(200);

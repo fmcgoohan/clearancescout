@@ -380,7 +380,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                 fontWeight: 600,
               }}
             >
-              {pluralize(openCount, 'Department Task')}
+              {filteredActions.length} of {actions.length} {pluralize(actions.length, 'Task', 'Tasks')}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -448,6 +448,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Status:</span>
               <select
+                aria-label="Filter actions by status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
                 style={{
@@ -467,10 +468,39 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
           )}
         </div>
 
-        {/* Modal Body */}
-        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* Accessible Live Announcement Region for Screen Readers */}
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          style={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            padding: 0,
+            margin: '-1px',
+            overflow: 'hidden',
+            clip: 'rect(0, 0, 0, 0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+        >
+          {isLoading
+            ? 'Loading action items...'
+            : activeTab === 'NOTIFICATIONS'
+            ? `Showing ${notifications.length} notifications`
+            : `Showing ${filteredActions.length} of ${actions.length} department tasks`}
+        </div>
+
+        {/* Modal Body with Explicit ARIA List Semantics */}
+        <div
+          role="list"
+          aria-label={`Department Tasks List (${filteredActions.length} items)`}
+          aria-setsize={filteredActions.length}
+          style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}
+        >
           {isLoading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            <div role="status" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
               Loading action items...
             </div>
           ) : activeTab === 'NOTIFICATIONS' ? (
@@ -519,9 +549,13 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
               No action items found matching current filters.
             </div>
           ) : (
-            filteredActions.map((act) => (
+            filteredActions.map((act, idx) => (
               <div
                 key={act.id}
+                role="listitem"
+                aria-posinset={idx + 1}
+                aria-setsize={filteredActions.length}
+                aria-label={`Task ${idx + 1} of ${filteredActions.length}: ${act.title}`}
                 style={{
                   padding: '14px 18px',
                   borderRadius: '8px',

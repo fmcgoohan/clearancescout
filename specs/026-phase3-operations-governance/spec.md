@@ -98,3 +98,21 @@ Phase 3 implementation will be deemed complete when:
 1. `./scripts/spec-check.sh` passes with 0 violations across `src/`.
 2. All unit, contract, and integration test suites pass 100% green under Vitest/jsdom (`npm test`).
 3. Real Playwright Chromium browser validation (`node tests/live_keyboard_focus_validation.js`) passes 100% across both local server (`http://localhost:3001`) AND live Cloud Run deployment URL (`https://clearancescout-n3tcx4jcbq-uc.a.run.app`).
+
+---
+
+## Phase 3 Approval Audit & Final Refinements
+
+### User Story 25: Action Center Accessibility & Count Semantics
+- **AC-25.1**: Screen reader / AT engines MUST receive the exact logical task count shown visually (`Showing X of Y department tasks`).
+- **AC-25.2**: Task list container MUST declare `role="list"` with `aria-setsize` matching the visible count, and items MUST declare `role="listitem"` with `aria-posinset` and `aria-setsize`.
+- **AC-25.3**: Department filtering MUST announce updated logical totals via `role="status"` `aria-live="polite"`.
+
+### User Story 26: Contextual Collapsible Screenplay Intake Panel
+- **AC-26.1**: Full screenplay intake controls MUST remain prominent on the Screenplay panel or when no screenplay has been ingested.
+- **AC-26.2**: On operational panels (`overview`, `clearance`, `tasks`), intake controls collapse into a compact bar (`Screenplay Intake: X scenes ingested`) with `Replace Screenplay` and `Intake Options ▼` toggles when scenes exist. Preference persisted per project in `localStorage`.
+
+### User Story 27: Readiness Card Density Reduction
+- **AC-27.1**: Scene readiness cards MUST lead with scene identity, readiness text badge (`BLOCKS SHOOTING`, `WORKING CLEAR`, `FINAL CLEAR`), and 1-line summary by default.
+- **AC-27.2**: Detailed evaluation context MUST be accessible inside a disclosure button (`aria-expanded`, Enter/Space key support).
+

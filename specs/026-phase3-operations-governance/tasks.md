@@ -32,3 +32,10 @@
 - [x] **T014-P3**: Run `./scripts/spec-check.sh` static analysis gate to verify zero static constitution or emoji violations.
 - [x] **T015-P3**: Run full Vitest unit/contract suite (`npm test`).
 - [x] **T016-P3**: Extend `tests/live_keyboard_focus_validation.js` and execute real Playwright Chromium browser validation suite against local server (`http://localhost:3001`) AND live Cloud Run deployment URL (`https://clearancescout-n3tcx4jcbq-uc.a.run.app`).
+
+## Phase 7: Phase 3 Approval & Final Refinements (US25–US27)
+- [x] **T017-P3**: Action Center Accessibility Count Semantics: Add `role="status"` `aria-live="polite"` status region, `role="list"`, `role="listitem"`, `aria-setsize`, and `aria-posinset` in `ActionListModal.tsx`. (Satisfied: `ActionListModal.tsx`, `ActionListModalAccessibility.test.tsx`)
+- [x] **T018-P3**: Authoritative Production Title Synchronization: Expand `genericDefaultTitles` in `canonicalRegistryWorkflow.ts` and default fallback in `App.tsx`. (Satisfied: `canonicalRegistryWorkflow.ts`, `App.tsx`)
+- [x] **T019-P3**: Contextual Collapsible Screenplay Intake: Implement compact intake bar on operational panels with `localStorage` preference persistence. (Satisfied: `WorkspacePage.tsx`)
+- [x] **T020-P3**: Readiness Card Density Reduction: Lead with scene identity and status badge, placing detailed evaluation context inside accessible disclosure button (`aria-expanded`). (Satisfied: `WorkspacePage.tsx`)
+

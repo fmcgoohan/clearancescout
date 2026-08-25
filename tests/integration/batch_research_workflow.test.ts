@@ -100,7 +100,9 @@ JORDAN drives a Veloce GT past the Titan Industrial Hazard Placard.
     }
 
     // 7. Verify Entities in Database have Grounded Evaluations
-    const updatedEntitiesRes = await request(app).get(`/api/projects/${projectId}/entities`);
+    const updatedEntitiesRes = await request(app)
+      .get(`/api/projects/${projectId}/entities`)
+      .set('x-demo-token', 'judge-pass-2026');
     expect(updatedEntitiesRes.status).toBe(200);
     const updatedEntities = updatedEntitiesRes.body;
 

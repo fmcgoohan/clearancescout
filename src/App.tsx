@@ -25,7 +25,7 @@ export default function App() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [executionMode, setExecutionMode] = useState<'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE'>('DEMO_MODE');
   const serverExecutionModeRef = useRef<'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE'>('DEMO_MODE');
-  const [projectTitle, setProjectTitle] = useState('Production Project Workspace');
+  const [projectTitle, setProjectTitle] = useState('');
   const [projectType, setProjectType] = useState<'Movie' | 'TV Show' | 'Commercial'>('Movie');
   const [projectSummary, setProjectSummary] = useState<ProjectSummary>({
     entityCount: 0,
@@ -291,7 +291,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: 'ClearanceScout Production Clearance Workspace',
+          title: 'Untitled Production Workspace',
           productionCompany: 'Apex Entertainment',
           scriptVersion: 'v1.0-ShootingDraft',
           projectType: 'Movie',
@@ -620,7 +620,7 @@ export default function App() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h1 style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
-                {projectTitle}
+                {projectTitle || 'Untitled Production Workspace'}
               </h1>
               <span
                 style={{
