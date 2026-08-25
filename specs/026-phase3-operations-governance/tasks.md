@@ -28,7 +28,7 @@
 - [x] **T012-P3**: Add duplicate-export prevention lock, error recovery with retry trigger, and `aria-live="polite"` status announcements in `BinderExportModal.tsx`. (Satisfied: `BinderExportModal.tsx`, `App.tsx`, `test_binder_export_feedback.test.tsx`)
 
 ## Phase 6: Automated Testing & Real Browser Verification (US20–US24 Gate)
-- [ ] **T013-P3**: Create unit and contract tests in `tests/contract/test_task_ownership_history.test.ts` asserting audit history append behavior, due date overdue calculation, and 4-department total sums.
-- [ ] **T014-P3**: Run `./scripts/spec-check.sh` static analysis gate to verify zero static constitution or emoji violations.
-- [ ] **T015-P3**: Run full Vitest unit/contract suite (`npm test`).
-- [ ] **T016-P3**: Extend `tests/live_keyboard_focus_validation.js` and execute real Playwright Chromium browser validation suite against local server (`http://localhost:3001`) AND live Cloud Run deployment URL (`https://clearancescout-n3tcx4jcbq-uc.a.run.app`).
+- [x] **T013-P3**: Create unit and contract tests in `tests/contract/test_task_ownership_history.test.ts` asserting audit history append behavior, due date overdue calculation, and 4-department total sums.
+- [x] **T014-P3**: Run `./scripts/spec-check.sh` static analysis gate to verify zero static constitution or emoji violations.
+- [x] **T015-P3**: Run full Vitest unit/contract suite (`npm test`).
+- [x] **T016-P3**: Extend `tests/live_keyboard_focus_validation.js` and execute real Playwright Chromium browser validation suite against local server (`http://localhost:3001`) AND live Cloud Run deployment URL (`https://clearancescout-n3tcx4jcbq-uc.a.run.app`).

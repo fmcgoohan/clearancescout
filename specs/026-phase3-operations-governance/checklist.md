@@ -32,6 +32,6 @@
 
 ## Automated Testing & Real Browser Verification
 
-- [ ] **CHK014**: `./scripts/spec-check.sh` passes with zero static constitution or emoji violations.
-- [ ] **CHK015**: Vitest unit and contract suite (`npm test`) passes 100% green across 95+ test files.
-- [ ] **CHK016**: Real Playwright Chromium automation (`tests/live_keyboard_focus_validation.js`) passes 100% green against both local server (`http://localhost:3001`) AND live Cloud Run deployment (`https://clearancescout-n3tcx4jcbq-uc.a.run.app`).
+- [x] **CHK014**: `./scripts/spec-check.sh` passes with zero static constitution or emoji violations.
+- [x] **CHK015**: Vitest unit and contract suite (`npm test`) passes 100% green across 95+ test files.
+- [x] **CHK016**: Real Playwright Chromium automation (`tests/live_keyboard_focus_validation.js`) passes 100% green against both local server (`http://localhost:3001`) AND live Cloud Run deployment (`https://clearancescout-n3tcx4jcbq-uc.a.run.app`).

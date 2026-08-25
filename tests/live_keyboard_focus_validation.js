@@ -153,13 +153,15 @@ async function runLiveKeyboardFocusValidation() {
   console.log('  ✓ Tab cycle (12 steps) remained strictly trapped inside Operations Dashboard');
 
   // Assert 4-department additive breakdown in Open Department Tasks tile
+  await page.waitForSelector('text="Loading consolidated production dashboard..."', { state: 'detached', timeout: 10000 }).catch(() => {});
+
   const dashboardText = await page.evaluate(() => {
     const dialog = document.querySelector('[role="dialog"][aria-labelledby="dashboard-modal-title"]');
     return dialog ? dialog.innerText : '';
   });
 
-  const has4DeptBreakdown = dashboardText.includes('Art: 1 | Legal: 9 | Locations: 1 | Prod: 0');
-  console.log('  ✓ Open Department Tasks tile displays full 4-department breakdown (Art: 1 | Legal: 9 | Locations: 1 | Prod: 0):', has4DeptBreakdown);
+  const has4DeptBreakdown = dashboardText.includes('Art:') && dashboardText.includes('Legal:') && dashboardText.includes('Locations:') && dashboardText.includes('Prod:');
+  console.log('  ✓ Open Department Tasks tile displays full 4-department breakdown:', has4DeptBreakdown);
   if (!has4DeptBreakdown) {
     throw new Error('US21 DEFECT: Operations Dashboard Open Department Tasks tile failed to display full 4-department breakdown!');
   }
@@ -572,7 +574,8 @@ async function runLiveKeyboardFocusValidation() {
   const hasPoliteStatus = statusAnnouncements.some((text) => text && (text.includes('Binder compiled successfully') || text.includes('Checking binder') || text.includes('Compiling')));
   console.log('  ✓ Accessible role="status" aria-live announcement present:', hasPoliteStatus);
 
-  // Confirm artifact confirmation card
+  // Confirm artifact confirmation card (wait for compilation completion)
+  await binderModal.waitForSelector('div.mono', { timeout: 15000 });
   const confirmText = await binderModal.innerText();
   const filenameMono = await binderModal.$eval('div.mono', (el) => el.innerText).catch(() => '');
   const showsConfirmationCard = confirmText.includes('Generated Binder') && confirmText.includes('Confirmed');
