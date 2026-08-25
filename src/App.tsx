@@ -3,7 +3,7 @@ import { WorkspacePage } from './pages/WorkspacePage';
 import { CitationDrawer, Citation } from './components/CitationDrawer';
 import { ReplacementCardModal, ReplacementCard } from './components/ReplacementCardModal';
 import { TimelineDrawer } from './components/TimelineDrawer';
-import { BinderExportModal, ClearanceBinder } from './components/BinderExportModal';
+import { BinderExportModal, ClearanceBinder, ExportLifecycleState, PreflightInfo } from './components/BinderExportModal';
 import { ProjectListModal } from './components/ProjectListModal';
 import { DemoTokenModal } from './components/DemoTokenModal';
 import { useTimelineSSE } from './hooks/useTimelineSSE';
@@ -69,6 +69,9 @@ export default function App() {
   const [isBinderOpen, setIsBinderOpen] = useState(false);
   const [binderData, setBinderData] = useState<ClearanceBinder | null>(null);
   const [isExportingBinder, setIsExportingBinder] = useState(false);
+  const [exportState, setExportState] = useState<ExportLifecycleState>('IDLE');
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [preflightData, setPreflightData] = useState<PreflightInfo | null>(null);
 
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [timelineTargetEntity, setTimelineTargetEntity] = useState<string | null>(null);
@@ -530,16 +533,46 @@ export default function App() {
 
   const handleExportBinder = async () => {
     if (!projectId) return;
+    if (exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING') return;
+
+    setExportError(null);
+    setPreflightData(null);
+    setExportState('PREFLIGHT_CHECKING');
     setIsExportingBinder(true);
+    setIsBinderOpen(true);
+
     try {
-      const res = await apiFetch(`/api/projects/${projectId}/binder/export`);
-      if (res.ok) {
-        const data = await res.json();
-        setBinderData(data);
-        setIsBinderOpen(true);
+      // 1. Run Preflight Check (AC-23.1)
+      const preflightRes = await apiFetch(`/api/projects/${projectId}/binder/preflight`);
+      if (!preflightRes.ok) {
+        const errJson = await preflightRes.json().catch(() => ({}));
+        throw new Error(errJson.reason || `Preflight check failed (HTTP ${preflightRes.status})`);
       }
-    } catch (err) {
+
+      const preflight = await preflightRes.json();
+      setPreflightData(preflight);
+
+      if (!preflight.canExport) {
+        setExportError(preflight.reason || 'Project is not ready for binder export.');
+        setExportState('FAILURE');
+        return;
+      }
+
+      // 2. Transition to PROCESSING and compile binder (AC-23.2)
+      setExportState('PROCESSING');
+      const exportRes = await apiFetch(`/api/projects/${projectId}/binder/export`, { method: 'POST' });
+      if (!exportRes.ok) {
+        const errJson = await exportRes.json().catch(() => ({}));
+        throw new Error(errJson.error || `Binder compilation failed (HTTP ${exportRes.status})`);
+      }
+
+      const data = await exportRes.json();
+      setBinderData(data);
+      setExportState('SUCCESS');
+    } catch (err: any) {
       console.error('Error exporting clearance binder:', err);
+      setExportError(err.message || 'An unexpected error occurred during binder export.');
+      setExportState('FAILURE');
     } finally {
       setIsExportingBinder(false);
     }
@@ -684,11 +717,16 @@ export default function App() {
           <button
             className="btn-secondary touch-target"
             aria-label="Export Legal Clearance Binder with SHA-256 Digest"
+            aria-busy={exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING'}
             style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
             onClick={handleExportBinder}
-            disabled={isExportingBinder}
+            disabled={exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING'}
           >
-            {isExportingBinder ? 'Compiling...' : 'Export Clearance Binder'}
+            {exportState === 'PREFLIGHT_CHECKING'
+              ? 'Checking Preflight...'
+              : exportState === 'PROCESSING'
+              ? 'Compiling Binder...'
+              : 'Export Clearance Binder'}
           </button>
 
           {/* Settings Menu Offloading Secondary Controls */}
@@ -873,7 +911,15 @@ export default function App() {
       <BinderExportModal
         binder={binderData}
         isOpen={isBinderOpen}
-        onClose={() => setIsBinderOpen(false)}
+        onClose={() => {
+          setIsBinderOpen(false);
+          setExportState('IDLE');
+          setExportError(null);
+        }}
+        exportState={exportState}
+        exportError={exportError}
+        preflightData={preflightData}
+        onRetry={handleExportBinder}
         executionMode={executionMode}
         onJumpToEvidence={handleBinderJumpToEvidence}
         onJumpToTimeline={handleBinderJumpToTimeline}

@@ -48,10 +48,27 @@ export interface ClearanceBinder {
   disclaimer: string;
 }
 
+export type ExportLifecycleState = 'IDLE' | 'PREFLIGHT_CHECKING' | 'PROCESSING' | 'SUCCESS' | 'FAILURE';
+
+export interface PreflightInfo {
+  ready: boolean;
+  canExport: boolean;
+  totalScenes?: number;
+  blockerCount?: number;
+  warningCount?: number;
+  totalClearanceItems?: number;
+  estimatedSize?: string;
+  reason?: string;
+}
+
 interface BinderExportModalProps {
   binder: ClearanceBinder | null;
   isOpen: boolean;
   onClose: () => void;
+  exportState?: ExportLifecycleState;
+  exportError?: string | null;
+  preflightData?: PreflightInfo | null;
+  onRetry?: () => void;
   executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
   onJumpToEvidence?: (entityId: string, entityName: string, citations?: any[], rationale?: string, status?: string) => void;
   onJumpToTimeline?: (entityId: string, entityName: string) => void;
@@ -61,6 +78,10 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
   binder,
   isOpen,
   onClose,
+  exportState = 'SUCCESS',
+  exportError = null,
+  preflightData = null,
+  onRetry,
   executionMode = 'DEMO_MODE',
   onJumpToEvidence,
   onJumpToTimeline,
@@ -69,15 +90,135 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
   const [copiedDigest, setCopiedDigest] = React.useState(false);
 
   const { containerRef } = useModalFocus<HTMLDivElement>({
-    isOpen: isOpen && !!binder,
+    isOpen: isOpen && (!!binder || exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING' || exportState === 'FAILURE'),
     onClose,
   });
 
-  if (!isOpen || !binder) return null;
+  // Render Loading / Processing state
+  if (exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING') {
+    return (
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Clearance Binder Export Processing"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 1200,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+        }}
+      >
+        <div
+          className="glass-panel"
+          style={{
+            width: '480px',
+            maxWidth: '90vw',
+            padding: '32px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+          }}
+        >
+          <div
+            role="status"
+            aria-live="polite"
+            style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--accent-cyan)' }}
+          >
+            {exportState === 'PREFLIGHT_CHECKING'
+              ? 'Checking binder preflight readiness...'
+              : 'Compiling production clearance binder payload...'}
+          </div>
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            {exportState === 'PREFLIGHT_CHECKING'
+              ? 'Analyzing scene readiness, blocker counts, and entity catalog before export...'
+              : 'Generating cryptographic integrity digest and building downloadable legal dossier...'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render Failure state
+  if (exportState === 'FAILURE' || exportError) {
+    return (
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Clearance Binder Export Error"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 1200,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+        }}
+      >
+        <div
+          className="glass-panel"
+          style={{
+            width: '520px',
+            maxWidth: '90vw',
+            padding: '32px',
+            background: 'var(--bg-card)',
+            border: '1px solid #ef4444',
+            borderRadius: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+          }}
+        >
+          <div
+            role="status"
+            aria-live="polite"
+            style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#f87171' }}
+          >
+            Binder Export Error
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', background: 'rgba(239, 68, 68, 0.1)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+            {exportError || 'An error occurred while compiling the clearance binder.'}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+            <button className="btn-secondary" onClick={onClose}>
+              Close
+            </button>
+            {onRetry && (
+              <button className="btn-primary" onClick={onRetry}>
+                Retry Export
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!binder) return null;
 
   const dominant =
     binder.provenanceSummary?.dominantProvenance ||
-    binder.citationsIndex[0]?.provenance ||
+    binder.citationsIndex?.[0]?.provenance ||
     (executionMode === 'CLOUD_MODE' ? 'FALLBACK_FIXTURE' : 'DEMO_FIXTURE');
 
   const isLive = dominant === 'PARALLEL_LIVE';
@@ -122,6 +263,9 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
   const handlePrintPdf = () => {
     window.print();
   };
+
+  const generatedFilename = `Clearance_Binder_${binder.projectSummary.title.replace(/\s+/g, '_')}_${binder.id}.json`;
+  const fileSizeKb = (JSON.stringify(binder).length / 1024).toFixed(1);
 
   return (
     <div
@@ -228,6 +372,40 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
               ✕
             </button>
           </div>
+        </div>
+
+        {/* Generated Artifact Confirmation Card (AC-23.3) */}
+        <div
+          className="no-print"
+          style={{
+            background: 'rgba(52, 211, 153, 0.08)',
+            border: '1px solid rgba(52, 211, 153, 0.3)',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '0.82rem',
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 600, color: '#34d399', marginBottom: '2px' }}>
+              Generated Binder Artifact Confirmed
+            </div>
+            <div className="mono" style={{ fontSize: '0.78rem', color: 'var(--text-main)' }}>
+              {generatedFilename} ({fileSizeKb} KB)
+            </div>
+          </div>
+          <div role="status" aria-live="polite" className="sr-only">
+            {`Binder compiled successfully: ${generatedFilename} (${fileSizeKb} KB)`}
+          </div>
+          <button
+            className="btn-primary"
+            style={{ fontSize: '0.75rem', padding: '4px 12px', whiteSpace: 'nowrap' }}
+            onClick={handleDownloadJson}
+          >
+            Download (.JSON)
+          </button>
         </div>
 
         {/* Provenance Watermark Badge Banner */}

@@ -23,9 +23,9 @@
 - [x] **T009-P3**: Update `ActionListModal.tsx` and `ProductionDashboardModal.tsx` to render assignee controls, editable due date picker, `OVERDUE` badge for overdue open tasks, and expandable audit history timeline per task. (Satisfied: `ActionListModal.tsx`, `ProductionDashboardModal.tsx`)
 
 ## Phase 5: Trustworthy Visible Binder-Export Feedback (US23)
-- [ ] **T010-P3**: Enhance `binderRoutes.ts` to provide preflight readiness status (`PREFLIGHT_CHECKING`) checking total scenes, blockers, and warnings prior to export.
-- [ ] **T011-P3**: Update `BinderExportModal.tsx` and `App.tsx` with explicit processing state feedback, filename confirmation (`Clearance_Binder_The_Neon_Horizon_proj-cf44db8a.json`), file size, integrity checksum digest, and direct download buttons.
-- [ ] **T012-P3**: Add duplicate-export prevention lock, error recovery with retry trigger, and `aria-live="polite"` status announcements in `BinderExportModal.tsx`.
+- [x] **T010-P3**: Enhance `binderRoutes.ts` to provide preflight readiness status (`PREFLIGHT_CHECKING`) checking total scenes, blockers, and warnings prior to export. (Satisfied: `binderRoutes.ts`)
+- [x] **T011-P3**: Update `BinderExportModal.tsx` and `App.tsx` with explicit processing state feedback, filename confirmation (`Clearance_Binder_The_Neon_Horizon_proj-cf44db8a.json`), file size, integrity checksum digest, and direct download buttons. (Satisfied: `BinderExportModal.tsx`, `App.tsx`)
+- [x] **T012-P3**: Add duplicate-export prevention lock, error recovery with retry trigger, and `aria-live="polite"` status announcements in `BinderExportModal.tsx`. (Satisfied: `BinderExportModal.tsx`, `App.tsx`, `test_binder_export_feedback.test.tsx`)
 
 ## Phase 6: Automated Testing & Real Browser Verification (US20–US24 Gate)
 - [ ] **T013-P3**: Create unit and contract tests in `tests/contract/test_task_ownership_history.test.ts` asserting audit history append behavior, due date overdue calculation, and 4-department total sums.

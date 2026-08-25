@@ -25,10 +25,10 @@
 
 ## Trustworthy Visible Binder-Export Feedback
 
-- [ ] **CHK010**: Binder export executes preflight check before file generation (`AC-23.1`).
-- [ ] **CHK011**: Export UI displays explicit processing state, filename confirmation, file size, SHA-256 digest, and download buttons (`AC-23.2`, `AC-23.3`).
-- [ ] **CHK012**: Primary controls lock during processing to prevent duplicate export requests (`AC-23.2`).
-- [ ] **CHK013**: Errors display retry trigger and announce status via `aria-live="polite"` (`AC-23.4`).
+- [x] **CHK010**: Binder export executes preflight check before file generation (`AC-23.1`).
+- [x] **CHK011**: Export UI displays explicit processing state, filename confirmation, file size, SHA-256 digest, and download buttons (`AC-23.2`, `AC-23.3`).
+- [x] **CHK012**: Primary controls lock during processing to prevent duplicate export requests (`AC-23.2`).
+- [x] **CHK013**: Errors display retry trigger and announce status via `aria-live="polite"` (`AC-23.4`).
 
 ## Automated Testing & Real Browser Verification
 
