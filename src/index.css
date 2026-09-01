@@ -441,4 +441,104 @@ header .mark span {
   }
 }
 
+/* Sticky Header Accommodation & Scroll Padding */
+html {
+  scroll-padding-top: 140px;
+}
+
+header.app-header {
+  box-sizing: border-box;
+}
+
+/* Project Code Badges: strictly single line, no wrapping */
+[data-testid="workspace-project-code"],
+[data-project-code="true"] {
+  white-space: nowrap !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+}
+
+@media (max-width: 768px) {
+  html {
+    scroll-padding-top: 90px;
+  }
+  header.app-header {
+    padding: 6px 10px !important;
+    gap: 4px !important;
+  }
+  .app-header-brand {
+    gap: 6px !important;
+  }
+  .app-header-brand h1 {
+    font-size: 0.9rem !important;
+  }
+  .app-header-brand .header-subtitle {
+    display: none !important;
+  }
+  .role-label {
+    display: none !important;
+  }
+  .app-header-actions {
+    gap: 4px !important;
+  }
+  .app-header-actions button,
+  .app-header-actions .touch-target,
+  .app-header-actions select {
+    padding: 3px 6px !important;
+    font-size: 0.7rem !important;
+  }
+  .portfolio-container {
+    padding: 10px 8px 240px 8px !important;
+  }
+}
+
+/* Portfolio Grid Layout & Multi-Column Desktop Rules */
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .portfolio-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+}
+
+/* Portfolio Card Visible Focus Ring & Interaction */
+[data-portfolio-card="true"] {
+  box-sizing: border-box;
+  max-width: 100%;
+  scroll-margin-top: 140px;
+  scroll-margin-bottom: 24px;
+}
+
+[data-open-production="true"] {
+  scroll-margin-top: 140px;
+  scroll-margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  [data-portfolio-card="true"] {
+    scroll-margin-top: 100px !important;
+    scroll-margin-bottom: 24px !important;
+  }
+  [data-open-production="true"] {
+    scroll-margin-top: 100px !important;
+    scroll-margin-bottom: 24px !important;
+  }
+}
+
+[data-portfolio-card="true"]:focus-visible,
+[data-portfolio-card="true"]:focus {
+  outline: 2px solid #6366f1 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.35) !important;
+}
+
+
+
 

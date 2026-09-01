@@ -85,7 +85,8 @@ Alex opens another Summit Cola in the car.`;
       .send({ scriptText, format: 'PLAINTEXT' });
 
     const entitiesRes = await request(app).get(`/api/projects/${projectId}/entities`);
-    const summit = entitiesRes.body.find((e: any) => e.canonicalName.includes('Summit Cola'));
+    const entityList = Array.isArray(entitiesRes.body) ? entitiesRes.body : (entitiesRes.body.entities || []);
+    const summit = entityList.find((e: any) => e.canonicalName.includes('Summit Cola'));
     expect(summit).toBeDefined();
 
     const occRes = await request(app).get(`/api/projects/${projectId}/entities/${summit.id}/occurrences`);

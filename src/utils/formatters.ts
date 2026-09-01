@@ -8,6 +8,18 @@ export function pluralize(count: number, singular: string, plural?: string): str
   return count === 1 ? `1 ${singular}` : `${count} ${p}`;
 }
 
+export function formatProjectCode(projectId: string | undefined | null, title?: string): string {
+  if (!projectId) return 'PRJ-NEON-HORIZON';
+  if (projectId === 'proj-default' || (title && title.toLowerCase().includes('neon'))) {
+    return 'PRJ-NEON-HORIZON';
+  }
+  if (projectId === 'proj-cyberpunk' || (title && title.toLowerCase().includes('cyberpunk'))) {
+    return 'PRJ-CYBERPUNK';
+  }
+  const cleanId = projectId.replace(/^proj-/, '').toUpperCase();
+  return `PRJ-${cleanId}`;
+}
+
 export function formatStatus(status: string | undefined | null): string {
   if (!status) return 'Insufficient evidence';
   switch (status.toUpperCase()) {

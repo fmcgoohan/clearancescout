@@ -9,6 +9,7 @@ import { ActionListModal } from '../../src/components/ActionListModal';
 import * as apiClient from '../../src/utils/apiClient';
 
 vi.mock('../../src/utils/apiClient', () => ({
+  getDemoToken: vi.fn().mockReturnValue('demo-tok'),
   apiFetch: vi.fn(),
 }));
 

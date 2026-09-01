@@ -27,8 +27,10 @@ describe('Contract & Quality: User Story 23 - Trustworthy Visible Binder-Export 
       projectId,
       sceneNumber: 1,
       heading: 'INT. LEGAL OFFICE - DAY',
+      locationType: 'INT',
+      timeOfDay: 'DAY',
       rawText: 'INT. LEGAL OFFICE - DAY\nAlice signs the binder.',
-      occurrences: [],
+      characterActionSummary: 'Alice signs the binder.',
     });
 
     // Call preflight endpoint

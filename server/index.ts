@@ -18,6 +18,13 @@ import { sceneRouter } from './api/sceneRoutes.js';
 import { actionRouter } from './api/actionRoutes.js';
 import { placeholderRouter } from './api/placeholderRoutes.js';
 import { dashboardRouter } from './api/dashboardRoutes.js';
+import { commentRouter } from './api/commentRoutes.js';
+import { attachmentRouter } from './api/attachmentRoutes.js';
+import { notificationRouter } from './api/notificationRoutes.js';
+import { bulkActionRouter } from './api/bulkActionRoutes.js';
+import { viewRouter } from './api/viewRoutes.js';
+import { portfolioRouter } from './api/portfolioRoutes.js';
+import { adminRouter } from './api/adminRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,8 +49,8 @@ app.use('/api', (req, res, next) => {
   return next();
 });
 
-app.use('/api', entityMutationRouter);
 app.use('/api/projects', projectRouter);
+app.use('/api', entityMutationRouter);
 app.use('/api', clearanceRouter);
 app.use('/api', rightsRouter);
 app.use('/api', sceneRouter);
@@ -53,6 +60,13 @@ app.use('/api', dashboardRouter);
 app.use('/api', replacementRouter);
 app.use('/api', timelineRouter);
 app.use('/api', binderRouter);
+app.use('/api', commentRouter);
+app.use('/api', attachmentRouter);
+app.use('/api', notificationRouter);
+app.use('/api', bulkActionRouter);
+app.use('/api', viewRouter);
+app.use('/api', portfolioRouter);
+app.use('/api', adminRouter);
 
 // Global Observable Action Timeline Stream alias
 app.use('/api/events', timelineRouter);

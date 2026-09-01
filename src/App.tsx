@@ -8,10 +8,16 @@ import { ProjectListModal } from './components/ProjectListModal';
 import { DemoTokenModal } from './components/DemoTokenModal';
 import { useTimelineSSE } from './hooks/useTimelineSSE';
 import { apiFetch, getDemoToken, setDemoToken } from './utils/apiClient';
-import { pluralize } from './utils/formatters';
+import { pluralize, formatProjectCode } from './utils/formatters';
 import { TERMINOLOGY } from './constants/terminology';
 import { AlertTriangleIcon, LockIcon, KeyIcon, ZapIcon, RefreshCwIcon } from './components/icons/Icons';
 import { SettingsPopover } from './components/SettingsPopover';
+import { NotificationDrawer } from './components/NotificationDrawer';
+import { RoleWorkspaceSwitcher } from './components/RoleWorkspaceSwitcher';
+import { UserAdminModal } from './components/UserAdminModal';
+import { PortfolioDashboard } from './components/PortfolioDashboard';
+import { ActionListModal } from './components/ActionListModal';
+import { UserRole } from './types/collaboration';
 
 interface ProjectSummary {
   entityCount: number;
@@ -51,6 +57,7 @@ export default function App() {
     remaining: 25,
   });
   const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [isSwitchingProject, setIsSwitchingProject] = useState<boolean>(false);
   
   // UI Drawers & Modals State
   const [isCitationOpen, setIsCitationOpen] = useState(false);
@@ -77,6 +84,15 @@ export default function App() {
   const [timelineTargetEntity, setTimelineTargetEntity] = useState<string | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Phase 4 Collaboration & Admin State
+  const [userRole, setUserRole] = useState<UserRole>('CLEARANCE_COORDINATOR');
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [appViewMode, setAppViewMode] = useState<'WORKSPACE' | 'PORTFOLIO'>('WORKSPACE');
+  const [deepLinkTaskId, setDeepLinkTaskId] = useState<string | undefined>(undefined);
+  const [deepLinkActivityType, setDeepLinkActivityType] = useState<string | undefined>(undefined);
+  const [deepLinkActivityId, setDeepLinkActivityId] = useState<string | undefined>(undefined);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
 
   const { events } = useTimelineSSE(projectId);
 
@@ -208,50 +224,75 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isReplacementOpen, isBinderOpen, isCitationOpen, isTimelineOpen, isTokenModalOpen, isProjectModalOpen]);
 
-  const loadProjectDetails = async (id: string) => {
+  const currentProjectIdRef = useRef<string | null>(projectId);
+  useEffect(() => {
+    currentProjectIdRef.current = projectId;
+  }, [projectId]);
+
+  const loadProjectDetails = async (id: string): Promise<boolean> => {
+    console.log(`[App] loadProjectDetails START for id="${id}"`);
+    currentProjectIdRef.current = id;
+    setIsSwitchingProject(true);
+    setProjectSummary({
+      entityCount: 0,
+      clearedCount: 0,
+      actionRequiredCount: 0,
+      reviewRecommendedCount: 0,
+      researchRequiredCount: 0,
+    });
     try {
       const res = await apiFetch(`/api/projects/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setProjectId(data.id);
-        try {
-          localStorage.setItem('clearancescout_active_project_id', data.id);
-        } catch (e) {
-          /* ignore */
-        }
-        setProjectTitle(data.title);
-        setProjectType(data.projectType || 'Movie');
-        setExecutionMode(serverExecutionModeRef.current || data.executionMode || 'DEMO_MODE');
-        setAuthError(null);
-        setInitError(null);
-        setQuotaError(null);
-        setProjectSummary({
-          entityCount: data.entityCount || 0,
-          clearedCount: data.clearedCount || 0,
-          actionRequiredCount: data.actionRequiredCount || 0,
-          reviewRecommendedCount: data.reviewRecommendedCount || 0,
-          researchRequiredCount: data.researchRequiredCount || 0,
-        });
-        if (data.liveQuotaLimit !== undefined) {
-          setLiveQuota({
-            limit: data.liveQuotaLimit,
-            used: data.liveQuotaUsed || 0,
-            remaining: data.liveQuotaRemaining !== undefined ? data.liveQuotaRemaining : Math.max(0, data.liveQuotaLimit - (data.liveQuotaUsed || 0)),
-          });
-        }
-        setRefreshTrigger((prev) => prev + 1);
-      } else if (res.status === 401) {
-        const errData = await res.json().catch(() => ({}));
-        setAuthError(errData.error || 'Authentication Required: Demo Access Token required.');
-        if (!userDismissedTokenModalRef.current) {
-          setIsTokenModalOpen(true);
-        }
-      } else {
+      if (!res.ok) {
         setInitError(`Failed to load project details (Server HTTP ${res.status}).`);
+        return false;
       }
+      let data = await res.json();
+      console.log(`[App] loadProjectDetails RESOLVED data:`, data.id, data.title);
+      if ((!data.entityCount || data.entityCount === 0) && data.id !== 'proj-cyberpunk') {
+        try {
+          await apiFetch(`/api/projects/${data.id}/script/demo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
+          });
+          const refreshed = await apiFetch(`/api/projects/${data.id}`);
+          if (refreshed.ok) {
+            data = await refreshed.json();
+          }
+        } catch (e) {}
+      }
+      setProjectId(data.id);
+      try {
+        localStorage.setItem('clearancescout_active_project_id', data.id);
+      } catch (e) {
+        /* ignore */
+      }
+      setProjectTitle(data.title);
+      setProjectType(data.projectType || 'Movie');
+      setExecutionMode(serverExecutionModeRef.current || data.executionMode || 'DEMO_MODE');
+      setAuthError(null);
+      setInitError(null);
+      setQuotaError(null);
+      setProjectSummary({
+        entityCount: data.entityCount || 0,
+        clearedCount: data.clearedCount || 0,
+        actionRequiredCount: data.actionRequiredCount || 0,
+        reviewRecommendedCount: data.reviewRecommendedCount || 0,
+        researchRequiredCount: data.researchRequiredCount || 0,
+      });
+      if (data.liveQuotaLimit !== undefined) {
+        setLiveQuota({
+          limit: data.liveQuotaLimit,
+          used: data.liveQuotaUsed || 0,
+          remaining: data.liveQuotaRemaining !== undefined ? data.liveQuotaRemaining : Math.max(0, data.liveQuotaLimit - (data.liveQuotaUsed || 0)),
+        });
+      }
+      setRefreshTrigger((prev) => prev + 1);
+      return true;
     } catch (err: any) {
       console.error('Error loading project details:', err);
       setInitError(`Error loading project: ${err?.message || 'Network error'}`);
+      return false;
     }
   };
 
@@ -264,7 +305,7 @@ export default function App() {
           const storedId = localStorage.getItem('clearancescout_active_project_id');
           const targetProj = (storedId && listData.projects.find((p: any) => p.id === storedId)) || listData.projects[0];
           // Auto-seed demo screenplay if project is empty so 3 scenes and 7 entities load automatically
-          if (!targetProj.entityCount || targetProj.entityCount === 0) {
+          if ((!targetProj.entityCount || targetProj.entityCount === 0) && targetProj.id !== 'proj-cyberpunk') {
             try {
               await apiFetch(`/api/projects/${targetProj.id}/script/demo`, {
                 method: 'POST',
@@ -332,7 +373,12 @@ export default function App() {
     bootstrapFromHealth();
   }, [hasTokenConfigured]);
 
-  const refreshProjectSummary = async (id: string, snapshot?: any) => {
+  const refreshProjectSummary = async (id?: string, snapshot?: any) => {
+    const targetId = id || snapshot?.project?.id || currentProjectIdRef.current;
+    if (targetId && targetId !== currentProjectIdRef.current) {
+      console.log(`[App] refreshProjectSummary DISCARDING stale call for id="${targetId}" (active is "${currentProjectIdRef.current}")`);
+      return;
+    }
     if (snapshot && Array.isArray(snapshot.entities)) {
       if (snapshot.project?.title) {
         setProjectTitle(snapshot.project.title);
@@ -349,6 +395,7 @@ export default function App() {
         reviewRecommendedCount,
         researchRequiredCount,
       });
+      setIsSwitchingProject(false);
       return;
     }
     try {
@@ -365,6 +412,7 @@ export default function App() {
           reviewRecommendedCount: data.reviewRecommendedCount || 0,
           researchRequiredCount: data.researchRequiredCount || 0,
         });
+        setIsSwitchingProject(false);
         if (data.liveQuotaLimit !== undefined) {
           setLiveQuota({
             limit: data.liveQuotaLimit,
@@ -583,13 +631,13 @@ export default function App() {
       {/* Header Bar */}
       <header
         role="banner"
-        className="glass-panel responsive-stack header-command-bar"
+        className="glass-panel app-header"
         style={{
           borderRadius: 0,
           borderLeft: 'none',
           borderRight: 'none',
           borderTop: 'none',
-          padding: '16px 32px',
+          padding: '12px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -597,30 +645,56 @@ export default function App() {
           top: 0,
           zIndex: 100,
           flexWrap: 'wrap',
-          gap: '12px',
+          gap: '10px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div className="app-header-brand" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
             style={{
-              width: '36px',
-              height: '36px',
+              width: '34px',
+              height: '34px',
               borderRadius: '8px',
               background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 800,
-              fontSize: '1.1rem',
+              fontSize: '1rem',
               color: '#ffffff',
             }}
           >
             CS
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
-                {projectTitle || 'Untitled Production Workspace'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h1 style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.02em', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isSwitchingProject ? (
+                  <span data-testid="workspace-project-title" style={{ color: '#38bdf8' }}>
+                    Switching production...
+                  </span>
+                ) : (
+                  <>
+                    <span data-testid="workspace-project-title">{projectTitle || 'Untitled Production Workspace'}</span>
+                    <span
+                      data-testid="workspace-project-code"
+                      style={{
+                        fontSize: '0.68rem',
+                        fontFamily: 'monospace',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: 'rgba(56, 189, 248, 0.15)',
+                        color: '#38bdf8',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                        display: 'inline-block',
+                        flexShrink: 0,
+                      }}
+                    >
+                      [{formatProjectCode(projectId, projectTitle)}]
+                    </span>
+                  </>
+                )}
               </h1>
               <span
                 style={{
@@ -645,89 +719,149 @@ export default function App() {
                 {projectType === 'TV Show' ? 'TV Show' : projectType === 'Commercial' ? 'Commercial' : 'Movie'}
               </span>
             </div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            <span className="header-subtitle" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
               ClearanceScout Platform
             </span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          {/* Project Switcher Trigger */}
+        <div className="app-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Phase 4 Role Perspective Switcher */}
+          <RoleWorkspaceSwitcher currentRole={userRole} onRoleChange={(role) => setUserRole(role)} />
+
+          {/* Phase 4 In-Product Notification Drawer */}
+          <NotificationDrawer
+            currentUserRole={userRole}
+            demoToken={getDemoToken() || undefined}
+            onSelectTask={(taskId, activityType, activityId) => {
+              setDeepLinkTaskId(taskId);
+              setDeepLinkActivityType(activityType);
+              setDeepLinkActivityId(activityId);
+              setIsActionModalOpen(true);
+            }}
+          />
+
+          {/* Portfolio View Toggle */}
           <button
+            data-testid="portfolio-view-toggle"
             className="btn-secondary touch-target"
-            aria-label="Switch or Create Production Project"
-            style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => setIsProjectModalOpen(true)}
+            onClick={() => setAppViewMode(appViewMode === 'WORKSPACE' ? 'PORTFOLIO' : 'WORKSPACE')}
+            style={{ fontSize: '0.75rem' }}
           >
-            Switch Project
+            {appViewMode === 'WORKSPACE' ? '📊 Portfolio' : '🎬 Studio Workspace'}
           </button>
 
-          {/* Landing Clearance Summary Indicator */}
-          <div
-            className="touch-target"
-            aria-label={`Project Summary: ${projectSummary.entityCount} Total Entities, ${projectSummary.clearedCount} ${TERMINOLOGY.STATUS_CLEARED}, ${projectSummary.actionRequiredCount} ${TERMINOLOGY.STATUS_ACTION_REQUIRED}, ${projectSummary.reviewRecommendedCount} ${TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}, ${projectSummary.researchRequiredCount || 0} ${TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'rgba(0,0,0,0.3)',
-              padding: '4px 10px',
-              borderRadius: '20px',
-              border: '1px solid var(--border-color)',
-              fontSize: '0.75rem',
-            }}
-          >
-            <span style={{ color: 'var(--text-muted)' }}>Summary:</span>
-            <span style={{ color: 'var(--status-no-issue)', fontWeight: 600 }}>{projectSummary.clearedCount} {TERMINOLOGY.STATUS_CLEARED}</span>
-            {projectSummary.actionRequiredCount > 0 && (
-              <span style={{ color: 'var(--status-action)', fontWeight: 600 }}>{projectSummary.actionRequiredCount} {TERMINOLOGY.STATUS_ACTION_REQUIRED}</span>
-            )}
-            {projectSummary.reviewRecommendedCount > 0 && (
-              <span style={{ color: 'var(--status-review)', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} {TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}</span>
-            )}
-            {(projectSummary.researchRequiredCount || 0) > 0 && (
-              <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{projectSummary.researchRequiredCount} {TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}</span>
-            )}
-            <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'entity', 'entities')})</span>
-          </div>
+          {/* User Admin Trigger */}
+          {userRole === 'ADMINISTRATOR' && (
+            <button
+              className="btn-secondary touch-target text-xs"
+              onClick={() => setIsAdminOpen(true)}
+            >
+              ⚙️ User Admin
+            </button>
+          )}
 
-          {/* Live Quota Indicator Badge */}
-          <div
-            className="touch-target quota-meter"
-            aria-label={`Live Quota Remaining: ${liveQuota.remaining} of ${liveQuota.limit}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: liveQuota.remaining === 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0,0,0,0.3)',
-              padding: '4px 10px',
-              borderRadius: '20px',
-              border: `1px solid ${liveQuota.remaining === 0 ? 'rgba(239, 68, 68, 0.5)' : 'var(--border-color)'}`,
-              fontSize: '0.75rem',
-              color: liveQuota.remaining === 0 ? '#f87171' : 'var(--text-main)',
-            }}
-          >
-            <span>Quota:</span>
-            <span className="quota-meter-number" style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: liveQuota.remaining === 0 ? '#f87171' : 'var(--accent-cyan)' }}>
-              {liveQuota.remaining} / {liveQuota.limit}
-            </span>
-          </div>
+          {appViewMode === 'WORKSPACE' && (
+            <>
+              {/* Project Switcher Trigger */}
+              <button
+                className="btn-secondary touch-target"
+                aria-label="Switch or Create Production Project"
+                style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => setIsProjectModalOpen(true)}
+              >
+                Switch Project
+              </button>
 
-          {/* Export Clearance Binder Trigger */}
-          <button
-            className="btn-secondary touch-target"
-            aria-label="Export Legal Clearance Binder with SHA-256 Digest"
-            aria-busy={exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING'}
-            style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={handleExportBinder}
-            disabled={exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING'}
-          >
-            {exportState === 'PREFLIGHT_CHECKING'
-              ? 'Checking Preflight...'
-              : exportState === 'PROCESSING'
-              ? 'Compiling Binder...'
-              : 'Export Clearance Binder'}
-          </button>
+              {/* Landing Clearance Summary Indicator */}
+              {isSwitchingProject ? (
+                <div
+                  data-testid="header-switching-indicator"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    fontSize: '0.75rem',
+                    color: '#38bdf8',
+                    fontWeight: 600,
+                  }}
+                >
+                  <span>⏳ Switching production...</span>
+                </div>
+              ) : (
+                <div
+                  data-testid="project-summary-bar"
+                  className="touch-target"
+                  aria-label={`Project Summary: ${projectSummary.entityCount} Total Entities, ${projectSummary.clearedCount} ${TERMINOLOGY.STATUS_CLEARED}, ${projectSummary.actionRequiredCount} ${TERMINOLOGY.STATUS_ACTION_REQUIRED}, ${projectSummary.reviewRecommendedCount} ${TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}, ${projectSummary.researchRequiredCount || 0} ${TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'rgba(0,0,0,0.3)',
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    border: '1px solid var(--border-color)',
+                    fontSize: '0.75rem',
+                  }}
+                >
+                  <span style={{ color: 'var(--text-muted)' }}>Summary:</span>
+                  <span style={{ color: 'var(--status-no-issue)', fontWeight: 600 }}>{projectSummary.clearedCount} {TERMINOLOGY.STATUS_CLEARED}</span>
+                  {projectSummary.actionRequiredCount > 0 && (
+                    <span style={{ color: 'var(--status-action)', fontWeight: 600 }}>{projectSummary.actionRequiredCount} {TERMINOLOGY.STATUS_ACTION_REQUIRED}</span>
+                  )}
+                  {projectSummary.reviewRecommendedCount > 0 && (
+                    <span style={{ color: 'var(--status-review)', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} {TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}</span>
+                  )}
+                  {(projectSummary.researchRequiredCount || 0) > 0 && (
+                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{projectSummary.researchRequiredCount} {TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}</span>
+                  )}
+                  <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'entity', 'entities')})</span>
+                </div>
+              )}
+
+              {/* Live Quota Indicator Badge */}
+              <div
+                className="touch-target quota-meter"
+                aria-label={`Live Quota Remaining: ${liveQuota.remaining} of ${liveQuota.limit}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: liveQuota.remaining === 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0,0,0,0.3)',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  border: `1px solid ${liveQuota.remaining === 0 ? 'rgba(239, 68, 68, 0.5)' : 'var(--border-color)'}`,
+                  fontSize: '0.75rem',
+                  color: liveQuota.remaining === 0 ? '#f87171' : 'var(--text-main)',
+                }}
+              >
+                <span>Quota:</span>
+                <span className="quota-meter-number" style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: liveQuota.remaining === 0 ? '#f87171' : 'var(--accent-cyan)' }}>
+                  {liveQuota.remaining} / {liveQuota.limit}
+                </span>
+              </div>
+
+              {/* Export Clearance Binder Trigger */}
+              <button
+                className="btn-secondary touch-target"
+                aria-label="Export Legal Clearance Binder with SHA-256 Digest"
+                aria-busy={exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING'}
+                style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={handleExportBinder}
+                disabled={exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING'}
+              >
+                {exportState === 'PREFLIGHT_CHECKING'
+                  ? 'Checking Preflight...'
+                  : exportState === 'PROCESSING'
+                  ? 'Compiling Binder...'
+                  : 'Export Clearance Binder'}
+              </button>
+            </>
+          )}
 
           {/* Settings Menu Offloading Secondary Controls */}
           {/* Server execution mode from health endpoint */}
@@ -806,15 +940,30 @@ export default function App() {
 
       {/* Main Workspace Area */}
       <main style={{ flex: 1, padding: '32px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-        {projectId ? (
+        {appViewMode === 'PORTFOLIO' ? (
+          <PortfolioDashboard
+            demoToken={getDemoToken() || undefined}
+            onSelectProject={async (selectedId, selectedTitle) => {
+              setIsSwitchingProject(true);
+              currentProjectIdRef.current = selectedId;
+              setProjectId(selectedId);
+              if (selectedTitle) {
+                setProjectTitle(selectedTitle);
+              }
+              setAppViewMode('WORKSPACE');
+              await loadProjectDetails(selectedId);
+            }}
+          />
+        ) : projectId ? (
           <WorkspacePage
             projectId={projectId}
+            isSwitchingProject={isSwitchingProject}
             onEvaluateClearance={handleEvaluateClearance}
             onGenerateReplacement={handleGenerateReplacement}
             onOpenCounselReview={handleOpenCounselReview}
             onExportBinder={handleExportBinder}
             onRefreshProjectSummary={(snapshot) => {
-              if (projectId) refreshProjectSummary(projectId, snapshot);
+              refreshProjectSummary(currentProjectIdRef.current || projectId, snapshot);
             }}
             isEvaluating={isEvaluating}
             refreshTrigger={refreshTrigger}
@@ -908,6 +1057,20 @@ export default function App() {
 
       <ReplacementCardModal card={replacementCard} isOpen={isReplacementOpen} onClose={() => setIsReplacementOpen(false)} />
 
+      <ActionListModal
+        projectId={projectId || 'proj-default'}
+        isOpen={isActionModalOpen}
+        onClose={() => {
+          setIsActionModalOpen(false);
+          setDeepLinkTaskId(undefined);
+          setDeepLinkActivityType(undefined);
+          setDeepLinkActivityId(undefined);
+        }}
+        targetTaskId={deepLinkTaskId}
+        targetActivityType={deepLinkActivityType}
+        targetActivityId={deepLinkActivityId}
+      />
+
       <BinderExportModal
         binder={binderData}
         isOpen={isBinderOpen}
@@ -942,6 +1105,14 @@ export default function App() {
         activeProjectSummary={projectSummary}
         onSelectProject={(selectedId) => loadProjectDetails(selectedId)}
         onClose={() => setIsProjectModalOpen(false)}
+      />
+
+      <UserAdminModal
+        isOpen={isAdminOpen}
+        projectId={projectId || 'proj-default'}
+        currentUserRole={userRole}
+        demoToken={getDemoToken() || undefined}
+        onClose={() => setIsAdminOpen(false)}
       />
     </div>
   );

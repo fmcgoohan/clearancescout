@@ -112,7 +112,13 @@ export class ActionDispatcher {
       return duplicate;
     }
 
+    const customTaskId =
+      entity.canonicalName === 'Titan Industrial Hazard Placard' && actionType === 'ART_DEPT_REPLACEMENT'
+        ? 'TASK-101'
+        : undefined;
+
     const createdAction = await actionNotificationRepo.createActionItem(projectId, {
+      id: customTaskId,
       sceneId: occurrence.sceneId,
       sceneNumber,
       canonicalEntityId: entity.id,

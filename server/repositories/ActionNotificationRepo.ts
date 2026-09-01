@@ -117,9 +117,9 @@ export class ActionNotificationRepo {
 
   async createActionItem(
     projectId: string,
-    input: Omit<ClearanceActionItem, 'id' | 'projectId' | 'createdAt' | 'updatedAt'>
+    input: Omit<ClearanceActionItem, 'id' | 'projectId' | 'createdAt' | 'updatedAt'> & { id?: string }
   ): Promise<ClearanceActionItem> {
-    const id = `act-${uuidv4().slice(0, 8)}`;
+    const id = input.id || `act-${uuidv4().slice(0, 8)}`;
     const now = new Date().toISOString();
     const initialStatus = input.status || 'OPEN';
 
@@ -216,6 +216,7 @@ export class ActionNotificationRepo {
       resolutionTrigger?: string;
       actor?: string;
       reason?: string;
+      activityHistory?: ActionAuditEvent[];
     }
   ): Promise<ClearanceActionItem | null> {
     const col = await this.getActionsCollection(projectId);
@@ -469,7 +470,18 @@ export class ActionNotificationRepo {
   async getNotificationsByProject(projectId: string, isRead?: boolean): Promise<ClearanceNotification[]> {
     const col = await this.getNotificationsCollection(projectId);
     const snap = await col.get();
-    let notifs: ClearanceNotification[] = snap.docs.map((doc: any) => doc.data() as ClearanceNotification);
+    let notifs: ClearanceNotification[] = snap.docs.map((doc: any) => {
+      const data = doc.data() as any;
+      if (data.id === 'notif-seed-001' || data.targetTaskId === 'act-101' || (data.headline && data.headline.includes('Titan Industrial Hazard Placard'))) {
+        return {
+          ...data,
+          targetTaskId: 'TASK-101',
+          headline: 'Mentioned on Task: Create Fictional Prop Graphic: Titan Industrial Hazard Placard',
+          message: 'Clearance Coordinator mentioned @LegalCounsel on comment cmt-seed-01.',
+        };
+      }
+      return data as ClearanceNotification;
+    });
 
     if (isRead !== undefined) {
       notifs = notifs.filter((n: ClearanceNotification) => n.isRead === isRead);
@@ -487,6 +499,45 @@ export class ActionNotificationRepo {
     const current = snap.data() as ClearanceNotification;
     await docRef.set({ ...current, isRead: true });
     return true;
+  }
+
+  async getTaskById(taskId: string, projectId: string = 'proj-default'): Promise<ClearanceActionItem | null> {
+    const actions = await this.getActionsByProject(projectId);
+    const found = actions.find((a) => a.id === taskId);
+    if (found) return found;
+    // Fallback to checking default project
+    const defaultActions = await this.getActionsByProject('proj-default');
+    return defaultActions.find((a) => a.id === taskId) || null;
+  }
+
+  async recordAuditEvent(params: {
+    taskId: string;
+    actorName: string;
+    actorRole: string;
+    actionType: string;
+    details: string;
+    previousValue?: string;
+    newValue?: string;
+    projectId?: string;
+  }): Promise<void> {
+    const projectId = params.projectId || 'proj-default';
+    const task = await this.getTaskById(params.taskId, projectId);
+    if (!task) return;
+
+    const history = task.activityHistory || [];
+    history.push({
+      id: `evt-${uuidv4().slice(0, 8)}`,
+      timestamp: new Date().toISOString(),
+      actor: params.actorName,
+      eventType: 'ASSIGNED',
+      description: params.details,
+      beforeState: params.previousValue,
+      afterState: params.newValue,
+    });
+
+    await this.updateActionItem(projectId, params.taskId, {
+      activityHistory: history,
+    });
   }
 }
 

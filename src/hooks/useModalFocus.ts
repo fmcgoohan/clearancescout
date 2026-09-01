@@ -119,8 +119,16 @@ export function useModalFocus<T extends HTMLElement = HTMLDivElement>({
       if (!containerRef.current) return;
 
       // Priority 1: User explicitly specified initial focus element
-      if (initialFocusRef?.current && containerRef.current.contains(initialFocusRef.current)) {
-        initialFocusRef.current.focus();
+      if (initialFocusRef) {
+        if (initialFocusRef.current && containerRef.current.contains(initialFocusRef.current)) {
+          initialFocusRef.current.focus();
+          return;
+        }
+        // If caller passed initialFocusRef but element is not yet mounted (e.g. async load), focus container to avoid premature button focus
+        if (!containerRef.current.hasAttribute('tabindex')) {
+          containerRef.current.setAttribute('tabindex', '-1');
+        }
+        containerRef.current.focus();
         return;
       }
 

@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json tsconfig.json vite.config.ts ./
-RUN npm ci
+RUN npm install
 
 # Copy source files
 COPY server/ ./server/
@@ -28,7 +28,7 @@ ENV EXECUTION_MODE=DEMO_MODE
 
 # Install only production dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copy built frontend assets, fixtures, and transpiled server from builder
 COPY --from=builder /app/dist ./dist

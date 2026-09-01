@@ -1,0 +1,16 @@
+{
+  "schedule-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "schedule",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ./scripts/schedule-guard.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -15,7 +15,7 @@ class InMemoryStore {
     return this.collections.get(name)!;
   }
 
-  async doc(path: string) {
+  doc(path: string) {
     const parts = path.split('/');
     const collectionName = parts.slice(0, -1).join('/');
     const docId = parts[parts.length - 1];

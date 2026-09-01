@@ -29,8 +29,9 @@ clearanceRouter.post('/projects/:id/clearance/evaluate', async (req: Request, re
       assessment: assessments[0],
     });
   } catch (err: any) {
-    if (err.status) {
-      return res.status(err.status).json({ error: err.message, quota: err.quota });
+    const statusCode = err.status || err.statusCode;
+    if (statusCode) {
+      return res.status(statusCode).json({ error: err.message, quota: err.quota });
     }
     next(err);
   }

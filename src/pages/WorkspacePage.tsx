@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId, useRef } from 'react';
 import { ScriptViewer, Scene, CounselOverrideItem } from '../components/ScriptViewer';
 import { EntityRegistryTable, CanonicalEntity } from '../components/EntityRegistryTable';
 import { ItemEditModal, EntityCategory } from '../components/ItemEditModal';
@@ -30,6 +30,7 @@ import { Icon } from '../components/icons/Icon';
 
 interface WorkspacePageProps {
   projectId: string;
+  isSwitchingProject?: boolean;
   onEvaluateClearance: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
   onOpenCounselReview: (entityId: string, sceneId?: string) => void;
@@ -42,6 +43,7 @@ interface WorkspacePageProps {
 
 export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   projectId,
+  isSwitchingProject = false,
   onEvaluateClearance,
   onGenerateReplacement,
   onOpenCounselReview,
@@ -80,6 +82,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
   // Scene Readiness summary state (Phase 5)
   const [readinessSummary, setReadinessSummary] = useState<{
+    projectId?: string;
     totalScenes: number;
     redScenesCount: number;
     workingClearScenesCount: number;
@@ -138,7 +141,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   // Phase 2 Workspace Section Tab Navigation State
   const [activeTab, setActiveTab] = useState<'overview' | 'screenplay' | 'clearance' | 'tasks'>('overview');
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>('ALL');
-  const [isHydrating, setIsHydrating] = useState<boolean>(true);
+  const [isHydrating, setIsHydrating] = useState<boolean>(false);
 
   // Ingestion feedback toast banner (Feature 021)
   const [ingestionToast, setIngestionToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
@@ -184,16 +187,32 @@ Along the heavy steel bulkhead, a weathered warning sign is bolted to the wall: 
 
 Jordan inputs the security code. The hydraulic lock hisses open.`;
 
+  const activeProjectIdRef = useRef(projectId);
+  useEffect(() => {
+    activeProjectIdRef.current = projectId;
+  }, [projectId]);
+
   const fetchWorkspaceData = async () => {
     if (!projectId) return;
+    const targetId = projectId;
+    activeProjectIdRef.current = projectId;
     setIsHydrating(true);
+    setReadinessSummary(null);
+    setScenes([]);
+    setEntities([]);
     try {
-      const [scenesRes, entitiesRes, readinessRes, actionsRes] = await Promise.all([
-        apiFetch(`/api/projects/${projectId}/scenes`),
-        apiFetch(`/api/projects/${projectId}/entities`),
-        apiFetch(`/api/projects/${projectId}/scenes/readiness`),
-        apiFetch(`/api/projects/${projectId}/actions?status=OPEN`),
+      const [scenesRes, entitiesRes, readinessRes, actionsRes, snapshotRes] = await Promise.all([
+        apiFetch(`/api/projects/${targetId}/scenes`),
+        apiFetch(`/api/projects/${targetId}/entities`),
+        apiFetch(`/api/projects/${targetId}/scenes/readiness`),
+        apiFetch(`/api/projects/${targetId}/actions?status=OPEN`),
+        apiFetch(`/api/projects/${targetId}/snapshot`),
       ]);
+
+      if (targetId !== activeProjectIdRef.current) {
+        console.log(`[WorkspacePage] fetchWorkspaceData DISCARDING stale result for targetId="${targetId}" (active is "${activeProjectIdRef.current}")`);
+        return;
+      }
 
       let openCount = 0;
       if (actionsRes.ok) {
@@ -205,7 +224,10 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       let readinessMap = new Map<string, any>();
       if (readinessRes.ok) {
         readinessSummaryData = await readinessRes.json();
-        if (Array.isArray(readinessSummaryData.scenes)) {
+        if (readinessSummaryData) {
+          readinessSummaryData.projectId = targetId;
+        }
+        if (Array.isArray(readinessSummaryData?.scenes)) {
           readinessSummaryData.scenes.forEach((s: any) => readinessMap.set(s.sceneId, s));
         }
       }
@@ -249,6 +271,15 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         }
       }
 
+      let snapshotData: any = null;
+      if (snapshotRes.ok) {
+        snapshotData = await snapshotRes.json();
+      }
+
+      if (!readinessSummaryData && snapshotData?.readiness) {
+        readinessSummaryData = snapshotData.readiness;
+      }
+
       // Apply all state updates atomically in the same batch
       setOpenActionsCount(openCount);
       setReadinessSummary(readinessSummaryData);
@@ -257,7 +288,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       setOverrides(fetchedOverrides);
 
       if (onRefreshProjectSummary) {
-        await Promise.resolve(onRefreshProjectSummary());
+        await Promise.resolve(onRefreshProjectSummary(snapshotData));
       }
     } catch (err) {
       console.error('Failed to fetch workspace data:', err);
@@ -426,9 +457,31 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Workspace Section Navigation Bar (User Story 17) */}
-      <div
-        role="tablist"
+      {isSwitchingProject ? (
+        <div
+          data-testid="switching-production-indicator"
+          style={{
+            padding: '40px 20px',
+            textAlign: 'center',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            margin: '20px 0',
+          }}
+        >
+          <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>⏳</div>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-main)' }}>
+            Switching production...
+          </h3>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+            Loading script version, clearance items, and shooting readiness snapshot...
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Workspace Section Navigation Bar (User Story 17) */}
+          <div
+            role="tablist"
         aria-label="Workspace Sections"
         style={{
           display: 'flex',
@@ -811,7 +864,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           )}
 
           {/* Hero Readiness Index Card */}
-          {scenes.length > 0 && readinessSummary && (
+          {readinessSummary && (!readinessSummary.projectId || readinessSummary.projectId === projectId) && (
             <div
               className="glass-panel hero-animate"
               style={{
@@ -875,6 +928,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                     <span>Working Clear: {readinessSummary.workingClearScenesCount}</span>
                   </span>
                   <span
+                    data-testid="workspace-blocked-scenes"
                     style={{
                       fontSize: '0.8rem',
                       padding: '4px 10px',
@@ -910,6 +964,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                   Shooting Readiness Index
                 </div>
                 <div
+                  data-testid="workspace-readiness-pct"
                   style={{
                     fontSize: '2.75rem',
                     fontWeight: 900,
@@ -1348,6 +1403,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           });
         }}
       />
+        </>
+      )}
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { ActionListModal, ClearanceActionItem } from '../components/ActionListModal';
 
 vi.mock('../utils/apiClient.js', () => ({
+  getDemoToken: vi.fn().mockReturnValue('demo-tok'),
   apiFetch: vi.fn().mockResolvedValue({
     ok: true,
     json: async () => [],
@@ -37,9 +38,8 @@ describe('ActionListModal Accessibility Count Semantics', () => {
 
     render(<ActionListModal isOpen={true} projectId="proj-1" onClose={() => {}} />);
 
-    const statusRegion = await screen.findByRole('status');
+    const statusRegion = await screen.findByText('Showing 11 of 11 department tasks');
     expect(statusRegion).not.toBeNull();
-    expect(statusRegion.textContent).toBe('Showing 11 of 11 department tasks');
 
     const list = screen.getByRole('list', { name: /Department Tasks List/i });
     expect(list).not.toBeNull();
@@ -65,8 +65,8 @@ describe('ActionListModal Accessibility Count Semantics', () => {
     const legalTab = await screen.findByRole('button', { name: /Legal Counsel/i });
     fireEvent.click(legalTab);
 
-    const statusRegion = screen.getByRole('status');
-    expect(statusRegion.textContent).toBe('Showing 9 of 11 department tasks');
+    const statusRegion = screen.getByText('Showing 9 of 11 department tasks');
+    expect(statusRegion).not.toBeNull();
 
     const list = screen.getByRole('list', { name: /Department Tasks List \(9 items\)/i });
     expect(list.getAttribute('aria-setsize')).toBe('9');

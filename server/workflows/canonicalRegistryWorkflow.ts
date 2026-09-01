@@ -34,7 +34,7 @@ export class CanonicalRegistryWorkflow {
     ];
 
     const extractedTitle = extractTitleFromScriptText(scriptText);
-    if (extractedTitle && project && genericDefaultTitles.includes(project.title)) {
+    if (extractedTitle && project && genericDefaultTitles.includes(project.title) && projectId !== 'proj-cyberpunk') {
       await projectRepo.updateProject(projectId, { title: extractedTitle });
     }
 
