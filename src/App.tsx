@@ -736,6 +736,7 @@ export default function App() {
           {/* Phase 4 In-Product Notification Drawer */}
           <NotificationDrawer
             currentUserRole={userRole}
+            projectId={projectId}
             demoToken={getDemoToken() || undefined}
             onSelectTask={(taskId, activityType, activityId) => {
               setDeepLinkTaskId(taskId);

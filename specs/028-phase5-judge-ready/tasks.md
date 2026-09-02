@@ -93,6 +93,16 @@
 
 ---
 
+## Phase 8: Convergence
+
+**Purpose**: Fix missing task resolution, tombstone behavior, and test coverage per FR-014.
+
+- [x] T027 [P] Resolve target task existence in `src/components/NotificationDrawer.tsx` and `src/components/ActionListModal.tsx`; render missing/orphan notifications as disabled/tombstoned, keep drawer open, announce exactly "This task is no longer available.", and prevent false navigation/focus per FR-014 (partial)
+- [x] T028 [P] Implement notification deletion endpoint `DELETE /api/notifications/:id` in `server/api/notificationRoutes.ts` and `server/repositories/UserNotificationRepo.ts` for automated test cleanup per FR-014 (missing)
+- [x] T029 Update `tests/repro_local.js` and `tests/repro_live.js` to execute and verify Scenario A (valid TASK-101 navigation + announcement) and Scenario B (missing target disabled tombstone + "This task is no longer available." announcement + drawer retained + test cleanup) per FR-014 and US1/AC4 (partial)
+
+---
+
 ## Dependencies & Execution Order
 
 - **Phase 1 (Setup)**: T001–T002 can start immediately.
@@ -102,3 +112,5 @@
 - **Phase 5 (User Story 3 - P2 Mobile)**: T012–T013 can run in parallel with US1/US2.
 - **Phase 6 (User Story 4 - P1 Packaging)**: T014–T019 can run in parallel.
 - **Phase 7 (Release Validation)**: T020–T026 run after all user story implementations complete.
+- **Phase 8 (Convergence)**: T027–T028 run in parallel; T029 verifies both locally and in test suite.
+

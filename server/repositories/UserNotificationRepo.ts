@@ -87,6 +87,10 @@ class UserNotificationRepository {
       this.notifications.set(n.id, n);
     });
   }
+
+  public deleteNotification(id: string): boolean {
+    return this.notifications.delete(id);
+  }
 }
 
 export const userNotificationRepo = new UserNotificationRepository();

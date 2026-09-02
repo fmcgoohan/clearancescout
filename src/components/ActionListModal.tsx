@@ -145,34 +145,41 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
       setStatusFilter('ALL');
 
       const matchedTask = actions.find((a) => a.id === targetTaskId);
-      const effectiveTaskId = matchedTask ? matchedTask.id : targetTaskId;
-      const taskTitle = matchedTask ? matchedTask.title : targetTaskId;
 
-      if (targetActivityType === 'ATTACHMENT') {
-        setExpandedAttachments((prev) => ({ ...prev, [effectiveTaskId]: true }));
-      } else if (targetActivityType === 'ASSIGNMENT' || targetActivityType === 'STATUS') {
-        setExpandedHistory((prev) => ({ ...prev, [effectiveTaskId]: true }));
-      } else {
-        setExpandedComments((prev) => ({ ...prev, [effectiveTaskId]: true }));
-      }
+      if (matchedTask) {
+        const effectiveTaskId = matchedTask.id;
+        const taskTitle = matchedTask.title;
 
-      setNavAnnouncement(`Navigated to task: ${taskTitle}`);
+        if (targetActivityType === 'ATTACHMENT') {
+          setExpandedAttachments((prev) => ({ ...prev, [effectiveTaskId]: true }));
+        } else if (targetActivityType === 'ASSIGNMENT' || targetActivityType === 'STATUS') {
+          setExpandedHistory((prev) => ({ ...prev, [effectiveTaskId]: true }));
+        } else {
+          setExpandedComments((prev) => ({ ...prev, [effectiveTaskId]: true }));
+        }
 
-      if (!isLoading && actions.length > 0) {
-        const timer = setTimeout(() => {
-          const headingEl =
-            document.getElementById(`task-heading-${effectiveTaskId}`) ||
-            document.getElementById(`task-card-${effectiveTaskId}`);
-          if (headingEl) {
-            headingEl.scrollIntoView({ behavior: 'auto', block: 'center' });
-            headingEl.setAttribute('tabindex', '-1');
-            requestAnimationFrame(() => {
-              headingEl.focus();
-              focusedTaskIdRef.current = effectiveTaskId;
-            });
-          }
-        }, 50);
-        return () => clearTimeout(timer);
+        setNavAnnouncement(`Navigated to task: ${taskTitle}`);
+
+        if (!isLoading && actions.length > 0) {
+          const timer = setTimeout(() => {
+            const headingEl =
+              document.getElementById(`task-heading-${effectiveTaskId}`) ||
+              document.getElementById(`task-card-${effectiveTaskId}`);
+            if (headingEl) {
+              headingEl.scrollIntoView({ behavior: 'auto', block: 'center' });
+              headingEl.setAttribute('tabindex', '-1');
+              requestAnimationFrame(() => {
+                headingEl.focus();
+                focusedTaskIdRef.current = effectiveTaskId;
+              });
+            }
+          }, 50);
+          return () => clearTimeout(timer);
+        }
+      } else if (!isLoading && actions.length > 0) {
+        // Missing / orphan task target: do NOT announce false success and do NOT focus unrelated task
+        setNavAnnouncement('This task is no longer available.');
+        focusedTaskIdRef.current = null;
       }
     } else if (!isOpen) {
       focusedTaskIdRef.current = null;

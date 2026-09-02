@@ -720,110 +720,204 @@ async function runLocalVerification() {
     }
     console.log(`Neon Return Audit: PASS (The Neon Horizon 33.3% readiness, 2 blocked, and 3/7/11 tabs confirmed)`);
 
-    // 6. Test P1: Notification Drawer & Target Task Focus Alignment
-    console.log('\n--- P1 TEST: Notification Drawer & Task Heading ID Focus Audit ---');
+    // 6. Test P1: Notification Drawer - Scenario A (Valid TASK-101) & Scenario B (Missing Target Tombstone)
+    console.log('\n--- SCENARIO A: VALID NOTIFICATION DEEP-LINK & FOCUS AUDIT (TASK-101) ---');
     const alertsBtn = await page.waitForSelector('#notification-drawer-button, button:has-text("Alerts")', { timeout: 5000 });
     await alertsBtn.click();
     await page.waitForTimeout(500);
 
-    const notifyItems = await page.$$('[data-notification-item="true"]');
-    console.log(`Found ${notifyItems.length} notification items`);
-    for (let i = 0; i < notifyItems.length; i++) {
-      const item = notifyItems[i];
-      const targetTaskAttr = await item.getAttribute('data-notification-target-task');
-      const text = await item.innerText();
-      const accessibleName = await item.getAttribute('aria-label') || await item.getAttribute('title') || 'N/A';
-      console.log(`Notification #${i + 1}: targetTask="${targetTaskAttr}" | accessibleName="${accessibleName}" | text="${text.replace(/\n/g, ' ')}"`);
+    const validNotifyItem = await page.waitForSelector('[data-notification-target-task="TASK-101"]', { timeout: 5000 });
+    const validTargetTaskId = await validNotifyItem.getAttribute('data-notification-target-task');
+    const validItemDisabled = await validNotifyItem.getAttribute('data-notification-disabled');
+    const validItemAccessibleName = await validNotifyItem.getAttribute('aria-label') || '';
+    const validItemText = await validNotifyItem.innerText();
 
-      // Notification accessible name and body must contain target task identifier (e.g. TASK-101)
-      if (!accessibleName.includes(targetTaskAttr) || !text.includes(targetTaskAttr)) {
-        console.error(`P1 NOTIFICATION FAIL: Notification #${i + 1} accessible name or text missing target task identifier "${targetTaskAttr}"!`);
-        process.exit(1);
-      }
+    console.log(`Valid Notification: targetTask="${validTargetTaskId}" | disabled=${validItemDisabled}`);
+    console.log(`  Accessible Name: "${validItemAccessibleName}"`);
+    console.log(`  Text: "${validItemText.replace(/\n/g, ' ')}"`);
+
+    if (validItemDisabled === 'true') {
+      console.error(`P1 NOTIFICATION FAIL: Valid notification for ${validTargetTaskId} is incorrectly marked disabled!`);
+      process.exit(1);
     }
 
-    if (notifyItems.length > 0) {
-      const firstNotify = notifyItems[0];
-      const targetTaskId = await firstNotify.getAttribute('data-notification-target-task');
-      console.log(`Clicking first notification (target: ${targetTaskId})...`);
+    console.log(`Clicking valid notification (target: ${validTargetTaskId})...`);
+    let resyncFocusedDuringLoad = false;
+    let zeroOfZeroVisibleDuringLoad = false;
+    const clickTime = Date.now();
 
-      let resyncFocusedDuringLoad = false;
-      let zeroOfZeroVisibleDuringLoad = false;
-      const clickTime = Date.now();
+    await validNotifyItem.click();
 
-      await firstNotify.click();
+    while (Date.now() - clickTime < 4000) {
+      const check = await page.evaluate((expectedId) => {
+        const activeEl = document.activeElement;
+        const isButton = activeEl && activeEl.tagName.toLowerCase() === 'button';
+        const isReSyncFocused = isButton && (
+          (activeEl.textContent && activeEl.textContent.trim().includes('Re-Sync')) ||
+          (activeEl.getAttribute('aria-label') && activeEl.getAttribute('aria-label').includes('Re-Sync'))
+        );
+        const actionModal = document.querySelector('[role="dialog"][aria-labelledby="action-modal-title"]');
+        const modalText = actionModal ? actionModal.textContent || '' : '';
+        const isZeroOfZero = modalText.includes('0 of 0') || modalText.includes('Showing 0 of 0');
+        const headingEl = document.getElementById(`task-heading-${expectedId}`);
+        const isTargetHeadingFocused = activeEl === headingEl;
 
-      while (Date.now() - clickTime < 4000) {
-        const check = await page.evaluate((expectedId) => {
-          const activeEl = document.activeElement;
-          const isButton = activeEl && activeEl.tagName.toLowerCase() === 'button';
-          const isReSyncFocused = isButton && (
-            (activeEl.textContent && activeEl.textContent.trim().includes('Re-Sync')) ||
-            (activeEl.getAttribute('aria-label') && activeEl.getAttribute('aria-label').includes('Re-Sync'))
-          );
-          const actionModal = document.querySelector('[role="dialog"][aria-labelledby="action-modal-title"]');
-          const modalText = actionModal ? actionModal.textContent || '' : '';
-          const isZeroOfZero = modalText.includes('0 of 0') || modalText.includes('Showing 0 of 0');
-          const headingEl = document.getElementById(`task-heading-${expectedId}`);
-          const isTargetHeadingFocused = activeEl === headingEl;
-
-          return {
-            isReSyncFocused: !!isReSyncFocused,
-            isZeroOfZero: !!isZeroOfZero,
-            isTargetHeadingFocused: !!isTargetHeadingFocused,
-            activeTag: activeEl ? activeEl.tagName.toLowerCase() : 'none',
-            activeId: activeEl ? activeEl.id : '',
-            activeText: activeEl ? activeEl.innerText || activeEl.textContent || '' : '',
-          };
-        }, targetTaskId);
-
-        if (check.isReSyncFocused) {
-          resyncFocusedDuringLoad = true;
-        }
-        if (check.isZeroOfZero) {
-          zeroOfZeroVisibleDuringLoad = true;
-        }
-        if (check.isTargetHeadingFocused) {
-          console.log(`[t+${Date.now() - clickTime}ms] Target heading ${targetTaskId} received focus!`);
-          break;
-        }
-        await page.waitForTimeout(10);
-      }
-
-      if (resyncFocusedDuringLoad) {
-        console.error(`P1 ACTION CENTER FAIL: Re-Sync button received focus during notification deep-link navigation!`);
-        process.exit(1);
-      }
-      if (zeroOfZeroVisibleDuringLoad) {
-        console.error(`P1 ACTION CENTER FAIL: "0 of 0" was visible in modal chrome during task load!`);
-        process.exit(1);
-      }
-
-      const modalVisible = await page.$('[role="dialog"]').then(el => el ? true : false);
-      const navAnnouncement = await page.$eval('[data-testid="nav-announcement"]', el => el.textContent.trim()).catch(() => 'N/A');
-
-      const activeElementInfo = await page.evaluate(() => {
-        const el = document.activeElement;
-        if (!el) return { tagName: 'none', id: '', accessibleName: '' };
         return {
-          tagName: el.tagName.toLowerCase(),
-          id: el.id || '',
-          accessibleName: el.getAttribute('aria-label') || el.innerText || '',
+          isReSyncFocused: !!isReSyncFocused,
+          isZeroOfZero: !!isZeroOfZero,
+          isTargetHeadingFocused: !!isTargetHeadingFocused,
+          activeTag: activeEl ? activeEl.tagName.toLowerCase() : 'none',
+          activeId: activeEl ? activeEl.id : '',
+          activeText: activeEl ? activeEl.innerText || activeEl.textContent || '' : '',
         };
-      });
+      }, validTargetTaskId);
 
-      console.log(`Action Modal Visible: ${modalVisible}`);
-      console.log(`Live Region Announcement: "${navAnnouncement}"`);
-      console.log(`Active Focused Element: <${activeElementInfo.tagName} id="${activeElementInfo.id}" label="${activeElementInfo.accessibleName.replace(/\n/g, ' ')}">`);
-
-      // Strict Focus Assertion: Active focused element must be H4 with ID task-heading-${targetTaskId}
-      const expectedHeadingId = `task-heading-${targetTaskId}`;
-      if (activeElementInfo.tagName !== 'h4' || activeElementInfo.id !== expectedHeadingId) {
-        console.error(`P1 NOTIFICATION FOCUS FAIL: Expected focused element <h4 id="${expectedHeadingId}">, but got <${activeElementInfo.tagName} id="${activeElementInfo.id}">!`);
-        process.exit(1);
+      if (check.isReSyncFocused) resyncFocusedDuringLoad = true;
+      if (check.isZeroOfZero) zeroOfZeroVisibleDuringLoad = true;
+      if (check.isTargetHeadingFocused) {
+        console.log(`[t+${Date.now() - clickTime}ms] Target heading ${validTargetTaskId} received focus!`);
+        break;
       }
-      console.log(`P1 Notification Heading Focus Audit: PASS (Focused <h4 id="${expectedHeadingId}"> without Re-Sync flash or "0 of 0" chrome)`);
+      await page.waitForTimeout(10);
     }
+
+    if (resyncFocusedDuringLoad) {
+      console.error(`P1 ACTION CENTER FAIL: Re-Sync button received focus during notification deep-link navigation!`);
+      process.exit(1);
+    }
+    if (zeroOfZeroVisibleDuringLoad) {
+      console.error(`P1 ACTION CENTER FAIL: "0 of 0" was visible in modal chrome during task load!`);
+      process.exit(1);
+    }
+
+    const modalVisible = await page.$('[role="dialog"][aria-labelledby="action-modal-title"]').then(el => el ? true : false);
+    const navAnnouncement = await page.$eval('[data-testid="nav-announcement"]', el => el.textContent.trim()).catch(() => 'N/A');
+
+    const activeElementInfo = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el) return { tagName: 'none', id: '', accessibleName: '' };
+      return {
+        tagName: el.tagName.toLowerCase(),
+        id: el.id || '',
+        accessibleName: el.getAttribute('aria-label') || el.innerText || '',
+      };
+    });
+
+    console.log(`Action Modal Visible: ${modalVisible}`);
+    console.log(`Live Region Announcement: "${navAnnouncement}"`);
+    console.log(`Active Focused Element: <${activeElementInfo.tagName} id="${activeElementInfo.id}" label="${activeElementInfo.accessibleName.replace(/\n/g, ' ')}">`);
+
+    const expectedHeadingId = `task-heading-${validTargetTaskId}`;
+    if (activeElementInfo.tagName !== 'h4' || activeElementInfo.id !== expectedHeadingId) {
+      console.error(`P1 NOTIFICATION FOCUS FAIL: Expected focused element <h4 id="${expectedHeadingId}">, but got <${activeElementInfo.tagName} id="${activeElementInfo.id}">!`);
+      process.exit(1);
+    }
+    if (!navAnnouncement.includes('Create Fictional Prop Graphic: Titan Industrial Hazard Placard')) {
+      console.error(`P1 NOTIFICATION ANNOUNCEMENT FAIL: Expected real task title in announcement, got: "${navAnnouncement}"`);
+      process.exit(1);
+    }
+    console.log('Scenario A (Valid Notification Navigation & Focus): PASS');
+
+    // Close Action Center Modal
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+
+    // --- SCENARIO B: MISSING/ORPHAN TARGET TASK TOMBSTONE AUDIT ---
+    console.log('\n--- SCENARIO B: MISSING/ORPHAN TARGET TASK TOMBSTONE AUDIT ---');
+
+    // 1. Create temporary orphan notification
+    const orphanCreateRes = await page.evaluate(async (token) => {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['x-demo-token'] = token;
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          userId: 'LEGAL_COUNSEL',
+          projectId: 'proj-default',
+          triggerType: 'TASK_MENTION',
+          title: 'Orphan Notification Test',
+          message: 'Notification with missing target task.',
+          targetTaskId: 'TASK-NON-EXISTENT-999',
+        }),
+      });
+      return { ok: res.ok, data: await res.json() };
+    }, DEMO_TOKEN);
+
+    const orphanId = orphanCreateRes.data?.notification?.id;
+    console.log(`Created temporary orphan notification (ID: ${orphanId}, Target: TASK-NON-EXISTENT-999)`);
+
+    // 2. Open notification drawer
+    const alertsBtn2 = await page.waitForSelector('#notification-drawer-button, button:has-text("Alerts")', { timeout: 5000 });
+    await alertsBtn2.click();
+    await page.waitForTimeout(500);
+
+    // 3. Inspect orphan notification item
+    const orphanItem = await page.waitForSelector('[data-notification-target-task="TASK-NON-EXISTENT-999"]', { timeout: 5000 });
+    const orphanDisabledAttr = await orphanItem.getAttribute('data-notification-disabled');
+    const orphanAriaDisabled = await orphanItem.getAttribute('aria-disabled');
+    const orphanAriaLabel = await orphanItem.getAttribute('aria-label') || '';
+    const orphanText = await orphanItem.innerText();
+
+    console.log(`Orphan Notification: data-notification-disabled="${orphanDisabledAttr}" | aria-disabled="${orphanAriaDisabled}"`);
+    console.log(`  Accessible Name: "${orphanAriaLabel}"`);
+    console.log(`  Text: "${orphanText.replace(/\n/g, ' ')}"`);
+
+    if (orphanDisabledAttr !== 'true') {
+      console.error(`P1 TOMBSTONE FAIL: Expected orphan notification to have data-notification-disabled="true", got "${orphanDisabledAttr}"`);
+      process.exit(1);
+    }
+    if (!orphanAriaLabel.includes('link disabled')) {
+      console.error(`P1 TOMBSTONE FAIL: Expected orphan notification aria-label to indicate disabled link, got "${orphanAriaLabel}"`);
+      process.exit(1);
+    }
+
+    // 4. Click the disabled orphan notification item
+    console.log('Clicking disabled orphan notification item...');
+    await orphanItem.click({ force: true });
+    await page.waitForTimeout(400);
+
+    // 5. Assertions:
+    // - Drawer must stay open
+    const drawerStillOpen = await page.$('[role="dialog"][aria-label="Notifications"]').then(el => el ? true : false);
+    // - Live region must announce exactly "This task is no longer available."
+    const drawerAnnouncement = await page.$eval('[data-testid="notification-live-announcement"]', el => el.textContent.trim()).catch(() => 'N/A');
+    // - Action Center modal must NOT be open
+    const actionModalOpen = await page.$('[role="dialog"][aria-labelledby="action-modal-title"]').then(el => el ? true : false);
+
+    console.log(`Drawer Retained Open: ${drawerStillOpen}`);
+    console.log(`Drawer Live Region Announcement: "${drawerAnnouncement}"`);
+    console.log(`Action Center Modal Opened: ${actionModalOpen}`);
+
+    if (!drawerStillOpen) {
+      console.error(`P1 TOMBSTONE FAIL: Expected notification drawer to remain open after clicking disabled orphan, but drawer closed!`);
+      process.exit(1);
+    }
+    if (drawerAnnouncement !== 'This task is no longer available.') {
+      console.error(`P1 TOMBSTONE FAIL: Expected live announcement "This task is no longer available.", but got "${drawerAnnouncement}"`);
+      process.exit(1);
+    }
+    if (actionModalOpen) {
+      console.error(`P1 TOMBSTONE FAIL: Action Center modal unexpectedly opened on missing task click!`);
+      process.exit(1);
+    }
+
+    // 6. Cleanup: Remove temporary QA orphan notification
+    if (orphanId) {
+      console.log(`Cleaning up temporary orphan notification ${orphanId}...`);
+      const deleteRes = await page.evaluate(async ({ id, token }) => {
+        const headers = {};
+        if (token) headers['x-demo-token'] = token;
+        const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE', headers });
+        return { ok: res.ok };
+      }, { id: orphanId, token: DEMO_TOKEN });
+      console.log(`Orphan cleanup status: ${deleteRes.ok ? 'SUCCESS' : 'FAILED'}`);
+    }
+
+    // Close drawer
+    await alertsBtn2.click();
+    await page.waitForTimeout(300);
+    console.log('Scenario B (Missing Target Disabled Tombstone & Announcement): PASS');
 
     // --- RC REGRESSION: Task Status Update & Audit History ---
     console.log('\n--- RC REGRESSION: TASK UPDATE & AUDIT HISTORY AUDIT ---');
@@ -875,42 +969,6 @@ async function runLocalVerification() {
     }
     console.log(`Exported Binder: Title="${binderExportRes.data.projectSummary?.title}" | Total Scenes=${binderExportRes.data.projectSummary?.totalScenes} | SHA-256 Digest="${binderExportRes.data.integrityDigest.slice(0, 16)}..."`);
     console.log('RC Regression Binder Export Audit: PASS');
-
-    // --- RC REGRESSION: Tombstone / Non-existent Task Reference Integrity ---
-    console.log('\n--- RC REGRESSION: TOMBSTONE NOTIFICATION INTEGRITY AUDIT ---');
-    const tombstoneCheck = await page.evaluate(async (token) => {
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['x-demo-token'] = token;
-      const res = await fetch('/api/notifications', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          userId: 'LEGAL_COUNSEL',
-          projectId: 'proj-default',
-          triggerType: 'TASK_MENTION',
-          title: 'Orphan Notification Test',
-          message: 'Notification with missing target task.',
-          targetTaskId: 'TASK-NON-EXISTENT-999',
-        }),
-      });
-      return { ok: res.ok, data: await res.json() };
-    }, DEMO_TOKEN);
-
-    const verifyOrphan = await page.evaluate(async (token) => {
-      const headers = {};
-      if (token) headers['x-demo-token'] = token;
-      const res = await fetch('/api/notifications?userId=LEGAL_COUNSEL', { headers });
-      const notifs = (await res.json()).notifications || [];
-      const orphan = notifs.find(n => n.title === 'Orphan Notification Test');
-      return orphan ? orphan.targetTaskId : null;
-    }, DEMO_TOKEN);
-
-    if (verifyOrphan === 'TASK-101') {
-      console.error(`RC REGRESSION FAIL: Orphan notification was silently remapped to TASK-101!`);
-      process.exit(1);
-    }
-    console.log(`Orphan Notification targetTaskId preserved as: "${verifyOrphan}" (No silent TASK-101 fallback)`);
-    console.log('RC Regression Tombstone & Task ID Integrity Audit: PASS');
 
     console.log('\n=== LOCAL PLAYWRIGHT VERIFICATION AUDIT COMPLETE: ALL PASS ===');
   } catch (err) {

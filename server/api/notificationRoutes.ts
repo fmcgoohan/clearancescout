@@ -52,6 +52,13 @@ notificationRouter.post('/notifications/mark-all-read', (req: Request, res: Resp
   res.json({ success: true });
 });
 
+// DELETE single notification
+notificationRouter.delete('/notifications/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const success = userNotificationRepo.deleteNotification(id);
+  res.json({ success });
+});
+
 // GET Notification SSE stream stub
 notificationRouter.get('/notifications/stream', (req: Request, res: Response) => {
   res.setHeader('Content-Type', 'text/event-stream');
