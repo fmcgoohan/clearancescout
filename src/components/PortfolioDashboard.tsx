@@ -290,19 +290,22 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
 
       {/* Interactive Controls & Filter Bar */}
       <div
+        className="portfolio-controls-bar"
         style={{
           background: 'var(--panel2)',
           border: '1px solid var(--border)',
           borderRadius: '10px',
-          padding: '12px 16px',
+          padding: '12px 12px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '12px',
+          boxSizing: 'border-box',
+          width: '100%',
         }}
       >
-        <div style={{ flex: '1 1 240px', maxWidth: '360px' }}>
+        <div style={{ flex: '1 1 240px', maxWidth: '360px', width: '100%', boxSizing: 'border-box' }}>
           <input
             type="text"
             placeholder="Filter productions by name..."
@@ -324,22 +327,26 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
         </div>
         <div
           data-testid="portfolio-filter-tabs"
+          className="portfolio-filter-tabs"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
             flexWrap: 'wrap',
             flex: '1 1 auto',
+            boxSizing: 'border-box',
           }}
         >
           <button
             type="button"
             data-filter-tab="all"
             onClick={() => setFilterMode('ALL')}
+            aria-label={`All (${portfolio.length})`}
+            className="portfolio-filter-tab-btn"
             style={{
-              padding: '8px 14px',
+              padding: '8px 12px',
               borderRadius: '6px',
-              fontSize: '0.78rem',
+              fontSize: '13px',
               fontWeight: 700,
               border: '1px solid',
               borderColor: filterMode === 'ALL' ? 'var(--accent)' : 'var(--border)',
@@ -347,21 +354,24 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
               color: filterMode === 'ALL' ? 'var(--accent)' : 'var(--muted)',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
-              flex: '1 1 80px',
               textAlign: 'center',
               whiteSpace: 'nowrap',
+              boxSizing: 'border-box',
             }}
           >
-            All ({portfolio.length})
+            <span className="tab-label-desktop">All</span>
+            <span className="tab-label-mobile">All</span> ({portfolio.length})
           </button>
           <button
             type="button"
             data-filter-tab="blocked"
             onClick={() => setFilterMode('BLOCKED')}
+            aria-label={`Needs Attention (${portfolio.filter((p) => p.blockedSceneCount > 0 || p.overdueTaskCount > 0).length})`}
+            className="portfolio-filter-tab-btn"
             style={{
-              padding: '8px 14px',
+              padding: '8px 12px',
               borderRadius: '6px',
-              fontSize: '0.78rem',
+              fontSize: '13px',
               fontWeight: 700,
               border: '1px solid',
               borderColor: filterMode === 'BLOCKED' ? 'var(--warn)' : 'var(--border)',
@@ -369,21 +379,24 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
               color: filterMode === 'BLOCKED' ? 'var(--warn)' : 'var(--muted)',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
-              flex: '1 1 120px',
               textAlign: 'center',
               whiteSpace: 'nowrap',
+              boxSizing: 'border-box',
             }}
           >
-            Needs Attention ({portfolio.filter((p) => p.blockedSceneCount > 0 || p.overdueTaskCount > 0).length})
+            <span className="tab-label-desktop">Needs Attention</span>
+            <span className="tab-label-mobile">Attention</span> ({portfolio.filter((p) => p.blockedSceneCount > 0 || p.overdueTaskCount > 0).length})
           </button>
           <button
             type="button"
             data-filter-tab="ready"
             onClick={() => setFilterMode('READY')}
+            aria-label={`Fully Ready (${portfolio.filter((p) => p.readinessPercentage >= 100).length})`}
+            className="portfolio-filter-tab-btn"
             style={{
-              padding: '8px 14px',
+              padding: '8px 12px',
               borderRadius: '6px',
-              fontSize: '0.78rem',
+              fontSize: '13px',
               fontWeight: 700,
               border: '1px solid',
               borderColor: filterMode === 'READY' ? 'var(--ok)' : 'var(--border)',
@@ -391,12 +404,13 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
               color: filterMode === 'READY' ? 'var(--ok)' : 'var(--muted)',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
-              flex: '1 1 95px',
               textAlign: 'center',
               whiteSpace: 'nowrap',
+              boxSizing: 'border-box',
             }}
           >
-            Fully Ready ({portfolio.filter((p) => p.readinessPercentage >= 100).length})
+            <span className="tab-label-desktop">Fully Ready</span>
+            <span className="tab-label-mobile">Ready</span> ({portfolio.filter((p) => p.readinessPercentage >= 100).length})
           </button>
         </div>
       </div>

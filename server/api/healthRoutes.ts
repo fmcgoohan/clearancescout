@@ -20,6 +20,9 @@ healthRouter.get('/health', async (req: Request, res: Response) => {
     if (!geminiConfigured) missing.push('GEMINI_API_KEY');
     if (!parallelWebConfigured) missing.push('PARALLEL_WEB_API_KEY');
 
+    const revision = process.env.K_REVISION || 'unknown';
+    const service = process.env.K_SERVICE || 'clearancescout';
+
     if (missing.length > 0) {
       const responsePayload: HealthStatusResponse = {
         status: 'DEGRADED',
@@ -27,6 +30,8 @@ healthRouter.get('/health', async (req: Request, res: Response) => {
         uptimeSeconds,
         timestamp: new Date().toISOString(),
         version: '1.0.0',
+        revision,
+        service,
         credentials,
         missingCredentials: missing,
         error: `CLOUD_MODE is active but missing required API credentials: ${missing.join(', ')}. Production clearance operations will fail visibly without silent mock fallback.`,
@@ -42,6 +47,8 @@ healthRouter.get('/health', async (req: Request, res: Response) => {
         uptimeSeconds,
         timestamp: new Date().toISOString(),
         version: '1.0.0',
+        revision,
+        service,
         credentials,
         firestoreConnected: false,
         error: `CLOUD_MODE is active but Google Cloud Firestore via ADC is unreachable: ${firestoreCheck.error}. Volatile in-memory fallback is prohibited in production.`,
@@ -56,6 +63,8 @@ healthRouter.get('/health', async (req: Request, res: Response) => {
     uptimeSeconds,
     timestamp: new Date().toISOString(),
     version: '1.0.0',
+    revision: process.env.K_REVISION || 'unknown',
+    service: process.env.K_SERVICE || 'clearancescout',
     credentials,
     ...(config.executionMode === 'CLOUD_MODE' ? { firestoreConnected: true } : {}),
   };

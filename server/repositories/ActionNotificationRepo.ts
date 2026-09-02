@@ -470,18 +470,7 @@ export class ActionNotificationRepo {
   async getNotificationsByProject(projectId: string, isRead?: boolean): Promise<ClearanceNotification[]> {
     const col = await this.getNotificationsCollection(projectId);
     const snap = await col.get();
-    let notifs: ClearanceNotification[] = snap.docs.map((doc: any) => {
-      const data = doc.data() as any;
-      if (data.id === 'notif-seed-001' || data.targetTaskId === 'act-101' || (data.headline && data.headline.includes('Titan Industrial Hazard Placard'))) {
-        return {
-          ...data,
-          targetTaskId: 'TASK-101',
-          headline: 'Mentioned on Task: Create Fictional Prop Graphic: Titan Industrial Hazard Placard',
-          message: 'Clearance Coordinator mentioned @LegalCounsel on comment cmt-seed-01.',
-        };
-      }
-      return data as ClearanceNotification;
-    });
+    let notifs: ClearanceNotification[] = snap.docs.map((doc: any) => doc.data() as ClearanceNotification);
 
     if (isRead !== undefined) {
       notifs = notifs.filter((n: ClearanceNotification) => n.isRead === isRead);

@@ -128,6 +128,7 @@ export default function App() {
   };
 
   const [initError, setInitError] = useState<string | null>(null);
+  const [servingRevision, setServingRevision] = useState<string>('unknown');
 
   const bootstrapFromHealth = async () => {
     setInitError(null);
@@ -142,6 +143,9 @@ export default function App() {
           health.executionMode === 'CLOUD_MODE'
         ) {
           serverMode = health.executionMode;
+        }
+        if (health.revision) {
+          setServingRevision(health.revision);
         }
       }
     } catch (err) {
@@ -873,6 +877,7 @@ export default function App() {
             liveQuota={liveQuota}
             eventsCount={events.length}
             onOpenTimeline={() => setIsTimelineOpen(true)}
+            servingRevision={servingRevision}
           />
         </div>
       </header>

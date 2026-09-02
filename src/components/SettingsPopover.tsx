@@ -9,6 +9,7 @@ interface SettingsPopoverProps {
   liveQuota: { remaining: number; limit: number };
   eventsCount: number;
   onOpenTimeline: () => void;
+  servingRevision?: string;
 }
 
 export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
@@ -19,10 +20,24 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
   liveQuota,
   eventsCount,
   onOpenTimeline,
+  servingRevision = 'unknown',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  const handleCopyRevision = async () => {
+    if (servingRevision) {
+      try {
+        await navigator.clipboard.writeText(servingRevision);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy revision:', err);
+      }
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -189,6 +204,50 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
               <span className="quota-meter-number" style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: liveQuota.remaining === 0 ? '#f87171' : 'var(--accent-cyan)' }}>
                 {liveQuota.remaining} / {liveQuota.limit}
               </span>
+            </div>
+          </div>
+
+          {/* Serving Revision & Provenance */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Serving Revision</span>
+            <div
+              data-testid="serving-revision"
+              id="serving-revision-display"
+              aria-label={`Serving Cloud Run revision: ${servingRevision}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'rgba(0,0,0,0.3)',
+                padding: '6px 8px',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                fontSize: '0.72rem',
+                fontFamily: 'monospace',
+                color: 'var(--accent-cyan)',
+                userSelect: 'all',
+                wordBreak: 'break-all',
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>{servingRevision}</span>
+              <button
+                type="button"
+                className="touch-target"
+                aria-label="Copy Serving Revision"
+                onClick={handleCopyRevision}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: copied ? 'var(--ok, #34d399)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                }}
+                title={copied ? 'Copied!' : 'Copy Revision'}
+              >
+                {copied ? '✓' : '📋'}
+              </button>
             </div>
           </div>
 

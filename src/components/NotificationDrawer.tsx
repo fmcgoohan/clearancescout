@@ -108,13 +108,14 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
               <p className="text-xs text-gray-500 italic p-2">No notifications found.</p>
             ) : (
               notifications.map((n) => {
-                const taskId = n.targetTaskId || (n as any).taskId || (n as any).actionId || 'TASK-101';
+                const taskId = n.targetTaskId || (n as any).taskId || (n as any).actionId || '';
                 // Extract clean human task title from notification title
                 const cleanTaskTitle = n.title
-                  .replace(/^Mentioned on Task (?:[A-Za-z0-9_-]+:\s*)?/i, '')
-                  .replace(/^Mentioned on Task:\s*/i, '')
-                  .trim();
-                const effectiveTitle = `Mentioned on Task ${taskId}: ${cleanTaskTitle}`;
+                  ? n.title.replace(/^Mentioned on Task (?:[A-Za-z0-9_-]+:\s*)?/i, '').replace(/^Mentioned on Task:\s*/i, '').trim()
+                  : '';
+                const effectiveTitle = taskId
+                  ? `Mentioned on Task ${taskId}: ${cleanTaskTitle}`
+                  : (n.title || 'Notification');
                 const effectiveMessage = n.message;
 
                 return (
@@ -126,7 +127,9 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                     aria-label={
                       n.targetCommentDeleted
                         ? `Referenced comment was deleted — link disabled for ${effectiveTitle}`
-                        : `Jump to task ${taskId}: ${cleanTaskTitle} - ${effectiveMessage}`
+                        : (taskId
+                            ? `Jump to task ${taskId}: ${cleanTaskTitle} - ${effectiveMessage}`
+                            : `${effectiveTitle} - ${effectiveMessage}`)
                     }
                     onClick={() => {
                       handleMarkRead(n.id);

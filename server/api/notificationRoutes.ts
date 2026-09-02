@@ -15,6 +15,23 @@ notificationRouter.get('/notifications', (req: Request, res: Response) => {
   });
 });
 
+// POST create notification
+notificationRouter.post('/notifications', (req: Request, res: Response) => {
+  const { userId, projectId, triggerType, title, message, targetTaskId, targetEntityId, targetActivityType, targetActivityId } = req.body;
+  const created = userNotificationRepo.createNotification({
+    userId: userId || 'LEGAL_COUNSEL',
+    projectId: projectId || 'proj-default',
+    triggerType: triggerType || 'TASK_MENTION',
+    title: title || 'Notification',
+    message: message || '',
+    targetTaskId,
+    targetEntityId,
+    targetActivityType,
+    targetActivityId,
+  });
+  res.status(201).json({ notification: created });
+});
+
 // POST mark single notification as read
 notificationRouter.post('/notifications/:id/read', (req: Request, res: Response) => {
   const { id } = req.params;

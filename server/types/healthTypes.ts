@@ -11,6 +11,8 @@ export interface HealthStatusResponse {
   uptimeSeconds: number;
   timestamp: string;
   version: string;
+  revision?: string;
+  service?: string;
   credentials: CredentialStatus;
   firestoreConnected?: boolean;
   missingCredentials?: string[];

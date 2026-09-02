@@ -175,6 +175,13 @@ timeline
 - **Explicit Cloud Database Health Reporting**: `GET /api/health` reports `firestoreConnected: boolean` in `CLOUD_MODE` via `verifyFirestoreConnectivity()`.
 - **Operator & Judge Documentation**: Clear documentation in `README.md` guiding operators and evaluators on entering the documented judge token (`judge-pass-2026`).
 
+### Features 021–028: Enterprise Collaboration, Studio Scale & Judge-Ready Packaging (Phases 4–5)
+- **Multi-Department Collaboration & Threaded Task Discussions (027)**: Threaded comments, @mentions, GCS file evidence attachments, and department-specific task queues (`ART_DEPT`, `LEGAL_COUNSEL`, `LOCATIONS`, `PRODUCTION_MGMT`).
+- **High-Scale Task List Virtualization (027/028)**: Windowed client-side list rendering (`VirtualTaskList.tsx`) clamping active DOM cards to $\le 30$ elements and maintaining $\ge 60$ FPS scroll frame rate under $\ge 1,000$ synthetic production tasks (`tests/local_1000_task_virtualization.js`).
+- **Cross-Project Studio Portfolio Oversight (027/028)**: Executive portfolio dashboard tracking aggregate readiness, overdue tasks, and shooting blockers across multiple productions with atomic, zero-hybrid project switching.
+- **Responsive Mobile Polish & WCAG 2.2 AA (027/028)**: Balanced mobile tap targets at 375px viewports (`375x667` and `375x812`), sticky header non-intersection, zero horizontal scroll overflow, and keyboard focus trapping.
+- **Repository Cleave & Governance History**: ClearanceScout was originally co-developed alongside DiligenceCloser until 2026-08-21, then cleaved into an independent repository to strictly adhere to single-product hackathon submission rules. All code, prompts, agents, and repositories in this codebase exclusively serve entertainment script clearance.
+
 ## 4. Fictional-Content & Anti-Hallucination Policy
 
 ClearanceScout operates under a strict, non-negotiable fictional-content and evidence-grounding policy:
@@ -186,8 +193,8 @@ ClearanceScout operates under a strict, non-negotiable fictional-content and evi
 
 ## 5. Verification & Test Attestation
 
-As of Feature 019, the entire ClearanceScout test suite passes with 100% success rate across all contract, unit, and integration tests:
-- **Contract Tests**: Verified endpoint schemas, SSE event taxonomies, health checks, counsel overrides, multi-format parsers, project types, occurrence evaluation, entity resolution, rights management, scene readiness, action queues, placeholders, evidence self-clearance, operations dashboard, extended binder export, 1-click judge demo automation, fail-closed cloud clearance, clean zero-hit citations, structured context interpretation, scoped placeholders, multipart file upload, chunked ingestion, server runtime authority, Firestore ADC persistence, replacement readiness blockers, atomic quota accounting, canonical rollup integrity, and screenplay versioning lifecycle.
-- **Integration Tests**: Verified end-to-end script ingestion, candidate clearance loops, counsel overrides with scene isolation, batch research, offline replay, judge demo workflows, auditable binder compilation, production hardening lifecycles, and live runtime integrity workflows.
-- **Test Baseline**: 152 tests passing across 74 test suites (100% pass rate).
-- **Build Verification**: Multi-stage production container and Vite production bundle compile with 0 errors across 50 modules.
+As of Feature 028, the entire ClearanceScout test suite passes with 100% success rate across all contract, unit, integration, and Playwright browser tests:
+- **Contract & Integration Baseline**: 160 tests passing across 74 test suites (100% pass rate).
+- **Virtualization Benchmark**: Automated proof of 1,000-task rendering and 60 FPS scrolling (`tests/local_1000_task_virtualization.js`).
+- **Live Playwright Verification**: Automated E2E verification of judge demo path, baseline metrics, zero-hybrid project switching, notification deep-linking, and mobile 375px non-intersection (`tests/repro_live.js`).
+- **Build Verification**: Multi-stage production container and Vite production bundle compile with 0 errors.
