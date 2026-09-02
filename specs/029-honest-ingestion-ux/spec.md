@@ -1,0 +1,126 @@
+# Feature Specification: Honest Ingestion UX & Production Creation Flow
+
+**Feature Branch**: `029-honest-ingestion-ux`  
+**Created**: 2026-09-02  
+**Status**: Draft  
+**Input**: User description: "Honest Ingestion UX and Production Creation Flow: eliminate silent demo seeding, provide honest extraction preview before commit, persistent header New Production control, guided onboarding flow, and single clear primary action per state."
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - Unambiguous Production Creation & Honest Empty State (Priority: P1)
+
+As a legal clearance coordinator starting a new film project, I want to create a brand-new production directly from the main header and see a clean, unpopulated workspace with zero placeholder items, so that real productions are never polluted with synthetic demo data.
+
+**Why this priority**: Silent demo substitution destroys user trust, creates legal ambiguity regarding clearance status, and makes it impossible to distinguish genuine uploaded script items from sample data.
+
+**Independent Test**: Create a new production from the header control; verify the workspace shows 0 scenes, 0 clearance items, and 0 department tasks, with an explicit prompt to add a screenplay.
+
+**Acceptance Scenarios**:
+1. **Given** any view in the application, **When** the user looks at the top navigation header, **Then** a persistent "New Production" action button is directly visible and accessible without opening the project switcher.
+2. **Given** the user creates a new production titled "Solaris Dawn", **When** the workspace initializes, **Then** the workspace displays 0 scenes, 0 clearance items, and 0 department tasks, and displays a prominent recommendation to "Upload Screenplay".
+3. **Given** an empty production, **When** the user views the summary bar and readiness cards, **Then** the UI displays "No clearance items recorded" and "No clearance blockers recorded" rather than declaring the empty production as "Ready for Shoot".
+4. **Given** an empty production, **When** the user explicitly clicks a labeled "Load Sample Production Data" action, **Then** the workspace loads sample scenes, items, and tasks with visible badges identifying them as sample reference data.
+
+---
+
+### User Story 2 - Honest Screenplay Ingestion Preview & Extraction Validation (Priority: P1)
+
+As a clearance analyst uploading a screenplay document (PDF or text), I want to preview extracted scenes, page counts, and sample scene headings before committing the file to my production, and receive clear warnings and failure blocks if extraction yields zero valid scenes, so that corrupt or unsupported files never corrupt project state.
+
+**Why this priority**: Corrupt or unparseable script files previously reported success while silently committing zero scenes or substituting synthetic sample data. Users must have authoritative confirmation of what was parsed before commit.
+
+**Independent Test**: Upload a malformed or text-free PDF; verify extraction fails with clear diagnostics, shows 0 scenes detected, and blocks commit without modifying workspace state.
+
+**Acceptance Scenarios**:
+1. **Given** the Screenplay Intake modal, **When** a user selects a script file (PDF or plain text), **Then** the system presents an Extraction Preview displaying the filename, page count, detected scene count, and excerpted scene headings.
+2. **Given** a script extraction resulting in 1 or more valid scenes, **When** the user verifies the preview and clicks "Confirm Ingestion", **Then** the scenes and candidate clearance items are committed to the project and stage transitions to Clearance Review.
+3. **Given** a malformed or text-empty PDF yielding 0 detectable scenes, **When** extraction finishes, **Then** the system presents a visible warning banner explaining no scenes were detected, disables the "Confirm Ingestion" action, and prevents any workspace state mutation.
+4. **Given** a failed extraction, **When** the user closes the modal, **Then** the workspace remains in its pre-upload state without substituting demo scenes or marking the project as cleared.
+
+---
+
+### User Story 3 - Guided Ingestion Workflow & Single Primary Action per State (Priority: P2)
+
+As a production clearance operator, I want each workspace stage (Intake, Clearance Review, Department Tasks, Readiness, Export) to highlight exactly one unambiguous next action based on current project state, so that onboarding and clearance progression are intuitive and frictionless.
+
+**Why this priority**: Eliminates operator confusion by avoiding competing equal-weight buttons, ensuring operators immediately understand whether they need to upload a script, review extraction, resolve blocking risks, or export the clearance binder.
+
+**Independent Test**: Walk through a production lifecycle from empty -> intake -> review -> export, verifying the primary action updates deterministically at each step.
+
+**Acceptance Scenarios**:
+1. **Given** an empty production with no script, **When** viewing the workspace, **Then** the primary action card displays "Upload Screenplay" directing to intake.
+2. **Given** an ingested script with unresolved high-risk items, **When** viewing the workspace, **Then** the primary action card displays "Resolve Next Blocker" (or "Review X Clearance Blockers") directing to the Clearance Items tab.
+3. **Given** all clearance items cleared and tasks complete, **When** viewing the workspace, **Then** the primary action card displays "Export Clearance Binder" opening the export drawer.
+4. **Given** the main navigation header, **When** viewing controls, **Then** secondary administrative controls (execution mode, live quota count, serving revision) are relocated to the Settings dialog, keeping the header focused on identity, New Production, Switch Project, and Alerts.
+
+---
+
+### User Story 4 - Preservation of Sample Reference Benchmarks (Priority: P2)
+
+As a judge or evaluator assessing the system, I want sample reference productions (The Neon Horizon and Cyberpunk Odyssey) to remain available via explicit sample selection with their exact validated benchmark metrics, so that system capabilities can be tested against established ground truths.
+
+**Why this priority**: Preserves existing golden test cases and demo flows without compromising the isolation and integrity of newly created user productions.
+
+**Independent Test**: Select "The Neon Horizon" from the portfolio switcher; verify 3 scenes, 7 items, 11 tasks, 33.3% readiness, and 2 blocked scenes are displayed.
+
+**Acceptance Scenarios**:
+1. **Given** the Portfolio / Switch Project view, **When** the user selects "The Neon Horizon", **Then** the workspace displays 3 scenes, 7 clearance items, 11 tasks, 33.3% shooting readiness, and 2 blocked scenes, labeled with a "Sample Reference Project" indicator.
+2. **Given** the Portfolio / Switch Project view, **When** the user selects "Cyberpunk Odyssey", **Then** the workspace displays 100% readiness and 0 blocked scenes in full isolation from other projects.
+3. **Given** any sample project, **When** switching back to a custom user production, **Then** no sample items or state leak into the user production.
+
+---
+
+### Edge Cases
+
+- What happens when a multi-page PDF contains vector graphics only without extractable text streams? The system displays a warning "No extractable text found in PDF" with detected scene count 0, disables the ingestion confirm button, and suggests uploading a plain text screenplay or OCR-processed PDF.
+- What happens when a user creates a new production and immediately closes their browser before uploading a screenplay? The project remains saved as an empty production with 0 scenes and 0 items; on reload, it remains clean without automatic demo seeding.
+- What happens when a user uploads a script with unnumbered scene headings (e.g. `INT. WAREHOUSE - NIGHT`)? The extraction preview identifies standard script sluglines, numbers them sequentially for review, and previews the headings for user confirmation.
+- What happens when a notification targets an item in an empty project? The notification tombstone renders disabled with "Link Disabled: Referenced task not found" and announces "This task is no longer available." without crashing or navigating.
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+- **FR-001**: The application MUST NOT automatically seed demo or sample data into any newly created or empty user production under any circumstances.
+- **FR-002**: The top header navigation MUST provide a persistent, high-visibility "New Production" button that directly opens the creation workflow without requiring the user to open the project switcher.
+- **FR-003**: The project switcher control MUST be dedicated exclusively to switching active projects or viewing the portfolio dashboard.
+- **FR-004**: The production creation workflow MUST guide the user through structured steps: Production Details -> Screenplay Intake -> Extraction Preview & Validation -> Ingestion Confirmation.
+- **FR-005**: Screenplay ingestion MUST provide a pre-commit Extraction Preview displaying the document filename, page count, detected scene count, sample scene headings, and any extraction warnings.
+- **FR-006**: Ingestion MUST block commitment and display an explicit error alert when extraction produces 0 valid scenes or empty text, preventing any project state mutation.
+- **FR-007**: A project with 0 clearance items or 0 scenes MUST display "No clearance items recorded" and "No clearance blockers recorded" and MUST NOT indicate the project is "Ready for Shoot" or "100% Ready".
+- **FR-008**: Sample benchmark productions (The Neon Horizon and Cyberpunk Odyssey) MUST be accessible only through explicit user selection and MUST display a prominent "Sample Reference Project" badge to distinguish them from user-created data.
+- **FR-009**: The workspace MUST compute exactly one primary recommendation card following a deterministic state hierarchy:
+  1. No script ingested -> "Upload Screenplay"
+  2. Parsing / processing -> Progress indicator
+  3. Action Required blockers exist -> "Resolve Clearance Blockers"
+  4. Review Recommended items exist -> "Review Recommended Items"
+  5. Unfinished department tasks -> "View Department Tasks"
+  6. All items cleared -> "Export Clearance Binder"
+- **FR-010**: Administrative metadata and system controls (system execution mode, API quota counters, serving revision, demo tokens) MUST reside inside the Settings popover/modal and MUST NOT clutter the primary header chrome.
+- **FR-011**: Plain-language labels MUST be used across all primary operator views; technical jargon (e.g., canonical entity registries, entity overrides, grounding quotas) MUST be replaced with conversational equivalents ("Clearance Items", "Manual Decision", "API Quota") or confined to developer/settings dialogs.
+- **FR-012**: The application MUST maintain WCAG 2.2 AA accessibility across all newly added creation and preview surfaces, including visible focus rings, dialog focus trapping, live-region status updates, and keyboard dismissability.
+
+### Key Entities
+
+- **Production / Project**: A top-level container for film/television clearance analysis. Attributes include ID, title, production code, studio name, creation timestamp, and `isSample` boolean flag.
+- **Screenplay Document**: An uploaded script file (PDF or text) with metadata including filename, file size, page count, raw text content, and parse status.
+- **Extraction Preview**: An ephemeral validation summary generated prior to database commitment, containing detected scene count, parsed scene sluglines, token/word count, and validation warnings (e.g. 0 scenes detected).
+- **Clearance Item**: A detected entity within a script that requires legal assessment.
+- **Department Task**: An actionable resolution item assigned to an art, legal, or production crew department.
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: 100% of newly created productions initialize with exactly 0 scenes, 0 clearance items, and 0 department tasks, with zero automatic demo data injections.
+- **SC-002**: 100% of malformed or text-empty script uploads are halted at the preview stage with 0 false "Ingestion Successful" reports and 0 corrupted project states.
+- **SC-003**: Users can initiate production creation in exactly 1 click from any application screen via the persistent header control.
+- **SC-004**: Operators are presented with exactly 1 primary next-action recommendation per workspace state with 0 ambiguous competing primary buttons.
+- **SC-005**: Sample benchmark projects retain 100% data integrity (Neon Horizon: 3 scenes, 7 clearance items, 11 tasks, 33.3% readiness, 2 blocked scenes; Cyberpunk Odyssey: 100% readiness, 0 blocked scenes) with explicit visual sample labeling.
+
+## Assumptions
+
+- Script uploads support standard PDF (`.pdf`), plain text (`.txt`), and Final Draft / Fountain style text formats.
+- Sample reference datasets remain available in local memory/fixtures for offline evaluation and instant demonstration without external API costs.
+- Users operating on 375px mobile viewports retain full access to the "New Production" action and guided creation workflow without horizontal clipping.
+- Existing notification tombstone integrity (`TASK-NON-EXISTENT-999` disabled link and "This task is no longer available." announcement) is preserved throughout.

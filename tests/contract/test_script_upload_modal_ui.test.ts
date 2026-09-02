@@ -148,20 +148,24 @@ describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger'
 
   it('surfaces visible PARSING_FAILED error alert immediately when server returns HTTP 502 error', async () => {
     global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes('/api/projects/proj-error-123/script/upload')) {
+      if (url.includes('/preview')) {
         return Promise.resolve({
-          ok: false,
-          status: 502,
+          ok: true,
           json: async () => ({
-            code: 'PARSING_FAILED',
-            error: 'Live AI screenplay parsing failed during scene extraction chunk 5: Model rate limit',
+            success: true,
+            scenesDetected: 1,
+            isValid: true,
+            sampleHeadings: ['Scene 1: INT. HOUSE - DAY'],
           }),
         });
       }
       return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: async () => ({}),
+        ok: false,
+        status: 422,
+        json: async () => ({
+          error: 'Live AI screenplay parsing failed: invalid structure.',
+          code: 'PARSING_FAILED',
+        }),
       });
     });
 
@@ -179,7 +183,11 @@ describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger'
     const validFile = new File(['INT. HOUSE - DAY'], 'script.fountain', { type: 'text/plain' });
     fireEvent.change(fileInput, { target: { files: [validFile] } });
 
-    const uploadSubmitButton = getByText(/Upload & Ingest Draft/i);
+    await waitFor(() => {
+      expect(getByText(/Confirm Ingestion/i)).toBeDefined();
+    });
+
+    const uploadSubmitButton = getByText(/Confirm Ingestion/i);
     fireEvent.click(uploadSubmitButton);
 
     await waitFor(() => {
@@ -194,7 +202,18 @@ describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger'
     // Return a hanging promise for the upload request
     let abortListener: (() => void) | null = null;
     global.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
-      if (url.includes('/api/projects/proj-cancel-123/script/upload')) {
+      if (url.includes('/preview')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            success: true,
+            scenesDetected: 1,
+            isValid: true,
+            sampleHeadings: ['Scene 1: INT. CABIN - DAY'],
+          }),
+        });
+      }
+      if (url.includes('/script')) {
         return new Promise((_, reject) => {
           if (init?.signal) {
             init.signal.addEventListener('abort', () => {
@@ -222,7 +241,11 @@ describe('Interaction Regression: WorkspacePage Upload Screenplay Modal Trigger'
     const validFile = new File(['INT. CABIN - DAY'], 'script.fountain', { type: 'text/plain' });
     fireEvent.change(fileInput, { target: { files: [validFile] } });
 
-    const uploadSubmitButton = getByText(/Upload & Ingest Draft/i);
+    await waitFor(() => {
+      expect(getByText(/Confirm Ingestion/i)).toBeDefined();
+    });
+
+    const uploadSubmitButton = getByText(/Confirm Ingestion/i);
     fireEvent.click(uploadSubmitButton);
 
     // Active upload shows cancel button

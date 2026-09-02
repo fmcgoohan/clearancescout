@@ -133,9 +133,9 @@ export class ActionNotificationRepo {
     };
 
     const actionItem: ClearanceActionItem = {
+      ...input,
       id,
       projectId,
-      ...input,
       status: initialStatus,
       activityHistory: input.activityHistory && input.activityHistory.length > 0 ? input.activityHistory : [initialAuditEvent],
       createdAt: now,

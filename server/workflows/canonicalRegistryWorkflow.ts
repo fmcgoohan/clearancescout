@@ -15,7 +15,89 @@ export interface WorkflowResult {
   snapshot?: any;
 }
 
+export interface ScriptPreviewResult {
+  filename: string;
+  format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF';
+  characterCount: number;
+  wordCount: number;
+  estimatedPageCount: number;
+  scenesDetected: number;
+  sampleHeadings: string[];
+  warnings: string[];
+  isValid: boolean;
+  previewTextExcerpt: string;
+}
+
 export class CanonicalRegistryWorkflow {
+  async previewScriptUpload(
+    scriptText: string,
+    filename: string = 'screenplay.txt',
+    format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = 'PLAINTEXT'
+  ): Promise<ScriptPreviewResult> {
+    const characterCount = scriptText.length;
+    const wordCount = scriptText.trim() ? scriptText.trim().split(/\s+/).length : 0;
+    
+    // Calculate page count from PDF page markers or word count
+    const formFeedCount = (scriptText.match(/\f/g) || []).length;
+    const pageMarkerMatches = (scriptText.match(/--\s*\d+\s*of\s*(\d+)\s*--/gi) || []);
+    let estimatedPageCount = Math.max(1, Math.ceil(wordCount / 250));
+    if (pageMarkerMatches.length > 0) {
+      const lastMatch = pageMarkerMatches[pageMarkerMatches.length - 1];
+      const match = /--\s*\d+\s*of\s*(\d+)\s*--/i.exec(lastMatch);
+      if (match && parseInt(match[1], 10)) {
+        estimatedPageCount = parseInt(match[1], 10);
+      }
+    } else if (formFeedCount > 0) {
+      estimatedPageCount = formFeedCount + 1;
+    }
+
+    const previewTextExcerpt = scriptText.slice(0, 500);
+
+    const warnings: string[] = [];
+    if (!scriptText.trim()) {
+      warnings.push('File contains no extractable text or is empty.');
+      return {
+        filename,
+        format,
+        characterCount: 0,
+        wordCount: 0,
+        estimatedPageCount: 0,
+        scenesDetected: 0,
+        sampleHeadings: [],
+        warnings,
+        isValid: false,
+        previewTextExcerpt: '',
+      };
+    }
+
+    let parsedScenes: ParsedScene[] = [];
+    try {
+      parsedScenes = await scriptParserAgent.parseScriptText(scriptText, format);
+    } catch (e: any) {
+      warnings.push(e?.message || 'Failed to parse scenes from screenplay text.');
+    }
+
+    const scenesDetected = parsedScenes ? parsedScenes.length : 0;
+    if (scenesDetected === 0) {
+      warnings.push('No valid scene headings (e.g. INT. / EXT.) were detected in the document.');
+    }
+
+    const sampleHeadings = (parsedScenes || []).slice(0, 5).map(s => `Scene ${s.sceneNumber}: ${s.heading}`);
+
+    return {
+      filename,
+      format,
+      characterCount,
+      wordCount,
+      estimatedPageCount,
+      scenesDetected,
+      sampleHeadings,
+      warnings,
+      isValid: scenesDetected > 0,
+      previewTextExcerpt,
+    };
+  }
+
   async processScriptUpload(
     projectId: string,
     scriptText: string,

@@ -176,7 +176,7 @@ const handleScriptUpload = async (req: Request, res: Response, next: any) => {
       } else if (origLower.endsWith('.pdf') || uploadedFile.mimetype === 'application/pdf') {
         format = 'PDF';
         try {
-          scriptText = extractTextFromPdfBuffer(uploadedFile.buffer);
+          scriptText = await extractTextFromPdfBuffer(uploadedFile.buffer);
         } catch (err: any) {
           return res.status(400).json({
             error:
@@ -205,7 +205,7 @@ const handleScriptUpload = async (req: Request, res: Response, next: any) => {
       }
       if (format === 'PDF' && scriptText.startsWith('%PDF')) {
         try {
-          scriptText = extractTextFromPdfBuffer(Buffer.from(scriptText, 'latin1'));
+          scriptText = await extractTextFromPdfBuffer(Buffer.from(scriptText, 'latin1'));
         } catch (err: any) {
           return res.status(400).json({
             error: err.message || 'Unable to extract text from PDF.',
@@ -230,6 +230,15 @@ const handleScriptUpload = async (req: Request, res: Response, next: any) => {
     const checksumSha256 = crypto.createHash('sha256').update(scriptText).digest('hex');
     const result = await canonicalRegistryWorkflow.processScriptUpload(projectId, scriptText, format);
 
+    if (!result.scenesParsed || result.scenesParsed === 0) {
+      return res.status(422).json({
+        error: 'No valid scenes detected in screenplay. Check format and headings (e.g. INT. / EXT.).',
+        code: 'ZERO_SCENES_DETECTED',
+        scenesParsed: 0,
+        filename,
+      });
+    }
+
     return res.json({
       success: true,
       projectId,
@@ -253,9 +262,127 @@ const handleScriptUpload = async (req: Request, res: Response, next: any) => {
         code: 'FILE_TOO_LARGE',
       });
     }
+    if (err.code === 'PARSING_FAILED') {
+      return res.status(422).json({
+        error: err.message || 'No valid scenes could be parsed from the screenplay.',
+        code: 'ZERO_SCENES_DETECTED',
+        scenesParsed: 0,
+      });
+    }
     next(err);
   }
 };
+
+const handleScriptPreview = async (req: Request, res: Response, next: any) => {
+  try {
+    let scriptText = '';
+    let filename = 'screenplay.txt';
+    let format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF' = req.body.format || 'PLAINTEXT';
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const uploadedFile = (files?.['file']?.[0] || files?.['script']?.[0] || req.file) as Express.Multer.File | undefined;
+
+    if (uploadedFile) {
+      filename = uploadedFile.originalname;
+      if (uploadedFile.size === 0 || uploadedFile.buffer.length === 0) {
+        return res.json({
+          success: true,
+          filename,
+          format: 'PLAINTEXT',
+          characterCount: 0,
+          wordCount: 0,
+          estimatedPageCount: 0,
+          scenesDetected: 0,
+          sampleHeadings: [],
+          warnings: ['Uploaded screenplay file is empty (0 bytes).'],
+          isValid: false,
+          previewTextExcerpt: '',
+        });
+      }
+
+      const origLower = filename.toLowerCase();
+      if (origLower.endsWith('.fountain') || origLower.includes('.fountain.') || origLower.endsWith('.fountain.txt')) {
+        format = 'FOUNTAIN';
+        scriptText = uploadedFile.buffer.toString('utf-8');
+      } else if (origLower.endsWith('.pdf') || uploadedFile.mimetype === 'application/pdf') {
+        format = 'PDF';
+        try {
+          scriptText = await extractTextFromPdfBuffer(uploadedFile.buffer);
+        } catch (err: any) {
+          return res.json({
+            success: true,
+            filename,
+            format: 'PDF',
+            characterCount: 0,
+            wordCount: 0,
+            estimatedPageCount: 0,
+            scenesDetected: 0,
+            sampleHeadings: [],
+            warnings: [
+              err.message ||
+                'Unable to extract text from PDF. The document may be a scanned image or encrypted.',
+            ],
+            isValid: false,
+            previewTextExcerpt: '',
+          });
+        }
+      } else if (origLower.endsWith('.txt') || origLower.endsWith('.text') || uploadedFile.mimetype.startsWith('text/')) {
+        format = 'PLAINTEXT';
+        scriptText = uploadedFile.buffer.toString('utf-8');
+      } else {
+        return res.status(400).json({
+          error: `Unsupported file format '${filename}'. Supported formats: .fountain, .txt, .pdf`,
+          code: 'UNSUPPORTED_FORMAT',
+        });
+      }
+    } else if (req.body.scriptText) {
+      scriptText = req.body.scriptText;
+      filename = req.body.filename || 'manual_input.txt';
+      if (format === 'PDF' && scriptText.startsWith('%PDF')) {
+        try {
+          scriptText = await extractTextFromPdfBuffer(Buffer.from(scriptText, 'latin1'));
+        } catch (err: any) {
+          return res.json({
+            success: true,
+            filename,
+            format: 'PDF',
+            characterCount: 0,
+            wordCount: 0,
+            estimatedPageCount: 0,
+            scenesDetected: 0,
+            sampleHeadings: [],
+            warnings: [err.message || 'Unable to extract text from PDF.'],
+            isValid: false,
+            previewTextExcerpt: '',
+          });
+        }
+      }
+    } else {
+      return res.status(400).json({
+        error: 'Screenplay file or scriptText payload is required.',
+        code: 'MISSING_PAYLOAD',
+      });
+    }
+
+    const preview = await canonicalRegistryWorkflow.previewScriptUpload(scriptText, filename, format);
+    return res.json({
+      success: true,
+      ...preview,
+    });
+  } catch (err: any) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        error: 'Screenplay file exceeds maximum allowed size of 25MB.',
+        code: 'FILE_TOO_LARGE',
+      });
+    }
+    next(err);
+  }
+};
+
+// Screenplay Ingestion Preview Endpoints (Pre-Commit Validation)
+projectRouter.post('/:id/script/preview', scriptUploadMiddleware, handleScriptPreview);
+projectRouter.post('/script/preview', scriptUploadMiddleware, handleScriptPreview);
 
 // Upload & Parse Script Endpoints (Support both /:id/script/upload and /:id/script)
 projectRouter.post('/:id/script/upload', scriptUploadMiddleware, handleScriptUpload);

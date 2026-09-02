@@ -860,11 +860,61 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               }}
               onExportBinder={onExportBinder}
               onResearchItem={(id) => onEvaluateClearance(id)}
+              onLoadSample={async () => {
+                try {
+                  const res = await apiFetch(`/api/projects/${projectId}/script/demo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
+                  });
+                  if (res.ok) {
+                    await fetchWorkspaceData();
+                    if (onRefreshProjectSummary) {
+                      await onRefreshProjectSummary();
+                    }
+                  }
+                } catch (err) {
+                  console.error('Error loading sample screenplay:', err);
+                }
+              }}
             />
           )}
 
+          {/* Honest Empty State Banner if no scenes */}
+          {scenes.length === 0 && (
+            <div
+              data-testid="workspace-empty-state"
+              className="glass-panel"
+              style={{
+                padding: '32px 24px',
+                textAlign: 'center',
+                borderRadius: '12px',
+                border: '1px dashed var(--border-color)',
+                background: 'rgba(0, 0, 0, 0.2)',
+              }}
+            >
+              <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>
+                No Screenplay Ingested
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '480px', margin: '0 auto 16px auto', lineHeight: 1.5 }}>
+                This workspace does not have any screenplay scenes or clearance entities recorded yet. Upload a screenplay to begin automated clearance extraction.
+              </p>
+              <button
+                data-testid="workspace-empty-upload-btn"
+                className="btn-primary touch-target"
+                onClick={() => {
+                  setUploadModalInitialMode('FILE');
+                  setIsUploadModalOpen(true);
+                }}
+                style={{ padding: '8px 20px', fontSize: '0.85rem' }}
+              >
+                Upload Screenplay
+              </button>
+            </div>
+          )}
+
           {/* Hero Readiness Index Card */}
-          {readinessSummary && (!readinessSummary.projectId || readinessSummary.projectId === projectId) && (
+          {scenes.length > 0 && readinessSummary && (!readinessSummary.projectId || readinessSummary.projectId === projectId) && (
             <div
               className="glass-panel hero-animate"
               style={{

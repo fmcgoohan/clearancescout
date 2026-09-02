@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
 import { EntityCategory } from '../repositories/EntityRepo.js';
 import zlib from 'zlib';
+import { PDFParse } from 'pdf-parse';
 
 export function toTitleCase(str: string): string {
   const minorWords = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'nor', 'of', 'on', 'or', 'so', 'the', 'to', 'up', 'yet']);
@@ -32,7 +33,7 @@ export function extractTitleFromScriptText(scriptText: string): string | null {
   return null;
 }
 
-export function extractTextFromPdfBuffer(buffer: Buffer): string {
+export async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
   if (!buffer || buffer.length === 0) {
     const err: any = new Error('PDF buffer is empty');
     err.code = 'PDF_EXTRACTION_FAILED';
@@ -46,77 +47,87 @@ export function extractTextFromPdfBuffer(buffer: Buffer): string {
     throw err;
   }
 
-  const extractedLines: string[] = [];
+  let extractedText = '';
 
-  const parseContentStream = (stream: string) => {
-    // Match text blocks (BT ... ET)
-    const btMatches = stream.match(/BT[\s\S]*?ET/g) || [];
-    for (const block of btMatches) {
-      // Matches (text) Tj
-      const tjMatches = block.match(/\((.*?)\)\s*Tj/g) || [];
-      for (const tj of tjMatches) {
-        const text = tj.replace(/^\(/, '').replace(/\)\s*Tj$/, '');
-        const unescaped = text
-          .replace(/\\([\\()])/g, '$1')
-          .replace(/\\n/g, '\n')
-          .replace(/\\r/g, '')
-          .replace(/\\t/g, '\t');
-        if (unescaped.trim()) {
-          extractedLines.push(unescaped);
-        }
-      }
-
-      // Matches [(t1) ... (t2)] TJ
-      const bigTjMatches = block.match(/\[(.*?)\]\s*TJ/g) || [];
-      for (const bigTj of bigTjMatches) {
-        const parts = bigTj.match(/\((.*?)\)/g) || [];
-        const fullLine = parts
-          .map((p) => p.slice(1, -1).replace(/\\([\\()])/g, '$1'))
-          .join('');
-        if (fullLine.trim()) {
-          extractedLines.push(fullLine);
-        }
-      }
+  try {
+    const parser = new PDFParse({ data: buffer });
+    const result = await parser.getText();
+    if (result && result.text) {
+      extractedText = result.text;
     }
-  };
-
-  // Search for stream blocks
-  const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
-  let match: RegExpExecArray | null;
-
-  let streamFound = false;
-  while ((match = streamRegex.exec(raw)) !== null) {
-    streamFound = true;
-    const streamContent = match[1];
-    parseContentStream(streamContent);
-
-    try {
-      const streamStart = match.index + match[0].indexOf('\n') + 1;
-      const streamEnd = match.index + match[0].lastIndexOf('endstream');
-      if (streamStart < streamEnd) {
-        const compressedChunk = buffer.subarray(streamStart, streamEnd);
-        try {
-          const decompressed = zlib.inflateSync(compressedChunk).toString('utf-8');
-          parseContentStream(decompressed);
-        } catch {
-          // Not flate compressed or raw stream
-        }
-      }
-    } catch {
-      // Ignore
-    }
+  } catch (pdfErr: any) {
+    console.warn('pdf-parse primary extractor failed, falling back to stream parsing:', pdfErr?.message);
   }
 
-  // If no streams contained text operators, check uncontained BT/ET operators across the raw file
-  if (!streamFound || extractedLines.length === 0) {
-    parseContentStream(raw);
+  // Strip control codes (preserving standard newlines \n, \r, and \t)
+  extractedText = extractedText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+  // Secondary stream parser fallback if primary parse was empty
+  if (!extractedText || extractedText.trim().length === 0) {
+    const extractedLines: string[] = [];
+
+    const parseContentStream = (stream: string) => {
+      const btMatches = stream.match(/BT[\s\S]*?ET/g) || [];
+      for (const block of btMatches) {
+        const tjMatches = block.match(/\((.*?)\)\s*Tj/g) || [];
+        for (const tj of tjMatches) {
+          const text = tj.replace(/^\(/, '').replace(/\)\s*Tj$/, '');
+          const unescaped = text
+            .replace(/\\([\\()])/g, '$1')
+            .replace(/\\n/g, '\n')
+            .replace(/\\r/g, '')
+            .replace(/\\t/g, '\t');
+          if (unescaped.trim()) {
+            extractedLines.push(unescaped);
+          }
+        }
+
+        const bigTjMatches = block.match(/\[(.*?)\]\s*TJ/g) || [];
+        for (const bigTj of bigTjMatches) {
+          const parts = bigTj.match(/\((.*?)\)/g) || [];
+          const fullLine = parts
+            .map((p) => p.slice(1, -1).replace(/\\([\\()])/g, '$1'))
+            .join('');
+          if (fullLine.trim()) {
+            extractedLines.push(fullLine);
+          }
+        }
+      }
+    };
+
+    const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
+    let match: RegExpExecArray | null;
+    let streamFound = false;
+    while ((match = streamRegex.exec(raw)) !== null) {
+      streamFound = true;
+      const streamContent = match[1];
+      parseContentStream(streamContent);
+
+      try {
+        const streamStart = match.index + match[0].indexOf('\n') + 1;
+        const streamEnd = match.index + match[0].lastIndexOf('endstream');
+        if (streamStart < streamEnd) {
+          const compressedChunk = buffer.subarray(streamStart, streamEnd);
+          try {
+            const decompressed = zlib.inflateSync(compressedChunk).toString('utf-8');
+            parseContentStream(decompressed);
+          } catch {}
+        }
+      } catch {}
+    }
+
+    if (!streamFound || extractedLines.length === 0) {
+      parseContentStream(raw);
+    }
+
+    extractedText = extractedLines.join('\n').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
   }
 
-  const fullText = extractedLines.join('\n').trim();
+  const fullText = extractedText.trim();
 
-  // Validate that meaningful screenplay content was extracted
-  const hasSceneHeading = fullText.includes('INT.') || fullText.includes('EXT.') || fullText.includes('SCENE');
-  if (!fullText || (!hasSceneHeading && fullText.length < 20)) {
+  // Validate that genuine printable screenplay scene content was extracted
+  const hasSceneHeading = /(?:^|\n)(?:SCENE\s+\d+[:\s\-]*)?(?:\.?INT\b|\.?EXT\b|\.?INT\/EXT\b)\.?\s/i.test(fullText);
+  if (!fullText || (!hasSceneHeading && fullText.length < 30)) {
     const err: any = new Error(
       'Unable to extract text from PDF. The document may be a scanned image or encrypted. Please provide a text-based PDF, Fountain, or Plaintext screenplay.'
     );
@@ -402,7 +413,7 @@ ${chunkText}`,
           upper.startsWith('.')
         );
       });
-    return raw.length > 0 ? raw : [scriptText];
+    return raw;
   }
 
   private preprocessScript(rawText: string, format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF'): string {
@@ -417,7 +428,7 @@ ${chunkText}`,
   private parseScriptFallback(scriptText: string): ParsedScene[] {
     // Regex splits on standard and Fountain sluglines (INT., EXT., INT/EXT., .LOCATION, SCENE N - INT)
     const rawScenes = scriptText
-      .split(/(?=\n(?:SCENE\s+\d+[:\s\-]*)?(?:\.?INT\b|\.?EXT\b|\.?INT\/EXT\b)\.?\s)/gi)
+      .split(/(?:^|\n)(?=(?:SCENE\s+\d+[:\s\-]*)?(?:\.?INT\b|\.?EXT\b|\.?INT\/EXT\b)\.?\s)/gi)
       .map((s) => s.trim())
       .filter((s) => {
         if (s.length === 0) return false;
@@ -430,9 +441,14 @@ ${chunkText}`,
         );
       });
 
+    if (rawScenes.length === 0) {
+      return [];
+    }
+
     // 5-category deterministic recognition patterns for demo & test suites
     const candidatePatterns: Array<{ name: string; category: EntityCategory; regex: RegExp }> = [
       // 1. Brands & Trademarks
+      { name: 'Coors Light', category: 'BRAND', regex: /\b(?:Coors Light|Coors)\b/gi },
       { name: 'Summit Cola', category: 'BRAND', regex: /\b(?:Summit Cola|Summit Pop|Summit Soda|Summit Energy Drink)\b/gi },
       { name: 'AeroTech Prism Laptop', category: 'BRAND', regex: /\b(?:AeroTech Prism Laptop|AeroTech Prism|AeroTech)\b/gi },
       { name: 'Veloce GT', category: 'BRAND', regex: /\b(?:Veloce GT|Veloce Motors|Veloce)\b/gi },
@@ -468,7 +484,7 @@ ${chunkText}`,
       { name: 'Biohazard Warning Sign', category: 'GRAPHIC_PROP', regex: /\b(?:Biohazard Warning Sign|Biohazard Label)\b/gi },
     ];
 
-    const scenesToProcess = rawScenes.length > 0 ? rawScenes : [scriptText];
+    const scenesToProcess = rawScenes;
 
     return scenesToProcess.map((sceneStr, index) => {
       const lines = sceneStr.trim().split('\n');

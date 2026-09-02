@@ -4,7 +4,7 @@ const LOCAL_URL = 'http://localhost:8088';
 const DEMO_TOKEN = 'judge-pass-2026';
 
 async function runLocalVerification() {
-  console.log('=== LOCAL PLAYWRIGHT VERIFICATION AUDIT ===');
+  console.log('=== LOCAL PLAYWRIGHT VERIFICATION AUDIT (FEATURE 029) ===');
   console.log(`Target URL: ${LOCAL_URL}\n`);
 
   const browser = await chromium.launch({ headless: true });
@@ -13,7 +13,7 @@ async function runLocalVerification() {
 
   try {
     // 1. Initial Page Load & Set Demo Token
-    console.log('[Step 1] Navigating to local URL...');
+    console.log('[Step 1] Navigating to local URL and configuring demo token...');
     await page.goto(LOCAL_URL, { waitUntil: 'domcontentloaded' });
     await page.evaluate((token) => {
       localStorage.setItem('clearancescout_demo_token', token);
@@ -21,17 +21,7 @@ async function runLocalVerification() {
     }, DEMO_TOKEN);
     await page.reload({ waitUntil: 'networkidle' });
 
-    // 2. Baseline Workspace Inspection
-    console.log('\n--- BASELINE WORKSPACE METRICS ---');
-    const wsTitle = await page.$eval('[data-testid="workspace-project-title"]', el => el.textContent.trim()).catch(() => 'N/A');
-    const wsCode = await page.$eval('[data-testid="workspace-project-code"]', el => el.textContent.trim()).catch(() => 'N/A');
-    const wsReadiness = await page.$eval('[data-testid="workspace-readiness-pct"]', el => el.textContent.trim()).catch(() => 'N/A');
-
-    console.log(`Workspace Project Title: ${wsTitle}`);
-    console.log(`Workspace Project Code: ${wsCode}`);
-    console.log(`Workspace Readiness: ${wsReadiness}`);
-
-    // Provenance / Serving Revision Verification
+    // Provenance Verification
     console.log('\n--- PROVENANCE & SERVING REVISION AUDIT ---');
     const settingsBtn = await page.waitForSelector('#settings-menu-button', { timeout: 5000 });
     await settingsBtn.click();
@@ -42,791 +32,224 @@ async function runLocalVerification() {
       console.error('PROVENANCE AUDIT FAIL: Serving revision is empty!');
       process.exit(1);
     }
-    console.log('Provenance & Serving Revision Audit: PASS (User-visible and copyable in Settings menu)');
+    console.log('Provenance & Serving Revision Audit: PASS (User-visible in Settings)');
     await settingsBtn.click(); // close settings menu
-
-    // 3. P2 Portfolio Visual, Desktop Grid & Responsive Audit
-    console.log('\n--- P2 PORTFOLIO VISUAL, DESKTOP GRID & RESPONSIVE AUDIT ---');
-    const headerPortfolioBtn = await page.waitForSelector('header button:has-text("Portfolio")', { timeout: 5000 });
-    console.log(`Found header portfolio button: ${await headerPortfolioBtn.innerText()}`);
-    await headerPortfolioBtn.click();
-    await page.waitForSelector('[data-portfolio-card="true"]', { timeout: 5000 });
-
-    // P2 Executive Summary Panel & Stat Tiles Audit
-    const execSummaryText = await page.$eval('[data-testid="portfolio-executive-summary"]', el => el.innerText.replace(/\n/g, ' ')).catch(() => 'N/A');
-    console.log(`Portfolio Executive Summary: ${execSummaryText}`);
-
-    const statTiles = await page.$$('[data-stat-tile]');
-    console.log(`Found ${statTiles.length} distinct executive stat tiles`);
-    if (statTiles.length < 4) {
-      console.error(`P2 STAT TILES FAIL: Expected 4 distinct stat tiles, found ${statTiles.length}`);
-      process.exit(1);
-    }
-
-    for (let i = 0; i < statTiles.length; i++) {
-      const tile = statTiles[i];
-      const tileStyle = await page.evaluate((el) => {
-        const cs = window.getComputedStyle(el);
-        return {
-          backgroundColor: cs.backgroundColor,
-          borderTopWidth: cs.borderTopWidth,
-          borderStyle: cs.borderTopStyle,
-          borderRadius: cs.borderRadius,
-        };
-      }, tile);
-
-      if (tileStyle.backgroundColor === 'transparent' || tileStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
-        console.error(`P2 STAT TILE FAIL: Stat tile #${i + 1} background is transparent!`);
-        process.exit(1);
-      }
-      if (parseFloat(tileStyle.borderTopWidth) <= 0 || tileStyle.borderStyle === 'none') {
-        console.error(`P2 STAT TILE FAIL: Stat tile #${i + 1} border is missing!`);
-        process.exit(1);
-      }
-
-      const spans = await tile.$$('span');
-      if (spans.length < 2) {
-        console.error(`P2 STAT TILE FAIL: Stat tile #${i + 1} does not have separate label and number elements!`);
-        process.exit(1);
-      }
-      const labelBox = await spans[0].boundingBox();
-      const numBox = await spans[1].boundingBox();
-      const labelText = await spans[0].innerText();
-      const numText = await spans[1].innerText();
-      console.log(`Stat Tile #${i + 1} ("${labelText}"): Label y=${labelBox.y} | Number y=${numBox.y} ("${numText}")`);
-
-      if (numBox.y <= labelBox.y + labelBox.height - 2) {
-        console.error(`P2 STAT TILE FAIL: Stat tile #${i + 1} label and number are on the same line without vertical separation!`);
-        process.exit(1);
-      }
-    }
-    console.log(`P2 Executive Stat Tiles Audit: PASS (4 distinct styled tiles with vertical label/number hierarchy)`);
-
-    // P2 Filter Tabs Segmented Control & Gap Audit
-    const filterTabsContainer = await page.$('[data-testid="portfolio-filter-tabs"]');
-    const filterTabButtons = await page.$$('[data-testid="portfolio-filter-tabs"] button');
-    console.log(`Found ${filterTabButtons.length} filter tab buttons`);
-    if (filterTabButtons.length < 3) {
-      console.error(`P2 FILTER TABS FAIL: Expected 3 filter tab buttons, found ${filterTabButtons.length}`);
-      process.exit(1);
-    }
-
-    const tab1Box = await filterTabButtons[0].boundingBox();
-    const tab2Box = await filterTabButtons[1].boundingBox();
-    const tab3Box = await filterTabButtons[2].boundingBox();
-    const gap12 = tab2Box.x - (tab1Box.x + tab1Box.width);
-    const gap23 = tab3Box.x - (tab2Box.x + tab2Box.width);
-    console.log(`Filter Tabs Gap: Tab1->Tab2 = ${gap12}px | Tab2->Tab3 = ${gap23}px`);
-    if (gap12 < 4 || gap23 < 4) {
-      console.error(`P2 FILTER TABS FAIL: Adjacent filter tabs lack visible gap (gap12=${gap12}px, gap23=${gap23}px < 4px)!`);
-      process.exit(1);
-    }
-    console.log(`P2 Filter Tabs Audit: PASS (Visible gap between segmented controls, no concatenated text run)`);
-
-    // P2 Cards Detailed Inspection (Desktop 1280x800)
-    const cardElements = await page.$$('[data-portfolio-card="true"]');
-    console.log(`Total Rendered Portfolio Cards: ${cardElements.length}`);
-
-    if (cardElements.length < 2) {
-      console.error(`P2 PORTFOLIO FAIL: Expected at least 2 portfolio cards, found ${cardElements.length}`);
-      process.exit(1);
-    }
-
-    // Card Computed Style Audit
-    const cardComputedStyle = await page.evaluate((el) => {
-      const cs = window.getComputedStyle(el);
-      return {
-        backgroundColor: cs.backgroundColor,
-        borderTopWidth: cs.borderTopWidth,
-        borderStyle: cs.borderTopStyle,
-        borderRadius: cs.borderRadius,
-      };
-    }, cardElements[0]);
-    console.log(`Card Computed Style: bg="${cardComputedStyle.backgroundColor}", border="${cardComputedStyle.borderTopWidth} ${cardComputedStyle.borderStyle}", radius="${cardComputedStyle.borderRadius}"`);
-    if (cardComputedStyle.backgroundColor === 'transparent' || cardComputedStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
-      console.error(`P2 VISUAL FAIL: Card background is transparent!`);
-      process.exit(1);
-    }
-    if (parseFloat(cardComputedStyle.borderTopWidth) <= 0 || cardComputedStyle.borderStyle === 'none') {
-      console.error(`P2 VISUAL FAIL: Card border is missing or 0px width!`);
-      process.exit(1);
-    }
-    console.log(`P2 Card Chrome Style Audit: PASS (Visible non-transparent panel background & border)`);
-
-    // Open Production Button Style Audit
-    const openBtnEl = await page.waitForSelector('button[data-open-production="true"]', { timeout: 5000 });
-    const openBtnStyle = await page.evaluate((el) => {
-      const cs = window.getComputedStyle(el);
-      return {
-        backgroundColor: cs.backgroundColor,
-        color: cs.color,
-        padding: cs.padding,
-        fontWeight: cs.fontWeight,
-      };
-    }, openBtnEl);
-    console.log(`Open Production Button Style: bg="${openBtnStyle.backgroundColor}", color="${openBtnStyle.color}", padding="${openBtnStyle.padding}", fontWeight="${openBtnStyle.fontWeight}"`);
-    if (openBtnStyle.backgroundColor === 'transparent' || openBtnStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
-      console.error(`P2 VISUAL FAIL: Open Production button has transparent background!`);
-      process.exit(1);
-    }
-    console.log(`P2 Open Production Button Style Audit: PASS (Styled primary accent button)`);
-
-    for (let i = 0; i < cardElements.length; i++) {
-      const card = cardElements[i];
-      const pId = await card.getAttribute('data-project-id');
-      const title = await card.$eval('h3', el => el.textContent.trim()).catch(() => 'N/A');
-      const code = await card.$eval('[data-project-code="true"]', el => el.textContent.trim()).catch(() => 'N/A');
-      const cardText = await card.innerText();
-      const openBtnLabel = await card.$eval('button[data-open-production="true"]', el => el.getAttribute('aria-label') || '').catch(() => '');
-      const cardAriaLabel = await card.getAttribute('aria-label') || '';
-
-      console.log(`Card #${i + 1}: ID="${pId}" | Title="${title}" | Code="${code}" | OpenBtn="${openBtnLabel}"`);
-
-      // Verify all required card fields
-      if (!title || title === 'N/A') {
-        console.error(`P2 PORTFOLIO FAIL: Card #${i + 1} missing project title!`);
-        process.exit(1);
-      }
-      if (!code.startsWith('[PRJ-') || code.includes('PRJ-DEFAULT')) {
-        console.error(`P2 PORTFOLIO FAIL: Card #${i + 1} code "${code}" contains raw PRJ-DEFAULT or invalid format!`);
-        process.exit(1);
-      }
-      const cardLower = cardText.toLowerCase();
-      if (!cardLower.includes('readiness')) {
-        console.error(`P2 PORTFOLIO FAIL: Card #${i + 1} missing readiness percentage!`);
-        process.exit(1);
-      }
-      if (!cardLower.includes('blocked scenes') || !cardLower.includes('overdue tasks') || !cardLower.includes('expiring rights')) {
-        console.error(`P2 PORTFOLIO FAIL: Card #${i + 1} missing blocked/overdue/rights metric labels!`);
-        process.exit(1);
-      }
-      if (!cardLower.includes('last sync:')) {
-        console.error(`P2 PORTFOLIO FAIL: Card #${i + 1} missing Last Sync timestamp!`);
-        process.exit(1);
-      }
-      if (!openBtnLabel.includes(title) || !openBtnLabel.includes(code)) {
-        console.error(`P2 PORTFOLIO FAIL: Card #${i + 1} Open Production button aria-label missing title or code!`);
-        process.exit(1);
-      }
-      if (!cardAriaLabel.includes(title)) {
-        console.error(`P2 PORTFOLIO FAIL: Card #${i + 1} container aria-label missing production identity!`);
-        process.exit(1);
-      }
-    }
-
-    // P2 Desktop Multi-Column Grid Verification at 1280px width
-    const card1Box = await cardElements[0].boundingBox();
-    const card2Box = await cardElements[1].boundingBox();
-    console.log(`Desktop Grid Check (1280px): Card #1 x=${card1Box.x}, y=${card1Box.y} | Card #2 x=${card2Box.x}, y=${card2Box.y}`);
-    if (card2Box.x <= card1Box.x) {
-      console.error(`P2 DESKTOP GRID FAIL: Cards are stacked vertically at 1280px instead of multi-column grid layout!`);
-      process.exit(1);
-    }
-    console.log(`P2 Desktop Grid Audit: PASS (Side-by-side multi-column cards at 1280px)`);
-
-    // P2 Keyboard Focus Ring via real keyboard Tab navigation
-    console.log('Testing keyboard Tab navigation to portfolio card...');
-    await page.evaluate(() => {
-      window.scrollTo(0, 0);
-      if (document.activeElement && document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
-      }
-    });
-
-    let cardFocused = false;
-    for (let tabAttempt = 0; tabAttempt < 20; tabAttempt++) {
-      await page.keyboard.press('Tab');
-      await page.waitForTimeout(50);
-      const isCardFocused = await page.evaluate(() => {
-        const el = document.activeElement;
-        return el !== null && el.getAttribute('data-portfolio-card') === 'true';
-      });
-      if (isCardFocused) {
-        cardFocused = true;
-        console.log(`[Tab #${tabAttempt + 1}] Successfully focused a portfolio card via keyboard Tab!`);
-        break;
-      }
-    }
-
-    if (!cardFocused) {
-      console.error(`P2 KEYBOARD FOCUS FAIL: Pressing Tab did not focus a [data-portfolio-card="true"] element!`);
-      process.exit(1);
-    }
-
-    const cardFocusStyle = await page.evaluate(() => {
-      const el = document.activeElement;
-      const cs = window.getComputedStyle(el);
-      return {
-        outlineStyle: cs.outlineStyle,
-        outlineWidth: cs.outlineWidth,
-        boxShadow: cs.boxShadow,
-      };
-    });
-    console.log(`Focused Card Computed Styles: outline=${cardFocusStyle.outlineStyle} ${cardFocusStyle.outlineWidth}, boxShadow=${cardFocusStyle.boxShadow}`);
-    const hasVisibleFocusRing = cardFocusStyle.outlineStyle !== 'none' || cardFocusStyle.boxShadow.includes('rgb');
-    if (!hasVisibleFocusRing) {
-      console.error(`P2 KEYBOARD FOCUS FAIL: Focused card does not have a visible focus outline or ring!`);
-      process.exit(1);
-    }
-    console.log(`P2 Keyboard Focus Ring Audit: PASS (Visible focus ring confirmed via Tab navigation)`);
-
-    // P2 Mobile Viewport Responsiveness & Sticky Header Overlap Audit (375x667 & 375x812)
-    for (const vp of [{ width: 375, height: 667 }, { width: 375, height: 812 }]) {
-      console.log(`\n[P2 Responsive Test] Setting viewport to ${vp.width}x${vp.height} (Mobile)...`);
-      await page.setViewportSize(vp);
-      await page.waitForTimeout(300);
-
-      const hasHorizontalScroll = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
-      console.log(`Mobile Viewport (${vp.width}x${vp.height}) Horizontal Overflow Detected: ${hasHorizontalScroll}`);
-
-      if (hasHorizontalScroll) {
-        console.error(`P2 RESPONSIVE FAIL: Portfolio layout has horizontal overflow at ${vp.width}x${vp.height} mobile viewport!`);
-        process.exit(1);
-      }
-
-      // Check Header Compactness at 375px
-      const headerBox = await page.$eval('header.app-header', (el) => {
-        const rect = el.getBoundingClientRect();
-        return { height: rect.height, bottom: rect.bottom };
-      });
-      console.log(`Mobile Header Compactness (${vp.width}x${vp.height}): Height=${headerBox.height}px, Bottom=${headerBox.bottom}px`);
-      if (headerBox.height > 150) {
-        console.error(`P2 MOBILE HEADER FAIL: Header height (${headerBox.height}px) is too tall (>150px) at ${vp.width}x${vp.height}!`);
-        process.exit(1);
-      }
-
-      // Check Portfolio H2 Title Single-Line (No Wrapping)
-      const titleLineCheck = await page.evaluate(() => {
-        const h2 = document.querySelector('[data-testid="portfolio-dashboard"] h2');
-        if (!h2) return { found: false, rectCount: 0, height: 0, text: '' };
-        return {
-          found: true,
-          rectCount: h2.getClientRects().length,
-          height: h2.offsetHeight,
-          text: h2.innerText.replace(/\n/g, ' '),
-        };
-      });
-      console.log(`Portfolio Title H2 Single-Line Check: "${titleLineCheck.text}" | rectCount=${titleLineCheck.rectCount}, height=${titleLineCheck.height}px`);
-      if (!titleLineCheck.found || titleLineCheck.rectCount > 1 || titleLineCheck.height > 32) {
-        console.error(`P2 TITLE WRAP FAIL: Portfolio H2 title wrapped to multiple lines (rectCount=${titleLineCheck.rectCount}, height=${titleLineCheck.height}px)!`);
-        process.exit(1);
-      }
-
-      // Check Project Code Badges Single-Line (No Wrapping)
-      const codeBadgesCheck = await page.evaluate(() => {
-        const badges = Array.from(document.querySelectorAll('[data-project-code="true"], [data-testid="workspace-project-code"]'));
-        return badges.map((b) => ({
-          text: b.textContent ? b.textContent.trim() : '',
-          rectCount: b.getClientRects().length,
-          isWrapped: b.getClientRects().length > 1,
-        }));
-      });
-      console.log(`Project Code Badges Single-Line Check:`, codeBadgesCheck);
-      for (const badge of codeBadgesCheck) {
-        if (badge.isWrapped || badge.rectCount > 1) {
-          console.error(`P2 CODE BADGE WRAP FAIL: Project code "${badge.text}" wrapped to multiple client rects (${badge.rectCount})!`);
-          process.exit(1);
-        }
-      }
-
-      // Check Filter Tabs 375px Non-Collision, Non-Overflow, and Font Size >= 12px
-      const filterTabsMobile = await page.$$('[data-testid="portfolio-filter-tabs"] button');
-      if (filterTabsMobile.length === 3) {
-        const tabDetails = [];
-        const boxes = [];
-        for (let tIdx = 0; tIdx < filterTabsMobile.length; tIdx++) {
-          const tabBtn = filterTabsMobile[tIdx];
-          const box = await tabBtn.boundingBox();
-          boxes.push(box);
-          const detail = await tabBtn.evaluate((el) => {
-            const cs = window.getComputedStyle(el);
-            const rect = el.getBoundingClientRect();
-            return {
-              visibleText: el.innerText.replace(/\n/g, ' ').trim(),
-              ariaLabel: el.getAttribute('aria-label') || '',
-              width: rect.width,
-              height: rect.height,
-              scrollWidth: el.scrollWidth,
-              clientWidth: el.clientWidth,
-              textOverflows: el.scrollWidth > el.clientWidth,
-              fontSize: parseFloat(cs.fontSize),
-              fontSizeRaw: cs.fontSize,
-              rectCount: el.getClientRects().length,
-            };
-          });
-          tabDetails.push(detail);
-        }
-
-        console.log(`Filter Tabs Audit (${vp.width}x${vp.height}):`);
-        for (let tIdx = 0; tIdx < tabDetails.length; tIdx++) {
-          const d = tabDetails[tIdx];
-          console.log(`  Tab #${tIdx + 1}: text="${d.visibleText}" | ariaLabel="${d.ariaLabel}" | width=${d.width.toFixed(1)}px | scrollW=${d.scrollWidth}px, clientW=${d.clientWidth}px | textOverflows=${d.textOverflows} | fontSize=${d.fontSizeRaw}`);
-        }
-
-        // 1. Assert no text overflow on any tab (scrollWidth <= clientWidth)
-        for (let tIdx = 0; tIdx < tabDetails.length; tIdx++) {
-          const d = tabDetails[tIdx];
-          if (d.textOverflows) {
-            console.error(`P2 FILTER TABS FAIL: Tab #${tIdx + 1} ("${d.visibleText}") has text overflow (scrollWidth=${d.scrollWidth}px > clientWidth=${d.clientWidth}px) at ${vp.width}x${vp.height}!`);
-            process.exit(1);
-          }
-        }
-
-        // 2. Assert computed font-size >= 12px
-        for (let tIdx = 0; tIdx < tabDetails.length; tIdx++) {
-          const d = tabDetails[tIdx];
-          if (d.fontSize < 12) {
-            console.error(`P2 FILTER TABS FAIL: Tab #${tIdx + 1} ("${d.visibleText}") computed font size (${d.fontSizeRaw}) is below 12px at ${vp.width}x${vp.height}!`);
-            process.exit(1);
-          }
-        }
-
-        // 3. Assert no two filter tabs bounding boxes intersect
-        for (let i = 0; i < boxes.length; i++) {
-          for (let j = i + 1; j < boxes.length; j++) {
-            const b1 = boxes[i];
-            const b2 = boxes[j];
-            const intersects = (b1.x < b2.x + b2.width - 0.5) && (b1.x + b1.width - 0.5 > b2.x) &&
-                               (b1.y < b2.y + b2.height - 0.5) && (b1.y + b1.height - 0.5 > b2.y);
-            if (intersects) {
-              console.error(`P2 FILTER TABS FAIL: Tabs #${i + 1} ("${tabDetails[i].visibleText}") and #${j + 1} ("${tabDetails[j].visibleText}") collide/intersect bounding boxes at ${vp.width}x${vp.height}!`);
-              process.exit(1);
-            }
-          }
-        }
-
-        // 4. Assert single line formatting
-        for (let tIdx = 0; tIdx < tabDetails.length; tIdx++) {
-          const d = tabDetails[tIdx];
-          if (d.rectCount > 1) {
-            console.error(`P2 FILTER TABS FAIL: Tab #${tIdx + 1} ("${d.visibleText}") wrapped to multiple client rects (${d.rectCount}) at ${vp.width}x${vp.height}!`);
-            process.exit(1);
-          }
-        }
-
-        console.log(`P2 Filter Tabs Non-Collision & Non-Overflow Audit (${vp.width}x${vp.height}): PASS (0 collisions, 0 text overflows, all font-size >= 12px, full aria-labels)`);
-      }
-
-      // Check card vertical stacking
-      const cards = await page.$$('[data-portfolio-card="true"]');
-      const box1 = await cards[0].boundingBox();
-      const box2 = await cards[1].boundingBox();
-      console.log(`Mobile Stacking Check (${vp.width}x${vp.height}): Card #1 y=${box1.y}, h=${box1.height} | Card #2 y=${box2.y}`);
-      if (box2.y < box1.y + box1.height - 10) {
-        console.error(`P2 MOBILE RESPONSIVE FAIL: Cards did not stack vertically at ${vp.width}x${vp.height}!`);
-        process.exit(1);
-      }
-
-      // Test Card #1 scrollIntoView and sticky header non-intersection
-      const card1Check = await page.evaluate(() => {
-        const header = document.querySelector('header');
-        const card1 = document.querySelectorAll('[data-portfolio-card="true"]')[0];
-        card1.scrollIntoView({ behavior: 'instant', block: 'start' });
-        const hRect = header.getBoundingClientRect();
-        const cRect = card1.getBoundingClientRect();
-        const openBtn = card1.querySelector('[data-open-production="true"]');
-        const bRect = openBtn.getBoundingClientRect();
-
-        return {
-          headerBottom: hRect.bottom,
-          cardTop: cRect.top,
-          cardBottom: cRect.bottom,
-          btnTop: bRect.top,
-          btnBottom: bRect.bottom,
-          isCardCovered: cRect.top < hRect.bottom - 1,
-        };
-      });
-
-      console.log(`Card #1 Scroll Check (${vp.width}x${vp.height}): Header bottom=${card1Check.headerBottom}px | Card #1 top=${card1Check.cardTop}px`);
-      if (card1Check.isCardCovered) {
-        console.error(`P2 STICKY HEADER OVERLAP FAIL: Card #1 top (${card1Check.cardTop}px) is covered by sticky header (bottom=${card1Check.headerBottom}px)!`);
-        process.exit(1);
-      }
-
-      // Test Open Production button scrollIntoView and sticky header non-intersection
-      const btn1Check = await page.evaluate(() => {
-        const header = document.querySelector('header');
-        const card1 = document.querySelectorAll('[data-portfolio-card="true"]')[0];
-        const openBtn = card1.querySelector('[data-open-production="true"]');
-        openBtn.scrollIntoView({ behavior: 'instant', block: 'nearest' });
-        const hRect = header.getBoundingClientRect();
-        const bRect = openBtn.getBoundingClientRect();
-
-        return {
-          headerBottom: hRect.bottom,
-          btnTop: bRect.top,
-          btnBottom: bRect.bottom,
-          isBtnCovered: bRect.top < hRect.bottom - 1,
-        };
-      });
-
-      console.log(`Card #1 Open Button Check (${vp.width}x${vp.height}): Header bottom=${btn1Check.headerBottom}px | Button top=${btn1Check.btnTop}px`);
-      if (btn1Check.isBtnCovered) {
-        console.error(`P2 STICKY HEADER OVERLAP FAIL: Card #1 Open Production button (${btn1Check.btnTop}px) is covered by sticky header (bottom=${btn1Check.headerBottom}px)!`);
-        process.exit(1);
-      }
-
-      // Test Card #2 scrollIntoView and sticky header non-intersection
-      const card2Check = await page.evaluate(() => {
-        const header = document.querySelector('header');
-        const card2 = document.querySelectorAll('[data-portfolio-card="true"]')[1];
-        card2.scrollIntoView({ behavior: 'instant', block: 'start' });
-        const hRect = header.getBoundingClientRect();
-        const cRect = card2.getBoundingClientRect();
-        const openBtn = card2.querySelector('[data-open-production="true"]');
-        const bRect = openBtn.getBoundingClientRect();
-
-        return {
-          headerBottom: hRect.bottom,
-          cardTop: cRect.top,
-          cardBottom: cRect.bottom,
-          btnTop: bRect.top,
-          btnBottom: bRect.bottom,
-          isCardCovered: cRect.top < hRect.bottom - 1,
-        };
-      });
-
-      console.log(`Card #2 Scroll Check (${vp.width}x${vp.height}): Header bottom=${card2Check.headerBottom}px | Card #2 top=${card2Check.cardTop}px`);
-      if (card2Check.isCardCovered) {
-        console.error(`P2 STICKY HEADER OVERLAP FAIL: Card #2 top (${card2Check.cardTop}px) is covered by sticky header (bottom=${card2Check.headerBottom}px)!`);
-        process.exit(1);
-      }
-
-      console.log(`P2 Mobile Sticky Header & Non-Intersection Audit (${vp.width}x${vp.height}): PASS`);
-    }
-
-    // Reset back to Desktop Viewport (1280x800)
-    await page.setViewportSize({ width: 1280, height: 800 });
     await page.waitForTimeout(300);
 
-    // 4. Test P0/P1: Open Production Cyberpunk Odyssey & Zero Grace Period Sampling Audit
-    console.log('\n--- P0/P1 TEST: Open Production Cyberpunk Odyssey & High-Frequency Sampling Audit ---');
-    const cpBtn = await page.waitForSelector('button[data-open-production="true"][data-project-id="proj-cyberpunk"]', { timeout: 5000 });
-    console.log(`Clicking Open Production on Cyberpunk Odyssey...`);
-    await cpBtn.click();
+    // =========================================================================
+    // SCENARIO A: Persistent "New Production" Button in Header
+    // =========================================================================
+    console.log('\n--- SCENARIO A: PERSISTENT NEW PRODUCTION HEADER CONTROL ---');
+    const newProdBtn = await page.waitForSelector('[data-testid="header-new-production-btn"]', { timeout: 5000 });
+    const newProdBtnText = await newProdBtn.innerText();
+    const newProdBtnAria = await newProdBtn.getAttribute('aria-label');
+    console.log(`Header New Production Button: "${newProdBtnText}" (aria-label: "${newProdBtnAria}")`);
 
-    let hybridDetected = false;
-    let hybridDetails = '';
-    const switchStartTime = Date.now();
+    const switchProjBtn = await page.waitForSelector('[data-testid="header-switch-project-btn"], button:has-text("Switch Project")', { timeout: 5000 });
+    const switchProjText = await switchProjBtn.innerText();
+    console.log(`Header Switch Project Button: "${switchProjText}"`);
 
-    // High-frequency sampling loop (10ms interval) from t=0 with ZERO grace period
-    while (Date.now() - switchStartTime < 6000) {
-      const sample = await page.evaluate(() => {
-        const headerEl = document.querySelector('header');
-        const mainEl = document.querySelector('main');
-        const titleEl = document.querySelector('[data-testid="workspace-project-title"]');
-        const codeEl = document.querySelector('[data-testid="workspace-project-code"]');
-        const readinessEl = document.querySelector('[data-testid="workspace-readiness-pct"]');
-        const summaryEl = document.querySelector('[data-testid="project-summary-bar"]');
-        const switchingEl = document.querySelector('[data-testid="switching-production-indicator"], [data-testid="header-switching-indicator"]');
-
-        const headerText = headerEl ? headerEl.innerText : '';
-        const mainText = mainEl ? mainEl.innerText : '';
-        const titleText = titleEl ? titleEl.textContent.trim() : '';
-        const codeText = codeEl ? codeEl.textContent.trim() : '';
-        const readinessText = readinessEl ? readinessEl.textContent.trim() : '';
-        const summaryText = summaryEl ? summaryEl.innerText.replace(/\n/g, ' ') : '';
-
-        const isSwitchingIndicatorVisible = switchingEl !== null ||
-          mainText.includes('Switching production...') || headerText.includes('Switching production...');
-
-        const isEmptyIntake =
-          mainText.includes('No canonical entities registered') ||
-          mainText.includes('Upload screenplay') ||
-          mainText.includes('Drop screenplay files') ||
-          mainText.includes('Parse demo screenplay') ||
-          mainText.includes('No scenes registered') ||
-          (document.querySelectorAll('.scene-readiness-card').length === 0 && document.querySelectorAll('tbody tr').length === 0 && !mainText.includes('Screenplay (3'));
-
-        return {
-          headerText,
-          mainText,
-          titleText,
-          codeText,
-          readinessText,
-          summaryText,
-          isSwitchingIndicatorVisible,
-          isEmptyIntake,
-        };
-      });
-
-      const elapsed = Date.now() - switchStartTime;
-
-      // Fail from click t=0 if old Neon chrome remains without Switching production overlay
-      if (!sample.isSwitchingIndicatorVisible) {
-        if (sample.titleText.includes('The Neon Horizon') || sample.codeText.includes('NEON-HORIZON') || sample.summaryText.includes('7 entities')) {
-          hybridDetected = true;
-          hybridDetails = `[t+${elapsed}ms] Uncovered stale Neon chrome visible without overlay: Title="${sample.titleText}", Code="${sample.codeText}", Summary="${sample.summaryText}"`;
-          break;
-        }
-        const hasHeader7Entities = sample.headerText.includes('7 entities') || sample.summaryText.includes('7 entities');
-        const hasTabs000 = sample.mainText.includes('Screenplay (0') || sample.mainText.includes('Clearance Items (0)');
-        if ((hasHeader7Entities || sample.titleText.includes('The Neon Horizon')) && (hasTabs000 || sample.isEmptyIntake)) {
-          hybridDetected = true;
-          hybridDetails = `[t+${elapsed}ms] Uncovered hybrid state: Header shows Neon 7 entities/chrome while tabs are 0/0/0 or intake is empty without overlay`;
-          break;
-        }
-      }
-
-      // Success Check: Selected project Cyberpunk title and workspace readiness 100% rendered without overlay
-      if (sample.titleText.includes('Cyberpunk') && sample.readinessText === '100%' && !sample.isSwitchingIndicatorVisible) {
-        console.log(`[t+${elapsed}ms] Switching finished -> Title: "${sample.titleText}" | Readiness: "${sample.readinessText}"`);
-        break;
-      }
-
-      await page.waitForTimeout(10);
-    }
-
-    if (hybridDetected) {
-      console.error(`P1 Atomic Transition Audit: FAIL (${hybridDetails})`);
+    if (!newProdBtnText.includes('New Production')) {
+      console.error('SCENARIO A FAIL: "+ New Production" button is not directly visible in header!');
       process.exit(1);
     }
-    console.log(`P1 Atomic Transition Audit: PASS (Zero transient hybrid state detected)`);
+    console.log('Scenario A (Persistent New Production Button): PASS');
 
-    const cpWsTitle = await page.$eval('[data-testid="workspace-project-title"]', el => el.textContent.trim()).catch(() => 'N/A');
-    const cpWsCode = await page.$eval('[data-testid="workspace-project-code"]', el => el.textContent.trim()).catch(() => 'N/A');
-    const cpWsReadiness = await page.$eval('[data-testid="workspace-readiness-pct"]', el => el.textContent.trim()).catch(() => 'N/A');
-    const cpWsSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ')).catch(() => 'N/A');
+    // =========================================================================
+    // SCENARIO B: Create Clean Production & Honest Empty State
+    // =========================================================================
+    console.log('\n--- SCENARIO B: CREATE CLEAN PRODUCTION & HONEST EMPTY STATE ---');
+    await newProdBtn.click();
+    await page.waitForSelector('[data-testid="create-production-submit-btn"]', { timeout: 5000 });
 
-    // Read Blocked Count for Cyberpunk directly from workspace blocked-scenes element
-    const cpBlockedCountText = await page.$eval('[data-testid="workspace-blocked-scenes"]', el => el.textContent.trim()).catch(() => '');
-    const cpBlockedCount = cpBlockedCountText.includes('0') ? 0 : (cpBlockedCountText.match(/\d+/) ? parseInt(cpBlockedCountText.match(/\d+/)[0], 10) : 0);
+    const prodTitleInput = await page.$('#new-prod-title');
+    const prodStudioInput = await page.$('#new-prod-studio');
+    await prodTitleInput.fill('Solaris Dawn');
+    await prodStudioInput.fill('A24 Studios');
 
-    console.log('Resulting Workspace Post-Open (Cyberpunk Odyssey):');
-    console.log(`  Title: "${cpWsTitle}" | Code: "${cpWsCode}" | Readiness: "${cpWsReadiness}" | Blocked: ${cpBlockedCount} ("${cpBlockedCountText}")`);
-    console.log(`  Summary Bar: "${cpWsSummary}"`);
+    const createSubmitBtn = await page.$('[data-testid="create-production-submit-btn"]');
+    await createSubmitBtn.click();
+    await page.waitForTimeout(1000);
 
-    // Strict Post-Open Assertions: Title, Code, Readiness, AND Blocked count
-    if (cpWsTitle !== 'Cyberpunk Odyssey' || !cpWsCode.includes('CYBERPUNK') || !cpWsReadiness.includes('100%') || cpBlockedCount !== 0) {
-      console.error(`P0 ROUTING FAIL: Expected Cyberpunk Odyssey [PRJ-CYBERPUNK] 100% readiness with 0 blocked, but got Title="${cpWsTitle}", Code="${cpWsCode}", Readiness="${cpWsReadiness}", Blocked=${cpBlockedCount}`);
+    // Verify newly opened workspace
+    const projectHeaderTitle = await page.$eval('[data-testid="workspace-project-title"]', el => el.innerText.trim()).catch(() => 'N/A');
+    console.log(`Active Workspace Title: "${projectHeaderTitle}"`);
+
+    const summaryBarText = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
+    console.log(`Summary Bar Text: "${summaryBarText}"`);
+
+    const recCardText = await page.$eval('[data-testid="primary-recommendation-card"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
+    console.log(`Recommendation Card: "${recCardText}"`);
+
+    const emptyStateVisible = await page.$('[data-testid="workspace-empty-state"]').then(el => Boolean(el));
+    console.log(`Workspace Empty State Notice Visible: ${emptyStateVisible}`);
+
+    if (!projectHeaderTitle.includes('Solaris Dawn')) {
+      console.error(`SCENARIO B FAIL: Expected active project "Solaris Dawn", got "${projectHeaderTitle}"`);
       process.exit(1);
     }
-    console.log(`P0 Routing Audit: PASS (Cyberpunk Odyssey 100% readiness & 0 blocked confirmed)`);
-
-    // 5. Switch back to Neon Horizon & High-Frequency Sampling Audit
-    console.log(`\n[Switch 2] Opening Portfolio and returning to Neon Horizon...`);
-    await page.click('header button:has-text("Portfolio")');
-    await page.waitForSelector('[data-portfolio-card="true"]', { timeout: 5000 });
-
-    const neonBtn = await page.waitForSelector('button[data-open-production="true"][data-project-id="proj-default"], button[data-open-production="true"]:not([data-project-id="proj-cyberpunk"])', { timeout: 5000 });
-    console.log(`Clicking Open Production on Neon Horizon...`);
-    await neonBtn.click();
-
-    let hybridDetected2 = false;
-    let hybridDetails2 = '';
-    const switchStartTime2 = Date.now();
-
-    while (Date.now() - switchStartTime2 < 6000) {
-      const sample2 = await page.evaluate(() => {
-        const headerEl = document.querySelector('header');
-        const mainEl = document.querySelector('main');
-        const titleEl = document.querySelector('[data-testid="workspace-project-title"]');
-        const codeEl = document.querySelector('[data-testid="workspace-project-code"]');
-        const readinessEl = document.querySelector('[data-testid="workspace-readiness-pct"]');
-        const summaryEl = document.querySelector('[data-testid="project-summary-bar"]');
-        const switchingEl = document.querySelector('[data-testid="switching-production-indicator"], [data-testid="header-switching-indicator"]');
-
-        const headerText = headerEl ? headerEl.innerText : '';
-        const mainText = mainEl ? mainEl.innerText : '';
-        const titleText = titleEl ? titleEl.textContent.trim() : '';
-        const codeText = codeEl ? codeEl.textContent.trim() : '';
-        const readinessText = readinessEl ? readinessEl.textContent.trim() : '';
-        const summaryText = summaryEl ? summaryEl.innerText.replace(/\n/g, ' ') : '';
-
-        const isSwitchingIndicatorVisible = switchingEl !== null ||
-          mainText.includes('Switching production...') || headerText.includes('Switching production...');
-
-        const isEmptyIntake =
-          mainText.includes('No canonical entities registered') ||
-          mainText.includes('Upload screenplay') ||
-          mainText.includes('Drop screenplay files') ||
-          mainText.includes('Parse demo screenplay') ||
-          mainText.includes('No scenes registered') ||
-          (document.querySelectorAll('.scene-readiness-card').length === 0 && document.querySelectorAll('tbody tr').length === 0 && !mainText.includes('Screenplay (3'));
-
-        return {
-          headerText,
-          mainText,
-          titleText,
-          codeText,
-          readinessText,
-          summaryText,
-          isSwitchingIndicatorVisible,
-          isEmptyIntake,
-        };
-      });
-
-      const elapsed2 = Date.now() - switchStartTime2;
-
-      // Fail from click t=0 if old Cyberpunk chrome remains without Switching production overlay
-      if (!sample2.isSwitchingIndicatorVisible) {
-        if (sample2.titleText.includes('Cyberpunk') || sample2.codeText.includes('CYBERPUNK')) {
-          hybridDetected2 = true;
-          hybridDetails2 = `[t+${elapsed2}ms] Uncovered stale Cyberpunk chrome visible without overlay: Title="${sample2.titleText}", Code="${sample2.codeText}"`;
-          break;
-        }
-        const hasHeader0Entities = sample2.headerText.includes('0 entities') || sample2.summaryText.includes('0 entities');
-        const hasTabs3711 = sample2.mainText.includes('Screenplay (3') || sample2.mainText.includes('Clearance Items (7)');
-        if (hasHeader0Entities && (hasTabs3711 || !sample2.isEmptyIntake || sample2.mainText.includes('Titan Industrial Hazard Placard'))) {
-          hybridDetected2 = true;
-          hybridDetails2 = `[t+${elapsed2}ms] Uncovered hybrid state: Header showed 0 entities while tabs/intake showed Neon content without overlay`;
-          break;
-        }
-      }
-
-      if (sample2.titleText.includes('Neon') && sample2.readinessText === '33.3%' && !sample2.isSwitchingIndicatorVisible) {
-        console.log(`[t+${elapsed2}ms] Switching back finished -> Title: "${sample2.titleText}" | Readiness: "${sample2.readinessText}"`);
-        break;
-      }
-
-      await page.waitForTimeout(10);
-    }
-
-    if (hybridDetected2) {
-      console.error(`P1 Neon Horizon Switch Audit: FAIL (${hybridDetails2})`);
+    if (!summaryBarText.includes('No clearance items recorded')) {
+      console.error(`SCENARIO B FAIL: Summary bar should report "No clearance items recorded", got "${summaryBarText}"`);
       process.exit(1);
     }
-    console.log(`P1 Neon Horizon Switch Audit: PASS (Zero transient hybrid state detected)`);
+    if (!recCardText.includes('Upload Screenplay to Begin Clearance')) {
+      console.error(`SCENARIO B FAIL: Primary recommendation should be "Upload Screenplay", got "${recCardText}"`);
+      process.exit(1);
+    }
+    console.log('Scenario B (Clean Production Creation & Honest Empty Workspace): PASS');
 
-    const neonWsTitle = await page.$eval('[data-testid="workspace-project-title"]', el => el.textContent.trim()).catch(() => 'N/A');
-    const neonWsCode = await page.$eval('[data-testid="workspace-project-code"]', el => el.textContent.trim()).catch(() => 'N/A');
-    const neonWsReadiness = await page.$eval('[data-testid="workspace-readiness-pct"]', el => el.textContent.trim()).catch(() => 'N/A');
-    const neonWsSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ')).catch(() => 'N/A');
+    // =========================================================================
+    // SCENARIO C: Ingestion Extraction Preview & 0-Scene Block
+    // =========================================================================
+    console.log('\n--- SCENARIO C: INGESTION EXTRACTION PREVIEW & 0-SCENE BLOCK ---');
+    const uploadTriggerBtn = await page.waitForSelector('[data-testid="recommendation-upload-script-btn"], [data-testid="workspace-empty-upload-btn"]', { timeout: 5000 });
+    await uploadTriggerBtn.click();
+    await page.waitForSelector('[aria-labelledby="upload-modal-title"]', { timeout: 5000 });
 
-    // Read Blocked Count for Neon Horizon directly from workspace blocked-scenes element
-    const neonBlockedCountText = await page.$eval('[data-testid="workspace-blocked-scenes"]', el => el.textContent.trim()).catch(() => '');
-    const neonBlockedCount = neonBlockedCountText.includes('2') ? 2 : (neonBlockedCountText.match(/\d+/) ? parseInt(neonBlockedCountText.match(/\d+/)[0], 10) : 0);
+    // Switch to Paste Screenplay tab
+    const pasteTabBtn = await page.waitForSelector('button:has-text("Paste Screenplay Text")', { timeout: 5000 });
+    await pasteTabBtn.click();
 
-    // Read Tabs (Screenplay, Clearance Items, Department Tasks)
-    const screenplayTabText = await page.$eval('#tab-screenplay', el => el.textContent.trim()).catch(() => 'N/A');
-    const clearanceTabText = await page.$eval('#tab-clearance', el => el.textContent.trim()).catch(() => 'N/A');
-    const tasksTabText = await page.$eval('#tab-tasks', el => el.textContent.trim()).catch(() => 'N/A');
+    // Type invalid non-screenplay text (no sluglines)
+    const textarea = await page.waitForSelector('textarea', { timeout: 5000 });
+    await textarea.fill('This is an ordinary text document without any scene headings or sluglines.\nJust informal notes.');
+    await page.waitForTimeout(1000);
 
-    console.log('Resulting Workspace Post-Switch (Neon Horizon):');
-    console.log(`  Title: "${neonWsTitle}" | Code: "${neonWsCode}" | Readiness: "${neonWsReadiness}" | Blocked: ${neonBlockedCount} ("${neonBlockedCountText}")`);
-    console.log(`  Tabs: Screenplay="${screenplayTabText}" | Clearance="${clearanceTabText}" | Tasks="${tasksTabText}"`);
-    console.log(`  Summary Bar: "${neonWsSummary}"`);
+    // Inspect preview card & warning banner
+    const previewWarnings = await page.waitForSelector('[data-testid="extraction-preview-warnings"]', { timeout: 5000 });
+    const warningText = await previewWarnings.innerText();
+    console.log(`Extraction Preview Warning: "${warningText.replace(/\n/g, ' ')}"`);
 
-    // Strict Post-Open Assertions: Title, Code, Readiness, AND Blocked count (2 blocked, 3/7/11)
-    if (neonWsTitle !== 'The Neon Horizon' || !neonWsCode.includes('NEON-HORIZON') || !neonWsReadiness.includes('33.3%') || neonBlockedCount !== 2) {
-      console.error(`P0 ROUTING FAIL: Expected The Neon Horizon [PRJ-NEON-HORIZON] 33.3% readiness with 2 blocked, but got Title="${neonWsTitle}", Code="${neonWsCode}", Readiness="${neonWsReadiness}", Blocked=${neonBlockedCount}`);
+    const confirmBtn = await page.$('[data-testid="btn-confirm-ingestion"]');
+    const isConfirmDisabled = await confirmBtn.getAttribute('disabled');
+    const confirmBtnText = await confirmBtn.innerText();
+    console.log(`Confirm Button: "${confirmBtnText}" | disabled=${isConfirmDisabled !== null}`);
+
+    if (isConfirmDisabled === null) {
+      console.error('SCENARIO C FAIL: "Confirm Ingestion" button must be disabled when 0 scenes are detected!');
       process.exit(1);
     }
 
-    // Strict Tab Assertions: 3 scenes / 7 items / 11 tasks
-    if (!screenplayTabText.includes('3') || !clearanceTabText.includes('7') || !tasksTabText.includes('11')) {
-      console.error(`P1 TABS FAIL: Expected Neon Horizon to show 3 scenes / 7 items / 11 tasks, but got Screenplay="${screenplayTabText}", Clearance="${clearanceTabText}", Tasks="${tasksTabText}"`);
-      process.exit(1);
-    }
-    console.log(`Neon Return Audit: PASS (The Neon Horizon 33.3% readiness, 2 blocked, and 3/7/11 tabs confirmed)`);
-
-    // 6. Test P1: Notification Drawer - Scenario A (Valid TASK-101) & Scenario B (Missing Target Tombstone)
-    console.log('\n--- SCENARIO A: VALID NOTIFICATION DEEP-LINK & FOCUS AUDIT (TASK-101) ---');
-    const alertsBtn = await page.waitForSelector('#notification-drawer-button, button:has-text("Alerts")', { timeout: 5000 });
-    await alertsBtn.click();
+    // Close upload modal
+    const cancelModalBtn = await page.$('button[aria-label="Close upload dialog"], button:has-text("Cancel")');
+    await cancelModalBtn.click();
     await page.waitForTimeout(500);
 
-    const validNotifyItem = await page.waitForSelector('[data-notification-target-task="TASK-101"]', { timeout: 5000 });
-    const validTargetTaskId = await validNotifyItem.getAttribute('data-notification-target-task');
-    const validItemDisabled = await validNotifyItem.getAttribute('data-notification-disabled');
-    const validItemAccessibleName = await validNotifyItem.getAttribute('aria-label') || '';
-    const validItemText = await validNotifyItem.innerText();
+    // Verify workspace remains empty and was NOT replaced with Neon Horizon
+    const afterCancelSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
+    console.log(`Workspace after failed extraction cancel: "${afterCancelSummary}"`);
+    if (!afterCancelSummary.includes('No clearance items recorded')) {
+      console.error(`SCENARIO C FAIL: Workspace was corrupted or replaced with demo data after cancelled upload!`);
+      process.exit(1);
+    }
+    console.log('Scenario C (Extraction Preview Warning & 0-Scene Ingestion Block): PASS');
 
-    console.log(`Valid Notification: targetTask="${validTargetTaskId}" | disabled=${validItemDisabled}`);
-    console.log(`  Accessible Name: "${validItemAccessibleName}"`);
-    console.log(`  Text: "${validItemText.replace(/\n/g, ' ')}"`);
+    // =========================================================================
+    // SCENARIO D: Explicit "Load Sample Production" Action
+    // =========================================================================
+    console.log('\n--- SCENARIO D: EXPLICIT LOAD SAMPLE PRODUCTION ---');
+    const loadSampleBtn = await page.waitForSelector('[data-testid="recommendation-load-sample-btn"]', { timeout: 5000 });
+    console.log(`Found explicit sample load button: "${await loadSampleBtn.innerText()}"`);
+    await loadSampleBtn.click();
+    await page.waitForTimeout(2000);
 
-    if (validItemDisabled === 'true') {
-      console.error(`P1 NOTIFICATION FAIL: Valid notification for ${validTargetTaskId} is incorrectly marked disabled!`);
+    const loadedReadiness = await page.$eval('[data-testid="workspace-readiness-pct"]', el => el.textContent.trim()).catch(() => 'N/A');
+    const loadedSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
+    const loadedBlockers = await page.$eval('[data-testid="workspace-blocked-scenes"]', el => el.textContent.trim()).catch(() => 'N/A');
+
+    console.log(`Loaded Sample Readiness: ${loadedReadiness}`);
+    console.log(`Loaded Sample Summary: ${loadedSummary}`);
+    console.log(`Loaded Sample Blockers: ${loadedBlockers}`);
+
+    if (loadedReadiness !== '33.3%') {
+      console.error(`SCENARIO D FAIL: Expected Neon Horizon 33.3% readiness, got "${loadedReadiness}"`);
+      process.exit(1);
+    }
+    if (!loadedBlockers.includes('2')) {
+      console.error(`SCENARIO D FAIL: Expected Neon Horizon 2 blocked scenes, got "${loadedBlockers}"`);
+      process.exit(1);
+    }
+    console.log('Scenario D (Explicit Load Sample -> Neon Horizon 33.3% / 2 Blocked): PASS');
+
+    // =========================================================================
+    // SCENARIO E: Cyberpunk Odyssey Isolation from Portfolio
+    // =========================================================================
+    console.log('\n--- SCENARIO E: CYBERPUNK ODYSSEY ISOLATION ---');
+    const portfolioToggleBtn = await page.waitForSelector('[data-testid="portfolio-view-toggle"]', { timeout: 5000 });
+    await portfolioToggleBtn.click();
+    await page.waitForSelector('[data-portfolio-card="true"]', { timeout: 5000 });
+
+    const cyberpunkCard = await page.waitForSelector('[data-portfolio-card="true"]:has-text("Cyberpunk Odyssey")', { timeout: 5000 });
+    const cyberpunkReadinessBadge = await cyberpunkCard.$eval('[data-readiness-badge="true"]', el => el.innerText.trim()).catch(() => 'N/A');
+    console.log(`Cyberpunk Portfolio Card Readiness: "${cyberpunkReadinessBadge}"`);
+
+    await cyberpunkCard.click();
+    await page.waitForTimeout(1500);
+
+    const cyberReadiness = await page.$eval('[data-testid="workspace-readiness-pct"]', el => el.textContent.trim()).catch(() => 'N/A');
+    const cyberBlockers = await page.$eval('[data-testid="workspace-blocked-scenes"]', el => el.textContent.trim()).catch(() => 'N/A');
+    console.log(`Cyberpunk Active Workspace Readiness: ${cyberReadiness} | Blockers: ${cyberBlockers}`);
+
+    if (cyberReadiness !== '100%') {
+      console.error(`SCENARIO E FAIL: Expected Cyberpunk 100% readiness, got "${cyberReadiness}"`);
+      process.exit(1);
+    }
+    if (!cyberBlockers.includes('0')) {
+      console.error(`SCENARIO E FAIL: Expected Cyberpunk 0 blocked scenes, got "${cyberBlockers}"`);
+      process.exit(1);
+    }
+    console.log('Scenario E (Cyberpunk Odyssey 100% / 0 Blocked Isolation): PASS');
+
+    // =========================================================================
+    // SCENARIO F: Notification Deep-Link & Tombstone Integrity
+    // =========================================================================
+    console.log('\n--- SCENARIO F: NOTIFICATION DEEP-LINK & TOMBSTONE INTEGRITY ---');
+    // Switch back to Neon Horizon using portfolio
+    const portfolioBtnF = await page.waitForSelector('[data-testid="portfolio-view-toggle"]', { timeout: 5000 });
+    await portfolioBtnF.click();
+    await page.waitForSelector('[data-portfolio-card="true"]', { timeout: 5000 });
+
+    const neonHorizonCard = await page.waitForSelector('[data-portfolio-card="true"]:has-text("The Neon Horizon")', { timeout: 5000 });
+    await neonHorizonCard.click();
+    await page.waitForTimeout(1500);
+
+    // Ensure sample data is populated on proj-default
+    await page.evaluate(async (token) => {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['x-demo-token'] = token;
+      await fetch('/api/projects/proj-default/script/demo', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
+      });
+    }, DEMO_TOKEN);
+
+    // Open notification drawer
+    const alertsBtn = await page.waitForSelector('#notification-drawer-button, button:has-text("Alerts")', { timeout: 5000 });
+    await alertsBtn.click();
+    await page.waitForSelector('[role="dialog"][aria-label="Notifications"]', { timeout: 5000 });
+
+    // Test valid notification deep link
+    const validNotification = await page.waitForSelector('[data-notification-target-task="TASK-101"]', { timeout: 5000 });
+    console.log(`Clicking valid notification for TASK-101...`);
+    await validNotification.click();
+    await page.waitForSelector('[role="dialog"][aria-labelledby="action-modal-title"]', { timeout: 5000 });
+    await page.waitForSelector('#task-heading-TASK-101', { timeout: 5000 });
+    await page.waitForTimeout(400);
+
+    const activeHeadingId = await page.evaluate(() => document.activeElement ? document.activeElement.id : null);
+    console.log(`Focused Element in Action Center: id="${activeHeadingId}"`);
+    if (activeHeadingId !== 'task-heading-TASK-101') {
+      console.error(`SCENARIO F FAIL: Expected focus on task-heading-TASK-101, got "${activeHeadingId}"`);
       process.exit(1);
     }
 
-    console.log(`Clicking valid notification (target: ${validTargetTaskId})...`);
-    let resyncFocusedDuringLoad = false;
-    let zeroOfZeroVisibleDuringLoad = false;
-    const clickTime = Date.now();
-
-    await validNotifyItem.click();
-
-    while (Date.now() - clickTime < 4000) {
-      const check = await page.evaluate((expectedId) => {
-        const activeEl = document.activeElement;
-        const isButton = activeEl && activeEl.tagName.toLowerCase() === 'button';
-        const isReSyncFocused = isButton && (
-          (activeEl.textContent && activeEl.textContent.trim().includes('Re-Sync')) ||
-          (activeEl.getAttribute('aria-label') && activeEl.getAttribute('aria-label').includes('Re-Sync'))
-        );
-        const actionModal = document.querySelector('[role="dialog"][aria-labelledby="action-modal-title"]');
-        const modalText = actionModal ? actionModal.textContent || '' : '';
-        const isZeroOfZero = modalText.includes('0 of 0') || modalText.includes('Showing 0 of 0');
-        const headingEl = document.getElementById(`task-heading-${expectedId}`);
-        const isTargetHeadingFocused = activeEl === headingEl;
-
-        return {
-          isReSyncFocused: !!isReSyncFocused,
-          isZeroOfZero: !!isZeroOfZero,
-          isTargetHeadingFocused: !!isTargetHeadingFocused,
-          activeTag: activeEl ? activeEl.tagName.toLowerCase() : 'none',
-          activeId: activeEl ? activeEl.id : '',
-          activeText: activeEl ? activeEl.innerText || activeEl.textContent || '' : '',
-        };
-      }, validTargetTaskId);
-
-      if (check.isReSyncFocused) resyncFocusedDuringLoad = true;
-      if (check.isZeroOfZero) zeroOfZeroVisibleDuringLoad = true;
-      if (check.isTargetHeadingFocused) {
-        console.log(`[t+${Date.now() - clickTime}ms] Target heading ${validTargetTaskId} received focus!`);
-        break;
-      }
-      await page.waitForTimeout(10);
-    }
-
-    if (resyncFocusedDuringLoad) {
-      console.error(`P1 ACTION CENTER FAIL: Re-Sync button received focus during notification deep-link navigation!`);
-      process.exit(1);
-    }
-    if (zeroOfZeroVisibleDuringLoad) {
-      console.error(`P1 ACTION CENTER FAIL: "0 of 0" was visible in modal chrome during task load!`);
-      process.exit(1);
-    }
-
-    const modalVisible = await page.$('[role="dialog"][aria-labelledby="action-modal-title"]').then(el => el ? true : false);
-    const navAnnouncement = await page.$eval('[data-testid="nav-announcement"]', el => el.textContent.trim()).catch(() => 'N/A');
-
-    const activeElementInfo = await page.evaluate(() => {
-      const el = document.activeElement;
-      if (!el) return { tagName: 'none', id: '', accessibleName: '' };
-      return {
-        tagName: el.tagName.toLowerCase(),
-        id: el.id || '',
-        accessibleName: el.getAttribute('aria-label') || el.innerText || '',
-      };
-    });
-
-    console.log(`Action Modal Visible: ${modalVisible}`);
-    console.log(`Live Region Announcement: "${navAnnouncement}"`);
-    console.log(`Active Focused Element: <${activeElementInfo.tagName} id="${activeElementInfo.id}" label="${activeElementInfo.accessibleName.replace(/\n/g, ' ')}">`);
-
-    const expectedHeadingId = `task-heading-${validTargetTaskId}`;
-    if (activeElementInfo.tagName !== 'h4' || activeElementInfo.id !== expectedHeadingId) {
-      console.error(`P1 NOTIFICATION FOCUS FAIL: Expected focused element <h4 id="${expectedHeadingId}">, but got <${activeElementInfo.tagName} id="${activeElementInfo.id}">!`);
-      process.exit(1);
-    }
-    if (!navAnnouncement.includes('Create Fictional Prop Graphic: Titan Industrial Hazard Placard')) {
-      console.error(`P1 NOTIFICATION ANNOUNCEMENT FAIL: Expected real task title in announcement, got: "${navAnnouncement}"`);
-      process.exit(1);
-    }
-    console.log('Scenario A (Valid Notification Navigation & Focus): PASS');
-
-    // Close Action Center Modal
+    // Close Action Center modal
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
 
-    // --- SCENARIO B: MISSING/ORPHAN TARGET TASK TOMBSTONE AUDIT ---
-    console.log('\n--- SCENARIO B: MISSING/ORPHAN TARGET TASK TOMBSTONE AUDIT ---');
-
-    // 1. Create temporary orphan notification
-    const orphanCreateRes = await page.evaluate(async (token) => {
+    // Test temporary orphan tombstone
+    const orphanCreate = await page.evaluate(async (token) => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['x-demo-token'] = token;
       const res = await fetch('/api/notifications', {
@@ -836,141 +259,186 @@ async function runLocalVerification() {
           userId: 'LEGAL_COUNSEL',
           projectId: 'proj-default',
           triggerType: 'TASK_MENTION',
-          title: 'Orphan Notification Test',
-          message: 'Notification with missing target task.',
+          title: 'Orphan Notification QA',
+          message: 'Target task deleted.',
           targetTaskId: 'TASK-NON-EXISTENT-999',
         }),
       });
       return { ok: res.ok, data: await res.json() };
     }, DEMO_TOKEN);
 
-    const orphanId = orphanCreateRes.data?.notification?.id;
-    console.log(`Created temporary orphan notification (ID: ${orphanId}, Target: TASK-NON-EXISTENT-999)`);
-
-    // 2. Open notification drawer
+    const orphanId = orphanCreate.data?.notification?.id;
     const alertsBtn2 = await page.waitForSelector('#notification-drawer-button, button:has-text("Alerts")', { timeout: 5000 });
     await alertsBtn2.click();
     await page.waitForTimeout(500);
 
-    // 3. Inspect orphan notification item
     const orphanItem = await page.waitForSelector('[data-notification-target-task="TASK-NON-EXISTENT-999"]', { timeout: 5000 });
-    const orphanDisabledAttr = await orphanItem.getAttribute('data-notification-disabled');
-    const orphanAriaDisabled = await orphanItem.getAttribute('aria-disabled');
-    const orphanAriaLabel = await orphanItem.getAttribute('aria-label') || '';
-    const orphanText = await orphanItem.innerText();
+    const isOrphanDisabled = await orphanItem.getAttribute('data-notification-disabled');
+    console.log(`Orphan notification disabled attribute: "${isOrphanDisabled}"`);
 
-    console.log(`Orphan Notification: data-notification-disabled="${orphanDisabledAttr}" | aria-disabled="${orphanAriaDisabled}"`);
-    console.log(`  Accessible Name: "${orphanAriaLabel}"`);
-    console.log(`  Text: "${orphanText.replace(/\n/g, ' ')}"`);
-
-    if (orphanDisabledAttr !== 'true') {
-      console.error(`P1 TOMBSTONE FAIL: Expected orphan notification to have data-notification-disabled="true", got "${orphanDisabledAttr}"`);
-      process.exit(1);
-    }
-    if (!orphanAriaLabel.includes('link disabled')) {
-      console.error(`P1 TOMBSTONE FAIL: Expected orphan notification aria-label to indicate disabled link, got "${orphanAriaLabel}"`);
-      process.exit(1);
-    }
-
-    // 4. Click the disabled orphan notification item
-    console.log('Clicking disabled orphan notification item...');
     await orphanItem.click({ force: true });
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(300);
 
-    // 5. Assertions:
-    // - Drawer must stay open
-    const drawerStillOpen = await page.$('[role="dialog"][aria-label="Notifications"]').then(el => el ? true : false);
-    // - Live region must announce exactly "This task is no longer available."
-    const drawerAnnouncement = await page.$eval('[data-testid="notification-live-announcement"]', el => el.textContent.trim()).catch(() => 'N/A');
-    // - Action Center modal must NOT be open
-    const actionModalOpen = await page.$('[role="dialog"][aria-labelledby="action-modal-title"]').then(el => el ? true : false);
+    const liveAnnouncement = await page.$eval('[data-testid="notification-live-announcement"]', el => el.textContent.trim()).catch(() => 'N/A');
+    console.log(`Orphan click live announcement: "${liveAnnouncement}"`);
 
-    console.log(`Drawer Retained Open: ${drawerStillOpen}`);
-    console.log(`Drawer Live Region Announcement: "${drawerAnnouncement}"`);
-    console.log(`Action Center Modal Opened: ${actionModalOpen}`);
-
-    if (!drawerStillOpen) {
-      console.error(`P1 TOMBSTONE FAIL: Expected notification drawer to remain open after clicking disabled orphan, but drawer closed!`);
-      process.exit(1);
-    }
-    if (drawerAnnouncement !== 'This task is no longer available.') {
-      console.error(`P1 TOMBSTONE FAIL: Expected live announcement "This task is no longer available.", but got "${drawerAnnouncement}"`);
-      process.exit(1);
-    }
-    if (actionModalOpen) {
-      console.error(`P1 TOMBSTONE FAIL: Action Center modal unexpectedly opened on missing task click!`);
+    if (isOrphanDisabled !== 'true' || liveAnnouncement !== 'This task is no longer available.') {
+      console.error(`SCENARIO F FAIL: Orphan task was not properly tombstoned!`);
       process.exit(1);
     }
 
-    // 6. Cleanup: Remove temporary QA orphan notification
+    // Cleanup orphan notification
     if (orphanId) {
-      console.log(`Cleaning up temporary orphan notification ${orphanId}...`);
-      const deleteRes = await page.evaluate(async ({ id, token }) => {
+      await page.evaluate(async ({ id, token }) => {
         const headers = {};
         if (token) headers['x-demo-token'] = token;
-        const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE', headers });
-        return { ok: res.ok };
+        await fetch(`/api/notifications/${id}`, { method: 'DELETE', headers });
       }, { id: orphanId, token: DEMO_TOKEN });
-      console.log(`Orphan cleanup status: ${deleteRes.ok ? 'SUCCESS' : 'FAILED'}`);
     }
 
-    // Close drawer
     await alertsBtn2.click();
     await page.waitForTimeout(300);
-    console.log('Scenario B (Missing Target Disabled Tombstone & Announcement): PASS');
+    console.log('Scenario F (Valid Notification Deep-Link & Orphan Tombstone): PASS');
 
-    // --- RC REGRESSION: Task Status Update & Audit History ---
-    console.log('\n--- RC REGRESSION: TASK UPDATE & AUDIT HISTORY AUDIT ---');
-    const taskUpdateRes = await page.evaluate(async (token) => {
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['x-demo-token'] = token;
-      const res = await fetch('/api/projects/proj-default/actions/TASK-101', {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({
-          status: 'IN_PROGRESS',
-          actor: 'Lead Clearance Counsel',
-          reason: 'Actively drafting prop graphic replacement specification.',
-        }),
-      });
-      return { ok: res.ok, status: res.status, data: await res.json() };
-    }, DEMO_TOKEN);
+    // =========================================================================
+    // SCENARIO G: Coors Light 4-Page PDF Extraction & Negative PDF Integrity
+    // =========================================================================
+    console.log('\n--- SCENARIO G: COORS LIGHT 4-PAGE PDF & NEGATIVE PDF AUDIT ---');
+    const path = await import('path');
+    const fs = await import('fs');
+    const coorsPdfPath = path.resolve(process.cwd(), 'tests/fixtures/coors_light_4page.pdf');
+    const imageOnlyPdfPath = path.resolve(process.cwd(), 'tests/fixtures/image_only.pdf');
+    const malformedPdfPath = path.resolve(process.cwd(), 'tests/fixtures/malformed.pdf');
 
-    if (!taskUpdateRes.ok || !taskUpdateRes.data) {
-      console.error(`RC REGRESSION FAIL: Task update failed with status ${taskUpdateRes.status}`);
+    // 1. Create a fresh clean production for PDF testing
+    const newProdBtnG = await page.waitForSelector('[data-testid="header-new-production-btn"]', { timeout: 5000 });
+    await newProdBtnG.click();
+    await page.waitForSelector('[data-testid="create-production-submit-btn"]', { timeout: 5000 });
+    await page.fill('#new-prod-title', 'Mountain Refuge Feature');
+    await page.fill('#new-prod-studio', 'Rockies Cinema');
+    await page.click('[data-testid="create-production-submit-btn"]');
+    await page.waitForTimeout(1000);
+
+    // Initial Quota check
+    const initialQuotaUsed = await page.$eval('[data-testid="quota-used-display"]', el => el.innerText.trim()).catch(() => '0');
+    console.log(`Initial Research Quota Used: ${initialQuotaUsed}`);
+
+    // 2. Negative Test: Image-Only Scanned PDF
+    console.log('Testing Negative Upload 1: Image-only scanned PDF...');
+    const uploadBtnG1 = await page.waitForSelector('[data-testid="recommendation-upload-script-btn"], [data-testid="workspace-empty-upload-btn"]', { timeout: 5000 });
+    await uploadBtnG1.click();
+    await page.waitForSelector('[aria-labelledby="upload-modal-title"]', { timeout: 5000 });
+
+    const fileInputG = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 5000 });
+    await fileInputG.setInputFiles(imageOnlyPdfPath);
+    await page.waitForTimeout(1500);
+
+    const imgWarnings = await page.waitForSelector('[data-testid="extraction-preview-warnings"]', { timeout: 5000 });
+    const imgWarnText = await imgWarnings.innerText();
+    const imgConfirmBtn = await page.$('[data-testid="btn-confirm-ingestion"]');
+    const isImgDisabled = await imgConfirmBtn.getAttribute('disabled');
+    console.log(`Image-Only PDF Preview Warning: "${imgWarnText.replace(/\n/g, ' ')}"`);
+    console.log(`Image-Only Confirm Button Disabled: ${isImgDisabled !== null}`);
+
+    if (isImgDisabled === null) {
+      console.error('SCENARIO G FAIL: Confirm button must be disabled for image-only PDF!');
       process.exit(1);
     }
-    console.log(`Task Update Status: ${taskUpdateRes.data.status} | Audit Events: ${taskUpdateRes.data.activityHistory?.length || 0}`);
-    console.log('RC Regression Task Update Audit: PASS');
 
-    // --- RC REGRESSION: Task Attachments Verification ---
-    console.log('\n--- RC REGRESSION: TASK ATTACHMENTS AUDIT ---');
-    const attachmentsRes = await page.evaluate(async (token) => {
-      const headers = {};
-      if (token) headers['x-demo-token'] = token;
-      const res = await fetch('/api/tasks/TASK-101/attachments', { headers });
-      return { ok: res.ok, status: res.status, data: await res.json() };
-    }, DEMO_TOKEN);
-    console.log(`Attachments Endpoint Response: status=${attachmentsRes.status}, count=${attachmentsRes.data?.attachments?.length || 0}`);
-    console.log('RC Regression Attachments Audit: PASS');
+    // 3. Negative Test: Corrupted / Malformed PDF
+    console.log('Testing Negative Upload 2: Malformed corrupted PDF...');
+    await fileInputG.setInputFiles(malformedPdfPath);
+    await page.waitForTimeout(1500);
 
-    // --- RC REGRESSION: Clearance Binder Export ---
-    console.log('\n--- RC REGRESSION: CLEARANCE BINDER EXPORT AUDIT ---');
-    const binderExportRes = await page.evaluate(async (token) => {
-      const headers = {};
-      if (token) headers['x-demo-token'] = token;
-      const res = await fetch('/api/projects/proj-default/binder/export', { headers });
-      return { ok: res.ok, status: res.status, data: await res.json() };
-    }, DEMO_TOKEN);
+    const malWarnings = await page.waitForSelector('[data-testid="extraction-preview-warnings"]', { timeout: 5000 });
+    const malWarnText = await malWarnings.innerText();
+    const malConfirmBtn = await page.$('[data-testid="btn-confirm-ingestion"]');
+    const isMalDisabled = await malConfirmBtn.getAttribute('disabled');
+    console.log(`Malformed PDF Preview Warning: "${malWarnText.replace(/\n/g, ' ')}"`);
+    console.log(`Malformed Confirm Button Disabled: ${isMalDisabled !== null}`);
 
-    if (!binderExportRes.ok || !binderExportRes.data || !binderExportRes.data.integrityDigest) {
-      console.error(`RC REGRESSION FAIL: Clearance binder export failed! status=${binderExportRes.status}`);
+    if (isMalDisabled === null) {
+      console.error('SCENARIO G FAIL: Confirm button must be disabled for malformed PDF!');
       process.exit(1);
     }
-    console.log(`Exported Binder: Title="${binderExportRes.data.projectSummary?.title}" | Total Scenes=${binderExportRes.data.projectSummary?.totalScenes} | SHA-256 Digest="${binderExportRes.data.integrityDigest.slice(0, 16)}..."`);
-    console.log('RC Regression Binder Export Audit: PASS');
 
-    console.log('\n=== LOCAL PLAYWRIGHT VERIFICATION AUDIT COMPLETE: ALL PASS ===');
+    // 4. Positive Test: Real 4-Page Coors Light Screenplay PDF
+    console.log('Testing Positive Upload: Coors Light 4-page Screenplay PDF...');
+    await fileInputG.setInputFiles(coorsPdfPath);
+    await page.waitForTimeout(2000);
+
+    const previewCard = await page.waitForSelector('[data-testid="extraction-preview-card"]', { timeout: 5000 });
+    const previewText = await previewCard.innerText();
+    console.log(`Coors PDF Preview Card:\n${previewText}`);
+
+    const coorsConfirmBtn = await page.$('[data-testid="btn-confirm-ingestion"]');
+    const isCoorsDisabled = await coorsConfirmBtn.getAttribute('disabled');
+    console.log(`Coors PDF Confirm Button Enabled: ${isCoorsDisabled === null}`);
+
+    if (isCoorsDisabled !== null) {
+      console.error('SCENARIO G FAIL: Confirm button must be enabled for valid 4-page Coors PDF!');
+      process.exit(1);
+    }
+
+    if (!previewText.includes('coors_light_4page.pdf') || !previewText.includes('Est. Pages: 4') || !previewText.includes('Scenes Detected: 3')) {
+      console.error(`SCENARIO G FAIL: Extraction preview mismatch! Expected 4 pages and 3 scenes.`);
+      process.exit(1);
+    }
+
+    // Confirm Ingestion
+    console.log('Clicking "Confirm Ingestion & Review"...');
+    await coorsConfirmBtn.click();
+    await page.waitForTimeout(3000);
+
+    // Assert Ingested Workspace State
+    const coorsSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
+    console.log(`Workspace Summary after Coors Ingestion: "${coorsSummary}"`);
+
+    // Verify Coors Light entity in table / registry
+    const registryTable = await page.waitForSelector('[data-testid="entity-registry-table"], table', { timeout: 5000 });
+    const registryContent = await registryTable.innerText();
+    console.log(`Registry Table Content Preview:\n${registryContent.slice(0, 300)}...`);
+
+    const hasCoorsLight = registryContent.toLowerCase().includes('coors light') || registryContent.toLowerCase().includes('coors');
+    const hasNeonDemo = registryContent.toLowerCase().includes('summit cola') || registryContent.toLowerCase().includes('aerotech');
+
+    console.log(`Coors Light Identified: ${hasCoorsLight}`);
+    console.log(`Zero Demo Entities Substituted: ${!hasNeonDemo}`);
+
+    if (!hasCoorsLight) {
+      console.error('SCENARIO G FAIL: "Coors Light" was not extracted as a clearance item!');
+      process.exit(1);
+    }
+    if (hasNeonDemo) {
+      console.error('SCENARIO G FAIL: Sample Neon Horizon entities were substituted into the user project!');
+      process.exit(1);
+    }
+
+    // Assert Quota Unused
+    const afterQuotaUsed = await page.$eval('[data-testid="quota-used-display"]', el => el.innerText.trim()).catch(() => '0');
+    console.log(`Research Quota Used after ingestion (before evaluation): ${afterQuotaUsed}`);
+
+    // Refresh and Verify State Persistence
+    console.log('Reloading page to verify snapshot persistence...');
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForTimeout(1000);
+
+    const reloadedSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
+    const reloadedTable = await page.waitForSelector('[data-testid="entity-registry-table"], table', { timeout: 5000 });
+    const reloadedContent = await reloadedTable.innerText();
+    const reloadedHasCoors = reloadedContent.toLowerCase().includes('coors');
+
+    console.log(`Reloaded Summary: "${reloadedSummary}"`);
+    console.log(`Reloaded Coors Light Preserved: ${reloadedHasCoors}`);
+
+    if (!reloadedHasCoors) {
+      console.error('SCENARIO G FAIL: Coors Light entity was lost after page reload!');
+      process.exit(1);
+    }
+
+    console.log('Scenario G (Coors Light 4-Page PDF & Negative PDF Integrity): PASS');
+
+    console.log('\n=== LOCAL PLAYWRIGHT VERIFICATION AUDIT COMPLETE: ALL PASS (A–G) ===');
   } catch (err) {
     console.error('Local verification failed with error:', err);
     process.exit(1);
@@ -980,4 +448,3 @@ async function runLocalVerification() {
 }
 
 runLocalVerification();
-

@@ -10,6 +10,7 @@ export interface RecommendedActionCardProps {
   onOpenUploadModal?: () => void;
   onExportBinder?: () => void;
   onResearchItem?: (entityId: string) => void;
+  onLoadSample?: () => void;
 }
 
 export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
@@ -20,6 +21,7 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
   onOpenUploadModal,
   onExportBinder,
   onResearchItem,
+  onLoadSample,
 }) => {
   const actionRequiredItems = entities.filter(
     (e) => e.overallClearanceStatus === 'ACTION_REQUIRED' || e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE'
@@ -36,12 +38,13 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
   let badgeColor = 'var(--status-no-issue, #22c55e)';
   let badgeBg = 'rgba(34, 197, 94, 0.12)';
   let handleClick: () => void = () => {};
+  const isEmptyWorkspace = (!hasScreenplay || entities.length === 0);
 
-  if (!hasScreenplay && entities.length === 0) {
-    title = 'No Screenplay Ingested';
-    rationale = 'Import a Fountain, Plaintext, or PDF screenplay to begin automated clearance extraction.';
-    buttonLabel = 'Add Screenplay';
-    ariaLabel = 'Add Screenplay';
+  if (isEmptyWorkspace) {
+    title = 'Upload Screenplay to Begin Clearance';
+    rationale = 'Upload a screenplay in PDF, Fountain, or plain text format to extract scenes and detect clearance entities.';
+    buttonLabel = 'Upload Screenplay';
+    ariaLabel = 'Upload Screenplay to Begin Clearance';
     badgeColor = 'var(--accent-cyan, #38bdf8)';
     badgeBg = 'rgba(56, 189, 248, 0.12)';
     handleClick = () => onOpenUploadModal?.();
@@ -91,7 +94,7 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
     handleClick = () => onSelectTab?.('tasks');
   } else {
     title = 'All Clearance Items Cleared';
-    rationale = 'No immediate action required. Project is ready for production shoot.';
+    rationale = 'All identified clearance items are cleared. Project is ready for legal binder export.';
     buttonLabel = 'Export Clearance Binder';
     ariaLabel = 'Export Clearance Binder';
     badgeColor = 'var(--status-no-issue, #22c55e)';
@@ -102,6 +105,7 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
   return (
     <div
       role="region"
+      data-testid="primary-recommendation-card"
       aria-label="Recommended Action"
       style={{
         padding: '1.25rem 1.5rem',
@@ -160,8 +164,26 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+        {isEmptyWorkspace && onLoadSample && (
+          <button
+            type="button"
+            data-testid="recommendation-load-sample-btn"
+            className="btn btn-secondary touch-target"
+            onClick={onLoadSample}
+            aria-label="Load Sample Production Data"
+            style={{
+              padding: '0.6rem 1rem',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+            }}
+          >
+            Load Sample Production
+          </button>
+        )}
         <button
+          data-testid={isEmptyWorkspace ? 'recommendation-upload-script-btn' : 'recommendation-primary-action-btn'}
           className="btn btn-primary touch-target"
           onClick={handleClick}
           aria-label={ariaLabel}

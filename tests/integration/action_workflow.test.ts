@@ -60,7 +60,7 @@ Elena Vance addresses the audience on next-generation energy distribution.
     const legalActions = await request(app).get(`/api/projects/${projectId}/actions?department=LEGAL_COUNSEL`);
     expect(legalActions.status).toBe(200);
     expect(legalActions.body.length).toBeGreaterThanOrEqual(1);
-    const musicAction = legalActions.body.find((a: any) => a.actionType === 'LEGAL_COUNSEL_RELEASE');
+    const musicAction = legalActions.body.find((a: any) => a.canonicalEntityId === nocturneMusic!.id);
     expect(musicAction).toBeDefined();
 
     // 6. Evaluate Scene 1 Readiness -> Blocked (RED) -> Creates Production Management Action & Alert
@@ -104,7 +104,7 @@ Elena Vance addresses the audience on next-generation energy distribution.
 
     await request(app).post(`/api/projects/${projectId}/actions/sync`);
 
-    const updatedLegal = await actionNotificationRepo.getActionById(projectId, musicAction.id);
+    const updatedLegal = await actionNotificationRepo.getActionById(projectId, musicAction!.id);
     expect(updatedLegal?.status).toBe('RESOLVED');
   });
 });

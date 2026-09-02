@@ -48,6 +48,21 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
 
   const [completionCounts, setCompletionCounts] = useState<{ scenesCount: number; entitiesCount: number; openActionsCount: number }>({ scenesCount: 3, entitiesCount: 7, openActionsCount: 7 });
 
+  // Extraction Preview State
+  const [previewData, setPreviewData] = useState<{
+    filename: string;
+    format: string;
+    characterCount: number;
+    wordCount: number;
+    estimatedPageCount: number;
+    scenesDetected: number;
+    sampleHeadings: string[];
+    warnings: string[];
+    isValid: boolean;
+    previewTextExcerpt: string;
+  } | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
   const { containerRef } = useModalFocus<HTMLDivElement>({
     isOpen,
     onClose,
@@ -61,6 +76,80 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-fetch preview on file or text change
+  useEffect(() => {
+    let active = true;
+    const fetchPreview = async () => {
+      if (activeTab === 'DEMO') {
+        setPreviewData({
+          filename: 'the_neon_horizon_sample.txt',
+          format: 'FOUNTAIN',
+          characterCount: 6540,
+          wordCount: 1120,
+          estimatedPageCount: 3,
+          scenesDetected: 3,
+          sampleHeadings: [
+            'Scene 1: INT. AERO TECH PRISM LAB - NIGHT',
+            'Scene 2: EXT. MIDTOWN SPIRE TOWER - DAY',
+            'Scene 3: INT. TITAN CARGO BAY - NIGHT',
+          ],
+          warnings: [],
+          isValid: true,
+          previewTextExcerpt: 'INT. AERO TECH PRISM LAB - NIGHT\nNeon reflections gleam...',
+        });
+        return;
+      }
+
+      if (activeTab === 'FILE' && selectedFile) {
+        setIsPreviewLoading(true);
+        try {
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          const res = await apiFetch(`/api/projects/${projectId}/script/preview`, {
+            method: 'POST',
+            body: formData,
+          });
+          if (res.ok && active) {
+            const data = await res.json();
+            setPreviewData(data);
+          }
+        } catch (e) {
+          console.error('Error fetching preview:', e);
+        } finally {
+          if (active) setIsPreviewLoading(false);
+        }
+      } else if (activeTab === 'PASTE' && pastedText.trim()) {
+        setIsPreviewLoading(true);
+        try {
+          const res = await apiFetch(`/api/projects/${projectId}/script/preview`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              scriptText: pastedText,
+              format: pastedFormat,
+              filename: 'pasted_screenplay.txt',
+            }),
+          });
+          if (res.ok && active) {
+            const data = await res.json();
+            setPreviewData(data);
+          }
+        } catch (e) {
+          console.error('Error fetching text preview:', e);
+        } finally {
+          if (active) setIsPreviewLoading(false);
+        }
+      } else {
+        setPreviewData(null);
+      }
+    };
+
+    fetchPreview();
+    return () => {
+      active = false;
+    };
+  }, [selectedFile, pastedText, pastedFormat, activeTab, projectId]);
 
   // Focus management during state transitions (e.g. processing or failure)
   useEffect(() => {
@@ -80,6 +169,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       setActiveTab(initialMode);
       setErrorMessage(null);
       setErrorCode(null);
+      setPreviewData(null);
     }
   }, [isOpen, initialMode]);
 
@@ -128,18 +218,21 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       setErrorMessage(`Unsupported file format '${file.name}'. Supported formats: .fountain, .txt, .pdf`);
       setErrorCode('UNSUPPORTED_FORMAT');
       setSelectedFile(null);
+      setPreviewData(null);
       return;
     }
     if (file.size === 0) {
       setErrorMessage('The selected file is empty (0 bytes).');
       setErrorCode('EMPTY_FILE');
       setSelectedFile(null);
+      setPreviewData(null);
       return;
     }
     if (file.size > 25 * 1024 * 1024) {
       setErrorMessage('The selected file exceeds the 25MB maximum limit.');
       setErrorCode('FILE_TOO_LARGE');
       setSelectedFile(null);
+      setPreviewData(null);
       return;
     }
     setSelectedFile(file);
@@ -811,6 +904,103 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
             </div>
           )}
 
+          {/* Extraction Preview Section */}
+          {isPreviewLoading && (
+            <div
+              style={{
+                padding: '16px',
+                background: 'rgba(6, 182, 212, 0.05)',
+                border: '1px solid rgba(6, 182, 212, 0.2)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                color: 'var(--accent-cyan)',
+                fontSize: '0.85rem',
+              }}
+            >
+              <span>⏳ Analyzing screenplay extraction structure...</span>
+            </div>
+          )}
+
+          {previewData && !isPreviewLoading && (
+            <div
+              data-testid="extraction-preview-card"
+              style={{
+                padding: '16px',
+                background: previewData.scenesDetected > 0 ? 'rgba(52, 211, 153, 0.08)' : 'rgba(239, 68, 68, 0.1)',
+                border: `1px solid ${previewData.scenesDetected > 0 ? 'rgba(52, 211, 153, 0.3)' : 'rgba(239, 68, 68, 0.4)'}`,
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 600, fontSize: '0.85rem', color: previewData.scenesDetected > 0 ? '#34d399' : '#f87171' }}>
+                  {previewData.scenesDetected > 0 ? '✓ Extraction Preview (Valid)' : '⚠️ Extraction Preview (Invalid / 0 Scenes)'}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  {previewData.filename} ({previewData.format})
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '0.8rem', background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '6px' }}>
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>Scenes Detected: </span>
+                  <strong style={{ color: previewData.scenesDetected > 0 ? '#34d399' : '#f87171' }}>
+                    {previewData.scenesDetected}
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>Est. Pages: </span>
+                  <strong>{previewData.estimatedPageCount}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>Characters: </span>
+                  <strong>{previewData.characterCount}</strong>
+                </div>
+              </div>
+
+              {previewData.sampleHeadings && previewData.sampleHeadings.length > 0 && (
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                  <div style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    Sample Headings Detected:
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {previewData.sampleHeadings.map((hd, idx) => (
+                      <div key={idx} style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#cbd5e1' }}>
+                        {hd}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Warnings List */}
+              {previewData.warnings && previewData.warnings.length > 0 && (
+                <div
+                  data-testid="extraction-preview-warnings"
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
+                    color: '#f87171',
+                  }}
+                >
+                  <strong style={{ display: 'block', marginBottom: '4px' }}>Extraction Warnings:</strong>
+                  <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                    {previewData.warnings.map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Upload & Parsing Progress Bar */}
           {isUploading && (
             <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -880,21 +1070,43 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
             </button>
             <button
               type="button"
+              data-testid="btn-confirm-ingestion"
               onClick={handleSubmit}
-              disabled={isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim())}
+              disabled={
+                Boolean(
+                  isUploading ||
+                  isPreviewLoading ||
+                  (activeTab === 'FILE' && (!selectedFile || (previewData && previewData.scenesDetected === 0))) ||
+                  (activeTab === 'PASTE' && (!pastedText.trim() || (previewData && previewData.scenesDetected === 0)))
+                )
+              }
               className="btn-primary touch-target"
               style={{
                 fontSize: '0.85rem',
-                opacity: isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim()) ? 0.5 : 1,
-                cursor: isUploading || (activeTab === 'FILE' && !selectedFile) || (activeTab === 'PASTE' && !pastedText.trim()) ? 'not-allowed' : 'pointer',
+                opacity:
+                  isUploading ||
+                  isPreviewLoading ||
+                  (activeTab === 'FILE' && (!selectedFile || (previewData && previewData.scenesDetected === 0))) ||
+                  (activeTab === 'PASTE' && (!pastedText.trim() || (previewData && previewData.scenesDetected === 0)))
+                    ? 0.5
+                    : 1,
+                cursor:
+                  isUploading ||
+                  isPreviewLoading ||
+                  (activeTab === 'FILE' && (!selectedFile || (previewData && previewData.scenesDetected === 0))) ||
+                  (activeTab === 'PASTE' && (!pastedText.trim() || (previewData && previewData.scenesDetected === 0)))
+                    ? 'not-allowed'
+                    : 'pointer',
               }}
             >
               {isUploading ? (
                 <span>Ingesting Screenplay ({elapsedSeconds}s)...</span>
+              ) : previewData && previewData.scenesDetected === 0 ? (
+                <span>Cannot Ingest (0 Scenes Detected)</span>
               ) : activeTab === 'DEMO' ? (
                 <span>Load Bundled Demo Screenplay</span>
               ) : (
-                <span>Upload & Ingest Draft</span>
+                <span>Confirm Ingestion & Review</span>
               )}
             </button>
           </div>

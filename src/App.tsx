@@ -17,6 +17,7 @@ import { RoleWorkspaceSwitcher } from './components/RoleWorkspaceSwitcher';
 import { UserAdminModal } from './components/UserAdminModal';
 import { PortfolioDashboard } from './components/PortfolioDashboard';
 import { ActionListModal } from './components/ActionListModal';
+import { NewProjectModal } from './components/NewProjectModal';
 import { UserRole } from './types/collaboration';
 
 interface ProjectSummary {
@@ -41,8 +42,9 @@ export default function App() {
     researchRequiredCount: 0,
   });
 
-  // Project List Modal State
+  // Project List & New Project Modals State
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   
   // Demo Access Token State
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
@@ -252,19 +254,6 @@ export default function App() {
       }
       let data = await res.json();
       console.log(`[App] loadProjectDetails RESOLVED data:`, data.id, data.title);
-      if ((!data.entityCount || data.entityCount === 0) && data.id !== 'proj-cyberpunk') {
-        try {
-          await apiFetch(`/api/projects/${data.id}/script/demo`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
-          });
-          const refreshed = await apiFetch(`/api/projects/${data.id}`);
-          if (refreshed.ok) {
-            data = await refreshed.json();
-          }
-        } catch (e) {}
-      }
       setProjectId(data.id);
       try {
         localStorage.setItem('clearancescout_active_project_id', data.id);
@@ -308,18 +297,6 @@ export default function App() {
         if (listData.projects && listData.projects.length > 0) {
           const storedId = localStorage.getItem('clearancescout_active_project_id');
           const targetProj = (storedId && listData.projects.find((p: any) => p.id === storedId)) || listData.projects[0];
-          // Auto-seed demo screenplay if project is empty so 3 scenes and 7 entities load automatically
-          if ((!targetProj.entityCount || targetProj.entityCount === 0) && targetProj.id !== 'proj-cyberpunk') {
-            try {
-              await apiFetch(`/api/projects/${targetProj.id}/script/demo`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
-              });
-            } catch (seedErr) {
-              console.error('Error auto-seeding demo screenplay:', seedErr);
-            }
-          }
           await loadProjectDetails(targetProj.id);
           return;
         }
@@ -345,16 +322,6 @@ export default function App() {
       });
       if (res.ok) {
         const data = await res.json();
-        // Auto-seed demo screenplay on new project creation
-        try {
-          await apiFetch(`/api/projects/${data.id}/script/demo`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
-          });
-        } catch (seedErr) {
-          console.error('Error seeding demo screenplay on new project:', seedErr);
-        }
         await loadProjectDetails(data.id);
       } else if (res.status === 401) {
         const errData = await res.json().catch(() => ({}));
@@ -768,10 +735,22 @@ export default function App() {
 
           {appViewMode === 'WORKSPACE' && (
             <>
+              {/* Persistent New Production Trigger */}
+              <button
+                data-testid="header-new-production-btn"
+                className="btn-primary touch-target"
+                aria-label="Create New Production"
+                style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => setIsNewProjectModalOpen(true)}
+              >
+                + New Production
+              </button>
+
               {/* Project Switcher Trigger */}
               <button
+                data-testid="header-switch-project-btn"
                 className="btn-secondary touch-target"
-                aria-label="Switch or Create Production Project"
+                aria-label="Switch Production Project"
                 style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                 onClick={() => setIsProjectModalOpen(true)}
               >
@@ -801,7 +780,11 @@ export default function App() {
                 <div
                   data-testid="project-summary-bar"
                   className="touch-target"
-                  aria-label={`Project Summary: ${projectSummary.entityCount} Total Entities, ${projectSummary.clearedCount} ${TERMINOLOGY.STATUS_CLEARED}, ${projectSummary.actionRequiredCount} ${TERMINOLOGY.STATUS_ACTION_REQUIRED}, ${projectSummary.reviewRecommendedCount} ${TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}, ${projectSummary.researchRequiredCount || 0} ${TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}`}
+                  aria-label={
+                    projectSummary.entityCount === 0
+                      ? 'Project Summary: No clearance items recorded (0 entities)'
+                      : `Project Summary: ${projectSummary.entityCount} Total Entities, ${projectSummary.clearedCount} ${TERMINOLOGY.STATUS_CLEARED}, ${projectSummary.actionRequiredCount} ${TERMINOLOGY.STATUS_ACTION_REQUIRED}, ${projectSummary.reviewRecommendedCount} ${TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}, ${projectSummary.researchRequiredCount || 0} ${TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}`
+                  }
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -814,17 +797,23 @@ export default function App() {
                   }}
                 >
                   <span style={{ color: 'var(--text-muted)' }}>Summary:</span>
-                  <span style={{ color: 'var(--status-no-issue)', fontWeight: 600 }}>{projectSummary.clearedCount} {TERMINOLOGY.STATUS_CLEARED}</span>
-                  {projectSummary.actionRequiredCount > 0 && (
-                    <span style={{ color: 'var(--status-action)', fontWeight: 600 }}>{projectSummary.actionRequiredCount} {TERMINOLOGY.STATUS_ACTION_REQUIRED}</span>
+                  {projectSummary.entityCount === 0 ? (
+                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No clearance items recorded (0 entities)</span>
+                  ) : (
+                    <>
+                      <span style={{ color: 'var(--status-no-issue)', fontWeight: 600 }}>{projectSummary.clearedCount} {TERMINOLOGY.STATUS_CLEARED}</span>
+                      {projectSummary.actionRequiredCount > 0 && (
+                        <span style={{ color: 'var(--status-action)', fontWeight: 600 }}>{projectSummary.actionRequiredCount} {TERMINOLOGY.STATUS_ACTION_REQUIRED}</span>
+                      )}
+                      {projectSummary.reviewRecommendedCount > 0 && (
+                        <span style={{ color: 'var(--status-review)', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} {TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}</span>
+                      )}
+                      {(projectSummary.researchRequiredCount || 0) > 0 && (
+                        <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{projectSummary.researchRequiredCount} {TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}</span>
+                      )}
+                      <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'entity', 'entities')})</span>
+                    </>
                   )}
-                  {projectSummary.reviewRecommendedCount > 0 && (
-                    <span style={{ color: 'var(--status-review)', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} {TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}</span>
-                  )}
-                  {(projectSummary.researchRequiredCount || 0) > 0 && (
-                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{projectSummary.researchRequiredCount} {TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}</span>
-                  )}
-                  <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'entity', 'entities')})</span>
                 </div>
               )}
 
@@ -958,6 +947,7 @@ export default function App() {
               }
               setAppViewMode('WORKSPACE');
               await loadProjectDetails(selectedId);
+              setIsSwitchingProject(false);
             }}
           />
         ) : projectId ? (
@@ -1111,6 +1101,17 @@ export default function App() {
         activeProjectSummary={projectSummary}
         onSelectProject={(selectedId) => loadProjectDetails(selectedId)}
         onClose={() => setIsProjectModalOpen(false)}
+      />
+
+      <NewProjectModal
+        isOpen={isNewProjectModalOpen}
+        onClose={() => setIsNewProjectModalOpen(false)}
+        onProjectCreated={async (newId) => {
+          setIsSwitchingProject(true);
+          await loadProjectDetails(newId);
+          setIsSwitchingProject(false);
+        }}
+        defaultExecutionMode={executionMode}
       />
 
       <UserAdminModal
