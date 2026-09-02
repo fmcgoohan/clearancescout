@@ -329,9 +329,9 @@ async function runLocalVerification() {
     await uploadBtnG1.click();
     await page.waitForSelector('[aria-labelledby="upload-modal-title"]', { timeout: 5000 });
 
-    const fileInputG = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 5000 });
-    await fileInputG.setInputFiles(imageOnlyPdfPath);
-    await page.waitForTimeout(1500);
+    const fileInputG1 = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 5000 });
+    await fileInputG1.setInputFiles(imageOnlyPdfPath);
+    await page.waitForTimeout(2000);
 
     const imgWarnings = await page.waitForSelector('[data-testid="extraction-preview-warnings"]', { timeout: 5000 });
     const imgWarnText = await imgWarnings.innerText();
@@ -345,10 +345,20 @@ async function runLocalVerification() {
       process.exit(1);
     }
 
+    // Cancel modal
+    const cancelModalBtnG1 = await page.$('button[aria-label="Close upload dialog"], button:has-text("Cancel")');
+    await cancelModalBtnG1.click();
+    await page.waitForTimeout(500);
+
     // 3. Negative Test: Corrupted / Malformed PDF
     console.log('Testing Negative Upload 2: Malformed corrupted PDF...');
-    await fileInputG.setInputFiles(malformedPdfPath);
-    await page.waitForTimeout(1500);
+    const uploadBtnG2 = await page.waitForSelector('[data-testid="recommendation-upload-script-btn"], [data-testid="workspace-empty-upload-btn"]', { timeout: 5000 });
+    await uploadBtnG2.click();
+    await page.waitForSelector('[aria-labelledby="upload-modal-title"]', { timeout: 5000 });
+
+    const fileInputG2 = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 5000 });
+    await fileInputG2.setInputFiles(malformedPdfPath);
+    await page.waitForTimeout(2000);
 
     const malWarnings = await page.waitForSelector('[data-testid="extraction-preview-warnings"]', { timeout: 5000 });
     const malWarnText = await malWarnings.innerText();
@@ -362,10 +372,20 @@ async function runLocalVerification() {
       process.exit(1);
     }
 
+    // Cancel modal
+    const cancelModalBtnG2 = await page.$('button[aria-label="Close upload dialog"], button:has-text("Cancel")');
+    await cancelModalBtnG2.click();
+    await page.waitForTimeout(500);
+
     // 4. Positive Test: Real 4-Page Coors Light Screenplay PDF
     console.log('Testing Positive Upload: Coors Light 4-page Screenplay PDF...');
-    await fileInputG.setInputFiles(coorsPdfPath);
-    await page.waitForTimeout(2000);
+    const uploadBtnG3 = await page.waitForSelector('[data-testid="recommendation-upload-script-btn"], [data-testid="workspace-empty-upload-btn"]', { timeout: 5000 });
+    await uploadBtnG3.click();
+    await page.waitForSelector('[aria-labelledby="upload-modal-title"]', { timeout: 5000 });
+
+    const fileInputG3 = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 5000 });
+    await fileInputG3.setInputFiles(coorsPdfPath);
+    await page.waitForTimeout(2500);
 
     const previewCard = await page.waitForSelector('[data-testid="extraction-preview-card"]', { timeout: 5000 });
     const previewText = await previewCard.innerText();
