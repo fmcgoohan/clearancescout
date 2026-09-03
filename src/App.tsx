@@ -210,7 +210,12 @@ export default function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isReplacementOpen) {
+        if (isActionModalOpen) {
+          setIsActionModalOpen(false);
+          setDeepLinkTaskId(undefined);
+          setDeepLinkActivityType(undefined);
+          setDeepLinkActivityId(undefined);
+        } else if (isReplacementOpen) {
           setIsReplacementOpen(false);
         } else if (isBinderOpen) {
           setIsBinderOpen(false);
@@ -228,7 +233,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isReplacementOpen, isBinderOpen, isCitationOpen, isTimelineOpen, isTokenModalOpen, isProjectModalOpen]);
+  }, [isActionModalOpen, isReplacementOpen, isBinderOpen, isCitationOpen, isTimelineOpen, isTokenModalOpen, isProjectModalOpen]);
 
   const currentProjectIdRef = useRef<string | null>(projectId);
   useEffect(() => {

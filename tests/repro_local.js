@@ -69,7 +69,9 @@ async function runLocalVerification() {
 
     const createSubmitBtn = await page.$('[data-testid="create-production-submit-btn"]');
     await createSubmitBtn.click();
-    await page.waitForTimeout(1000);
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
+    await page.waitForSelector('[data-testid="primary-recommendation-card"]', { timeout: 8000 });
+    await page.waitForTimeout(500);
 
     // Verify newly opened workspace
     const projectHeaderTitle = await page.$eval('[data-testid="workspace-project-title"]', el => el.innerText.trim()).catch(() => 'N/A');
@@ -132,8 +134,10 @@ async function runLocalVerification() {
     }
 
     // Close upload modal
-    const cancelModalBtn = await page.$('button[aria-label="Close upload dialog"], button:has-text("Cancel")');
-    await cancelModalBtn.click();
+    const cancelModalBtn = await page.$('button[aria-label="Close modal"], button[aria-label="Close dialog"], button:has-text("Cancel")');
+    if (cancelModalBtn) await cancelModalBtn.click();
+    else await page.keyboard.press('Escape');
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(500);
 
     // Verify workspace remains empty and was NOT replaced with Neon Horizon
@@ -152,7 +156,8 @@ async function runLocalVerification() {
     const loadSampleBtn = await page.waitForSelector('[data-testid="recommendation-load-sample-btn"]', { timeout: 5000 });
     console.log(`Found explicit sample load button: "${await loadSampleBtn.innerText()}"`);
     await loadSampleBtn.click();
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid="workspace-readiness-pct"]:has-text("33.3%")', { timeout: 10000 });
+    await page.waitForTimeout(500);
 
     const loadedReadiness = await page.$eval('[data-testid="workspace-readiness-pct"]', el => el.textContent.trim()).catch(() => 'N/A');
     const loadedSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
@@ -250,8 +255,11 @@ async function runLocalVerification() {
     }
 
     // Close Action Center modal
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
+    const closeActionBtn = await page.$('button[aria-label="Close dialog"], button[aria-label="Close modal"], [data-testid="action-center-close-btn"]');
+    if (closeActionBtn) await closeActionBtn.click();
+    else await page.keyboard.press('Escape');
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(500);
 
     // Test temporary orphan tombstone
     const orphanCreate = await page.evaluate(async (token) => {
@@ -332,8 +340,8 @@ async function runLocalVerification() {
     await newProdBtnG.click();
     await page.waitForSelector('[data-testid="create-production-submit-btn"]', { timeout: 5000 });
     await page.fill('#new-prod-title', 'Mountain Refuge Feature');
-    await page.fill('#new-prod-studio', 'Rockies Cinema');
     await page.click('[data-testid="create-production-submit-btn"]');
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(1000);
 
     // Initial Quota check
@@ -342,6 +350,10 @@ async function runLocalVerification() {
 
     // 2. Negative Test: Image-Only Scanned PDF
     console.log('Testing Negative Upload 1: Image-only scanned PDF...');
+    const overviewTab = await page.$('#tab-overview, button:has-text("Overview")');
+    if (overviewTab) await overviewTab.click();
+    await page.waitForTimeout(500);
+
     const uploadBtnG1 = await page.waitForSelector('[data-testid="recommendation-upload-script-btn"], [data-testid="workspace-empty-upload-btn"]', { timeout: 5000 });
     await uploadBtnG1.click();
     await page.waitForSelector('[aria-labelledby="upload-modal-title"]', { timeout: 5000 });
@@ -462,7 +474,11 @@ async function runLocalVerification() {
 
     // Refresh and Verify State Persistence
     console.log('Reloading page to verify snapshot persistence...');
-    await page.reload({ waitUntil: 'networkidle' });
+    try {
+      await page.reload({ waitUntil: 'load', timeout: 15000 });
+    } catch (e) {
+      await page.goto(page.url(), { waitUntil: 'load', timeout: 15000 });
+    }
     await page.waitForTimeout(1000);
 
     const reloadedSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
