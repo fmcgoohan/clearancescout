@@ -301,7 +301,7 @@ async function runLiveVerification() {
     console.log('Scenario F (Valid Notification Deep-Link & Orphan Tombstone): PASS');
 
     // =========================================================================
-    // SCENARIO G: Coors Light 4-Page PDF Extraction & Negative PDF Integrity
+    // SCENARIO G: COORS LIGHT 4-PAGE PDF & NEGATIVE PDF AUDIT
     // =========================================================================
     console.log('\n--- SCENARIO G: COORS LIGHT 4-PAGE PDF & NEGATIVE PDF AUDIT ---');
     const path = await import('path');
@@ -309,6 +309,18 @@ async function runLiveVerification() {
     const coorsPdfPath = path.resolve(process.cwd(), 'tests/fixtures/coors_light_4page.pdf');
     const imageOnlyPdfPath = path.resolve(process.cwd(), 'tests/fixtures/image_only.pdf');
     const malformedPdfPath = path.resolve(process.cwd(), 'tests/fixtures/malformed.pdf');
+
+    // Assert exact 39,078-byte judge PDF fixture
+    if (!fs.existsSync(coorsPdfPath)) {
+      console.error(`SCENARIO G FAIL: Coors PDF fixture missing at ${coorsPdfPath}!`);
+      process.exit(1);
+    }
+    const coorsStat = fs.statSync(coorsPdfPath);
+    console.log(`Coors PDF Fixture Size: ${coorsStat.size} bytes (Path: ${coorsPdfPath})`);
+    if (coorsStat.size !== 39078) {
+      console.error(`SCENARIO G FAIL: Invalid Coors PDF fixture! Expected exact 39078 bytes, got ${coorsStat.size} bytes.`);
+      process.exit(1);
+    }
 
     // 1. Create a fresh clean production for PDF testing
     const newProdBtnG = await page.waitForSelector('[data-testid="header-new-production-btn"]', { timeout: 5000 });
@@ -402,6 +414,11 @@ async function runLiveVerification() {
 
     if (!previewText.includes('coors_light_4page.pdf') || !previewText.includes('Est. Pages: 4') || !previewText.includes('Scenes Detected: 3')) {
       console.error(`SCENARIO G FAIL: Extraction preview mismatch! Expected 4 pages and 3 scenes.`);
+      process.exit(1);
+    }
+
+    if (!previewText.includes('EXT. NEIGHBORHOOD - NIGHT') || !previewText.includes('EXT. NEIGHBORHOOD CORNER - CONTINUOUS') || !previewText.includes('INT. LIVING ROOM - LATER THAT NIGHT')) {
+      console.error(`SCENARIO G FAIL: Extraction preview missing genuine scene headings!`);
       process.exit(1);
     }
 

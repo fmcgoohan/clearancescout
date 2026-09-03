@@ -13,16 +13,19 @@ describe('Contract: Coors Light 4-Page PDF Extraction & Ingestion Integrity', ()
   const malformedPath = path.resolve(process.cwd(), 'tests/fixtures/malformed.pdf');
 
   it('extracts substantial printable screenplay text from real 4-page PDF without binary/control codes', async () => {
+    const stat = fs.statSync(fixturePath);
+    expect(stat.size).toBe(39078);
+
     const buffer = fs.readFileSync(fixturePath);
     const text = await extractTextFromPdfBuffer(buffer);
 
     expect(text.length).toBeGreaterThan(1000);
     // Assert no binary/control characters except \n, \r, \t
     expect(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(text)).toBe(false);
-    expect(text).toContain('Coors Light');
-    expect(text).toContain('INT. MOUNTAIN CABIN - NIGHT');
-    expect(text).toContain('EXT. RIDGE OVERLOOK - DAY');
-    expect(text).toContain('INT. ABANDONED WEATHER STATION - DUSK');
+    expect(text).toContain('COORS LIGHT');
+    expect(text).toContain('EXT. NEIGHBORHOOD - NIGHT');
+    expect(text).toContain('EXT. NEIGHBORHOOD CORNER - CONTINUOUS');
+    expect(text).toContain('INT. LIVING ROOM - LATER THAT NIGHT');
   });
 
   it('generates accurate pre-commit preview with 3 scenes, 4 pages, and no warnings', async () => {
@@ -35,9 +38,9 @@ describe('Contract: Coors Light 4-Page PDF Extraction & Ingestion Integrity', ()
     expect(preview.scenesDetected).toBe(3);
     expect(preview.estimatedPageCount).toBe(4);
     expect(preview.sampleHeadings.length).toBe(3);
-    expect(preview.sampleHeadings[0]).toContain('INT. MOUNTAIN CABIN - NIGHT');
-    expect(preview.sampleHeadings[1]).toContain('EXT. RIDGE OVERLOOK - DAY');
-    expect(preview.sampleHeadings[2]).toContain('INT. ABANDONED WEATHER STATION - DUSK');
+    expect(preview.sampleHeadings[0]).toContain('EXT. NEIGHBORHOOD - NIGHT');
+    expect(preview.sampleHeadings[1]).toContain('EXT. NEIGHBORHOOD CORNER - CONTINUOUS');
+    expect(preview.sampleHeadings[2]).toContain('INT. LIVING ROOM - LATER THAT NIGHT');
     expect(preview.warnings.length).toBe(0);
   });
 
