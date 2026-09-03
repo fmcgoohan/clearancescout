@@ -43,7 +43,7 @@ describe('RecommendedActionCard Component', () => {
     );
 
     expect(screen.getByRole('region', { name: /Recommended Action/i })).toBeDefined();
-    expect(screen.getByText(/1 clearance item require action/i)).toBeDefined();
+    expect(screen.getByText(/1 clearance item requires action/i)).toBeDefined();
     expect(screen.getByText(/Start with Nocturne of the Wild/i)).toBeDefined();
 
     const button = screen.getByRole('button', { name: /Research Nocturne of the Wild/i });

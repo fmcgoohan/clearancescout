@@ -1,107 +1,86 @@
-# Tasks: Honest Ingestion UX & Production Creation Flow
+# Tasks: Honest Ingestion UX, Correctness & Workspace IA
 
-**Feature Directory**: `specs/029-honest-ingestion-ux`  
-**Input**: [spec.md](./spec.md), [plan.md](./plan.md), [data-model.md](./data-model.md), [contracts/api-contracts.md](./contracts/api-contracts.md)
+**Branch**: `029-honest-ingestion-ux` | **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md)
 
----
+## Phase 1: Setup & Contract Tests
 
-## Phase 1: Setup & Environment
-
-**Purpose**: Initialize feature branch structure and test baseline
-
-- [x] T001 Verify git branch `029-honest-ingestion-ux` and feature directory `specs/029-honest-ingestion-ux`
-- [x] T002 [P] Confirm existing tests compile and local dev environment is healthy
+- [x] T001 [P] Verify Coors Light 39,078-byte judge PDF fixture and extraction in tests/fixtures/CoorsLight_SpecComm_v.1.pdf
+- [x] T002 [P] Contract test for slugline CONTINUOUS preservation and page marker filtering in tests/contract/test_coors_pdf_extraction.test.ts
+- [x] T003 [P] Contract test for RETRY_RESEARCH task auto-resolution on entity evaluation in tests/contract/test_stale_task_pruning.test.ts
+- [x] T004 [P] Verify Constitution v1.5.0 principles in .specify/memory/constitution.md
 
 ---
 
-## Phase 2: Foundational Backend & Ingestion Preview Infrastructure
+## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Core in-memory extraction and validation endpoints
-
-- [x] T003 Implement in-memory screenplay extraction preview method in `server/services/CanonicalRegistryWorkflow.ts` returning detected scenes, page count, and slugline headings without DB mutation
-- [x] T004 Implement `POST /api/projects/:id/script/preview` endpoint in `server/api/projectRoutes.ts` per API contract
-- [x] T005 [P] Update `POST /api/projects/:id/script/upload` and `POST /api/projects/:id/script` in `server/api/projectRoutes.ts` to return HTTP 422 `ZERO_SCENES_DETECTED` when extracted scenes count is 0
-
----
-
-## Phase 3: User Story 1 - Unambiguous Production Creation & Honest Empty State (Priority: P1) 🎯 MVP
-
-**Goal**: Ensure new productions create clean empty workspaces without silent demo data injection.
-
-**Independent Test**: Click "New Production", enter details; verify workspace opens with 0 scenes, 0 items, and 0 tasks.
-
-- [x] T006 [US1] Remove automatic calls to `/script/demo` from `initProject`, `loadProjectDetails`, and project creation in `src/App.tsx`
-- [x] T007 [P] [US1] Create dedicated `src/components/NewProjectModal.tsx` with clean creation fields (Title, Studio, Project Type) and accessible dialog controls
-- [x] T008 [US1] Add persistent "New Production" button (`data-testid="header-new-production-btn"`) to header in `src/App.tsx` / `src/components/Header.tsx`
-- [x] T009 [US1] Update workspace initialization in `src/App.tsx` to display unpopulated state with "No clearance items recorded" and "No clearance blockers recorded" when entityCount is 0
+- [x] T005 Verify Firestore collections and test mock state isolation for multi-project benchmarks
+- [x] T006 Ensure ActionNotificationRepo supports querying tasks by entity and bulk status updates in server/repositories/ActionNotificationRepo.ts
+- [x] T007 Define shared TypeScript types for slugline timeOfDay, responsive card layout, and URL query params in src/types/
+- [x] T008 [P] Configure CSS utility tokens for compact header and responsive cards in src/index.css
 
 ---
 
-## Phase 4: User Story 2 - Honest Screenplay Ingestion Preview & Extraction Validation (Priority: P1)
+## Phase 3: Slice 1 - Release-Blocking Correctness (Priority: P0 / P1)
 
-**Goal**: Provide pre-commit preview of extracted script data and block invalid/empty uploads.
+**Goal**: Prune stale `RETRY_RESEARCH` tasks when entities evaluate (FR-013), preserve `CONTINUOUS`/`SAME`/`DAWN` in sluglines (FR-014), strip PDF page break markers (FR-015), and clarify occurrence vs unique blocker copy (FR-016).
 
-**Independent Test**: Select a corrupt/empty PDF; confirm preview shows 0 scenes, warning banner appears, and "Confirm Ingestion" is disabled.
+**Independent Test**: Load Neon Horizon -> evaluate -> verify AeroTech has status Cleared and Action Center has 0 open RETRY_RESEARCH tasks for AeroTech; parse Coors PDF -> verify Scene 2 timeOfDay is CONTINUOUS and no `-- 2 of 4 --` page markers appear.
 
-- [x] T010 [US2] Update `src/components/ScriptUploadModal.tsx` to implement a multi-step flow: File Selection -> Extraction Preview -> Confirmation
-- [x] T011 [US2] Connect `ScriptUploadModal.tsx` to `POST /api/projects/:id/script/preview` to fetch and render detected scene counts, sample headings, and warnings
-- [x] T012 [US2] Disable the "Confirm Ingestion" button in `ScriptUploadModal.tsx` and render an explicit error banner when `scenesDetected === 0`
-- [x] T013 [US2] Handle upload rejection in `ScriptUploadModal.tsx` gracefully, retaining pre-upload state without substituting demo data
-
----
-
-## Phase 5: User Story 3 - Guided Ingestion Workflow & Single Primary Action per State (Priority: P2)
-
-**Goal**: Ensure exactly one contextual primary action card per workspace state and clean header navigation.
-
-**Independent Test**: Walk through empty -> intake -> review -> export states; verify the primary action card updates deterministically.
-
-- [x] T014 [US3] Update `src/components/RecommendedActionCard.tsx` to compute primary action: "Upload Screenplay" when scenes === 0; "Resolve Clearance Blockers" when blockers > 0; "Export Binder" when all clear
-- [x] T015 [P] [US3] Move execution mode pill, quota counter, and serving revision into `src/components/SettingsModal.tsx`
-- [x] T016 [US3] Ensure project switcher only switches existing projects and links to the portfolio dashboard
+- [x] T009 [US-Correctness] Implement automatic `RETRY_RESEARCH` task resolution in server/workflows/clearanceEvaluator.ts (FR-013)
+- [x] T010 [US-Correctness] Implement high-fidelity slugline timeOfDay parser preserving CONTINUOUS, SAME, DAWN, DUSK in server/agents/ScriptParserAgent.ts (FR-014)
+- [x] T011 [US-Correctness] Implement page break marker stripping (/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gm and lone numbers) in server/agents/ScriptParserAgent.ts (FR-015)
+- [x] T012 [US-Correctness] Update SceneReadinessEngine to group multiple occurrences of the same entity in blocking summaries in server/workflows/sceneReadinessEngine.ts (FR-016)
+- [x] T013 [US-Correctness] Update DemoAutomationWorkflow to ensure demo load triggers task synchronization in server/workflows/demoAutomationWorkflow.ts
+- [x] T014 [US-Correctness] Run vitest on test_coors_pdf_extraction.test.ts to verify Slice 1 correctness
 
 ---
 
-## Phase 6: User Story 4 - Preservation of Sample Reference Benchmarks (Priority: P2)
+## Phase 4: Slice 2 - Streamlined Header & Workspace IA (Priority: P1)
 
-**Goal**: Preserve Neon Horizon and Cyberpunk Odyssey golden benchmarks accessible via explicit user action with sample badges.
+**Goal**: Compact header <=64px (FR-017), elevate Department Tasks to a full workspace tab (FR-018), persist URL query params (FR-019), and position onboarding guide below the Primary Recommendation Card (FR-020).
 
-**Independent Test**: Open Neon Horizon from portfolio; verify 3/7/11, 33.3%, 2 blocked scenes, labeled with sample badge.
+**Independent Test**: Resize to 375px -> verify header height <=64px; click "Department Tasks" tab -> verify full page task view and URL has `?tab=tasks`; reload -> verify state persists.
 
-- [x] T017 [US4] Add "Load Sample Production Data" action in empty workspace recommendation card in `src/components/RecommendedActionCard.tsx`
-- [x] T018 [US4] Ensure `proj-default` (Neon Horizon 3/7/11, 33.3%, 2 blocked) and `proj-cyberpunk` (100%, 0 blocked) retain sample reference badges and full isolation
-
----
-
-## Phase 7: Release Validation & Test Automation
-
-**Purpose**: Verify all scenarios A through F via Playwright test suites.
-
-- [x] T019 Update `tests/repro_local.js` to execute and verify Scenarios A through F (New Production header button, honest empty state, bad PDF preview warning/block, explicit sample load, Cyberpunk isolation, notification tombstone)
-- [x] T020 Update `tests/repro_live.js` with the matching Scenarios A through F
-- [x] T021 Run `npm run build` and local Playwright verification suite `node tests/repro_local.js`
+- [x] T015 [US-IA] Refactor App.tsx header to single-row layout (<=64px) with brand, project select, role, alerts, and More menu in src/App.tsx (FR-017)
+- [x] T016 [US-IA] Move secondary admin controls, Quota display, and Revision Provenance to SettingsPopover in src/components/SettingsPopover.tsx (FR-017)
+- [x] T017 [US-IA] Add first-class "Department Tasks" workspace section tab in src/App.tsx (FR-018)
+- [x] T018 [US-IA] Refactor ActionListModal into a dual-mode component (modal or full-page embedded tab) in src/components/ActionListModal.tsx (FR-018)
+- [x] T019 [US-IA] Implement URL query parameter synchronization for tab, entity, and task deep-linking in src/App.tsx (FR-019)
+- [x] T020 [US-IA] Relocate OnboardingBanner below RecommendedActionCard and auto-hide when scenesCount > 0 in src/App.tsx (FR-020)
 
 ---
 
-## Phase 8: Production PDF Extraction & Brand Entity Recognition (P0)
+## Phase 5: Slice 3 - Workflow Language & Canonical Terminology (Priority: P2)
 
-**Purpose**: Replace naive PDF extraction with `pdf-parse`, validate 4-page compressed screenplay PDF with Coors Light brand, and enforce negative image-only/malformed rejection.
+**Goal**: Converged domain copy ("Clearance Items", "Scene Occurrence", "View Evidence", "API Research Quota") and grammatical pluralization (FR-021, FR-022).
 
-- [x] T022 Create real 4-page compressed screenplay PDF fixture with Coors Light brand (`tests/fixtures/coors_light_4page.pdf`)
-- [x] T023 Replace naive BT/Tj extractor in `server/agents/ScriptParserAgent.ts` with `pdf-parse` library, control-code stripping, and add Coors Light brand pattern
-- [x] T024 Create negative test fixtures (`tests/fixtures/image_only.pdf`, `tests/fixtures/malformed.pdf`) and verify explicit extraction failure handling
-- [x] T025 Add contract test suite `tests/contract/test_coors_pdf_extraction.test.ts`
-- [x] T026 Update `tests/repro_local.js` and `tests/repro_live.js` with Scenario G (Coors 4-page PDF extraction, negative image-only/malformed rejection, zero demo substitution, quota preservation, reload persistence)
+**Independent Test**: Inspect Registry table -> verify header says "Clearance Items", occurrence buttons say "1 scene occurrence" / "2 scene occurrences", research buttons say "View Evidence" for evaluated items, and recommendation card says "1 clearance item requires action".
+
+- [x] T021 [US-Lang] Update EntityRegistryTable headers and buttons to canonical domain terminology in src/components/EntityRegistryTable.tsx (FR-021)
+- [x] T022 [US-Lang] Replace "1 use" / "{n} uses" with "{n} scene occurrence(s)" in src/components/EntityRegistryTable.tsx (FR-021)
+- [x] T023 [US-Lang] Update Action button label to "View Evidence" for evaluated items in src/components/EntityRegistryTable.tsx (FR-021)
+- [x] T024 [US-Lang] Fix grammatical singular/plural phrasing in RecommendedActionCard in src/components/RecommendedActionCard.tsx (FR-022)
 
 ---
 
-## Dependencies & Execution Order
+## Phase 6: Slice 4 - Mobile Responsive & Touch Targets (Priority: P1 / P2)
 
-- **Phase 1 (Setup)**: T001–T002 completed.
-- **Phase 2 (Backend)**: T003–T005 completed.
-- **Phase 3 (User Story 1 - P1 MVP)**: T006–T009 completed.
-- **Phase 4 (User Story 2 - P1)**: T010–T013 completed.
-- **Phase 5 (User Story 3 - P2)**: T014–T016 completed.
-- **Phase 6 (User Story 4 - P2)**: T017–T018 completed.
-- **Phase 7 (Validation)**: T019–T021 completed.
-- **Phase 8 (Production PDF Extraction P0)**: T022–T026 completed.
+**Goal**: Narrow-screen card layout on viewports <768px (FR-023) and enforce 44px minimum touch targets (FR-024).
+
+**Independent Test**: Load on 375px/390px/420px -> verify items render as stacked cards with no horizontal clipping, and all buttons have bounding boxes >= 44x44 CSS pixels.
+
+- [x] T025 [US-Mobile] Implement responsive card layout for Clearance Items on <768px viewports in src/components/EntityRegistryTable.tsx (FR-023)
+- [x] T026 [US-Mobile] Add CSS card styles and media queries in src/index.css (FR-023)
+- [x] T027 [US-Mobile] Enforce 44x44px minimum touch targets across header, tabs, buttons, and close controls in src/index.css & src/components/ (FR-024)
+- [x] T028 [US-Mobile] Verify zero horizontal body scroll and no clipped action columns across 375, 390, 420 viewports
+
+---
+
+## Phase 7: Polish & Comprehensive Playwright Verification
+
+**Purpose**: End-to-end verification across all 4 slices and regression guarantees
+
+- [x] T029 Update tests/repro_local.js with explicit assertions for Scenarios A–I (AeroTech sync, CONTINUOUS slugline, 375 header <=64px, 44px touch targets)
+- [x] T030 Mirror assertions in tests/repro_live.js for live Cloud Run verification
+- [x] T031 Run local Playwright verification suite (node tests/repro_local.js) and paste raw stdout
+- [x] T032 Verify build with npm run build

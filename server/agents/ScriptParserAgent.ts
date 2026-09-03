@@ -265,7 +265,13 @@ export class ScriptParserAgent {
   }
 
   private buildSceneShell(sceneStr: string, index: number): ParsedScene {
-    const lines = sceneStr.trim().split('\n');
+    // Invariant (FR-015): Strip page marker artifacts from scene body text
+    const cleanSceneStr = sceneStr
+      .replace(/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gim, '')
+      .replace(/^\s*\d+\.\s*$/gm, '')
+      .trim();
+
+    const lines = cleanSceneStr.split('\n');
     let heading = lines[0]?.trim() || `SCENE ${index + 1}`;
     if (heading.startsWith('.')) heading = heading.slice(1).trim();
 
@@ -275,18 +281,33 @@ export class ScriptParserAgent {
       : upperHeading.startsWith('INT/EXT')
       ? 'INT/EXT'
       : 'INT';
-    const timeOfDay = upperHeading.includes('NIGHT')
-      ? 'NIGHT'
-      : upperHeading.includes('DUSK')
-      ? 'DUSK'
-      : 'DAY';
+
+    // Invariant (FR-014): High-fidelity temporal extraction. Never normalize CONTINUOUS, SAME, DAWN, DUSK, MAGIC HOUR to DAY!
+    let timeOfDay = 'DAY';
+    if (upperHeading.includes('CONTINUOUS')) {
+      timeOfDay = 'CONTINUOUS';
+    } else if (upperHeading.includes('SAME')) {
+      timeOfDay = 'SAME';
+    } else if (upperHeading.includes('MOMENTS LATER')) {
+      timeOfDay = 'MOMENTS LATER';
+    } else if (upperHeading.includes('DAWN')) {
+      timeOfDay = 'DAWN';
+    } else if (upperHeading.includes('DUSK')) {
+      timeOfDay = 'DUSK';
+    } else if (upperHeading.includes('MAGIC HOUR')) {
+      timeOfDay = 'MAGIC HOUR';
+    } else if (upperHeading.includes('NIGHT')) {
+      timeOfDay = 'NIGHT';
+    } else if (upperHeading.includes('DAY')) {
+      timeOfDay = 'DAY';
+    }
 
     return {
       sceneNumber: index + 1,
       heading,
       locationType,
       timeOfDay,
-      rawText: sceneStr.trim(),
+      rawText: cleanSceneStr,
       characterActionSummary: lines.slice(1, 4).join(' ').trim(),
       entities: [],
     };
@@ -487,13 +508,33 @@ ${chunkText}`,
     const scenesToProcess = rawScenes;
 
     return scenesToProcess.map((sceneStr, index) => {
-      const lines = sceneStr.trim().split('\n');
+      const cleanSceneStr = sceneStr
+        .replace(/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gim, '')
+        .replace(/^\s*\d+\.\s*$/gm, '')
+        .trim();
+      const lines = cleanSceneStr.split('\n');
       let heading = lines[0]?.trim() || `SCENE ${index + 1}`;
-      if (heading.startsWith('.')) heading = heading.slice(1).trim();
-
       const upperHeading = heading.toUpperCase();
       const locationType = upperHeading.startsWith('EXT') ? 'EXT' : upperHeading.startsWith('INT/EXT') ? 'INT/EXT' : 'INT';
-      const timeOfDay = upperHeading.includes('NIGHT') ? 'NIGHT' : upperHeading.includes('DUSK') ? 'DUSK' : 'DAY';
+
+      let timeOfDay = 'DAY';
+      if (upperHeading.includes('CONTINUOUS')) {
+        timeOfDay = 'CONTINUOUS';
+      } else if (upperHeading.includes('SAME')) {
+        timeOfDay = 'SAME';
+      } else if (upperHeading.includes('MOMENTS LATER')) {
+        timeOfDay = 'MOMENTS LATER';
+      } else if (upperHeading.includes('DAWN')) {
+        timeOfDay = 'DAWN';
+      } else if (upperHeading.includes('DUSK')) {
+        timeOfDay = 'DUSK';
+      } else if (upperHeading.includes('MAGIC HOUR')) {
+        timeOfDay = 'MAGIC HOUR';
+      } else if (upperHeading.includes('NIGHT')) {
+        timeOfDay = 'NIGHT';
+      } else if (upperHeading.includes('DAY')) {
+        timeOfDay = 'DAY';
+      }
 
       const entities: ParsedEntityOccurrence[] = [];
 
@@ -522,7 +563,7 @@ ${chunkText}`,
         heading,
         locationType,
         timeOfDay,
-        rawText: sceneStr.trim(),
+        rawText: cleanSceneStr,
         characterActionSummary: lines.slice(1, 4).join(' ').trim(),
         entities,
       };

@@ -25,6 +25,7 @@ import {
 import { RecommendedActionCard } from '../components/RecommendedActionCard';
 import { OnboardingBanner } from '../components/OnboardingBanner';
 import { Icon } from '../components/icons/Icon';
+import { TERMINOLOGY } from '../constants/terminology';
 
 
 
@@ -142,6 +143,40 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'screenplay' | 'clearance' | 'tasks'>('overview');
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>('ALL');
   const [isHydrating, setIsHydrating] = useState<boolean>(false);
+
+  // URL Deep-Linking & Section Sync (FR-019)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['overview', 'screenplay', 'clearance', 'tasks'].includes(tabParam)) {
+        setActiveTab(tabParam as any);
+      }
+      const entityParam = params.get('entity');
+      if (entityParam) {
+        setSelectedDetailEntityId(entityParam);
+        setIsDetailModalOpen(true);
+      }
+    } catch (e) {
+      console.warn('Failed to parse URL query params:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (activeTab) params.set('tab', activeTab);
+      if (selectedDetailEntityId && isDetailModalOpen) {
+        params.set('entity', selectedDetailEntityId);
+      } else {
+        params.delete('entity');
+      }
+      const newSearch = params.toString() ? `?${params.toString()}` : window.location.pathname;
+      window.history.replaceState(null, '', newSearch);
+    } catch (e) {
+      // Ignore in non-browser environments
+    }
+  }, [activeTab, selectedDetailEntityId, isDetailModalOpen]);
 
   // Ingestion feedback toast banner (Feature 021)
   const [ingestionToast, setIngestionToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
@@ -481,98 +516,156 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         <>
           {/* Workspace Section Navigation Bar (User Story 17) */}
           <div
-            role="tablist"
-        aria-label="Workspace Sections"
-        style={{
-          display: 'flex',
-          gap: '8px',
-          borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '12px',
-          marginBottom: '4px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <button
-          role="tab"
-          id="tab-overview"
-          aria-selected={activeTab === 'overview'}
-          aria-controls="section-overview"
-          className={`btn-secondary touch-target ${activeTab === 'overview' ? 'tab-active' : ''}`}
-          onClick={() => setActiveTab('overview')}
-          style={{
-            background: activeTab === 'overview' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-            borderColor: activeTab === 'overview' ? 'var(--accent-cyan)' : 'var(--border-color)',
-            color: activeTab === 'overview' ? 'var(--accent-cyan)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'overview' ? 700 : 500,
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-          }}
-        >
-          Overview
-        </button>
-        <button
-          role="tab"
-          id="tab-screenplay"
-          aria-selected={activeTab === 'screenplay'}
-          aria-controls="section-screenplay"
-          className={`btn-secondary touch-target ${activeTab === 'screenplay' ? 'tab-active' : ''}`}
-          onClick={() => setActiveTab('screenplay')}
-          style={{
-            background: activeTab === 'screenplay' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-            borderColor: activeTab === 'screenplay' ? 'var(--accent-cyan)' : 'var(--border-color)',
-            color: activeTab === 'screenplay' ? 'var(--accent-cyan)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'screenplay' ? 700 : 500,
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-          }}
-        >
-          Screenplay ({pluralize(scenes.length, 'scene', 'scenes')})
-        </button>
-        <button
-          role="tab"
-          id="tab-clearance"
-          aria-selected={activeTab === 'clearance'}
-          aria-controls="section-clearance"
-          className={`btn-secondary touch-target ${activeTab === 'clearance' ? 'tab-active' : ''}`}
-          onClick={() => setActiveTab('clearance')}
-          style={{
-            background: activeTab === 'clearance' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-            borderColor: activeTab === 'clearance' ? 'var(--accent-cyan)' : 'var(--border-color)',
-            color: activeTab === 'clearance' ? 'var(--accent-cyan)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'clearance' ? 700 : 500,
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-          }}
-        >
-          Clearance Items ({entities.length})
-        </button>
-        <button
-          role="tab"
-          id="tab-tasks"
-          aria-selected={activeTab === 'tasks'}
-          aria-controls="section-tasks"
-          className={`btn-secondary touch-target ${activeTab === 'tasks' ? 'tab-active' : ''}`}
-          onClick={() => setActiveTab('tasks')}
-          style={{
-            background: activeTab === 'tasks' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-            borderColor: activeTab === 'tasks' ? 'var(--accent-cyan)' : 'var(--border-color)',
-            color: activeTab === 'tasks' ? 'var(--accent-cyan)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'tasks' ? 700 : 500,
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-          }}
-        >
-          Department Tasks ({openActionsCount > 0 ? `${openActionsCount} Open` : '0 Open'})
-        </button>
-      </div>
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid var(--border-color)',
+              paddingBottom: '12px',
+              marginBottom: '4px',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div
+              role="tablist"
+              aria-label="Workspace Sections"
+              style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <button
+                role="tab"
+                id="tab-overview"
+                aria-selected={activeTab === 'overview'}
+                aria-controls="section-overview"
+                className={`btn-secondary touch-target ${activeTab === 'overview' ? 'tab-active' : ''}`}
+                onClick={() => setActiveTab('overview')}
+                style={{
+                  background: activeTab === 'overview' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                  borderColor: activeTab === 'overview' ? 'var(--accent-cyan)' : 'var(--border-color)',
+                  color: activeTab === 'overview' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'overview' ? 700 : 500,
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Overview
+              </button>
+              <button
+                role="tab"
+                id="tab-screenplay"
+                aria-selected={activeTab === 'screenplay'}
+                aria-controls="section-screenplay"
+                className={`btn-secondary touch-target ${activeTab === 'screenplay' ? 'tab-active' : ''}`}
+                onClick={() => setActiveTab('screenplay')}
+                style={{
+                  background: activeTab === 'screenplay' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                  borderColor: activeTab === 'screenplay' ? 'var(--accent-cyan)' : 'var(--border-color)',
+                  color: activeTab === 'screenplay' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'screenplay' ? 700 : 500,
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Screenplay ({pluralize(scenes.length, 'scene', 'scenes')})
+              </button>
+              <button
+                role="tab"
+                id="tab-clearance"
+                aria-selected={activeTab === 'clearance'}
+                aria-controls="section-clearance"
+                className={`btn-secondary touch-target ${activeTab === 'clearance' ? 'tab-active' : ''}`}
+                onClick={() => setActiveTab('clearance')}
+                style={{
+                  background: activeTab === 'clearance' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                  borderColor: activeTab === 'clearance' ? 'var(--accent-cyan)' : 'var(--border-color)',
+                  color: activeTab === 'clearance' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'clearance' ? 700 : 500,
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Clearance Items ({entities.length})
+              </button>
+              <button
+                role="tab"
+                id="tab-tasks"
+                aria-selected={activeTab === 'tasks'}
+                aria-controls="section-tasks"
+                className={`btn-secondary touch-target ${activeTab === 'tasks' ? 'tab-active' : ''}`}
+                onClick={() => setActiveTab('tasks')}
+                style={{
+                  background: activeTab === 'tasks' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                  borderColor: activeTab === 'tasks' ? 'var(--accent-cyan)' : 'var(--border-color)',
+                  color: activeTab === 'tasks' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'tasks' ? 700 : 500,
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Department Tasks ({openActionsCount > 0 ? `${openActionsCount} Open` : '0 Open'})
+              </button>
+            </div>
+
+            {/* Workspace Clearance Summary Indicator Bar */}
+            <div
+              data-testid="project-summary-bar"
+              className="touch-target"
+              aria-label={
+                entities.length === 0
+                  ? 'Project Summary: No clearance items recorded (0 entities)'
+                  : `Project Summary: ${entities.length} Total Entities, ${entities.filter(e => e.overallClearanceStatus === 'NO_ISSUE_SURFACED').length} ${TERMINOLOGY.STATUS_CLEARED}, ${entities.filter(e => e.overallClearanceStatus === 'ACTION_REQUIRED').length} ${TERMINOLOGY.STATUS_ACTION_REQUIRED}, ${entities.filter(e => e.overallClearanceStatus === 'REVIEW_RECOMMENDED').length} ${TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}`
+              }
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(0,0,0,0.3)',
+                padding: '4px 12px',
+                borderRadius: '20px',
+                border: '1px solid var(--border-color)',
+                fontSize: '0.75rem',
+              }}
+            >
+              <span style={{ color: 'var(--text-muted)' }}>Summary:</span>
+              {entities.length === 0 ? (
+                <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No clearance items recorded (0 entities)</span>
+              ) : (
+                <>
+                  <span style={{ color: 'var(--status-no-issue)', fontWeight: 600 }}>
+                    {entities.filter(e => e.overallClearanceStatus === 'NO_ISSUE_SURFACED').length} {TERMINOLOGY.STATUS_CLEARED}
+                  </span>
+                  {entities.filter(e => e.overallClearanceStatus === 'ACTION_REQUIRED').length > 0 && (
+                    <span style={{ color: 'var(--status-action)', fontWeight: 600 }}>
+                      {entities.filter(e => e.overallClearanceStatus === 'ACTION_REQUIRED').length} {TERMINOLOGY.STATUS_ACTION_REQUIRED}
+                    </span>
+                  )}
+                  {entities.filter(e => e.overallClearanceStatus === 'REVIEW_RECOMMENDED').length > 0 && (
+                    <span style={{ color: 'var(--status-review)', fontWeight: 600 }}>
+                      {entities.filter(e => e.overallClearanceStatus === 'REVIEW_RECOMMENDED').length} {TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}
+                    </span>
+                  )}
+                  {entities.filter(e => e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE').length > 0 && (
+                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>
+                      {entities.filter(e => e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE').length} {TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}
+                    </span>
+                  )}
+                  <span style={{ color: 'var(--text-muted)' }}>({pluralize(entities.length, 'entity', 'entities')})</span>
+                </>
+              )}
+            </div>
+          </div>
 
       {/* Screenplay Intake Panel — Contextual & Collapsible on Operational Panels (Section 4) */}
       {activeTab !== 'screenplay' && scenes.length > 0 && isIntakeCollapsed ? (
@@ -803,16 +896,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           tabIndex={0}
           style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
         >
-          {/* Onboarding & Guidance Banner */}
-          <OnboardingBanner
-            projectId={projectId}
-            onOpenDemo={() => {
-              setUploadModalInitialMode('DEMO');
-              setIsUploadModalOpen(true);
-            }}
-          />
-
-          {/* Recommended Next Action Area */}
+          {/* Recommended Next Action Area (Hero Priority) */}
           {isHydrating ? (
             <div
               className="glass-panel"
@@ -876,6 +960,17 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                 } catch (err) {
                   console.error('Error loading sample screenplay:', err);
                 }
+              }}
+            />
+          )}
+
+          {/* Onboarding & Guidance Banner — Displayed Below Recommended Action Card, hidden once screenplay exists */}
+          {scenes.length === 0 && (
+            <OnboardingBanner
+              projectId={projectId}
+              onOpenDemo={() => {
+                setUploadModalInitialMode('DEMO');
+                setIsUploadModalOpen(true);
               }}
             />
           )}
@@ -1276,34 +1371,15 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           tabIndex={0}
           style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
         >
-          <div className="glass-panel" style={{ padding: '24px', borderRadius: '12px' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
-              Department Action Center & Operations
-            </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
-              Manage department-specific clearance assignments across Art Dept, Legal Counsel, Locations, and Production Management.
-            </p>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button
-                className="btn-primary touch-target"
-                aria-label="Open Department Action Center"
-                onClick={() => setIsActionModalOpen(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <FileTextIcon size={16} />
-                <span>Open Department Action Center ({openActionsCount} Tasks Open)</span>
-              </button>
-              <button
-                className="btn-secondary touch-target"
-                aria-label="Open Production Operations Dashboard"
-                onClick={() => setIsDashboardModalOpen(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' }}
-              >
-                <LayersIcon size={16} />
-                <span>Open Operations Dashboard</span>
-              </button>
-            </div>
-          </div>
+          <ActionListModal
+            projectId={projectId}
+            isOpen={true}
+            embedded={true}
+            onClose={() => {}}
+            onActionUpdated={() => {
+              fetchWorkspaceData();
+            }}
+          />
         </section>
       )}
 

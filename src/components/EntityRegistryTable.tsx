@@ -688,14 +688,20 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                         ) : (
                           <button
                             data-entity-id={e.id}
-                            aria-label={`Research ${e.canonicalName}`}
+                            aria-label={`View evidence for ${e.canonicalName}`}
                             className="btn-secondary touch-target"
                             style={{ fontSize: '0.75rem', padding: '4px 8px' }}
-                            onClick={() => onEvaluateClearance(e.id)}
+                            onClick={() => {
+                              if (onViewOccurrences) {
+                                onViewOccurrences(e.id);
+                              } else {
+                                onEvaluateClearance(e.id);
+                              }
+                            }}
                             disabled={isEvaluating || isItemInActiveBatch}
-                            title="Evaluate clearance research"
+                            title="View research citations and clearance evidence"
                           >
-                            {isEvaluating || isItemInActiveBatch ? 'Researching...' : 'Research'}
+                            {isEvaluating || isItemInActiveBatch ? 'Researching...' : 'View Evidence'}
                           </button>
                         )}
 
@@ -707,9 +713,9 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             onClick={() => onViewOccurrences(e.id)}
                             disabled={isEvaluating || isItemInActiveBatch}
                             title={`View scene occurrences for ${e.canonicalName}`}
-                            aria-label={`View occurrences for ${e.canonicalName}`}
+                            aria-label={`View scene occurrences for ${e.canonicalName}`}
                           >
-                            {e.occurrenceCount || 1} {(e.occurrenceCount || 1) === 1 ? 'use' : 'uses'}
+                            {e.occurrenceCount || 1} {(e.occurrenceCount || 1) === 1 ? 'scene occurrence' : 'scene occurrences'}
                           </button>
                         )}
 

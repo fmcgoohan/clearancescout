@@ -10,6 +10,12 @@ interface SettingsPopoverProps {
   eventsCount: number;
   onOpenTimeline: () => void;
   servingRevision?: string;
+  onNewProduction?: () => void;
+  onSwitchProject?: () => void;
+  onExportBinder?: () => void;
+  onTogglePortfolio?: () => void;
+  appViewMode?: 'WORKSPACE' | 'PORTFOLIO';
+  isExporting?: boolean;
 }
 
 export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
@@ -21,6 +27,12 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
   eventsCount,
   onOpenTimeline,
   servingRevision = 'unknown',
+  onNewProduction,
+  onSwitchProject,
+  onExportBinder,
+  onTogglePortfolio,
+  appViewMode = 'WORKSPACE',
+  isExporting = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -249,6 +261,50 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
                 {copied ? '✓' : '📋'}
               </button>
             </div>
+          </div>
+
+          {/* Workspace Quick Actions */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Workspace Actions</span>
+            {onNewProduction && (
+              <button
+                className="btn-primary touch-target"
+                onClick={() => {
+                  setIsOpen(false);
+                  onNewProduction();
+                }}
+                style={{ fontSize: '0.75rem', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                + New Production
+              </button>
+            )}
+            {onExportBinder && (
+              <button
+                className="btn-secondary touch-target"
+                aria-label="Export Legal Clearance Binder"
+                onClick={() => {
+                  setIsOpen(false);
+                  onExportBinder();
+                }}
+                disabled={isExporting}
+                style={{ fontSize: '0.75rem', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                {isExporting ? 'Compiling Binder...' : 'Export Clearance Binder'}
+              </button>
+            )}
+            {onTogglePortfolio && (
+              <button
+                data-testid="portfolio-view-toggle"
+                className="btn-secondary touch-target"
+                onClick={() => {
+                  setIsOpen(false);
+                  onTogglePortfolio();
+                }}
+                style={{ fontSize: '0.75rem', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                {appViewMode === 'WORKSPACE' ? '📊 Portfolio Dashboard' : '🎬 Studio Workspace'}
+              </button>
+            )}
           </div>
 
           {/* Activity / Event Log Trigger */}

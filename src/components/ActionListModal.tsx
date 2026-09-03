@@ -71,6 +71,7 @@ interface ActionListModalProps {
   targetTaskId?: string;
   targetActivityType?: string;
   targetActivityId?: string;
+  embedded?: boolean;
 }
 
 export const ActionListModal: React.FC<ActionListModalProps> = ({
@@ -81,6 +82,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
   targetTaskId,
   targetActivityType,
   targetActivityId,
+  embedded = false,
 }) => {
   const [actions, setActions] = useState<ClearanceActionItem[]>([]);
   const [notifications, setNotifications] = useState<ClearanceNotification[]>([]);
@@ -297,7 +299,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
     );
   };
 
-  if (!isOpen) return null;
+  if (!isOpen && !embedded) return null;
 
   const filteredActions = actions.filter((act) => {
     if (activeTab !== 'ALL' && act.targetDepartment !== activeTab) return false;
@@ -314,101 +316,82 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
   const prodCount = openActions.filter((a) => a.targetDepartment === 'PRODUCTION_MGMT').length;
   const unreadNotifsCount = notifications.filter((n) => !n.isRead).length;
 
-  return (
+  const contentBlock = (
     <div
-      ref={containerRef}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="action-modal-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      className="glass-panel"
+      data-testid="department-tasks-panel"
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(5, 7, 15, 0.85)',
-        backdropFilter: 'blur(8px)',
+        width: '100%',
+        maxWidth: embedded ? '100%' : '960px',
+        maxHeight: embedded ? 'none' : '90vh',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1400,
-        padding: '20px',
+        flexDirection: 'column',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-color)',
+        borderRadius: '12px',
+        boxShadow: embedded ? 'none' : '0 20px 40px rgba(0,0,0,0.6)',
+        overflow: 'hidden',
+        outline: 'none',
+        position: 'relative',
       }}
     >
       {/* Polite Live Region for Notification Navigation Announcements */}
       <div role="status" aria-live="polite" className="sr-only" data-testid="nav-announcement">
         {navAnnouncement}
       </div>
+
+      {/* Modal / Panel Header */}
       <div
-        className="glass-panel"
         style={{
-          width: '100%',
-          maxWidth: '960px',
-          maxHeight: '90vh',
+          padding: '16px 24px',
+          borderBottom: '1px solid var(--border-color)',
           display: 'flex',
-          flexDirection: 'column',
-          backgroundColor: 'var(--bg-secondary)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '12px',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
-          overflow: 'hidden',
-          outline: 'none',
-          position: 'relative',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'var(--bg-card)',
         }}
       >
-        {/* Modal Header */}
-        <div
-          style={{
-            padding: '16px 24px',
-            borderBottom: '1px solid var(--border-color)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            background: 'var(--bg-card)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h2 id="action-modal-title" style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FileTextIcon size={20} className="text-cyan-400" />
-              <span>Production Clearance Action & Notification Center</span>
-            </h2>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                padding: '2px 8px',
-                borderRadius: '10px',
-                background: openCount > 0 ? 'var(--status-action-bg)' : 'var(--status-no-issue-bg)',
-                color: openCount > 0 ? 'var(--status-action)' : 'var(--status-no-issue)',
-                border: openCount > 0 ? '1px solid var(--status-action-border)' : '1px solid var(--status-no-issue-border)',
-                fontWeight: 600,
-              }}
-            >
-              {isLoading || actions.length === 0
-                ? 'Loading tasks…'
-                : `${filteredActions.length} of ${actions.length} ${pluralize(actions.length, 'Task', 'Tasks')}`}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button
-              className="btn-secondary"
-              onClick={handleSyncActions}
-              disabled={isSyncing || isLoading || actions.length === 0}
-              style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <RefreshCwIcon size={14} />
-              <span>{isSyncing ? 'Syncing...' : 'Re-Sync'}</span>
-            </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h2 id="action-modal-title" style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FileTextIcon size={20} className="text-cyan-400" />
+            <span>Production Clearance Action & Notification Center</span>
+          </h2>
+          <span
+            style={{
+              fontSize: '0.75rem',
+              padding: '2px 8px',
+              borderRadius: '10px',
+              background: openCount > 0 ? 'var(--status-action-bg)' : 'var(--status-no-issue-bg)',
+              color: openCount > 0 ? 'var(--status-action)' : 'var(--status-no-issue)',
+              border: openCount > 0 ? '1px solid var(--status-action-border)' : '1px solid var(--status-no-issue-border)',
+              fontWeight: 600,
+            }}
+          >
+            {isLoading || actions.length === 0
+              ? 'Loading tasks…'
+              : `${filteredActions.length} of ${actions.length} ${pluralize(actions.length, 'Task', 'Tasks')}`}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            className="btn-secondary"
+            onClick={handleSyncActions}
+            disabled={isSyncing || isLoading || actions.length === 0}
+            style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <RefreshCwIcon size={14} />
+            <span>{isSyncing ? 'Syncing...' : 'Re-Sync'}</span>
+          </button>
+          {!embedded && (
             <button
               onClick={onClose}
               aria-label="Close action modal"
             >
               <XIcon size={18} />
             </button>
-          </div>
+          )}
         </div>
+      </div>
 
         {/* Department Tabs & Filter Controls */}
         <div
@@ -893,6 +876,37 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
           onRefreshTasks={() => fetchActionsAndNotifications()}
         />
       </div>
+  );
+
+  if (embedded) {
+    return contentBlock;
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="action-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(5, 7, 15, 0.85)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1400,
+        padding: '20px',
+      }}
+    >
+      {contentBlock}
     </div>
   );
 };

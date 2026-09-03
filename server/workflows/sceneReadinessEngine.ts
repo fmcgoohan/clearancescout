@@ -164,9 +164,20 @@ export class SceneReadinessEngine {
 
     if (blockers.length > 0) {
       overallStatus = 'RED';
-      blockingRationale = `${blockers.length} clearance blocker(s) prevent shooting Scene ${scene.sceneNumber}: ${blockers
-        .map((b) => `"${b.canonicalName}" (${b.effectiveStatus})`)
-        .join(', ')}.`;
+      const uniqueEntityMap = new Map<string, { name: string; status: string; count: number }>();
+      for (const b of blockers) {
+        const key = b.canonicalEntityId || b.canonicalName;
+        const existing = uniqueEntityMap.get(key);
+        if (existing) {
+          existing.count++;
+        } else {
+          uniqueEntityMap.set(key, { name: b.canonicalName, status: b.effectiveStatus, count: 1 });
+        }
+      }
+      const uniqueDescriptions = Array.from(uniqueEntityMap.values()).map((u) =>
+        u.count > 1 ? `"${u.name}" (${u.status}, ${u.count} occurrences)` : `"${u.name}" (${u.status})`
+      );
+      blockingRationale = `${blockers.length} clearance blocker(s) prevent shooting Scene ${scene.sceneNumber}: ${uniqueDescriptions.join(', ')}.`;
       summaryText = `${blockers.length} clearance blocker(s) prevent shooting Scene ${scene.sceneNumber}.`;
     } else if (workingClears.length > 0) {
       overallStatus = 'WORKING_CLEAR';

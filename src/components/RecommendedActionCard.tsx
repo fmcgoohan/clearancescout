@@ -52,9 +52,10 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
     const target = actionRequiredItems[0];
     const targetName = target?.canonicalName || 'Uncleared Item';
     title = target ? `Research ${targetName}` : `Review ${blockersCount} Clearance Blocker${blockersCount > 1 ? 's' : ''}`;
+    const itemNoun = blockersCount === 1 ? 'clearance item requires' : 'clearance items require';
     rationale = target
-      ? `${blockersCount} clearance item${blockersCount > 1 ? 's' : ''} require action. Start with ${targetName}.`
-      : `${blockersCount} clearance item${blockersCount > 1 ? 's' : ''} require action.`;
+      ? `${blockersCount} ${itemNoun} action. Start with ${targetName}.`
+      : `${blockersCount} ${itemNoun} action.`;
     buttonLabel = target ? `Research ${targetName}` : `Review ${blockersCount} Clearance Blocker${blockersCount > 1 ? 's' : ''}`;
     ariaLabel = buttonLabel;
     badgeColor = 'var(--status-action, #ef4444)';
@@ -71,7 +72,8 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
     const target = reviewRecommendedItems[0];
     const targetName = target?.canonicalName || 'Item';
     title = target ? `Research ${targetName}` : `Review ${reviewsCount} Recommended Item${reviewsCount > 1 ? 's' : ''}`;
-    rationale = `1 item recommended for review: ${targetName}.`;
+    const reviewNoun = reviewsCount === 1 ? 'item recommended' : 'items recommended';
+    rationale = `${reviewsCount} ${reviewNoun} for review: ${targetName}.`;
     buttonLabel = target ? `Research ${targetName}` : `Review ${reviewsCount} Recommended Item${reviewsCount > 1 ? 's' : ''}`;
     ariaLabel = buttonLabel;
     badgeColor = 'var(--status-review, #f59e0b)';

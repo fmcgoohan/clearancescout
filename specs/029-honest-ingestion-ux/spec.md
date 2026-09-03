@@ -100,6 +100,34 @@ As a judge or evaluator assessing the system, I want sample reference production
 - **FR-011**: Plain-language labels MUST be used across all primary operator views; technical jargon (e.g., canonical entity registries, entity overrides, grounding quotas) MUST be replaced with conversational equivalents ("Clearance Items", "Manual Decision", "API Quota") or confined to developer/settings dialogs.
 - **FR-012**: The application MUST maintain WCAG 2.2 AA accessibility across all newly added creation and preview surfaces, including visible focus rings, dialog focus trapping, live-region status updates, and keyboard dismissability.
 
+---
+
+### Proposal: Correctness & Workspace IA Architecture *(Proposed for SpecKit Plan/Tasks)*
+
+#### 1. Release-Blocking Correctness & Data Integrity
+- **FR-013**: Single Status Contract & Stale Research Task Pruning. When an entity transitions from `INSUFFICIENT_EVIDENCE` to an evaluated state (`NO_ISSUE_SURFACED`, `REVIEW_RECOMMENDED`, `ACTION_REQUIRED`), all initial `RETRY_RESEARCH` department tasks associated with that entity MUST be automatically marked `RESOLVED` and pruned from active task lists, ensuring Registry, Dossier, and Action Center data remain 100% synchronized.
+- **FR-014**: High-Fidelity Time-Of-Day Ingestion (`CONTINUOUS` Preservation). Slugline parsing MUST NOT normalize `CONTINUOUS`, `SAME`, `MOMENTS LATER`, `DAWN`, or `MAGIC HOUR` to `DAY`. The parsed `timeOfDay` field MUST preserve the verbatim time descriptor extracted from the script slugline.
+- **FR-015**: Screenplay Page Marker Filtering. PDF and text screenplay ingestion MUST strip standalone page header/footer markers (e.g. `-- 1 of 4 --`, `-- 2 of 4 --`, `2.`, `3.`) from scene body text, character action summaries, and occurrence excerpts.
+- **FR-016**: Entity-Level vs Occurrence-Level Blocker Distinction. Scene readiness summaries and failure rationales MUST distinguish between unique entity blockers and multiple scene occurrences (e.g. "1 clearance blocker ('Coors Light' across 3 occurrences) prevents shooting Scene 3" rather than repeating the entity name 3 times).
+
+#### 2. Usability & Workspace Information Architecture (IA)
+- **FR-017**: Streamlined Single-Row Header Architecture. The primary header bar MUST be compact (max height <=64px) and house only: (a) Product brand identity, (b) Project switcher dropdown, (c) Role perspective switcher, (d) Notification Alert Bell, and (e) Secondary Menu trigger. Secondary controls (`+ New Production`, `Execution Mode`, `Live Quota Counter`, `Export Binder`, `Admin`, `Settings`) MUST reside in menus.
+- **FR-018**: First-Class Department Tasks Workspace View. Department Tasks MUST be accessible as a full-page workspace section/tab (`Overview`, `Screenplay`, `Clearance Items`, `Department Tasks`) rather than modal-only, supporting persistent URL query parameters and full-screen task triage.
+- **FR-019**: State & Deep-Link URL Persistence on Reload. Active workspace tab selection, selected entity dossiers, and deep-linked task IDs (`?tab=tasks&task=TASK-101`) MUST be encoded in URL query parameters and restored on browser refresh.
+- **FR-020**: Onboarding Guide Lifecycle & Placement. The onboarding guide banner MUST render below the Primary Recommendation Card and MUST automatically hide once a screenplay has been successfully ingested for the active production.
+
+#### 3. Workflow Language & Canonical Domain Terminology
+- **FR-021**: Canonical Domain Terminology Convergence. Primary operator UI chrome MUST strictly adopt converged clearance terminology:
+  - "Clearance Items" (replacing "Entity Registry")
+  - "Scene Occurrence" (replacing "use" / "uses")
+  - "View Evidence" (replacing "Research" for evaluated items)
+  - "API Research Quota (X of 25 remaining)" (replacing "Live Quota")
+- **FR-022**: Deterministic Grammatical Pluralization. All dynamic counter strings MUST use grammatically correct singular/plural phrasing (e.g. "1 clearance item requires action" vs "2 clearance items require action", "1 scene" vs "3 scenes").
+
+#### 4. Responsive & Touch-Target Architecture
+- **FR-023**: Responsive Narrow-Viewport Card Layout. On viewports <768px (including 375px, 390px, 420px), the Clearance Items list MUST transform from a wide table into responsive stacked cards to eliminate horizontal clipping.
+- **FR-024**: 44px Touch Target Size Enforcement. All buttons, icon triggers, tabs, and dismiss controls across mobile and desktop MUST meet the WCAG 2.2 AA minimum touch target size of 44x44 CSS pixels.
+
 ### Key Entities
 
 - **Production / Project**: A top-level container for film/television clearance analysis. Attributes include ID, title, production code, studio name, creation timestamp, and `isSample` boolean flag.
@@ -107,6 +135,7 @@ As a judge or evaluator assessing the system, I want sample reference production
 - **Extraction Preview**: An ephemeral validation summary generated prior to database commitment, containing detected scene count, parsed scene sluglines, token/word count, and validation warnings (e.g. 0 scenes detected).
 - **Clearance Item**: A detected entity within a script that requires legal assessment.
 - **Department Task**: An actionable resolution item assigned to an art, legal, or production crew department.
+- **Scene Blocker**: An un-cleared item occurrence that prevents a specific scene from being marked ready for shooting.
 
 ## Success Criteria *(mandatory)*
 
@@ -117,6 +146,9 @@ As a judge or evaluator assessing the system, I want sample reference production
 - **SC-003**: Users can initiate production creation in exactly 1 click from any application screen via the persistent header control.
 - **SC-004**: Operators are presented with exactly 1 primary next-action recommendation per workspace state with 0 ambiguous competing primary buttons.
 - **SC-005**: Sample benchmark projects retain 100% data integrity (Neon Horizon: 3 scenes, 7 clearance items, 11 tasks, 33.3% readiness, 2 blocked scenes; Cyberpunk Odyssey: 100% readiness, 0 blocked scenes) with explicit visual sample labeling.
+- **SC-006**: 100% of evaluated clearance items show synchronized status across Registry, Dossier, and Action Center with zero dangling `RETRY_RESEARCH` tasks for cleared items.
+- **SC-007**: 100% of scene sluglines with `CONTINUOUS`, `SAME`, or `DUSK` time descriptors retain their exact time of day without normalization to `DAY`.
+- **SC-008**: Mobile viewports (375px, 390px, 420px) render a header height <=64px with zero horizontal scroll and 100% touch targets >=44px.
 
 ## Assumptions
 

@@ -591,17 +591,84 @@ header.app-header {
     width: 100% !important;
     box-sizing: border-box !important;
   }
-  .portfolio-filter-tabs button,
-  .portfolio-filter-tab-btn {
-    flex: 1 1 auto !important;
-    min-width: fit-content !important;
-    padding: 8px 10px !important;
-    font-size: 13px !important;
-    letter-spacing: -0.01em !important;
-    text-align: center !important;
-    white-space: nowrap !important;
+}
+
+/* Responsive Table-to-Card Transformation for Mobile < 768px (FR-023) */
+@media (max-width: 767px) {
+  .responsive-table-container table,
+  .responsive-table-container thead,
+  .responsive-table-container tbody,
+  .responsive-table-container th,
+  .responsive-table-container td,
+  .responsive-table-container tr {
+    display: block !important;
+    width: 100% !important;
     box-sizing: border-box !important;
-    overflow: visible !important;
+  }
+
+  .responsive-table-container thead tr {
+    position: absolute !important;
+    top: -9999px !important;
+    left: -9999px !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .responsive-table-container tbody tr {
+    margin-bottom: 12px !important;
+    padding: 14px 16px !important;
+    border-radius: 10px !important;
+    background: var(--bg-card, #151b23) !important;
+    border: 1px solid var(--border-color, #242e3a) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .responsive-table-container td {
+    padding: 6px 0 !important;
+    border: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
+
+  .responsive-table-container td:last-child {
+    margin-top: 8px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .responsive-table-container .action-overflow-container {
+    justify-content: flex-start !important;
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
   }
 }
+
+/* WCAG 2.2 AA Minimum 44x44px Touch Targets (FR-024) */
+.touch-target,
+button,
+a.btn,
+select,
+input[type="button"],
+input[type="submit"] {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.btn-secondary,
+.btn-primary {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
 

@@ -608,95 +608,87 @@ export default function App() {
           borderLeft: 'none',
           borderRight: 'none',
           borderTop: 'none',
-          padding: '12px 24px',
+          padding: '8px 20px',
+          height: '60px',
+          maxHeight: '64px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          flexWrap: 'wrap',
-          gap: '10px',
+          gap: '12px',
         }}
       >
-        <div className="app-header-brand" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="app-header-brand" style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
           <div
             style={{
-              width: '34px',
-              height: '34px',
+              width: '32px',
+              height: '32px',
+              minWidth: '32px',
               borderRadius: '8px',
               background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 800,
-              fontSize: '1rem',
+              fontSize: '0.95rem',
               color: '#ffffff',
             }}
           >
             CS
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h1 style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.02em', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {isSwitchingProject ? (
-                  <span data-testid="workspace-project-title" style={{ color: '#38bdf8' }}>
-                    Switching production...
-                  </span>
-                ) : (
-                  <>
-                    <span data-testid="workspace-project-title">{projectTitle || 'Untitled Production Workspace'}</span>
-                    <span
-                      data-testid="workspace-project-code"
-                      style={{
-                        fontSize: '0.68rem',
-                        fontFamily: 'monospace',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        background: 'rgba(56, 189, 248, 0.15)',
-                        color: '#38bdf8',
-                        border: '1px solid rgba(56, 189, 248, 0.3)',
-                        fontWeight: 600,
-                        whiteSpace: 'nowrap',
-                        display: 'inline-block',
-                        flexShrink: 0,
-                      }}
-                    >
-                      [{formatProjectCode(projectId, projectTitle)}]
-                    </span>
-                  </>
-                )}
-              </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            <button
+              data-testid="header-switch-project-btn"
+              className="btn-secondary touch-target"
+              aria-label="Switch Production Project"
+              style={{ fontSize: '0.78rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '240px' }}
+              onClick={() => setIsProjectModalOpen(true)}
+            >
               <span
+                data-testid="workspace-project-title"
                 style={{
-                  fontSize: '0.7rem',
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  background:
-                    projectType === 'TV Show'
-                      ? 'rgba(56, 189, 248, 0.15)'
-                      : projectType === 'Commercial'
-                      ? 'rgba(251, 191, 36, 0.15)'
-                      : 'rgba(129, 140, 248, 0.15)',
-                  color:
-                    projectType === 'TV Show'
-                      ? '#38bdf8'
-                      : projectType === 'Commercial'
-                      ? '#fbbf24'
-                      : '#818cf8',
-                  fontWeight: 600,
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }}
               >
-                {projectType === 'TV Show' ? 'TV Show' : projectType === 'Commercial' ? 'Commercial' : 'Movie'}
+                {projectTitle || 'Untitled Production Workspace'}
               </span>
-            </div>
-            <span className="header-subtitle" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              ClearanceScout Platform
-            </span>
+              <span
+                data-testid="workspace-project-code"
+                style={{
+                  fontSize: '0.65rem',
+                  fontFamily: 'monospace',
+                  padding: '1px 4px',
+                  borderRadius: '4px',
+                  background: 'rgba(56, 189, 248, 0.15)',
+                  color: '#38bdf8',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  display: 'inline-block',
+                  flexShrink: 0,
+                }}
+              >
+                [{formatProjectCode(projectId, projectTitle)}]
+              </span>
+            </button>
+            <button
+              data-testid="header-new-production-btn"
+              className="btn-primary touch-target"
+              aria-label="Create New Production"
+              style={{ fontSize: '0.75rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+              onClick={() => setIsNewProjectModalOpen(true)}
+            >
+              + New Production
+            </button>
           </div>
         </div>
 
-        <div className="app-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div className="app-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           {/* Phase 4 Role Perspective Switcher */}
           <RoleWorkspaceSwitcher currentRole={userRole} onRoleChange={(role) => setUserRole(role)} />
 
@@ -713,152 +705,7 @@ export default function App() {
             }}
           />
 
-          {/* Portfolio View Toggle */}
-          <button
-            data-testid="portfolio-view-toggle"
-            className="btn-secondary touch-target"
-            onClick={() => setAppViewMode(appViewMode === 'WORKSPACE' ? 'PORTFOLIO' : 'WORKSPACE')}
-            style={{ fontSize: '0.75rem' }}
-          >
-            {appViewMode === 'WORKSPACE' ? '📊 Portfolio' : '🎬 Studio Workspace'}
-          </button>
-
-          {/* User Admin Trigger */}
-          {userRole === 'ADMINISTRATOR' && (
-            <button
-              className="btn-secondary touch-target text-xs"
-              onClick={() => setIsAdminOpen(true)}
-            >
-              ⚙️ User Admin
-            </button>
-          )}
-
-          {appViewMode === 'WORKSPACE' && (
-            <>
-              {/* Persistent New Production Trigger */}
-              <button
-                data-testid="header-new-production-btn"
-                className="btn-primary touch-target"
-                aria-label="Create New Production"
-                style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-                onClick={() => setIsNewProjectModalOpen(true)}
-              >
-                + New Production
-              </button>
-
-              {/* Project Switcher Trigger */}
-              <button
-                data-testid="header-switch-project-btn"
-                className="btn-secondary touch-target"
-                aria-label="Switch Production Project"
-                style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-                onClick={() => setIsProjectModalOpen(true)}
-              >
-                Switch Project
-              </button>
-
-              {/* Landing Clearance Summary Indicator */}
-              {isSwitchingProject ? (
-                <div
-                  data-testid="header-switching-indicator"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(56, 189, 248, 0.15)',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    border: '1px solid rgba(56, 189, 248, 0.4)',
-                    fontSize: '0.75rem',
-                    color: '#38bdf8',
-                    fontWeight: 600,
-                  }}
-                >
-                  <span>⏳ Switching production...</span>
-                </div>
-              ) : (
-                <div
-                  data-testid="project-summary-bar"
-                  className="touch-target"
-                  aria-label={
-                    projectSummary.entityCount === 0
-                      ? 'Project Summary: No clearance items recorded (0 entities)'
-                      : `Project Summary: ${projectSummary.entityCount} Total Entities, ${projectSummary.clearedCount} ${TERMINOLOGY.STATUS_CLEARED}, ${projectSummary.actionRequiredCount} ${TERMINOLOGY.STATUS_ACTION_REQUIRED}, ${projectSummary.reviewRecommendedCount} ${TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}, ${projectSummary.researchRequiredCount || 0} ${TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}`
-                  }
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: 'rgba(0,0,0,0.3)',
-                    padding: '4px 10px',
-                    borderRadius: '20px',
-                    border: '1px solid var(--border-color)',
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  <span style={{ color: 'var(--text-muted)' }}>Summary:</span>
-                  {projectSummary.entityCount === 0 ? (
-                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No clearance items recorded (0 entities)</span>
-                  ) : (
-                    <>
-                      <span style={{ color: 'var(--status-no-issue)', fontWeight: 600 }}>{projectSummary.clearedCount} {TERMINOLOGY.STATUS_CLEARED}</span>
-                      {projectSummary.actionRequiredCount > 0 && (
-                        <span style={{ color: 'var(--status-action)', fontWeight: 600 }}>{projectSummary.actionRequiredCount} {TERMINOLOGY.STATUS_ACTION_REQUIRED}</span>
-                      )}
-                      {projectSummary.reviewRecommendedCount > 0 && (
-                        <span style={{ color: 'var(--status-review)', fontWeight: 600 }}>{projectSummary.reviewRecommendedCount} {TERMINOLOGY.STATUS_REVIEW_RECOMMENDED}</span>
-                      )}
-                      {(projectSummary.researchRequiredCount || 0) > 0 && (
-                        <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{projectSummary.researchRequiredCount} {TERMINOLOGY.STATUS_INSUFFICIENT_EVIDENCE}</span>
-                      )}
-                      <span style={{ color: 'var(--text-muted)' }}>({pluralize(projectSummary.entityCount, 'entity', 'entities')})</span>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Live Quota Indicator Badge */}
-              <div
-                className="touch-target quota-meter"
-                aria-label={`Live Quota Remaining: ${liveQuota.remaining} of ${liveQuota.limit}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: liveQuota.remaining === 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0,0,0,0.3)',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  border: `1px solid ${liveQuota.remaining === 0 ? 'rgba(239, 68, 68, 0.5)' : 'var(--border-color)'}`,
-                  fontSize: '0.75rem',
-                  color: liveQuota.remaining === 0 ? '#f87171' : 'var(--text-main)',
-                }}
-              >
-                <span>Quota:</span>
-                <span className="quota-meter-number" style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: liveQuota.remaining === 0 ? '#f87171' : 'var(--accent-cyan)' }}>
-                  {liveQuota.remaining} / {liveQuota.limit}
-                </span>
-              </div>
-
-              {/* Export Clearance Binder Trigger */}
-              <button
-                className="btn-secondary touch-target"
-                aria-label="Export Legal Clearance Binder with SHA-256 Digest"
-                aria-busy={exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING'}
-                style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-                onClick={handleExportBinder}
-                disabled={exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING'}
-              >
-                {exportState === 'PREFLIGHT_CHECKING'
-                  ? 'Checking Preflight...'
-                  : exportState === 'PROCESSING'
-                  ? 'Compiling Binder...'
-                  : 'Export Clearance Binder'}
-              </button>
-            </>
-          )}
-
           {/* Settings Menu Offloading Secondary Controls */}
-          {/* Server execution mode from health endpoint */}
           <SettingsPopover
             hasTokenConfigured={hasTokenConfigured}
             onOpenTokenModal={handleOpenTokenModal}
@@ -868,6 +715,12 @@ export default function App() {
             eventsCount={events.length}
             onOpenTimeline={() => setIsTimelineOpen(true)}
             servingRevision={servingRevision}
+            onNewProduction={() => setIsNewProjectModalOpen(true)}
+            onSwitchProject={() => setIsProjectModalOpen(true)}
+            onExportBinder={handleExportBinder}
+            onTogglePortfolio={() => setAppViewMode(appViewMode === 'WORKSPACE' ? 'PORTFOLIO' : 'WORKSPACE')}
+            appViewMode={appViewMode}
+            isExporting={exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING'}
           />
         </div>
       </header>

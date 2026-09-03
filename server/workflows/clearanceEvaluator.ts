@@ -585,6 +585,29 @@ Return valid JSON with these fields:
       await entityRepo.updateCanonicalEntityStatus(projectId, canonicalEntityId, status);
     }
 
+    // Invariant (FR-013): When entity evaluation completes (evaluating to NO_ISSUE_SURFACED, REVIEW_RECOMMENDED, or ACTION_REQUIRED),
+    // auto-resolve all open RETRY_RESEARCH tasks for this entity so Registry and Action Center remain in sync.
+    try {
+      const finalEntity = await entityRepo.getEntityById(projectId, canonicalEntityId);
+      if (finalEntity && finalEntity.overallClearanceStatus !== 'INSUFFICIENT_EVIDENCE') {
+        const openActions = await actionNotificationRepo.getActionsByProject(projectId, {
+          canonicalEntityId,
+        });
+        for (const act of openActions) {
+          if (act.actionType === 'RETRY_RESEARCH' && (act.status === 'OPEN' || act.status === 'IN_PROGRESS')) {
+            await actionNotificationRepo.updateActionStatus(
+              projectId,
+              act.id,
+              'RESOLVED',
+              `EVALUATION_COMPLETED (${finalEntity.overallClearanceStatus})`
+            );
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to resolve stale retry research actions:', err);
+    }
+
     return latestAssessment!;
   }
 }

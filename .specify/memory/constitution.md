@@ -1,14 +1,11 @@
 <!--
 Sync Impact Report:
-- Version change: 1.2.0 → 1.3.0
-- List of modified principles: Expanded Article 6 (Status Is Never Color Alone)
+- Version change: 1.4.0 → 1.5.0
+- List of modified principles:
+  - Article 10 (Project-Data Synchronization): Added Single Status Contract & Stale Research Task Pruning invariant.
+  - Article 12 (Counts & Semantic Sources): Added High-Fidelity Slugline Time-of-Day Invariant (Never map CONTINUOUS → DAY).
 - Added sections:
-  - XV. Article 10: No Regression in Project-Data Synchronization (NON-NEGOTIABLE)
-  - XVI. Article 11: Accessibility Is a Release Requirement (NON-NEGOTIABLE)
-  - XVII. Article 12: Counts Have One Documented Semantic Source (NON-NEGOTIABLE)
-  - XVIII. Article 13: Every Screen Exposes a Clear Next Action (NON-NEGOTIABLE)
-  - XIX. Article 14: Domain Terminology Is Understandable or Explained (NON-NEGOTIABLE)
-  - XX. Article 15: Responsive Behavior Is Specified, Not Inferred (NON-NEGOTIABLE)
+  - XXII. Article 17: Visible System Data Hierarchy (NON-NEGOTIABLE)
 - Removed sections: None
 - Follow-up TODOs: None
 -->
@@ -92,6 +89,7 @@ Sync Impact Report:
 ### XV. Article 10: No Regression in Project-Data Synchronization (NON-NEGOTIABLE)
 - Processing stages, completion summaries, scenes, canonical entities, clearance statuses, blocking occurrences, and department tasks MUST update atomically and maintain 100% data synchronization across all views.
 - Ingestion progress, processing stage changes, and final completion counts MUST synchronize seamlessly across the primary header, readiness band, clearance item registry, operations dashboard, and department task center.
+- **Single Status Contract & Stale Research Task Pruning**: When an entity's clearance status transitions from `INSUFFICIENT_EVIDENCE` to any resolved state (`NO_ISSUE_SURFACED`, `REVIEW_RECOMMENDED`, `ACTION_REQUIRED`), all initial `RETRY_RESEARCH` tasks created for that entity MUST be automatically marked `RESOLVED` and pruned from active task lists.
 
 ### XVI. Article 11: Accessibility Is a Release Requirement (NON-NEGOTIABLE)
 - Full compliance with WCAG 2.2 AA standards is a mandatory release gate for all surfaces.
@@ -104,6 +102,7 @@ Sync Impact Report:
   3. **Department Tasks**: Count of assigned work items across production departments.
   4. **Scenes**: Count of screenplay production units.
 - UI elements MUST explicitly clarify that an entity may appear multiple times across scenes, explaining why blocking occurrences can exceed entity tasks.
+- **High-Fidelity Slugline Ingestion (Never Map CONTINUOUS → DAY)**: Screenplay parser agents MUST preserve exact slugline temporal descriptors (`CONTINUOUS`, `SAME`, `MOMENTS LATER`, `DAWN`, `MAGIC HOUR`, `DUSK`, `NIGHT`, `DAY`). Parsers MUST NEVER normalize `CONTINUOUS` or other non-day/night temporal qualifiers to `DAY`.
 
 ### XVIII. Article 13: Every Screen Exposes a Clear Next Action (NON-NEGOTIABLE)
 - Every workspace view MUST present **one contextual primary recommendation card** at the top of the primary flow that dynamically calculates the highest-priority next step from current project state.
@@ -144,6 +143,11 @@ Sync Impact Report:
   - The workspace MUST organize content into four primary sections: `Overview`, `Screenplay`, `Clearance Items`, `Tasks`.
   - Section switching MUST preserve active project state, support full keyboard navigation (Arrow keys / Tab / ARIA `role="tablist"`), and update local state without triggering full page reloads.
 
+### XXII. Article 17: Visible System Data Hierarchy (NON-NEGOTIABLE)
+- System information architecture, navigation, and clearance data-flows MUST strictly respect the hierarchical pipeline order:
+  $$\text{Screenplay Scenes} \longrightarrow \text{Clearance Items} \longrightarrow \text{Department Tasks} \longrightarrow \text{Shooting Readiness} \longrightarrow \text{Clearance Binder}$$
+- Clearances are evaluated at the canonical item level, attached to scene occurrences, generate actionable tasks for production departments, determine per-scene shooting readiness, and compile into the final legal clearance binder.
+
 ## System Architecture & Operational Constraints
 
 ### Deterministic Calculation & Reasoning Pattern
@@ -164,4 +168,4 @@ Sync Impact Report:
   - **PATCH**: Wording clarifications, typo fixes, or non-semantic formatting updates.
 - All Pull Requests, architectural specs (`spec.md`), implementation plans (`plan.md`), and task breakdowns (`tasks.md`) MUST explicitly comply with all principles defined in this constitution.
 
-**Version**: 1.4.0 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-08-24
+**Version**: 1.5.0 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-09-03
