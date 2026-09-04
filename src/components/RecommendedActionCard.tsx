@@ -110,7 +110,7 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
       data-testid="primary-recommendation-card"
       aria-label="Recommended Action"
       style={{
-        padding: '1.25rem 1.5rem',
+        padding: '1rem 1.25rem',
         borderRadius: '12px',
         border: `1px solid ${badgeColor}`,
         backgroundColor: badgeBg,
@@ -120,9 +120,11 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
         flexWrap: 'wrap',
         gap: '1rem',
         marginBottom: '1.5rem',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: '280px', flex: '1 1 300px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: '1 1 200px' }}>
         <div
           style={{
             width: '40px',

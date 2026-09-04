@@ -57,7 +57,7 @@ Alex and Elena walk along the paved path discussing their future plans under the
     const evalScene2Res = await request(app)
       .post(`/api/projects/${projectId}/scenes/${scene2Id}/readiness/evaluate`);
     expect(evalScene2Res.status).toBe(200);
-    expect(evalScene2Res.body.status).toBe('FINAL_CLEAR');
+    expect(evalScene2Res.body.status).toBe('PENDING_REVIEW');
     expect(evalScene2Res.body.totalOccurrences).toBe(0);
 
     // 4. Query Project-Wide Readiness Summary
@@ -65,7 +65,8 @@ Alex and Elena walk along the paved path discussing their future plans under the
     expect(summaryRes.status).toBe(200);
     expect(summaryRes.body.totalScenes).toBe(2);
     expect(summaryRes.body.redScenesCount).toBe(1);
-    expect(summaryRes.body.finalClearScenesCount).toBe(1);
+    expect(summaryRes.body.pendingReviewScenesCount).toBe(1);
+    expect(summaryRes.body.finalClearScenesCount).toBe(0);
 
     // 5. Attach Fictional Replacement Card -> Should transition Scene 1 to WORKING_CLEAR
     await request(app)

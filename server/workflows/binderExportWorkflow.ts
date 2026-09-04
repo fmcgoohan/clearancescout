@@ -118,6 +118,7 @@ export class BinderExportWorkflow {
       finalClearScenes: readinessSummary.finalClearScenesCount,
       workingClearScenes: readinessSummary.workingClearScenesCount,
       redScenes: readinessSummary.redScenesCount,
+      pendingReviewScenes: readinessSummary.pendingReviewScenesCount || 0,
       overallReadinessPercentage: readinessSummary.overallReadinessPercentage,
       totalEntities: entities.length,
       clearedCount,

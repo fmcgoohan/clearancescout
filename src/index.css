@@ -439,6 +439,19 @@ header .mark span {
     width: 100% !important;
     max-width: 100% !important;
   }
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: inline-flex !important;
+  }
+}
+
+.desktop-only {
+  display: inline-flex;
+}
+.mobile-only {
+  display: none !important;
 }
 
 /* Sticky Header Accommodation & Scroll Padding */
@@ -670,5 +683,12 @@ input[type="submit"] {
   justify-content: center;
   box-sizing: border-box;
 }
+
+.project-select-card:focus-visible {
+  outline: 2px solid var(--accent-cyan, #38bdf8) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.3) !important;
+}
+
 
 

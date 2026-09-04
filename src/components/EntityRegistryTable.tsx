@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BatchResearchProgress } from '../hooks/useBatchResearch.js';
-import { pluralize, formatStatus, formatCategory } from '../utils/formatters.js';
+import { pluralize, formatStatus, formatCategory, formatOccurrenceCount } from '../utils/formatters.js';
 import {
   SearchIcon,
   RefreshCwIcon,
@@ -32,6 +32,7 @@ export interface CanonicalEntity {
   relationshipType?: string;
   isOverridden?: boolean;
   latestOverride?: {
+    overrideId: string;
     overrideStatus: string;
     rationale: string;
     counselName: string;
@@ -39,6 +40,8 @@ export interface CanonicalEntity {
   };
   replacementCard?: any;
   occurrenceCount?: number;
+  occurrencesCount?: number;
+  scenesCount?: number;
   occurrences?: any[];
   departmentTasks?: string[];
   evidenceCount?: number;
@@ -106,7 +109,7 @@ export interface EntityRegistryTableProps {
   batchProgress?: BatchResearchProgress;
   onRetryResearch?: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
-  onOpenCounselReview?: (entityId: string) => void;
+  onOpenCounselReview?: (entityId: string, entity?: any) => void;
   onOpenRightsModal?: (entityId: string, entityName: string) => void;
   onOpenPlaceholderModal?: (entityId: string, entityName: string, entityCategory: string) => void;
   onOpenComparison?: (entityId: string) => void;
@@ -237,7 +240,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
             <h3 style={{ fontSize: '1rem', color: 'var(--accent-cyan)', margin: 0 }}>
-              Clearance Items ("Clear Once, Recognize Everywhere")
+              Clearance Items
             </h3>
             {onAddItem && (
               <button
@@ -285,7 +288,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                 </span>
               </button>
             )}
-            {onEvaluateBatch && pendingEntities.length === 0 && (
+            {onEvaluateBatch && entities.length > 0 && !isEvaluating && !batchProgress?.isActive && pendingEntities.length === 0 && (
               <span
                 style={{
                   fontSize: '0.75rem',
@@ -376,14 +379,16 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
       <div
         style={{
           display: 'flex',
-          gap: '12px',
+          gap: '8px',
           flexWrap: 'wrap',
           alignItems: 'center',
           background: 'rgba(255,255,255,0.02)',
           border: '1px solid var(--border-color)',
           borderRadius: '8px',
-          padding: '10px 12px',
+          padding: '8px 10px',
           marginBottom: '16px',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
         }}
       >
         {/* Category Selector */}
@@ -437,7 +442,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
         </div>
 
         {/* Scene Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '100%' }}>
           <label htmlFor="filter-scene" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Scene:</label>
           <select
             id="filter-scene"
@@ -451,7 +456,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
               color: 'var(--text-main)',
               border: '1px solid var(--border-color)',
               fontSize: '0.75rem',
-              maxWidth: '220px',
+              maxWidth: '160px',
             }}
           >
             <option value="ALL">All Scenes</option>
@@ -692,7 +697,9 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             className="btn-secondary touch-target"
                             style={{ fontSize: '0.75rem', padding: '4px 8px' }}
                             onClick={() => {
-                              if (onViewOccurrences) {
+                              if (onOpenCounselReview) {
+                                onOpenCounselReview(e.id, e);
+                              } else if (onViewOccurrences) {
                                 onViewOccurrences(e.id);
                               } else {
                                 onEvaluateClearance(e.id);
@@ -715,7 +722,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             title={`View scene occurrences for ${e.canonicalName}`}
                             aria-label={`View scene occurrences for ${e.canonicalName}`}
                           >
-                            {e.occurrenceCount || 1} {(e.occurrenceCount || 1) === 1 ? 'scene occurrence' : 'scene occurrences'}
+                            {formatOccurrenceCount(e.occurrenceCount ?? e.occurrencesCount ?? 1, e.scenesCount)}
                           </button>
                         )}
 
@@ -855,7 +862,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                                   }}
                                   onClick={() => {
                                     setOpenDropdownEntityId(null);
-                                    onOpenCounselReview(e.id);
+                                    onOpenCounselReview(e.id, e);
                                   }}
                                 >
                                   <ScaleIcon size={12} /> Counsel Review & Override

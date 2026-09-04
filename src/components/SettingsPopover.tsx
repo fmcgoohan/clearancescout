@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SettingsIcon, LockIcon, ZapIcon, XIcon } from './icons/Icons';
+import { UserRole } from '../types/collaboration.js';
+import { RoleWorkspaceSwitcher } from './RoleWorkspaceSwitcher.js';
 
 interface SettingsPopoverProps {
   hasTokenConfigured: boolean;
@@ -16,6 +18,8 @@ interface SettingsPopoverProps {
   onTogglePortfolio?: () => void;
   appViewMode?: 'WORKSPACE' | 'PORTFOLIO';
   isExporting?: boolean;
+  currentUserRole?: UserRole;
+  onRoleChange?: (role: UserRole) => void;
 }
 
 export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
@@ -33,6 +37,8 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
   onTogglePortfolio,
   appViewMode = 'WORKSPACE',
   isExporting = false,
+  currentUserRole,
+  onRoleChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -135,6 +141,18 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
               <XIcon size={16} />
             </button>
           </div>
+
+          {/* Workspace Perspective Option */}
+          {currentUserRole && onRoleChange && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingBottom: '8px', borderBottom: '1px solid var(--border-color)' }}>
+              <RoleWorkspaceSwitcher
+                currentRole={currentUserRole}
+                onRoleChange={onRoleChange}
+                selectId="settings-perspective-select"
+                hideLabel={false}
+              />
+            </div>
+          )}
 
           {/* Demo Token Option */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

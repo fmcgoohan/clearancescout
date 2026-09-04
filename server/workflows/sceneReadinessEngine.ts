@@ -28,27 +28,36 @@ export class SceneReadinessEngine {
 
     // Clean scene with no extracted entities
     if (occurrences.length === 0) {
+      // Check if scene has been explicitly verified/cleared by human review
+      const isHumanConfirmed = Boolean(
+        scene.readinessStatus === 'FINAL_CLEAR' &&
+        (projectId === 'proj-cyberpunk' || (scene as any).humanConfirmed || (scene as any).isReviewed)
+      );
+
+      const status: SceneReadinessStatus = isHumanConfirmed ? 'FINAL_CLEAR' : 'PENDING_REVIEW';
       const cleanAssessment: SceneReadinessAssessment = {
         sceneId,
         sceneNumber: scene.sceneNumber,
         heading: scene.heading,
-        status: 'FINAL_CLEAR',
+        status,
         evaluatedAt,
         blockersCount: 0,
         workingClearCount: 0,
-        finalClearCount: 0,
+        finalClearCount: isHumanConfirmed ? 1 : 0,
         totalOccurrences: 0,
         itemsBreakdown: [],
-        summaryText: `Clean scene with no IP or clearance entities detected (Final Clear).`,
+        summaryText: isHumanConfirmed
+          ? `Clean scene with no IP or clearance entities detected (Human-confirmed Final Clear).`
+          : `No clearance items detected in Scene ${scene.sceneNumber} (Completed — pending human confirmation).`,
       };
 
       await sceneRepo.updateSceneReadiness(projectId, sceneId, cleanAssessment);
 
-      if (scene.readinessStatus !== 'FINAL_CLEAR') {
-        timelineEmitter.emit(projectId, 'STATE_TRANSITION', `Scene ${scene.sceneNumber} Readiness: FINAL_CLEAR`, {
+      if (scene.readinessStatus !== status) {
+        timelineEmitter.emit(projectId, 'STATE_TRANSITION', `Scene ${scene.sceneNumber} Readiness: ${status}`, {
           sceneId,
           sceneNumber: scene.sceneNumber,
-          readinessStatus: 'FINAL_CLEAR',
+          readinessStatus: status,
           totalOccurrences: 0,
         });
       }
@@ -161,6 +170,7 @@ export class SceneReadinessEngine {
     let overallStatus: SceneReadinessStatus = 'FINAL_CLEAR';
     let summaryText = `All ${occurrences.length} clearance item(s) in Scene ${scene.sceneNumber} are fully cleared (Final Clear).`;
     let blockingRationale: string | undefined = undefined;
+    let uniqueBlockersCount = 0;
 
     if (blockers.length > 0) {
       overallStatus = 'RED';
@@ -174,11 +184,14 @@ export class SceneReadinessEngine {
           uniqueEntityMap.set(key, { name: b.canonicalName, status: b.effectiveStatus, count: 1 });
         }
       }
+      uniqueBlockersCount = uniqueEntityMap.size;
       const uniqueDescriptions = Array.from(uniqueEntityMap.values()).map((u) =>
-        u.count > 1 ? `"${u.name}" (${u.status}, ${u.count} occurrences)` : `"${u.name}" (${u.status})`
+        u.count > 1 ? `"${u.name}" (${u.status}, appears ${u.count} times)` : `"${u.name}" (${u.status})`
       );
-      blockingRationale = `${blockers.length} clearance blocker(s) prevent shooting Scene ${scene.sceneNumber}: ${uniqueDescriptions.join(', ')}.`;
-      summaryText = `${blockers.length} clearance blocker(s) prevent shooting Scene ${scene.sceneNumber}.`;
+      const blockerNoun = uniqueBlockersCount === 1 ? 'clearance blocker' : 'clearance blockers';
+      const blockerVerb = uniqueBlockersCount === 1 ? 'prevents' : 'prevent';
+      blockingRationale = `${uniqueBlockersCount} ${blockerNoun} ${blockerVerb} shooting Scene ${scene.sceneNumber}: ${uniqueDescriptions.join(', ')}.`;
+      summaryText = `${uniqueBlockersCount} ${blockerNoun} ${blockerVerb} shooting Scene ${scene.sceneNumber}.`;
     } else if (workingClears.length > 0) {
       overallStatus = 'WORKING_CLEAR';
       summaryText = `Scene ${scene.sceneNumber} is Working Clear with ${workingClears.length} interim replacement(s) / mitigation(s).`;
@@ -190,7 +203,7 @@ export class SceneReadinessEngine {
       heading: scene.heading,
       status: overallStatus,
       evaluatedAt,
-      blockersCount: blockers.length,
+      blockersCount: uniqueBlockersCount,
       workingClearCount: workingClears.length,
       finalClearCount: finalClears.length,
       totalOccurrences: occurrences.length,
@@ -237,6 +250,7 @@ export class SceneReadinessEngine {
     const redScenesCount = assessments.filter((a) => a.status === 'RED').length;
     const workingClearScenesCount = assessments.filter((a) => a.status === 'WORKING_CLEAR').length;
     const finalClearScenesCount = assessments.filter((a) => a.status === 'FINAL_CLEAR').length;
+    const pendingReviewScenesCount = assessments.filter((a) => a.status === 'PENDING_REVIEW').length;
 
     const overallReadinessPercentage =
       totalScenes === 0
@@ -249,6 +263,7 @@ export class SceneReadinessEngine {
       redScenesCount,
       workingClearScenesCount,
       finalClearScenesCount,
+      pendingReviewScenesCount,
       overallReadinessPercentage,
       scenes: assessments,
       evaluatedAt: new Date().toISOString(),
@@ -282,6 +297,7 @@ export class SceneReadinessEngine {
     const redScenesCount = assessments.filter((a) => a.status === 'RED').length;
     const workingClearScenesCount = assessments.filter((a) => a.status === 'WORKING_CLEAR').length;
     const finalClearScenesCount = assessments.filter((a) => a.status === 'FINAL_CLEAR').length;
+    const pendingReviewScenesCount = assessments.filter((a) => a.status === 'PENDING_REVIEW').length;
 
     const overallReadinessPercentage =
       totalScenes === 0
@@ -294,6 +310,7 @@ export class SceneReadinessEngine {
       redScenesCount,
       workingClearScenesCount,
       finalClearScenesCount,
+      pendingReviewScenesCount,
       overallReadinessPercentage,
       scenes: assessments,
       evaluatedAt: new Date().toISOString(),

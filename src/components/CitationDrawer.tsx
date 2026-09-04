@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { apiFetch } from '../utils/apiClient.js';
-import { formatStatus } from '../utils/formatters.js';
+import { formatStatus, formatOccurrenceCount } from '../utils/formatters.js';
 import { useModalFocus } from '../hooks/useModalFocus.js';
 import {
   SearchIcon,
@@ -34,6 +34,8 @@ interface CitationDrawerProps {
   entityName: string;
   rationale?: string;
   currentStatus?: string;
+  occurrenceCount?: number;
+  scenesCount?: number;
   isOverridden?: boolean;
   latestOverride?: {
     overrideStatus: string;
@@ -55,7 +57,9 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
   onClose,
   entityName,
   rationale,
-  currentStatus = 'ACTION_REQUIRED',
+  currentStatus = 'NO_ISSUE_SURFACED',
+  occurrenceCount,
+  scenesCount,
   isOverridden = false,
   latestOverride,
   executionMode = 'DEMO_MODE',
@@ -160,6 +164,7 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
     <aside
       ref={containerRef}
       tabIndex={-1}
+      data-testid="citation-drawer"
       className="glass-panel drawer-responsive"
       role="dialog"
       aria-modal="true"
@@ -203,6 +208,21 @@ export const CitationDrawer: React.FC<CitationDrawerProps> = ({
             <span className={`badge badge-${currentStatus}`}>
               {formatStatus(currentStatus)}
             </span>
+            {occurrenceCount !== undefined && occurrenceCount > 0 && (
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border-color)',
+                  fontWeight: 600,
+                }}
+              >
+                {formatOccurrenceCount(occurrenceCount, scenesCount)}
+              </span>
+            )}
             {isOverridden && (
               <span
                 style={{

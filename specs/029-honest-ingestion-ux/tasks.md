@@ -84,3 +84,14 @@
 - [x] T030 Mirror assertions in tests/repro_live.js for live Cloud Run verification
 - [x] T031 Run local Playwright verification suite (node tests/repro_local.js) and paste raw stdout
 - [x] T032 Verify build with npm run build
+
+---
+
+## Phase 8: Convergence (Defects 1–5 Remediation)
+
+- [x] T033 [P1-375-Overflow] Fix document 375px overflow at the layout level in src/components/Header.tsx, src/App.tsx, and src/pages/WorkspacePage.tsx (brand identity and primary action visible; secondary actions fold into accessible overflow menu; nav tabs scroll in isolated region; no overflow-x:hidden hack; document.scrollWidth <= clientWidth across 320/375/390/420; 44px targets; focus visible; 200%/400% zoom) (FR-025)
+- [x] T034 [P1-Coors-Occurrences] Reconcile Coors Light occurrences (6 occurrences across 3 scenes for 1 canonical item) in server/agents/ScriptParserAgent.ts, src/components/EntityRegistryTable.tsx, src/components/CitationDrawer.tsx, and binder export (tests: 1/1, many/1, many/many, 0) (FR-026)
+- [x] T035 [P2-Blocker-Deduplication] Canonical entity blocker de-duplication in server/workflows/sceneReadinessEngine.ts and client readiness views (unique unresolved item = 1 blocker; "appears N times" scene copy; zero double-counting; reconciliation tests) (FR-027)
+- [x] T036 [P2-Production-Cards] Accessible production switcher cards in src/components/ProjectListModal.tsx (native button elements with accessible name=title; aria-selected state; Enter/Space support; visible focus ring; focus active production heading after switch; isolation preserved) (FR-028)
+- [x] T037 [P3-Zero-Item-Scenes] Explicit zero-item scene review & readiness contract in server/workflows/sceneReadinessEngine.ts, src/types/, and binder export (distinguish PENDING_REVIEW / NO_CANDIDATES_DETECTED from human-confirmed FINAL_CLEAR; unreviewed zero-item scenes not shooting ready) (FR-029)
+- [x] T038 [Verification] Run focused unit tests and comprehensive local Playwright suite on localhost:8088 covering 375 layout, Coors 6 across 3, blocker wording, keyboard project cards, and zero-item readiness states

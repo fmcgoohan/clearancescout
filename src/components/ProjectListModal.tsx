@@ -428,15 +428,44 @@ export function ProjectListModal({
                       const badge = getTypeBadge(proj.projectType);
                       const isActive = proj.id === activeProjectId;
                       return (
-                        <div
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={isActive}
+                          aria-label={`${proj.title}${isActive ? ' (Active Workspace)' : ''}`}
                           key={proj.id}
                           data-project-id={proj.id}
                           data-active-workspace={isActive ? 'true' : 'false'}
                           onClick={() => {
                             onSelectProject(proj.id);
                             onClose();
+                            setTimeout(() => {
+                              const heading = document.getElementById('workspace-production-heading') ||
+                                              document.querySelector('[data-testid="workspace-project-title"]') ||
+                                              document.querySelector('h1, h2');
+                              if (heading instanceof HTMLElement) {
+                                heading.focus();
+                              }
+                            }, 50);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              onSelectProject(proj.id);
+                              onClose();
+                              setTimeout(() => {
+                                const heading = document.getElementById('workspace-production-heading') ||
+                                                document.querySelector('[data-testid="workspace-project-title"]') ||
+                                                document.querySelector('h1, h2');
+                                if (heading instanceof HTMLElement) {
+                                  heading.focus();
+                                }
+                              }, 50);
+                            }
                           }}
                           style={{
+                            width: '100%',
+                            textAlign: 'left',
                             padding: '16px 20px',
                             borderRadius: '10px',
                             background: isActive ? 'rgba(56, 189, 248, 0.1)' : 'rgba(0,0,0,0.25)',
@@ -447,8 +476,10 @@ export function ProjectListModal({
                             alignItems: 'center',
                             transition: 'all 0.2s ease',
                             gap: '16px',
+                            color: 'inherit',
+                            fontFamily: 'inherit',
                           }}
-                          className="touch-target"
+                          className="touch-target project-select-card"
                         >
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
@@ -489,7 +520,7 @@ export function ProjectListModal({
                             {proj.entityCount || 0} Total Entities
                           </div>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

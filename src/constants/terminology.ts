@@ -45,7 +45,7 @@ export const TERMINOLOGY = {
 
   // 7. UX Redesign Operator Domain Labels
   CLEARANCE_ITEMS_LABEL: 'Clearance Items',
-  CLEARANCE_ITEMS_HEADER: 'Clearance Items ("Clear Once, Recognize Everywhere")',
+  CLEARANCE_ITEMS_HEADER: 'Clearance Items',
   RESEARCH_ACTION_LABEL: 'Research',
   RESEARCH_EVIDENCE_LABEL: 'Verify Evidence',
   SCREENPLAY_INTAKE_LABEL: 'Screenplay Intake & Clearance',

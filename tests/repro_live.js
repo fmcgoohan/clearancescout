@@ -11,6 +11,8 @@ async function runLiveVerification() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
 
+  let coorsScenarioProjectId = null;
+
   try {
     // 1. Initial Page Load & Set Demo Token
     console.log('[Step 1] Navigating to target URL and configuring demo token...');
@@ -340,9 +342,12 @@ async function runLiveVerification() {
     await newProdBtnG.click();
     await page.waitForSelector('[data-testid="create-production-submit-btn"]', { timeout: 5000 });
     await page.fill('#new-prod-title', 'Mountain Refuge Live QA');
+    await page.fill('#new-prod-studio', 'Rockies Cinema');
     await page.click('[data-testid="create-production-submit-btn"]');
     await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(1000);
+    coorsScenarioProjectId = await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
+    console.log(`  Captured Mountain Refuge Project ID: ${coorsScenarioProjectId}`);
 
     // Initial Quota check
     const initialQuotaUsed = await page.$eval('[data-testid="quota-used-display"]', el => el.innerText.trim()).catch(() => '0');
@@ -360,9 +365,8 @@ async function runLiveVerification() {
 
     const fileInputG1 = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 5000 });
     await fileInputG1.setInputFiles(imageOnlyPdfPath);
-    await page.waitForTimeout(2000);
 
-    const imgWarnings = await page.waitForSelector('[data-testid="extraction-preview-warnings"]', { timeout: 5000 });
+    const imgWarnings = await page.waitForSelector('[data-testid="extraction-preview-warnings"]', { timeout: 15000 });
     const imgWarnText = await imgWarnings.innerText();
     const imgConfirmBtn = await page.$('[data-testid="btn-confirm-ingestion"]');
     const isImgDisabled = await imgConfirmBtn.getAttribute('disabled');
@@ -375,8 +379,10 @@ async function runLiveVerification() {
     }
 
     // Cancel modal
-    const cancelModalBtnG1 = await page.$('button[aria-label="Close upload dialog"], button:has-text("Cancel")');
-    await cancelModalBtnG1.click();
+    const cancelModalBtnG1 = await page.$('button[aria-label="Close modal"], button[aria-label="Close dialog"], button:has-text("Cancel")');
+    if (cancelModalBtnG1) await cancelModalBtnG1.click();
+    else await page.keyboard.press('Escape');
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(500);
 
     // 3. Negative Test: Corrupted / Malformed PDF
@@ -387,9 +393,8 @@ async function runLiveVerification() {
 
     const fileInputG2 = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 5000 });
     await fileInputG2.setInputFiles(malformedPdfPath);
-    await page.waitForTimeout(2000);
 
-    const malWarnings = await page.waitForSelector('[data-testid="extraction-preview-warnings"]', { timeout: 5000 });
+    const malWarnings = await page.waitForSelector('[data-testid="extraction-preview-warnings"]', { timeout: 15000 });
     const malWarnText = await malWarnings.innerText();
     const malConfirmBtn = await page.$('[data-testid="btn-confirm-ingestion"]');
     const isMalDisabled = await malConfirmBtn.getAttribute('disabled');
@@ -402,8 +407,10 @@ async function runLiveVerification() {
     }
 
     // Cancel modal
-    const cancelModalBtnG2 = await page.$('button[aria-label="Close upload dialog"], button:has-text("Cancel")');
-    await cancelModalBtnG2.click();
+    const cancelModalBtnG2 = await page.$('button[aria-label="Close modal"], button[aria-label="Close dialog"], button:has-text("Cancel")');
+    if (cancelModalBtnG2) await cancelModalBtnG2.click();
+    else await page.keyboard.press('Escape');
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(500);
 
     // 4. Positive Test: Real 4-Page Coors Light Screenplay PDF
@@ -414,9 +421,8 @@ async function runLiveVerification() {
 
     const fileInputG3 = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 5000 });
     await fileInputG3.setInputFiles(coorsPdfPath);
-    await page.waitForTimeout(2500);
 
-    const previewCard = await page.waitForSelector('[data-testid="extraction-preview-card"]', { timeout: 5000 });
+    const previewCard = await page.waitForSelector('[data-testid="extraction-preview-card"]', { timeout: 15000 });
     const previewText = await previewCard.innerText();
     console.log(`Coors PDF Preview Card:\n${previewText}`);
 
@@ -442,14 +448,15 @@ async function runLiveVerification() {
     // Confirm Ingestion
     console.log('Clicking "Confirm Ingestion & Review"...');
     await coorsConfirmBtn.click();
-    await page.waitForTimeout(3000);
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 25000 }).catch(() => {});
+    await page.waitForTimeout(1000);
 
     // Assert Ingested Workspace State
     const coorsSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
     console.log(`Workspace Summary after Coors Ingestion: "${coorsSummary}"`);
 
     // Verify Coors Light entity in table / registry
-    const registryTable = await page.waitForSelector('[data-testid="entity-registry-table"], table', { timeout: 5000 });
+    const registryTable = await page.waitForSelector('[data-testid="entity-registry-table"], table', { timeout: 15000 });
     const registryContent = await registryTable.innerText();
     console.log(`Registry Table Content Preview:\n${registryContent.slice(0, 300)}...`);
 
@@ -626,7 +633,184 @@ async function runLiveVerification() {
     console.log('Mobile Sub-44px Touch Targets Count: ' + smallTargetsCount);
     console.log("Scenario J (Mobile 375px Header <=64px & Card Layout): PASS");
 
-    console.log('\n=== LIVE PLAYWRIGHT VERIFICATION AUDIT COMPLETE: ALL PASS (A–J) ===');
+    // =========================================================================
+    // SCENARIO K: CONVERGENCE DEFECTS AUDIT (FR-025 – FR-029)
+    // =========================================================================
+    console.log('\n--- SCENARIO K: CONVERGENCE DEFECTS AUDIT (FR-025 - FR-029) ---');
+
+    // 1. Defect 1: Responsive Viewport Zero-Overflow Audit (FR-025)
+    console.log('Testing Defect 1: Zero layout overflow across viewports...');
+    for (const vpWidth of [320, 375, 390, 420, 768, 1280]) {
+      await page.setViewportSize({ width: vpWidth, height: 800 });
+      await page.goto(`${LIVE_URL}?tab=overview`, { waitUntil: "networkidle" });
+      await page.waitForTimeout(300);
+      const sWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      const cWidth = await page.evaluate(() => document.documentElement.clientWidth);
+      console.log(`  Viewport ${vpWidth}px -> scrollWidth: ${sWidth} | clientWidth: ${cWidth} | ${sWidth <= cWidth ? 'PASS' : 'FAIL'}`);
+      if (sWidth > cWidth) {
+        console.error(`SCENARIO K FAIL: Viewport ${vpWidth}px has horizontal overflow! (${sWidth} > ${cWidth})`);
+        process.exit(1);
+      }
+    }
+
+    // 2. Defect 4: Accessible Production Cards (FR-028)
+    console.log('Testing Defect 4: Accessible production selection cards & keyboard navigation...');
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(`${LIVE_URL}?tab=clearance`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(500);
+
+    const switchBtn = await page.waitForSelector('[data-testid="header-switch-project-btn"]');
+    await switchBtn.click();
+    await page.waitForSelector('[role="dialog"], [aria-modal="true"]', { timeout: 5000 });
+
+    const cardButton = await page.waitForSelector('button.project-select-card[role="option"]');
+    const cardTagName = await cardButton.evaluate(el => el.tagName);
+    const cardRole = await cardButton.getAttribute('role');
+    const cardAriaSelected = await cardButton.getAttribute('aria-selected');
+    console.log(`  Project Card Element: <${cardTagName.toLowerCase()}> with role="${cardRole}", aria-selected="${cardAriaSelected}"`);
+
+    if (cardTagName !== 'BUTTON' || cardRole !== 'option' || cardAriaSelected === null) {
+      console.error('SCENARIO K FAIL: Project card is not an accessible native button with role="option" and aria-selected!');
+      process.exit(1);
+    }
+
+    // Activate via keyboard Enter
+    await page.locator('button.project-select-card[role="option"]').first().focus();
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(500);
+
+    const focusedHeading = await page.evaluate(() => {
+      const el = document.activeElement;
+      return el ? { tag: el.tagName, id: el.id, text: el.innerText } : null;
+    });
+    console.log(`  Focused element after project switch:`, focusedHeading);
+
+    // 3. Defect 3: Blocker Deduplication & Grammar (FR-027)
+    console.log('Testing Defect 3: Unique blocker deduplication & singular/plural grammar...');
+    // Switch to Mountain Refuge (Coors Light project)
+    await page.locator('[data-testid="header-switch-project-btn"]').click();
+    await page.waitForSelector('button.project-select-card', { timeout: 5000 });
+    if (coorsScenarioProjectId) {
+      await page.locator(`button.project-select-card[data-project-id="${coorsScenarioProjectId}"]`).click();
+    } else {
+      await page.locator('button.project-select-card:has-text("Mountain Refuge")').first().click();
+    }
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(1000);
+
+    const activeCoorsId = coorsScenarioProjectId || await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
+    const coorsProjectScenes = await page.evaluate(async ({ pid, token }) => {
+      const headers = {};
+      if (token) headers['x-demo-token'] = token;
+      const res = await fetch(`/api/projects/${pid}/scenes`, { headers });
+      return res.json();
+    }, { pid: activeCoorsId, token: DEMO_TOKEN });
+
+    for (const sc of coorsProjectScenes) {
+      const evalRes = await page.evaluate(async ({ pid, sid, token }) => {
+        const headers = {};
+        if (token) headers['x-demo-token'] = token;
+        const res = await fetch(`/api/projects/${pid}/scenes/${sid}/readiness/evaluate`, { method: 'POST', headers });
+        return res.json();
+      }, { pid: activeCoorsId, sid: sc.id, token: DEMO_TOKEN });
+      console.log(`  Scene ${sc.sceneNumber} Readiness: status=${evalRes.status}, blockersCount=${evalRes.blockersCount}, occurrences=${evalRes.totalOccurrences}`);
+      console.log(`    Rationale: "${evalRes.blockingRationale}"`);
+      if (evalRes.blockersCount !== 1) {
+        console.error(`SCENARIO K FAIL: Expected unique blockersCount=1, got ${evalRes.blockersCount}!`);
+        process.exit(1);
+      }
+      if (!evalRes.blockingRationale?.includes('1 clearance blocker prevents shooting Scene')) {
+        console.error(`SCENARIO K FAIL: Grammar mismatch! Expected "1 clearance blocker prevents shooting Scene", got "${evalRes.blockingRationale}"`);
+        process.exit(1);
+      }
+    }
+
+    // 4. Defect 2: Coors Light Occurrences (FR-026)
+    console.log('Testing Defect 2: Coors Light occurrence count formatting (6 across 3)...');
+    const coorsRow = await page.waitForSelector('tr:has-text("Coors Light"), [data-entity-row]:has-text("Coors Light")', { timeout: 5000 });
+    const coorsRowText = await coorsRow.innerText();
+    console.log(`  Coors Light Row Text: "${coorsRowText.replace(/\n/g, ' ')}"`);
+    if (!coorsRowText.includes('6 occurrences across 3 scenes')) {
+      console.error(`SCENARIO K FAIL: Expected "6 occurrences across 3 scenes", got "${coorsRowText}"!`);
+      process.exit(1);
+    }
+
+    // Open dossier drawer and verify badge
+    const evidenceBtn = await coorsRow.$('button:has-text("View Evidence")');
+    if (evidenceBtn) {
+      await evidenceBtn.click();
+    } else {
+      const moreBtn = await coorsRow.$('button[title="More actions"]');
+      if (moreBtn) {
+        await moreBtn.click();
+        await page.waitForTimeout(300);
+        const menuEvidenceBtn = await page.waitForSelector('button[role="menuitem"]:has-text("Counsel Review"), button[role="menuitem"]:has-text("View Evidence")', { timeout: 5000 });
+        await menuEvidenceBtn.click();
+      }
+    }
+    await page.waitForSelector('[data-testid="citation-drawer"]', { timeout: 5000 });
+    await page.waitForFunction(() => {
+      const drawer = document.querySelector('[data-testid="citation-drawer"]');
+      return drawer && drawer.innerText.includes('occurrences across');
+    }, { timeout: 5000 }).catch(() => {});
+    const drawerContent = await page.$eval('[data-testid="citation-drawer"]', el => el.innerText.replace(/\n/g, ' '));
+    console.log(`  Dossier Occurrence Badge: "${drawerContent.includes('6 occurrences across 3 scenes') ? '6 occurrences across 3 scenes' : 'Missing'}"`);
+    if (!drawerContent.includes('6 occurrences across 3 scenes')) {
+      console.error('SCENARIO K FAIL: Dossier drawer missing "6 occurrences across 3 scenes" badge!');
+      process.exit(1);
+    }
+    const closeDrawerBtn = await page.$('button[aria-label="Close research drawer"], button[aria-label="Close"]');
+    if (closeDrawerBtn) await closeDrawerBtn.click();
+    else await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+
+    // 5. Defect 5: Zero-Item Scene Review & Status Contract (FR-029)
+    console.log('Testing Defect 5: Zero-item scene review status contract (PENDING_REVIEW)...');
+    const zeroItemProject = await page.evaluate(async (token) => {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['x-demo-token'] = token;
+      const projRes = await fetch('/api/projects', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          title: 'Zero Item Audit Film',
+          productionCompany: 'Empty Space Prods',
+          projectType: 'Movie',
+          executionMode: 'DEMO_MODE',
+        }),
+      });
+      const proj = await projRes.json();
+      const scriptRes = await fetch(`/api/projects/${proj.id}/script`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          scriptText: 'INT. EMPTY OBSERVATORY - NIGHT\nSilence fills the cold dome. A lone telescope points toward the stars.\n',
+          format: 'PLAINTEXT',
+        }),
+      });
+      const scriptData = await scriptRes.json();
+      const readinessRes = await fetch(`/api/projects/${proj.id}/scenes/readiness`, { headers });
+      const readiness = await readinessRes.json();
+      return { proj, scriptData, readiness };
+    }, DEMO_TOKEN);
+
+    console.log(`  Zero-Item Project Readiness Status: ${zeroItemProject.readiness?.scenes?.[0]?.status}`);
+    console.log(`  Zero-Item Pending Review Count: ${zeroItemProject.readiness?.pendingReviewScenesCount}`);
+    console.log(`  Zero-Item Final Clear Count: ${zeroItemProject.readiness?.finalClearScenesCount}`);
+
+    if (zeroItemProject.readiness?.scenes?.[0]?.status !== 'PENDING_REVIEW') {
+      console.error(`SCENARIO K FAIL: Expected unreviewed zero-item scene status "PENDING_REVIEW", got "${zeroItemProject.readiness?.scenes?.[0]?.status}"!`);
+      process.exit(1);
+    }
+    if (zeroItemProject.readiness?.finalClearScenesCount !== 0) {
+      console.error(`SCENARIO K FAIL: Unreviewed zero-item scene must NOT be counted as Final Clear!`);
+      process.exit(1);
+    }
+
+    console.log('Scenario K (Convergence Defects 1-5 Remediation): PASS');
+
+    console.log('\n=== LIVE PLAYWRIGHT VERIFICATION AUDIT COMPLETE: ALL PASS (A–K) ===');
   } catch (err) {
     console.error('Live verification failed with error:', err);
     process.exit(1);

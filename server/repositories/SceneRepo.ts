@@ -2,7 +2,7 @@ import { getDb } from './firestoreClient.js';
 import { v4 as uuidv4 } from 'uuid';
 import { ClearanceStatus } from './EntityRepo.js';
 
-export type SceneReadinessStatus = 'RED' | 'WORKING_CLEAR' | 'FINAL_CLEAR';
+export type SceneReadinessStatus = 'RED' | 'WORKING_CLEAR' | 'FINAL_CLEAR' | 'PENDING_REVIEW';
 export type ItemReadinessTier = 'BLOCKER' | 'WORKING_CLEAR' | 'FINAL_CLEAR';
 
 export interface SceneItemReadinessDetail {
@@ -46,6 +46,7 @@ export interface ProjectReadinessSummary {
   redScenesCount: number;
   workingClearScenesCount: number;
   finalClearScenesCount: number;
+  pendingReviewScenesCount?: number;
   overallReadinessPercentage: number;
   scenes: SceneReadinessAssessment[];
   evaluatedAt: string;

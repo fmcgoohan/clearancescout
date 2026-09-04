@@ -54,7 +54,7 @@ export interface SceneReadinessDistributionItem {
   sceneId: string;
   sceneNumber: number;
   heading: string;
-  status: 'FINAL_CLEAR' | 'WORKING_CLEAR' | 'RED';
+  status: 'FINAL_CLEAR' | 'WORKING_CLEAR' | 'RED' | 'PENDING_REVIEW';
   blockerCount: number;
   workingCount: number;
   totalOccurrences: number;

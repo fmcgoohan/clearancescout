@@ -51,6 +51,8 @@ export interface CanonicalEntityData {
   // Current-Draft Scoping & Historical Archival (Feature 021)
   activeInCurrentDraft?: boolean;
   occurrencesCount?: number;
+  occurrenceCount?: number;
+  scenesCount?: number;
   isArchivedHistorical?: boolean;
 
   // Counsel Overrides & Cards
@@ -399,7 +401,10 @@ export class EntityRepo {
 
     const occurrences = await this.getAllOccurrences(projectId);
     const enriched = entities.map((ent: CanonicalEntityData) => {
-      const occCount = occurrences.filter((o) => o.canonicalEntityId === ent.id).length;
+      const entOccurrences = occurrences.filter((o) => o.canonicalEntityId === ent.id);
+      const occCount = entOccurrences.length;
+      const uniqueScenes = new Set(entOccurrences.map((o) => o.sceneId).filter(Boolean));
+      const scenesCount = uniqueScenes.size;
       // Invariant: AUTO_EXTRACTED and USER_EDITED entities MUST have >= 1 active occurrence on an existing current-draft scene.
       // MANUALLY_ADDED items remain active as operator-documented entries; USER_EDITED and AUTO_EXTRACTED with 0 occurrences are HISTORICAL_ONLY.
       const isActive = occCount > 0 || ent.origin === 'MANUALLY_ADDED';
@@ -407,6 +412,8 @@ export class EntityRepo {
       return {
         ...ent,
         occurrencesCount: occCount,
+        occurrenceCount: occCount,
+        scenesCount,
         activeInCurrentDraft: isActive,
         isArchivedHistorical: isHistorical,
       };

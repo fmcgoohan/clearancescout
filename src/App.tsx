@@ -68,6 +68,8 @@ export default function App() {
   const [citationEntityName, setCitationEntityName] = useState('');
   const [citationRationale, setCitationRationale] = useState('');
   const [citationStatus, setCitationStatus] = useState<string>('ACTION_REQUIRED');
+  const [citationOccurrenceCount, setCitationOccurrenceCount] = useState<number | undefined>(undefined);
+  const [citationScenesCount, setCitationScenesCount] = useState<number | undefined>(undefined);
   const [isOverridden, setIsOverridden] = useState<boolean>(false);
   const [latestOverride, setLatestOverride] = useState<any>(null);
   const [citations, setCitations] = useState<Citation[]>([]);
@@ -404,13 +406,34 @@ export default function App() {
 
   const refreshProjectQuota = refreshProjectSummary;
 
-  const handleOpenCounselReview = async (entityId: string, sceneId?: string) => {
+  const handleOpenCounselReview = async (entityId: string, sceneId?: string, preloadedEntity?: any) => {
     if (!projectId) return;
     try {
       setSelectedSceneId(sceneId);
-      const [entitiesRes, overridesRes] = await Promise.all([
+      setSelectedEntityId(entityId);
+      if (preloadedEntity) {
+        setCitationEntityName(preloadedEntity.canonicalName);
+        setCitationRationale(preloadedEntity.description || 'Reviewing clearance context.');
+        setCitationOccurrenceCount(preloadedEntity.occurrenceCount ?? preloadedEntity.occurrencesCount);
+        setCitationScenesCount(preloadedEntity.scenesCount);
+        setCitationStatus(preloadedEntity.overallClearanceStatus || 'NO_ISSUE_SURFACED');
+      }
+      setIsCitationOpen(true);
+
+      // URL Deep Link Sync: update ?entity= without dropping tab
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('entity') !== entityId) {
+          params.set('entity', entityId);
+          const newSearch = params.toString() ? `?${params.toString()}` : window.location.pathname;
+          window.history.replaceState(null, '', newSearch);
+        }
+      } catch (e) {}
+
+      const [entitiesRes, overridesRes, assessRes] = await Promise.all([
         apiFetch(`/api/projects/${projectId}/entities`),
         apiFetch(`/api/projects/${projectId}/entities/${entityId}/overrides`),
+        apiFetch(`/api/projects/${projectId}/entities/${entityId}/assessments`),
       ]);
 
       let ent: any = null;
@@ -425,12 +448,13 @@ export default function App() {
         entityOverrides = ovrData.overrides || [];
       }
 
+      let applicableOverride: any = null;
       if (ent) {
-        setSelectedEntityId(ent.id);
         setCitationEntityName(ent.canonicalName);
         setCitationRationale(ent.description || 'Reviewing clearance context.');
+        setCitationOccurrenceCount(ent.occurrenceCount ?? ent.occurrencesCount);
+        setCitationScenesCount(ent.scenesCount);
 
-        // Find applicable override: scene-specific first, then canonical override
         const sceneOverride = sceneId
           ? entityOverrides
               .filter((o: any) => o.sceneId === sceneId)
@@ -441,7 +465,7 @@ export default function App() {
           .filter((o: any) => !o.sceneId)
           .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
 
-        const applicableOverride = sceneOverride || canonicalOverride || ent.latestOverride || null;
+        applicableOverride = sceneOverride || canonicalOverride || ent.latestOverride || null;
 
         if (applicableOverride) {
           setIsOverridden(true);
@@ -450,7 +474,22 @@ export default function App() {
         } else {
           setIsOverridden(false);
           setLatestOverride(null);
-          setCitationStatus(ent.overallClearanceStatus);
+          setCitationStatus(ent.overallClearanceStatus || 'NO_ISSUE_SURFACED');
+        }
+      }
+
+      // Check existing assessments first to avoid unnecessary slow evaluate call
+      if (assessRes.ok) {
+        const assessData = await assessRes.json();
+        const assessments = Array.isArray(assessData) ? assessData : assessData.assessments || [];
+        const matchingAssess = assessments[0];
+        if (matchingAssess) {
+          setCitations(matchingAssess.citations || []);
+          if (matchingAssess.legalRationale) setCitationRationale(matchingAssess.legalRationale);
+          if (!applicableOverride) {
+            setCitationStatus(matchingAssess.riskStatus || ent?.overallClearanceStatus || 'NO_ISSUE_SURFACED');
+          }
+          return;
         }
       }
 
@@ -465,6 +504,9 @@ export default function App() {
         if (asm) {
           setCitations(asm.citations || []);
           if (asm.legalRationale) setCitationRationale(asm.legalRationale);
+          if (!applicableOverride) {
+            setCitationStatus(asm.riskStatus || ent?.overallClearanceStatus || 'NO_ISSUE_SURFACED');
+          }
         }
         await refreshProjectQuota(projectId);
       } else if (evalRes.status === 401) {
@@ -474,11 +516,52 @@ export default function App() {
         setQuotaError(errData.error || 'Live research quota exceeded for this project.');
         if (errData.quota) setLiveQuota(errData.quota);
       }
-      setIsCitationOpen(true);
     } catch (err) {
       console.error('Error opening counsel review:', err);
     }
   };
+
+  // URL Deep-Linking: Parse ?entity= on load or popstate
+  useEffect(() => {
+    if (!projectId) return;
+
+    const checkUrlEntity = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const entityParam = params.get('entity');
+        if (entityParam) {
+          const res = await apiFetch(`/api/projects/${projectId}/entities`);
+          if (res.ok) {
+            const entities = await res.json();
+            const exists = entities.some((e: any) => e.id === entityParam);
+            if (exists) {
+              handleOpenCounselReview(entityParam);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to parse URL entity param:', e);
+      }
+    };
+
+    checkUrlEntity();
+
+    const handlePopState = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const entityParam = params.get('entity');
+        if (entityParam) {
+          handleOpenCounselReview(entityParam);
+        } else {
+          setIsCitationOpen(false);
+          setSelectedEntityId('');
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [projectId]);
 
   const handleEvaluateClearance = async (entityId: string) => {
     if (!projectId) return;
@@ -625,7 +708,7 @@ export default function App() {
           gap: '12px',
         }}
       >
-        <div className="app-header-brand" style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+        <div className="app-header-brand" style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexShrink: 1 }}>
           <div
             style={{
               width: '32px',
@@ -639,16 +722,17 @@ export default function App() {
               fontWeight: 800,
               fontSize: '0.95rem',
               color: '#ffffff',
+              flexShrink: 0,
             }}
           >
             CS
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flexShrink: 1 }}>
             <button
               data-testid="header-switch-project-btn"
               className="btn-secondary touch-target"
               aria-label="Switch Production Project"
-              style={{ fontSize: '0.78rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '240px' }}
+              style={{ fontSize: '0.78rem', padding: '6px 8px', display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '150px', flexShrink: 1 }}
               onClick={() => setIsProjectModalOpen(true)}
             >
               <span
@@ -658,6 +742,7 @@ export default function App() {
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
+                  maxWidth: '75px',
                 }}
               >
                 {projectTitle || 'Untitled Production Workspace'}
@@ -665,9 +750,9 @@ export default function App() {
               <span
                 data-testid="workspace-project-code"
                 style={{
-                  fontSize: '0.65rem',
+                  fontSize: '0.62rem',
                   fontFamily: 'monospace',
-                  padding: '1px 4px',
+                  padding: '1px 3px',
                   borderRadius: '4px',
                   background: 'rgba(56, 189, 248, 0.15)',
                   color: '#38bdf8',
@@ -685,17 +770,20 @@ export default function App() {
               data-testid="header-new-production-btn"
               className="btn-primary touch-target"
               aria-label="Create New Production"
-              style={{ fontSize: '0.75rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+              style={{ fontSize: '0.75rem', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', flexShrink: 0 }}
               onClick={() => setIsNewProjectModalOpen(true)}
             >
-              + New Production
+              <span className="desktop-only">+ New Production</span>
+              <span className="mobile-only">+ New</span>
             </button>
           </div>
         </div>
 
-        <div className="app-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          {/* Phase 4 Role Perspective Switcher */}
-          <RoleWorkspaceSwitcher currentRole={userRole} onRoleChange={(role) => setUserRole(role)} />
+        <div className="app-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {/* Phase 4 Role Perspective Switcher (Visible on desktop/tablet >=768px) */}
+          <div className="desktop-only">
+            <RoleWorkspaceSwitcher currentRole={userRole} onRoleChange={(role) => setUserRole(role)} />
+          </div>
 
           {/* Phase 4 In-Product Notification Drawer */}
           <NotificationDrawer
@@ -710,7 +798,7 @@ export default function App() {
             }}
           />
 
-          {/* Settings Menu Offloading Secondary Controls */}
+          {/* Settings Menu Offloading Secondary Controls & Perspective on mobile */}
           <SettingsPopover
             hasTokenConfigured={hasTokenConfigured}
             onOpenTokenModal={handleOpenTokenModal}
@@ -726,6 +814,8 @@ export default function App() {
             onTogglePortfolio={() => setAppViewMode(appViewMode === 'WORKSPACE' ? 'PORTFOLIO' : 'WORKSPACE')}
             appViewMode={appViewMode}
             isExporting={exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING'}
+            currentUserRole={userRole}
+            onRoleChange={(role) => setUserRole(role)}
           />
         </div>
       </header>
@@ -811,6 +901,7 @@ export default function App() {
         ) : projectId ? (
           <WorkspacePage
             projectId={projectId}
+            projectTitle={projectTitle}
             isSwitchingProject={isSwitchingProject}
             onEvaluateClearance={handleEvaluateClearance}
             onGenerateReplacement={handleGenerateReplacement}
@@ -896,10 +987,23 @@ export default function App() {
         sceneId={selectedSceneId}
         citations={citations}
         isOpen={isCitationOpen}
-        onClose={() => setIsCitationOpen(false)}
+        onClose={() => {
+          setIsCitationOpen(false);
+          setSelectedEntityId('');
+          try {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('entity')) {
+              params.delete('entity');
+              const newSearch = params.toString() ? `?${params.toString()}` : window.location.pathname;
+              window.history.replaceState(null, '', newSearch);
+            }
+          } catch (e) {}
+        }}
         entityName={citationEntityName}
         rationale={citationRationale}
         currentStatus={citationStatus}
+        occurrenceCount={citationOccurrenceCount}
+        scenesCount={citationScenesCount}
         isOverridden={isOverridden}
         latestOverride={latestOverride}
         executionMode={executionMode}

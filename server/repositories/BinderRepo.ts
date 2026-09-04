@@ -27,6 +27,7 @@ export interface BinderProjectSummary {
   finalClearScenes: number;
   workingClearScenes: number;
   redScenes: number;
+  pendingReviewScenes?: number;
   overallReadinessPercentage: number;
   totalEntities: number;
   clearedCount: number;

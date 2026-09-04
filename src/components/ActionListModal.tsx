@@ -103,7 +103,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
   const targetTaskHeadingRef = React.useRef<HTMLHeadingElement | null>(null);
 
   const { containerRef } = useModalFocus<HTMLDivElement>({
-    isOpen,
+    isOpen: !embedded && isOpen,
     onClose,
     initialFocusRef: targetTaskId ? targetTaskHeadingRef : undefined,
   });

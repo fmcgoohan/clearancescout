@@ -31,10 +31,11 @@ import { TERMINOLOGY } from '../constants/terminology';
 
 interface WorkspacePageProps {
   projectId: string;
+  projectTitle?: string;
   isSwitchingProject?: boolean;
   onEvaluateClearance: (entityId: string) => void;
   onGenerateReplacement: (entityId: string) => void;
-  onOpenCounselReview: (entityId: string, sceneId?: string) => void;
+  onOpenCounselReview: (entityId: string, sceneId?: string, preloadedEntity?: any) => void;
   onExportBinder?: () => void;
   onRefreshProjectSummary?: (snapshot?: any) => void | Promise<void>;
   isEvaluating: boolean;
@@ -44,6 +45,7 @@ interface WorkspacePageProps {
 
 export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   projectId,
+  projectTitle,
   isSwitchingProject = false,
   onEvaluateClearance,
   onGenerateReplacement,
@@ -152,11 +154,6 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
       if (tabParam && ['overview', 'screenplay', 'clearance', 'tasks'].includes(tabParam)) {
         setActiveTab(tabParam as any);
       }
-      const entityParam = params.get('entity');
-      if (entityParam) {
-        setSelectedDetailEntityId(entityParam);
-        setIsDetailModalOpen(true);
-      }
     } catch (e) {
       console.warn('Failed to parse URL query params:', e);
     }
@@ -165,18 +162,29 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      if (activeTab) params.set('tab', activeTab);
-      if (selectedDetailEntityId && isDetailModalOpen) {
-        params.set('entity', selectedDetailEntityId);
-      } else {
-        params.delete('entity');
+      if (activeTab && params.get('tab') !== activeTab) {
+        params.set('tab', activeTab);
+        const newSearch = params.toString() ? `?${params.toString()}` : window.location.pathname;
+        window.history.replaceState(null, '', newSearch);
       }
-      const newSearch = params.toString() ? `?${params.toString()}` : window.location.pathname;
-      window.history.replaceState(null, '', newSearch);
     } catch (e) {
       // Ignore in non-browser environments
     }
-  }, [activeTab, selectedDetailEntityId, isDetailModalOpen]);
+  }, [activeTab]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab');
+        if (tabParam && ['overview', 'screenplay', 'clearance', 'tasks'].includes(tabParam)) {
+          setActiveTab(tabParam as any);
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Ingestion feedback toast banner (Feature 021)
   const [ingestionToast, setIngestionToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
@@ -514,6 +522,25 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         </div>
       ) : (
         <>
+          {/* Active Production Workspace Heading for Accessibility Focus */}
+          <h1
+            id="workspace-production-heading"
+            tabIndex={-1}
+            style={{
+              position: 'absolute',
+              width: '1px',
+              height: '1px',
+              padding: 0,
+              margin: '-1px',
+              overflow: 'hidden',
+              clip: 'rect(0, 0, 0, 0)',
+              whiteSpace: 'nowrap',
+              border: 0,
+            }}
+          >
+            {projectTitle || 'Production Clearance Workspace'}
+          </h1>
+
           {/* Workspace Section Navigation Bar (User Story 17) */}
           <div
             style={{
@@ -523,6 +550,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               borderBottom: '1px solid var(--border-color)',
               paddingBottom: '12px',
               marginBottom: '4px',
+              maxWidth: '100%',
               flexWrap: 'wrap',
               gap: '12px',
             }}
@@ -533,7 +561,12 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               style={{
                 display: 'flex',
                 gap: '8px',
-                flexWrap: 'wrap',
+                overflowX: 'auto',
+                maxWidth: '100%',
+                paddingBottom: '4px',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+                flexShrink: 1,
               }}
             >
               <button
@@ -630,12 +663,15 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                flexWrap: 'wrap',
                 gap: '8px',
                 background: 'rgba(0,0,0,0.3)',
                 padding: '4px 12px',
                 borderRadius: '20px',
                 border: '1px solid var(--border-color)',
                 fontSize: '0.75rem',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
               }}
             >
               <span style={{ color: 'var(--text-muted)' }}>Summary:</span>
@@ -667,183 +703,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             </div>
           </div>
 
-      {/* Screenplay Intake Panel — Contextual & Collapsible on Operational Panels (Section 4) */}
-      {activeTab !== 'screenplay' && scenes.length > 0 && isIntakeCollapsed ? (
-        <div className="glass-panel" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <FileTextIcon size={18} className="text-cyan-400" />
-            <span style={{ fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}>
-              Screenplay Intake: <span style={{ color: 'var(--accent-cyan)' }}>{scenes.length} {pluralize(scenes.length, 'scene', 'scenes')} ingested</span>
-            </span>
-          </div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              className="btn-secondary touch-target"
-              aria-label="Replace Screenplay File"
-              onClick={() => {
-                setUploadModalInitialMode('FILE');
-                setIsUploadModalOpen(true);
-              }}
-              style={{ fontSize: '0.78rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <FilmIcon size={14} />
-              <span>Replace Screenplay</span>
-            </button>
-            <button
-              className="btn-secondary touch-target"
-              aria-label={`Open Department Action & Notification Center (${openActionsCount} Department Tasks)`}
-              onClick={() => setIsActionModalOpen(true)}
-              style={{
-                fontSize: '0.78rem',
-                padding: '6px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                border: openActionsCount > 0 ? '1px solid var(--status-action)' : '1px solid var(--border-color)',
-                color: openActionsCount > 0 ? 'var(--status-action)' : 'var(--text-main)',
-              }}
-            >
-              <FileTextIcon size={14} />
-              <span>Department Tasks ({openActionsCount})</span>
-            </button>
-            <button
-              className="btn-secondary touch-target"
-              aria-label="Open Production Operations Dashboard"
-              onClick={() => setIsDashboardModalOpen(true)}
-              style={{
-                fontSize: '0.78rem',
-                padding: '6px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                borderColor: 'var(--accent-cyan)',
-                color: 'var(--accent-cyan)',
-              }}
-            >
-              <LayersIcon size={14} />
-              <span>Operations Dashboard</span>
-            </button>
-            <button
-              className="btn-secondary touch-target"
-              aria-label="Expand Full Intake Options"
-              aria-expanded={false}
-              onClick={toggleIntakeCollapsed}
-              style={{ fontSize: '0.78rem', padding: '6px 10px', color: 'var(--text-muted)' }}
-            >
-              Intake Options ▼
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="glass-panel responsive-stack" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>
-              Screenplay Intake & Clearance Review
-            </h2>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-              Extract scenes, highlight in-line occurrences, and review legal counsel overrides.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              className="btn-secondary touch-target"
-              aria-label="Load Bundled Fictional Demo Screenplay"
-              onClick={handleLoadSampleScreenplay}
-              disabled={isUploading}
-              style={{
-                borderColor: 'var(--accent-cyan)',
-                color: 'var(--accent-cyan)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <FilmIcon size={16} />
-              <span>Load Sample Screenplay</span>
-            </button>
 
-            <select
-              aria-label="Select screenplay format"
-              value={scriptFormat}
-              onChange={(e) => setScriptFormat(e.target.value as any)}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '6px',
-                background: 'var(--bg-secondary)',
-                color: 'var(--text-main)',
-                border: '1px solid var(--border-color)',
-                fontSize: '0.8rem',
-                minHeight: '38px',
-              }}
-            >
-              <option value="PLAINTEXT">Plaintext (.txt)</option>
-              <option value="FOUNTAIN">Fountain (.fountain)</option>
-              <option value="PDF">Screenplay PDF (.pdf)</option>
-            </select>
-
-            <button
-              className="btn-primary touch-target"
-              aria-label="Upload Screenplay File (.fountain, .txt, .pdf)"
-              onClick={() => {
-                setUploadModalInitialMode('FILE');
-                setIsUploadModalOpen(true);
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <FilmIcon size={16} />
-              <span>Upload Screenplay</span>
-            </button>
-
-            <button
-              className="btn-secondary touch-target"
-              aria-label={`Open Department Action & Notification Center (${openActionsCount} Department Tasks)`}
-              onClick={() => setIsActionModalOpen(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                border: openActionsCount > 0 ? '1px solid var(--status-action)' : '1px solid var(--border-color)',
-                color: openActionsCount > 0 ? 'var(--status-action)' : 'var(--text-main)',
-              }}
-            >
-              <FileTextIcon size={16} />
-              <span>Department Tasks ({openActionsCount})</span>
-            </button>
-
-            <button
-              className="btn-secondary touch-target"
-              aria-label="Open Production Operations Dashboard"
-              onClick={() => setIsDashboardModalOpen(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                borderColor: 'var(--accent-cyan)',
-                color: 'var(--accent-cyan)',
-              }}
-            >
-              <LayersIcon size={16} />
-              <span>Operations Dashboard</span>
-            </button>
-
-            {activeTab !== 'screenplay' && scenes.length > 0 && (
-              <button
-                className="btn-secondary touch-target"
-                aria-label="Collapse Intake Options"
-                aria-expanded={true}
-                onClick={toggleIntakeCollapsed}
-                style={{ fontSize: '0.78rem', padding: '6px 10px', color: 'var(--text-muted)' }}
-              >
-                Intake Options ▲
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Accessible Ingestion Success Toast Banner (Feature 021) */}
       {ingestionToast && (
@@ -1276,7 +1136,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             batchProgress={batchProgress}
             onRetryResearch={handleRetryResearch}
             onGenerateReplacement={onGenerateReplacement}
-            onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
+            onOpenCounselReview={(entityId, ent) => onOpenCounselReview(entityId, selectedSceneId || undefined, ent)}
             onOpenRightsModal={(entityId, entityName) => {
               setRightsEntityId(entityId);
               setRightsEntityName(entityName);
@@ -1309,6 +1169,77 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           tabIndex={0}
           style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
         >
+          {/* Screenplay Intake Toolbar */}
+          <div className="glass-panel" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <FileTextIcon size={18} className="text-cyan-400" />
+              <span style={{ fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                Screenplay Intake: <span style={{ color: 'var(--accent-cyan)' }}>{pluralize(scenes.length, 'scene', 'scenes')} ingested</span>
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select
+                aria-label="Select screenplay format"
+                value={scriptFormat}
+                onChange={(e) => setScriptFormat(e.target.value as any)}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '0.78rem',
+                }}
+              >
+                <option value="PLAINTEXT">Plaintext (.txt)</option>
+                <option value="FOUNTAIN">Fountain (.fountain)</option>
+                <option value="PDF">Screenplay PDF (.pdf)</option>
+              </select>
+              <button
+                className="btn-primary touch-target"
+                aria-label="Upload Screenplay File (.fountain, .txt, .pdf)"
+                onClick={() => {
+                  setUploadModalInitialMode('FILE');
+                  setIsUploadModalOpen(true);
+                }}
+                style={{ fontSize: '0.78rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <FilmIcon size={14} />
+                <span>Upload Screenplay</span>
+              </button>
+              <button
+                className="btn-secondary touch-target"
+                aria-label="Replace Screenplay File"
+                onClick={() => {
+                  setUploadModalInitialMode('FILE');
+                  setIsUploadModalOpen(true);
+                }}
+                style={{ fontSize: '0.78rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <FilmIcon size={14} />
+                <span>Replace Screenplay</span>
+              </button>
+              <button
+                className="btn-secondary touch-target"
+                aria-label="Load Bundled Fictional Demo Screenplay"
+                onClick={handleLoadSampleScreenplay}
+                disabled={isUploading}
+                style={{
+                  fontSize: '0.78rem',
+                  padding: '6px 12px',
+                  borderColor: 'var(--accent-cyan)',
+                  color: 'var(--accent-cyan)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <FilmIcon size={14} />
+                <span>Load Sample Screenplay</span>
+              </button>
+            </div>
+          </div>
+
           <ScriptViewer
             scenes={scenes}
             entities={entities}
@@ -1338,7 +1269,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             batchProgress={batchProgress}
             onRetryResearch={handleRetryResearch}
             onGenerateReplacement={onGenerateReplacement}
-            onOpenCounselReview={(entityId) => onOpenCounselReview(entityId, selectedSceneId || undefined)}
+            onOpenCounselReview={(entityId, ent) => onOpenCounselReview(entityId, selectedSceneId || undefined, ent)}
             onOpenRightsModal={(entityId, entityName) => {
               setRightsEntityId(entityId);
               setRightsEntityName(entityName);
@@ -1413,7 +1344,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         }}
         onOpenCounselReview={(entityId, sceneId) => {
           setIsDetailModalOpen(false);
-          onOpenCounselReview(entityId, sceneId);
+          onOpenCounselReview(entityId, sceneId, entities.find(e => e.id === entityId));
         }}
         onOpenRightsModal={(entityId, entityName) => {
           setIsDetailModalOpen(false);
@@ -1495,7 +1426,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           setIsPlaceholderModalOpen(true);
         }}
         onMitigateOverride={(canonicalEntityId) => {
-          onOpenCounselReview(canonicalEntityId);
+          onOpenCounselReview(canonicalEntityId, undefined, entities.find(e => e.id === canonicalEntityId));
         }}
       />
 

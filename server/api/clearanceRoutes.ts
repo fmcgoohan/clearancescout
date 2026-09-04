@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { clearanceEvaluator } from '../workflows/clearanceEvaluator.js';
 import { overrideRepo } from '../repositories/OverrideRepo.js';
+import { assessmentRepo } from '../repositories/AssessmentRepo.js';
 import { entityRepo, ClearanceStatus } from '../repositories/EntityRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { resolveEffectiveClearanceStatus } from '../workflows/effectiveStatusResolver.js';
@@ -193,6 +194,20 @@ clearanceRouter.get('/projects/:id/entities/:entityId/overrides', async (req: Re
     return res.json({
       canonicalEntityId: entityId,
       overrides,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get Assessments for Entity
+clearanceRouter.get('/projects/:id/entities/:entityId/assessments', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: projectId, entityId } = req.params;
+    const assessments = await assessmentRepo.getAssessmentsByEntity(projectId, entityId);
+    return res.json({
+      canonicalEntityId: entityId,
+      assessments,
     });
   } catch (err) {
     next(err);

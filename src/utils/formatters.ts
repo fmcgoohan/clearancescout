@@ -8,6 +8,19 @@ export function pluralize(count: number, singular: string, plural?: string): str
   return count === 1 ? `1 ${singular}` : `${count} ${p}`;
 }
 
+export function formatOccurrenceCount(occurrencesCount: number = 0, scenesCount?: number): string {
+  if (!occurrencesCount || occurrencesCount === 0) {
+    return '0 occurrences';
+  }
+  if (scenesCount === undefined || scenesCount === null) {
+    return occurrencesCount === 1 ? '1 scene occurrence' : `${occurrencesCount} scene occurrences`;
+  }
+  if (scenesCount <= 1) {
+    return occurrencesCount === 1 ? '1 scene occurrence' : `${occurrencesCount} occurrences in 1 scene`;
+  }
+  return `${occurrencesCount} occurrences across ${scenesCount} scenes`;
+}
+
 export function formatProjectCode(projectId: string | undefined | null, title?: string): string {
   if (!projectId) return 'PRJ-NEON-HORIZON';
   if (projectId === 'proj-default' || (title && title.toLowerCase().includes('neon'))) {
@@ -33,6 +46,8 @@ export function formatStatus(status: string | undefined | null): string {
       return 'No issue surfaced';
     case 'SCRIPT_REVISION_SUPERSEDED':
       return 'Superseded by new script revision';
+    case 'PENDING_REVIEW':
+      return 'Pending review';
     case 'FINAL_CLEAR':
       return 'Final clear';
     case 'WORKING_CLEAR':
