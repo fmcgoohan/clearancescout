@@ -345,7 +345,10 @@ async function runLocalVerification() {
     await page.fill('#new-prod-studio', 'Rockies Cinema');
     await page.click('[data-testid="create-production-submit-btn"]');
     await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => {
+      const pid = localStorage.getItem('clearancescout_active_project_id');
+      return pid && pid !== 'proj-default';
+    }, { timeout: 10000 }).catch(() => {});
     coorsScenarioProjectId = await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
     console.log(`  Captured Mountain Refuge Project ID: ${coorsScenarioProjectId}`);
 
@@ -699,7 +702,7 @@ async function runLocalVerification() {
     // Switch to Mountain Refuge (Coors Light project)
     await page.locator('[data-testid="header-switch-project-btn"]').click();
     await page.waitForSelector('button.project-select-card', { timeout: 5000 });
-    if (coorsScenarioProjectId) {
+    if (coorsScenarioProjectId && coorsScenarioProjectId !== 'proj-default') {
       await page.locator(`button.project-select-card[data-project-id="${coorsScenarioProjectId}"]`).click();
     } else {
       await page.locator('button.project-select-card:has-text("Mountain Refuge")').first().click();
