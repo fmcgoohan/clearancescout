@@ -398,6 +398,12 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
       setUploadProgress(95);
 
       const snapshot = data.snapshot || data;
+      if (snapshot && (!snapshot.entities || snapshot.entities.length === 0) && Array.isArray(data.entities) && data.entities.length > 0) {
+        snapshot.entities = data.entities;
+      }
+      if (snapshot && (!snapshot.scenes || snapshot.scenes.length === 0) && Array.isArray(data.scenes) && data.scenes.length > 0) {
+        snapshot.scenes = data.scenes;
+      }
       const scenesCount = Array.isArray(snapshot?.scenes) ? snapshot.scenes.length : (data.scenesCount || 0);
       const entitiesCount = Array.isArray(snapshot?.entities) ? snapshot.entities.length : (data.entitiesCount || 0);
       const openActionsCount = snapshot?.actionsSummary?.openActions !== undefined ? snapshot.actionsSummary.openActions : (data.openActionsCount || 0);

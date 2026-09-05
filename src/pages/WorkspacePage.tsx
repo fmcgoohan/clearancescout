@@ -230,6 +230,7 @@ Along the heavy steel bulkhead, a weathered warning sign is bolted to the wall: 
 
 Jordan inputs the security code. The hydraulic lock hisses open.`;
 
+  const lastLoadedProjectIdRef = useRef<string | null>(null);
   const activeProjectIdRef = useRef(projectId);
   useEffect(() => {
     activeProjectIdRef.current = projectId;
@@ -238,11 +239,14 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
   const fetchWorkspaceData = async () => {
     if (!projectId) return;
     const targetId = projectId;
+    const isProjectSwitch = lastLoadedProjectIdRef.current !== targetId;
     activeProjectIdRef.current = projectId;
     setIsHydrating(true);
-    setReadinessSummary(null);
-    setScenes([]);
-    setEntities([]);
+    if (isProjectSwitch) {
+      setReadinessSummary(null);
+      setScenes([]);
+      setEntities([]);
+    }
     try {
       const [scenesRes, entitiesRes, readinessRes, actionsRes, snapshotRes] = await Promise.all([
         apiFetch(`/api/projects/${targetId}/scenes`),
@@ -329,6 +333,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       setScenes(mappedScenes);
       setEntities(fetchedEntities);
       setOverrides(fetchedOverrides);
+      lastLoadedProjectIdRef.current = targetId;
 
       if (onRefreshProjectSummary) {
         await Promise.resolve(onRefreshProjectSummary(snapshotData));
@@ -342,7 +347,10 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
   const applyWorkspaceSnapshot = (snapshot: any) => {
     if (!snapshot) return;
-    if (Array.isArray(snapshot.scenes)) {
+    if (projectId) {
+      lastLoadedProjectIdRef.current = projectId;
+    }
+    if (Array.isArray(snapshot.scenes) && snapshot.scenes.length > 0) {
       let readinessMap = new Map<string, any>();
       if (snapshot.readiness?.scenes && Array.isArray(snapshot.readiness.scenes)) {
         snapshot.readiness.scenes.forEach((s: any) => readinessMap.set(s.sceneId, s));
@@ -357,8 +365,13 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       });
       setScenes(mappedScenes);
     }
-    if (Array.isArray(snapshot.entities)) {
-      setEntities(snapshot.entities);
+    const incomingEntities = Array.isArray(snapshot.entities)
+      ? snapshot.entities
+      : Array.isArray(snapshot.canonicalEntities)
+      ? snapshot.canonicalEntities
+      : null;
+    if (incomingEntities && incomingEntities.length > 0) {
+      setEntities(incomingEntities);
     }
     if (Array.isArray(snapshot.overrides)) {
       setOverrides(snapshot.overrides);
@@ -1446,9 +1459,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
           if (snapshot) {
             applyWorkspaceSnapshot(snapshot);
-          } else {
-            await fetchWorkspaceData();
           }
+          await fetchWorkspaceData();
 
           if (onRefreshProjectSummary) {
             await Promise.resolve(onRefreshProjectSummary(snapshot));

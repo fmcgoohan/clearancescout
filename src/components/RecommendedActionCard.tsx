@@ -38,9 +38,9 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
   let badgeColor = 'var(--status-no-issue, #22c55e)';
   let badgeBg = 'rgba(34, 197, 94, 0.12)';
   let handleClick: () => void = () => {};
-  const isEmptyWorkspace = (!hasScreenplay || entities.length === 0);
+  const hasNoScreenplay = !hasScreenplay;
 
-  if (isEmptyWorkspace) {
+  if (hasNoScreenplay) {
     title = 'Upload Screenplay to Begin Clearance';
     rationale = 'Upload a screenplay in PDF, Fountain, or plain text format to extract scenes and detect clearance entities.';
     buttonLabel = 'Upload Screenplay';
@@ -48,6 +48,14 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
     badgeColor = 'var(--accent-cyan, #38bdf8)';
     badgeBg = 'rgba(56, 189, 248, 0.12)';
     handleClick = () => onOpenUploadModal?.();
+  } else if (entities.length === 0) {
+    title = 'Screenplay Ingested — No Clearance Items Detected';
+    rationale = 'The screenplay was parsed successfully. No candidate clearance brands, art, or proprietary items were identified across scenes (Pending Review).';
+    buttonLabel = 'View Screenplay Scenes';
+    ariaLabel = 'View Screenplay Scenes';
+    badgeColor = 'var(--status-review, #f59e0b)';
+    badgeBg = 'rgba(245, 158, 11, 0.12)';
+    handleClick = () => onSelectTab?.('screenplay');
   } else if (blockersCount > 0) {
     const target = actionRequiredItems[0];
     const targetName = target?.canonicalName || 'Uncleared Item';
@@ -169,7 +177,7 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-        {isEmptyWorkspace && onLoadSample && (
+        {hasNoScreenplay && onLoadSample && (
           <button
             type="button"
             data-testid="recommendation-load-sample-btn"
@@ -187,7 +195,7 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
           </button>
         )}
         <button
-          data-testid={isEmptyWorkspace ? 'recommendation-upload-script-btn' : 'recommendation-primary-action-btn'}
+          data-testid={hasNoScreenplay ? 'recommendation-upload-script-btn' : 'recommendation-primary-action-btn'}
           className="btn btn-primary touch-target"
           onClick={handleClick}
           aria-label={ariaLabel}
