@@ -51,6 +51,9 @@ class TimelineBroadcaster {
     const projectClients = this.clients.get(projectId);
     if (projectClients) {
       projectClients.delete(res);
+      if (projectClients.size === 0) {
+        this.clients.delete(projectId);
+      }
     }
   }
 
@@ -83,7 +86,11 @@ class TimelineBroadcaster {
     if (!this.eventHistory.has(projectId)) {
       this.eventHistory.set(projectId, []);
     }
-    this.eventHistory.get(projectId)!.push(event);
+    const history = this.eventHistory.get(projectId)!;
+    history.push(event);
+    if (history.length > 100) {
+      history.shift();
+    }
 
     const projectClients = this.clients.get(projectId);
     if (projectClients) {

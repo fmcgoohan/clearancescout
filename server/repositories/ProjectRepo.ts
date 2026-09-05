@@ -132,6 +132,22 @@ export class ProjectRepo {
         });
         return p2;
       }
+      if (id.startsWith('proj-')) {
+        const autoProj: ProjectData = {
+          id,
+          title: 'Production Clearance Workspace',
+          productionCompany: 'Production Studio',
+          scriptVersion: 'v1.0-ShootingDraft',
+          projectType: 'Movie',
+          executionMode: 'DEMO_MODE',
+          liveQuotaLimit: 25,
+          liveQuotaUsed: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        await docRef.set(autoProj);
+        return autoProj;
+      }
       return null;
     }
     const data = snap.data() as ProjectData;

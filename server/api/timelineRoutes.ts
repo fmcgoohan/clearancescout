@@ -11,11 +11,14 @@ timelineRouter.get('/projects/:id/timeline/stream', (req: Request, res: Response
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  timelineEmitter.addClient(projectId, res);
-
-  req.on('close', () => {
+  const cleanup = () => {
     timelineEmitter.removeClient(projectId, res);
-  });
+  };
+
+  req.on('close', cleanup);
+  res.on('close', cleanup);
+  res.on('finish', cleanup);
+  res.on('error', cleanup);
 });
 
 // Get Event History

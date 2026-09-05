@@ -25,6 +25,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
 ENV EXECUTION_MODE=DEMO_MODE
+ENV NODE_OPTIONS="--max-old-space-size=1536"
 
 # Install only production dependencies
 COPY package*.json ./
