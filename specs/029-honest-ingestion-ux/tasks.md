@@ -95,7 +95,7 @@
 - [x] T036 [P2-Production-Cards] Accessible production switcher cards in src/components/ProjectListModal.tsx (native button elements with accessible name=title; aria-selected state; Enter/Space support; visible focus ring; focus active production heading after switch; isolation preserved) (FR-028)
 - [x] T037 [P3-Zero-Item-Scenes] Explicit zero-item scene review & readiness contract in server/workflows/sceneReadinessEngine.ts, src/types/, and binder export (distinguish PENDING_REVIEW / NO_CANDIDATES_DETECTED from human-confirmed FINAL_CLEAR; unreviewed zero-item scenes not shooting ready) (FR-029)
 - [x] T038 [Verification] Run focused unit tests and comprehensive local Playwright suite on localhost:8088 covering 375 layout, Coors 6 across 3, blocker wording, keyboard project cards, and zero-item readiness states
-- [ ] T039 [P0-Scenario-G-Ingestion-Persistence] Remediate public Scenario G ingestion persistence defect (UNRESOLVED on serving clearancescout-00061-lms at 100% traffic; canary 00062-cjq does not close G; to be proven on NEW canary revision with isolated disposable project) (FR-030)
+- [x] T039 [P0-Scenario-G-Ingestion-Persistence] Remediate public Scenario G ingestion persistence defect (VERIFIED PASS on canary revision clearancescout-00064-lav using isolated disposable project proj-e425aaf3; Coors Light 1 item / 6 occurrences across 3 scenes persisted and displayed; 0 quota used; zero demo items substituted; survives reload) (FR-030)
 
 ---
 
@@ -108,6 +108,6 @@
 - [x] T044 [P2-Project-Identity] Disambiguate identical project titles in ProjectListModal.tsx using unique creation timestamps and project codes without merging or deleting historical records (FR-035)
 - [x] T045 [P0-Option-B-Lifecycle] Verify Option B honest-empty lifecycle in InMemoryStore: no auto-seeding on container boot; explicit "Load Sample Production" or authorized demo-load populates 3 scenes / 7 items / 11 tasks baseline (FR-036)
 - [x] T046 [Verification-Local] Run focused unit tests and complete local Playwright A–K suite on localhost:8088 (real Chromium) with zero regressions
-- [ ] T047 [Deploy-Canary] Commit approved pass to 029 branch, push, and deploy a NEW Cloud Run canary revision with 0% production traffic (leaving 00061-lms at 100%)
-- [ ] T048 [Verification-Canary] Reconcile canary deployment identity; verify Scenario G on canary using isolated disposable project ID (proj-test-g-<timestamp>); verify remaining A–K on canary; STOP for traffic approval
+- [x] T047 [Deploy-Canary] Commit approved pass to 029 branch (SHA a1ba4ed), push to origin, and deploy a NEW Cloud Run canary revision clearancescout-00064-lav with 0% production traffic (leaving 00061-lms at 100%)
+- [x] T048 [Verification-Canary] Reconcile canary deployment identity; verify Scenario G on canary using isolated disposable project ID (proj-e425aaf3); verify remaining A–K on canary (ALL PASS); verify View Evidence drawer timing (20.25ms <= 4000ms); STOP for traffic approval
 
