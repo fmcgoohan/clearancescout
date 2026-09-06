@@ -135,7 +135,7 @@ export class ProjectRepo {
       if (id.startsWith('proj-')) {
         const autoProj: ProjectData = {
           id,
-          title: 'Production Clearance Workspace',
+          title: 'Default Production Workspace',
           productionCompany: 'Production Studio',
           scriptVersion: 'v1.0-ShootingDraft',
           projectType: 'Movie',

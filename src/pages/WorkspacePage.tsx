@@ -551,7 +551,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               border: 0,
             }}
           >
-            {projectTitle || 'Production Clearance Workspace'}
+            {projectTitle || 'Default Production Workspace'}
           </h1>
 
           {/* Workspace Section Navigation Bar (User Story 17) */}

@@ -71,7 +71,15 @@ async function runLocalVerification() {
 
     const createSubmitBtn = await page.$('[data-testid="create-production-submit-btn"]');
     await createSubmitBtn.click();
-    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 10000 }).catch(() => {});
+    await page.waitForFunction(
+      (expected) => {
+        const el = document.querySelector('[data-testid="workspace-project-title"]');
+        return el && el.innerText.trim().includes(expected);
+      },
+      'Solaris Dawn',
+      { timeout: 10000 }
+    ).catch(() => {});
     await page.waitForSelector('[data-testid="primary-recommendation-card"]', { timeout: 8000 });
     await page.waitForTimeout(500);
 
@@ -338,6 +346,7 @@ async function runLocalVerification() {
     }
 
     // 1. Create a fresh clean production for PDF testing
+    const prevPidG = await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
     const newProdBtnG = await page.waitForSelector('[data-testid="header-new-production-btn"]', { timeout: 5000 });
     await newProdBtnG.click();
     await page.waitForSelector('[data-testid="create-production-submit-btn"]', { timeout: 5000 });
@@ -345,10 +354,10 @@ async function runLocalVerification() {
     await page.fill('#new-prod-studio', 'Rockies Cinema');
     await page.click('[data-testid="create-production-submit-btn"]');
     await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
-    await page.waitForFunction(() => {
+    await page.waitForFunction((oldPid) => {
       const pid = localStorage.getItem('clearancescout_active_project_id');
-      return pid && pid !== 'proj-default';
-    }, { timeout: 10000 }).catch(() => {});
+      return pid && pid !== oldPid && pid !== 'proj-default';
+    }, prevPidG, { timeout: 10000 }).catch(() => {});
     coorsScenarioProjectId = await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
     console.log(`  Captured Mountain Refuge Project ID: ${coorsScenarioProjectId}`);
 
@@ -725,14 +734,19 @@ async function runLocalVerification() {
     await page.locator('[data-testid="header-switch-project-btn"]').click();
     await page.waitForSelector('button.project-select-card', { timeout: 5000 });
     if (coorsScenarioProjectId && coorsScenarioProjectId !== 'proj-default') {
-      await page.locator(`button.project-select-card[data-project-id="${coorsScenarioProjectId}"]`).click();
+      const targetCard = page.locator(`button.project-select-card[data-project-id="${coorsScenarioProjectId}"]`);
+      if (await targetCard.count() > 0) {
+        await targetCard.first().click();
+      } else {
+        await page.locator('button.project-select-card:has-text("Mountain Refuge")').first().click();
+      }
     } else {
       await page.locator('button.project-select-card:has-text("Mountain Refuge")').first().click();
     }
     await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(1000);
 
-    const activeCoorsId = coorsScenarioProjectId || await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
+    const activeCoorsId = await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
     const coorsProjectScenes = await page.evaluate(async ({ pid, token }) => {
       const headers = {};
       if (token) headers['x-demo-token'] = token;

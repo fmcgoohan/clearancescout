@@ -6,7 +6,7 @@ import { FilmIcon, TvIcon, MegaphoneIcon, BuildingIcon, FileTextIcon } from './i
 interface NewProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProjectCreated: (projectId: string) => void;
+  onProjectCreated: (projectId: string) => void | Promise<void>;
   defaultExecutionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
 }
 
@@ -59,7 +59,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
         setProductionCompany('');
         setScriptVersion('v1.0-ShootingDraft');
         setProjectType('Movie');
-        onProjectCreated(data.id);
+        await onProjectCreated(data.id);
         onClose();
       } else {
         const errData = await res.json().catch(() => ({}));
