@@ -1,0 +1,117 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import request from "supertest";
+import { app } from "../../server/index.js";
+
+describe("Contract: Pre-Walkthrough Corrections (FR-037 through FR-040)", () => {
+  let projectId: string;
+
+  beforeEach(async () => {
+    const projRes = await request(app)
+      .post("/api/projects")
+      .send({
+        title: "The Neon Horizon QA",
+        productionCompany: "Entrant Studio",
+        scriptVersion: "v1.0",
+        executionMode: "TEST_MODE",
+      });
+    expect(projRes.status).toBe(201);
+    projectId = projRes.body.id;
+  });
+
+  it("FR-037: should return empty actions array cleanly with HTTP 200 for zero-task projects", async () => {
+    const actionsRes = await request(app).get(`/api/projects/${projectId}/actions`);
+    expect(actionsRes.status).toBe(200);
+    const actions = Array.isArray(actionsRes.body) ? actionsRes.body : actionsRes.body.actions;
+    expect(Array.isArray(actions)).toBe(true);
+    expect(actions.length).toBe(0);
+
+    const notifsRes = await request(app).get(`/api/projects/${projectId}/notifications`);
+    expect(notifsRes.status).toBe(200);
+    const notifs = Array.isArray(notifsRes.body) ? notifsRes.body : notifsRes.body.notifications;
+    expect(Array.isArray(notifs)).toBe(true);
+    expect(notifs.length).toBe(0);
+  });
+
+  it("FR-038: should export markdown binder with sanitized title filename, project ID, and title metadata matching JSON", async () => {
+    const scriptRes = await request(app)
+      .post(`/api/projects/${projectId}/script`)
+      .send({
+        scriptText: "INT. PENTHOUSE WORKSPACE - NIGHT\nAlex drinks a can of Summit Cola.",
+        format: "PLAINTEXT",
+      });
+    expect(scriptRes.status).toBe(200);
+
+    const jsonRes = await request(app).get(`/api/projects/${projectId}/binder/export`);
+    expect(jsonRes.status).toBe(200);
+    expect(jsonRes.body.projectId).toBe(projectId);
+    expect(jsonRes.body.projectSummary.title).toBe("The Neon Horizon QA");
+
+    const mdRes = await request(app).get(`/api/projects/${projectId}/binder/markdown`);
+    expect(mdRes.status).toBe(200);
+    expect(mdRes.headers["content-type"]).toContain("text/markdown");
+
+    // Filename pattern check: Clearance_Binder_The_Neon_Horizon_QA_<binderId>.md
+    const contentDisposition = mdRes.headers["content-disposition"];
+    expect(contentDisposition).toBeDefined();
+    expect(contentDisposition).toContain("Clearance_Binder_The_Neon_Horizon_QA_");
+    expect(contentDisposition).toMatch(/\.md"$/);
+
+    // Markdown content includes Title and stable Project ID
+    expect(mdRes.text).toContain("# Production Legal Clearance Binder");
+    expect(mdRes.text).toContain("**Project Title**: The Neon Horizon QA");
+    expect(mdRes.text).toContain(`**Project ID**: ${projectId}`);
+    expect(mdRes.text).toContain(`\`${jsonRes.body.integrityDigest}\``);
+  });
+
+  it("FR-039 & FR-040: should format human-readable scene reference and dual copyright standard in prose", async () => {
+    const scriptRes = await request(app)
+      .post(`/api/projects/${projectId}/script`)
+      .send({
+        scriptText: "INT. PENTHOUSE WORKSPACE - NIGHT\nFrom the spatial audio system, Nocturne of the Wild plays softly in the background.",
+        format: "PLAINTEXT",
+      });
+    expect(scriptRes.status).toBe(200);
+
+    const entitiesRes = await request(app).get(`/api/projects/${projectId}/entities`);
+    const entities = Array.isArray(entitiesRes.body) ? entitiesRes.body : entitiesRes.body.entities;
+    expect(entities.length).toBeGreaterThanOrEqual(1);
+
+    const musicEntity = entities.find((e: any) =>
+      e.canonicalName.toLowerCase().includes("nocturne") || e.entityCategory === "ART_MUSIC"
+    );
+    expect(musicEntity).toBeDefined();
+
+    // Evaluate the entity
+    const evalRes = await request(app)
+      .post(`/api/projects/${projectId}/clearance/evaluate`)
+      .send({ canonicalEntityIds: [musicEntity.id] });
+    expect(evalRes.status).toBe(200);
+
+    // Fetch occurrences to verify occurrence evaluation rationale
+    const occRes = await request(app).get(`/api/projects/${projectId}/entities/${musicEntity.id}/occurrences`);
+    expect(occRes.status).toBe(200);
+    const occurrences = Array.isArray(occRes.body) ? occRes.body : occRes.body.occurrences;
+    const occurrence = occurrences?.[0];
+    expect(occurrence).toBeDefined();
+
+    // FR-039: Human-readable scene reference instead of raw scene UUID
+    expect(occurrence.riskRationale).toContain("Scene 1 — INT. PENTHOUSE WORKSPACE - NIGHT");
+    expect(occurrence.riskRationale).not.toMatch(/in scene-[0-9a-f]{8}/i);
+
+    // FR-040: Dual standard: statutory distribution vs production filming policy
+    expect(occurrence.riskRationale).toContain(
+      "A synchronization license is required for distribution. This production’s clearance policy requires the license to be secured before filming proceeds."
+    );
+
+    // Also check department action item generated by actionDispatcher
+    const actionsRes = await request(app).get(`/api/projects/${projectId}/actions`);
+    expect(actionsRes.status).toBe(200);
+    const actions = Array.isArray(actionsRes.body) ? actionsRes.body : actionsRes.body.actions;
+    const musicAction = actions.find((a: any) => a.canonicalEntityId === musicEntity.id);
+    expect(musicAction).toBeDefined();
+    expect(musicAction.description).toContain("Scene 1 — INT. PENTHOUSE WORKSPACE - NIGHT");
+    expect(musicAction.description).toContain(
+      "A synchronization license is required for distribution. This production’s clearance policy requires the license to be secured before filming proceeds."
+    );
+  });
+});

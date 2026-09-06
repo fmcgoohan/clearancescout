@@ -145,3 +145,42 @@ tests/
 - Commit tested tree to `029-honest-ingestion-ux` and push to origin.
 - Deploy a NEW non-serving Cloud Run canary revision (0% traffic; `clearancescout-00061-lms` remains 100%).
 - Run isolated disposable Scenario G on canary first, followed by canary verification of FAIL 1, FAIL 2, P2s, and preserved PASSes.
+
+---
+
+## Phase 11: Pre-Walkthrough Corrective Implementation Plan
+
+### 1. Cyberpunk Zero-Task UI State Lifecycle (FR-037)
+- In `src/components/ActionListModal.tsx`, introduce explicit `TaskFetchState`: `'idle' | 'loading' | 'loaded' | 'error'`.
+- Eliminate inferring loading from `actions.length === 0`.
+- When `fetchState === 'loaded'` and `activeDraftActions.length === 0`:
+  - Render header counter as `"0 of 0 Tasks"`.
+  - Render each department tab count with explicit zero `(0)`, never indefinite ellipsis `(…)`.
+  - Enable the Re-Sync button upon loaded empty success.
+  - Render explicit empty state message: `"No department tasks have been generated for this production"`, with a clear navigation route/button to the recommended next action (upload script).
+  - Eliminate indefinite loading spinners and screen-reader announcements.
+- Reset `actions` to `[]`, `notifications` to `[]`, and `fetchState` to `'loading'` immediately when `projectId` changes, preventing stale task leakage across workspace switches.
+- Ensure cold navigation with `?tab=tasks` cleanly transitions from loading to loaded-empty.
+
+### 2. Authoritative Cross-Format Binder Identity (FR-038)
+- In `server/api/binderRoutes.ts`, update `Content-Disposition` header for Markdown export to use human-readable sanitized filename from active title: `Clearance_Binder_${sanitizedTitle}_${binder.id}.md`, perfectly aligning with JSON export naming.
+- In `server/api/binderRoutes.ts`, add `**Project ID**: ${binder.projectId}` to the markdown export header block.
+- In `src/components/BinderExportModal.tsx`, sanitize JSON and Markdown filenames uniformly: `Clearance_Binder_${sanitizedTitle}_${binder.id}.json` and `.md`.
+- In `src/App.tsx`, invoke `setBinderData(null)` and `setPreflightData(null)` in `loadProjectDetails` upon switching active projects, eliminating cross-project binder state leaks.
+
+### 3. Human-Readable Scene References in Operator Prose (FR-039)
+- In `server/workflows/clearanceEvaluator.ts`, retrieve scene metadata via `sceneRepo.getSceneById` and format operator-facing scene references as `Scene ${scene.sceneNumber} — ${scene.heading}` (e.g. `Scene 1 — INT. PENTHOUSE WORKSPACE – NIGHT`) rather than raw internal database UUIDs (e.g. `scene-a0556326`).
+- Apply identical human-readable formatting in `server/workflows/actionDispatcher.ts` and timeline events while preserving internal IDs in structured metadata attributes.
+
+### 4. Statutory Distribution vs Production Filming Clearance Dual Standard (FR-040)
+- In `server/workflows/clearanceEvaluator.ts` and `server/workflows/actionDispatcher.ts`, update musical work clearance rationales to explicitly encode the dual standard:
+  `"A synchronization license is required for distribution. This production’s clearance policy requires the license to be secured before filming proceeds."`
+- Apply across evaluator occurrence rationales, scene blocker details, department action descriptions, and binder exports.
+
+### 5. Verification & Canary Deployment Protocol
+- Add focused contract tests verifying cross-format binder filename/ID alignment, human-readable scene references, and dual filming/distribution copy.
+- Build frontend (`npm run build`) and execute unit test suite (`npx vitest run`).
+- Run targeted Playwright browser validation covering Cyberpunk empty tasks, cold `?tab=tasks`, project switching, and Neon Horizon task restoration.
+- Commit the coherent patch to `029-honest-ingestion-ux` and push to origin.
+- Build container image and deploy a NEW Cloud Run canary revision (0% traffic; `clearancescout-00061-lms` remains 100%).
+- Verify acceptance checks on canary and STOP for operator review.

@@ -98,3 +98,26 @@
 - [x] P2 (Mobile Button Discoverability): Header `+ New Production` button renders a visible label (e.g. `+ New`) and visible affordance on mobile viewports (<=768px / 375px), maintaining >=44px touch targets without horizontal page overflow.
 - [x] P2 (Mobile Tabs Controlled Scroll): Navigation tabs maintain `white-space: nowrap` and `flex-shrink: 0` without compressing or wrapping labels, scrolling smoothly within existing tab container.
 
+### 11. Cyberpunk Zero-Task UI State Lifecycle (FR-037)
+- [x] Explicit fetch state (`idle | loading | loaded | error`) distinguishes genuine network fetch from loaded-empty results.
+- [x] Loaded-empty state renders "0 of 0 Tasks", zeros per department tab `(0)`, and zero ellipsis `(…)`.
+- [x] Empty state renders explicit message: "No department tasks have been generated for this production".
+- [x] Empty state provides route/button to recommended next action (upload screenplay).
+- [x] Re-Sync button is enabled upon loaded empty success.
+- [x] Switching active projects immediately resets tasks and fetch state to loading, preventing cross-workspace task leakage.
+- [x] Direct cold load with `?tab=tasks` cleanly renders loaded-empty state without hanging.
+
+### 12. Authoritative Cross-Format Binder Identity (FR-038)
+- [x] Downloaded Markdown filename matches sanitized title pattern: `Clearance_Binder_<SanitizedTitle>_<id>.md`.
+- [x] Downloaded JSON filename matches sanitized title pattern: `Clearance_Binder_<SanitizedTitle>_<id>.json`.
+- [x] Project ID and active title explicitly included in Markdown header metadata and export modal.
+- [x] Switching active projects clears client-side `binderData` and `preflightData` (`setBinderData(null)`).
+
+### 13. Human-Readable Scene References in Operator Prose (FR-039)
+- [x] Clearance evaluator rationales format scene references as "Scene <number> — <heading>" (e.g. "Scene 1 — INT. PENTHOUSE WORKSPACE – NIGHT"), never raw internal database UUIDs (`scene-a0556326`).
+- [x] Department tasks, notifications, and timeline event text use human-readable scene format.
+
+### 14. Statutory Distribution vs Production Filming Clearance Dual Standard (FR-040)
+- [x] Music clearance rationales state exact copy: "A synchronization license is required for distribution. This production’s clearance policy requires the license to be secured before filming proceeds."
+- [x] Dual standard consistently reflected across evaluator rationales, department tasks, and clearance binder exports.
+

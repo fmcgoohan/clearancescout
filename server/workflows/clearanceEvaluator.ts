@@ -2,6 +2,7 @@ import { entityRepo, ClearanceStatus, CanonicalEntityData, SceneEntityOccurrence
 import { assessmentRepo, ClearanceRiskAssessmentData, OccurrenceContextInterpretation } from '../repositories/AssessmentRepo.js';
 import { actionNotificationRepo } from '../repositories/ActionNotificationRepo.js';
 import { projectRepo } from '../repositories/ProjectRepo.js';
+import { sceneRepo } from '../repositories/SceneRepo.js';
 import { rightsRepo } from '../repositories/RightsRepo.js';
 import { actionDispatcher } from './actionDispatcher.js';
 import { parallelSearchTool, SearchResult } from '../tools/parallelSearchTool.js';
@@ -156,6 +157,10 @@ export class ClearanceEvaluator {
     }
 
     const { occurrence, sceneId } = occLookup;
+    const scene = await sceneRepo.getSceneById(projectId, sceneId);
+    const sceneLabel = scene
+      ? (scene.heading ? `Scene ${scene.sceneNumber} — ${scene.heading}` : `Scene ${scene.sceneNumber}`)
+      : `Scene ${sceneId}`;
     const entity = await entityRepo.getEntityById(projectId, occurrence.canonicalEntityId);
     if (!entity) {
       throw new Error(`Canonical entity ${occurrence.canonicalEntityId} not found`);
@@ -270,7 +275,7 @@ Return valid JSON with these fields:
     let status: ClearanceStatus = 'REVIEW_RECOMMENDED';
     let riskScore = 45;
     let rationale = isRegisteredActive
-      ? `Grounding search confirmed active registration for ${entity.canonicalName}. Category: ${entity.entityCategory}. Usage in ${sceneId} is neutral to moderate risk.`
+      ? `Grounding search confirmed active registration for ${entity.canonicalName}. Category: ${entity.entityCategory}. Usage in ${sceneLabel} is neutral to moderate risk.`
       : isZeroHit
       ? `Completed live search surfaced zero conflicting trademark registrations for ${entity.canonicalName}. Category: ${entity.entityCategory}. Review recommended to confirm unregistered common law rights.`
       : `Live search surfaced public reference(s) for ${entity.canonicalName}, but registration status is unconfirmed. Category: ${entity.entityCategory}. Review recommended to confirm active trademark protections.`;
@@ -299,7 +304,7 @@ Return valid JSON with these fields:
       // Contractual Rights cover this usage
       status = 'NO_ISSUE_SURFACED';
       riskScore = 5;
-      rationale = `${rightsCoverage.summaryText} Scene usage in ${sceneId} is cleared under executed agreement.`;
+      rationale = `${rightsCoverage.summaryText} Scene usage in ${sceneLabel} is cleared under executed agreement.`;
       contextFlags.length = 0;
       contextFlags.push('CONTRACTUAL_RIGHTS_ACTIVE');
       if (rightsCoverage.covenants.length > 0) {
@@ -314,7 +319,7 @@ Return valid JSON with these fields:
     } else if (isDefamatory || occurrenceContext.tone === 'DISPARAGING' || occurrenceContext.defamationRisk) {
       status = 'ACTION_REQUIRED';
       riskScore = 90;
-      rationale = `High tarnishment / disparagement risk in ${sceneId}: "${entity.canonicalName}" is depicted in negative scene context ("${occurrence.excerptText}"). Replacement or counsel release required.`;
+      rationale = `High tarnishment / disparagement risk in ${sceneLabel}: "${entity.canonicalName}" is depicted in negative scene context ("${occurrence.excerptText}"). Replacement or counsel release required.`;
       contextFlags.length = 0;
       contextFlags.push('DEFAMATION_RISK', 'UNAUTHORIZED_USAGE');
       if (isGeminiFallback) {
@@ -323,7 +328,7 @@ Return valid JSON with these fields:
     } else if (occurrenceContext.safetyHazardDepiction && occurrenceContext.prominence === 'HERO_FOREGROUND') {
       status = 'ACTION_REQUIRED';
       riskScore = 85;
-      rationale = `Safety hazard depiction risk in ${sceneId}: "${entity.canonicalName}" is featured in an unsafe product context. Replacement recommended.`;
+      rationale = `Safety hazard depiction risk in ${sceneLabel}: "${entity.canonicalName}" is featured in an unsafe product context. Replacement recommended.`;
       contextFlags.length = 0;
       contextFlags.push('SAFETY_HAZARD_RISK', 'UNAUTHORIZED_USAGE');
       if (isGeminiFallback) {
@@ -332,7 +337,7 @@ Return valid JSON with these fields:
     } else if (entity.entityCategory === 'ART_MUSIC') {
       status = 'ACTION_REQUIRED';
       riskScore = 85;
-      rationale = `Copyrighted musical work in ${sceneId}: "${entity.canonicalName}". Synchronization license required prior to broadcast/distribution.`;
+      rationale = `Copyrighted musical work in ${sceneLabel}: "${entity.canonicalName}". A synchronization license is required for distribution. This production’s clearance policy requires the license to be secured before filming proceeds.`;
       contextFlags.length = 0;
       contextFlags.push('MUSIC_SYNC_LICENSE_REQUIRED', 'COPYRIGHT_PROTECTION');
       if (isGeminiFallback) {
@@ -341,7 +346,7 @@ Return valid JSON with these fields:
     } else if (entity.entityCategory === 'PUBLIC_FIGURE') {
       status = 'REVIEW_RECOMMENDED';
       riskScore = 65;
-      rationale = `Living public figure depicted in ${sceneId}: "${entity.canonicalName}". Right of publicity review recommended.`;
+      rationale = `Living public figure depicted in ${sceneLabel}: "${entity.canonicalName}". Right of publicity review recommended.`;
       contextFlags.length = 0;
       contextFlags.push('RIGHT_OF_PUBLICITY_REVIEW');
       if (isGeminiFallback) {
@@ -350,7 +355,7 @@ Return valid JSON with these fields:
     } else if (entity.entityCategory === 'PROPRIETARY_LOCATION') {
       status = 'REVIEW_RECOMMENDED';
       riskScore = 55;
-      rationale = `Proprietary location in ${sceneId}: "${entity.canonicalName}". Location release / filming permit required.`;
+      rationale = `Proprietary location in ${sceneLabel}: "${entity.canonicalName}". Location release / filming permit required.`;
       contextFlags.length = 0;
       contextFlags.push('LOCATION_RELEASE_REQUIRED');
       if (isGeminiFallback) {
@@ -359,7 +364,7 @@ Return valid JSON with these fields:
     } else if (entity.entityCategory === 'GRAPHIC_PROP') {
       status = 'ACTION_REQUIRED';
       riskScore = 75;
-      rationale = `Proprietary graphic text in ${sceneId}: "${entity.canonicalName}". Fictionalized non-infringing prop packaging card recommended.`;
+      rationale = `Proprietary graphic text in ${sceneLabel}: "${entity.canonicalName}". Fictionalized non-infringing prop packaging card recommended.`;
       contextFlags.length = 0;
       contextFlags.push('GRAPHIC_CLEARANCE_REQUIRED');
       if (isGeminiFallback) {
@@ -368,7 +373,7 @@ Return valid JSON with these fields:
     } else if (entity.canonicalName.toLowerCase().includes('coca-cola') || entity.canonicalName.toLowerCase().includes('porsche')) {
       status = 'ACTION_REQUIRED';
       riskScore = 80;
-      rationale = `High brand protection enforcement mark in ${sceneId}: ${entity.canonicalName}. Written clearance release required.`;
+      rationale = `High brand protection enforcement mark in ${sceneLabel}: ${entity.canonicalName}. Written clearance release required.`;
       contextFlags.length = 0;
       contextFlags.push('FAMOUS_MARK_PROTECTION', 'CLEARANCE_RELEASE_REQUIRED');
       if (isGeminiFallback) {
@@ -384,7 +389,7 @@ Return valid JSON with these fields:
       } else {
         status = 'NO_ISSUE_SURFACED';
         riskScore = 15;
-        rationale = `Completed live search surfaced zero conflicting trademark registrations for "${entity.canonicalName}". Incidental background usage in ${sceneId} is clear.`;
+        rationale = `Completed live search surfaced zero conflicting trademark registrations for "${entity.canonicalName}". Incidental background usage in ${sceneLabel} is clear.`;
         contextFlags.length = 0;
         contextFlags.push('ZERO_TRADEMARK_CONFLICTS_SURFACED', 'INCIDENTAL_USAGE_CLEAR');
       }
@@ -401,7 +406,7 @@ Return valid JSON with these fields:
       } else {
         status = 'NO_ISSUE_SURFACED';
         riskScore = 20;
-        rationale = `Live search surfaced public reference(s) for "${entity.canonicalName}" with unconfirmed registration status. Incidental background usage in ${sceneId} presents low exposure.`;
+        rationale = `Live search surfaced public reference(s) for "${entity.canonicalName}" with unconfirmed registration status. Incidental background usage in ${sceneLabel} presents low exposure.`;
         contextFlags.length = 0;
         contextFlags.push('LIVE_MATCH_STATUS_UNKNOWN', 'TRADEMARK_STATUS_UNKNOWN', 'INCIDENTAL_USAGE_CLEAR');
       }
@@ -411,7 +416,7 @@ Return valid JSON with these fields:
     } else {
       status = 'NO_ISSUE_SURFACED';
       riskScore = 15;
-      rationale = `No infringement or tarnishment issues surfaced for ${entity.canonicalName} in ${sceneId} context.`;
+      rationale = `No infringement or tarnishment issues surfaced for ${entity.canonicalName} in ${sceneLabel} context.`;
       if (!isRegisteredActive) {
         contextFlags.length = 0;
         contextFlags.push('TRADEMARK_STATUS_UNKNOWN', 'INCIDENTAL_USAGE_CLEAR');
@@ -457,7 +462,7 @@ Return valid JSON with these fields:
       }
     }
 
-    timelineEmitter.emit(projectId, 'RISK_EVAL', `Occurrence Risk Verdict (${sceneId}): ${status}`, {
+    timelineEmitter.emit(projectId, 'RISK_EVAL', `Occurrence Risk Verdict (${sceneLabel}): ${status}`, {
       occurrenceId,
       sceneId,
       canonicalEntityId: entity.id,
@@ -551,9 +556,14 @@ Return valid JSON with these fields:
         if (rightsCoverage.covenants.length > 0) {
           rightsCoverage.covenants.forEach((c) => contextFlags.push(`COVENANT: ${c}`));
         }
-      } else if (entity.entityCategory === 'ART_MUSIC' || entity.entityCategory === 'GRAPHIC_PROP') {
+      } else if (entity.entityCategory === 'ART_MUSIC') {
         status = 'ACTION_REQUIRED';
-        riskScore = 80;
+        riskScore = 85;
+        rationale = `Copyrighted musical work: "${entity.canonicalName}". A synchronization license is required for distribution. This production’s clearance policy requires the license to be secured before filming proceeds.`;
+      } else if (entity.entityCategory === 'GRAPHIC_PROP') {
+        status = 'ACTION_REQUIRED';
+        riskScore = 75;
+        rationale = `Proprietary graphic text: "${entity.canonicalName}". Fictionalized non-infringing prop packaging card recommended.`;
       } else if (entity.entityCategory === 'BRAND') {
         // Invariant (FR-003): Baseline BRAND evaluation with zero-hit or unknown registration MUST NOT independently assign NO_ISSUE_SURFACED!
         // It must evaluate as REVIEW_RECOMMENDED unless affirmatively covered by contractual rights.

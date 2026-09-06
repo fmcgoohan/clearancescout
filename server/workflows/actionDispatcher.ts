@@ -30,7 +30,7 @@ export class ActionDispatcher {
 
     const scene = await sceneRepo.getSceneById(projectId, occurrence.sceneId);
     const sceneNumber = scene?.sceneNumber;
-    const sceneLabel = sceneNumber ? (scene?.heading ? `Scene ${sceneNumber} (${scene.heading})` : `Scene ${sceneNumber}`) : occurrence.sceneId;
+    const sceneLabel = sceneNumber ? (scene?.heading ? `Scene ${sceneNumber} — ${scene.heading}` : `Scene ${sceneNumber}`) : `Scene ${occurrence.sceneId}`;
 
     let actionType: ClearanceActionType | null = null;
     let targetDepartment: DepartmentTarget = 'LEGAL_COUNSEL';
@@ -55,7 +55,7 @@ export class ActionDispatcher {
         actionType = 'LEGAL_COUNSEL_RELEASE';
         targetDepartment = 'LEGAL_COUNSEL';
         title = `Secure Music Synchronization License: ${entity.canonicalName}`;
-        description = `Copyrighted musical work in ${sceneLabel} requires written synchronization license.`;
+        description = `Copyrighted musical work in ${sceneLabel}. A synchronization license is required for distribution. This production’s clearance policy requires the license to be secured before filming proceeds.`;
         priority = 'HIGH';
       } else if (entity.entityCategory === 'BRAND') {
         actionType = 'LEGAL_COUNSEL_RELEASE';
@@ -165,7 +165,7 @@ export class ActionDispatcher {
         actionType: 'PRODUCTION_REVIEW',
         targetDepartment: 'PRODUCTION_MGMT',
         title: `Scene ${sceneNumber} Shooting Blocker: RED`,
-        description: rationale || `Clearance blocker prevents shooting Scene ${sceneNumber} (${heading}).`,
+        description: rationale || `Clearance blocker prevents shooting Scene ${sceneNumber} — ${heading}.`,
         priority: 'CRITICAL',
         status: 'OPEN',
       });
@@ -176,7 +176,7 @@ export class ActionDispatcher {
       sceneNumber,
       targetDepartment: 'PRODUCTION_MGMT',
       headline: `🚨 Shooting Alert: Scene ${sceneNumber} Blocked (RED)`,
-      message: rationale || `Clearance blocker detected in Scene ${sceneNumber}: ${heading}.`,
+      message: rationale || `Clearance blocker detected in Scene ${sceneNumber} — ${heading}.`,
       severity: 'CRITICAL',
     });
   }

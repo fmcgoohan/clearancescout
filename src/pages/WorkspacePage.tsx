@@ -1375,6 +1375,10 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             onActionUpdated={() => {
               fetchWorkspaceData();
             }}
+            onNavigateToUpload={() => {
+              setUploadModalInitialMode('FILE');
+              setIsUploadModalOpen(true);
+            }}
           />
         </section>
       )}
@@ -1452,6 +1456,11 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         onClose={() => setIsActionModalOpen(false)}
         onActionUpdated={() => {
           fetchWorkspaceData();
+        }}
+        onNavigateToUpload={() => {
+          setIsActionModalOpen(false);
+          setUploadModalInitialMode('FILE');
+          setIsUploadModalOpen(true);
         }}
       />
 

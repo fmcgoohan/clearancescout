@@ -254,6 +254,8 @@ export default function App() {
       reviewRecommendedCount: 0,
       researchRequiredCount: 0,
     });
+    setBinderData(null);
+    setPreflightData(null);
     try {
       const res = await apiFetch(`/api/projects/${id}`);
       if (!res.ok) {

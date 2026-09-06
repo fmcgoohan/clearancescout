@@ -123,3 +123,16 @@
 - [x] T054 [Verification-Local] Run focused unit tests, local Scenario G on disposable project ID, reload from authoritative snapshot, and full local Playwright A–K suite on localhost:8088
 - [x] T055 [Deploy-Canary] Commit tested tree to `029-honest-ingestion-ux` (SHA `1b8823a`), push to origin, build image `gcr.io/clearance-scout-2026/clearancescout:1b8823a9681bc7e7c4f4f7d45f3c11ec8cfda001` via Cloud Build `5c6a2819-8af0-4629-9f00-e3af7524e29f`, and deploy NEW Cloud Run canary revision `clearancescout-00066-wed` with 0% production traffic (leaving `clearancescout-00061-lms` at 100%)
 - [x] T056 [Verification-Canary] Run isolated disposable Scenario G on canary first (PASS on disposable `proj-ff9fbe65`), verify full A–K live Playwright suite on canary `clearancescout-00066-wed` (ALL PASS A–K: FAIL 1 Cyberpunk 0%/0 blockers verified, FAIL 2 empty workspace identity `[PRJ-DEFAULT]` verified, P2 mobile `+ New` button visible, P2 mobile tabs controlled scroll verified, all viewports 320–1280 0 overflow), and STOP for traffic approval
+
+---
+
+## Phase 11: Pre-Walkthrough Corrective Pass
+
+- [x] T057 [P1-Cyberpunk-Zero-Tasks] Implement explicit task fetch lifecycle state (`idle | loading | loaded | error`) in `src/components/ActionListModal.tsx`: loaded-empty renders "0 of 0 Tasks", zeros per department tab `(0)`, empty state message ("No department tasks have been generated for this production"), route/button to next action (upload), Re-Sync enabled, no indefinite spinner/ellipsis; reset tasks/state on project switch; handle cold `?tab=tasks` (FR-037)
+- [x] T058 [P1-Binder-Identity] Align Markdown and JSON export filenames (`Clearance_Binder_${sanitizedTitle}_${id}.md` / `.json`), add Project ID to Markdown header, and clear client-side `binderData` / `preflightData` on project switch in `src/App.tsx` (FR-038)
+- [x] T059 [P1-Human-Readable-Scenes] Format human-readable scene references (`Scene ${scene.sceneNumber} — ${scene.heading}`) in `server/workflows/clearanceEvaluator.ts`, `server/workflows/actionDispatcher.ts`, and timeline events instead of raw internal `scene-` UUIDs (FR-039)
+- [x] T060 [P1-Filming-vs-Distribution-Copy] Encode statutory distribution vs production filming clearance dual standard ("A synchronization license is required for distribution. This production’s clearance policy requires the license to be secured before filming proceeds.") across music evaluator rationales and department tasks (FR-040)
+- [x] T061 [Contract-Tests] Implement focused contract tests in `tests/contract/test_pre_walkthrough_corrections.test.ts` for binder filename/ID alignment, human-readable scene formatting, and dual clearance copy
+- [x] T062 [Build-Verification] Verify frontend build (`npm run build`) and execute vitest unit suite (`npx vitest run`)
+- [x] T063 [Browser-Validation-Local] Execute targeted Playwright validation on `localhost:8088` (Cyberpunk zero-task state, cold `?tab=tasks`, project switching isolation, Neon Horizon task restoration)
+- [ ] T064 [Deploy-Canary] Commit coherent patch to `029-honest-ingestion-ux`, push to origin, build image, deploy NEW Cloud Run canary revision (0% traffic; `clearancescout-00061-lms` remains 100%), verify acceptance checks on canary, and STOP for operator review

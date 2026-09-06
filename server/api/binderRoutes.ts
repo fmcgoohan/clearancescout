@@ -105,9 +105,10 @@ binderRouter.get('/projects/:id/binder/markdown', async (req: Request, res: Resp
       binder = await binderExportWorkflow.compileAndExportBinder(projectId);
     }
 
+    const sanitizedTitle = (binder.projectSummary?.title || 'Untitled_Project').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
     const md = generateMarkdownBinder(binder);
     res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="ClearanceBinder-${projectId}.md"`);
+    res.setHeader('Content-Disposition', `attachment; filename="Clearance_Binder_${sanitizedTitle}_${binder.id}.md"`);
     return res.send(md);
   } catch (err) {
     next(err);
@@ -120,6 +121,7 @@ function generateMarkdownBinder(binder: any): string {
 
   return `# Production Legal Clearance Binder
 **Project Title**: ${p.title}
+**Project ID**: ${binder.projectId}
 **Project Type**: ${p.projectType || 'Movie'}
 **Production Company**: ${p.productionCompany}
 **Script Version**: ${p.scriptVersion}

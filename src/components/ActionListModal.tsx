@@ -64,6 +64,8 @@ export interface ClearanceNotification {
   createdAt: string;
 }
 
+export type TaskFetchState = 'idle' | 'loading' | 'loaded' | 'error';
+
 interface ActionListModalProps {
   isOpen: boolean;
   projectId: string;
@@ -73,6 +75,7 @@ interface ActionListModalProps {
   targetActivityType?: string;
   targetActivityId?: string;
   embedded?: boolean;
+  onNavigateToUpload?: () => void;
 }
 
 export const ActionListModal: React.FC<ActionListModalProps> = ({
@@ -84,12 +87,13 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
   targetActivityType,
   targetActivityId,
   embedded = false,
+  onNavigateToUpload,
 }) => {
   const [actions, setActions] = useState<ClearanceActionItem[]>([]);
   const [notifications, setNotifications] = useState<ClearanceNotification[]>([]);
   const [activeTab, setActiveTab] = useState<'ALL' | 'ART_DEPT' | 'LEGAL_COUNSEL' | 'LOCATIONS' | 'PRODUCTION_MGMT' | 'NOTIFICATIONS'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'RESOLVED'>('OPEN');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [fetchState, setFetchState] = useState<TaskFetchState>('loading');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [expandedHistory, setExpandedHistory] = useState<Record<string, boolean>>({});
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
@@ -111,33 +115,40 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
 
   const fetchActionsAndNotifications = async () => {
     if (!projectId) return;
-    setIsLoading(true);
+    setFetchState('loading');
     try {
       const [actionsRes, notifsRes] = await Promise.all([
         apiFetch(`/api/projects/${projectId}/actions`),
         apiFetch(`/api/projects/${projectId}/notifications`),
       ]);
 
-      if (actionsRes.ok) {
-        const data = await actionsRes.json();
-        setActions(Array.isArray(data) ? data : data.actions || []);
+      if (!actionsRes.ok) {
+        setFetchState('error');
+        return;
       }
+
+      const data = await actionsRes.json();
+      setActions(Array.isArray(data) ? data : data.actions || []);
+
       if (notifsRes.ok) {
-        const data = await notifsRes.json();
-        setNotifications(Array.isArray(data) ? data : data.notifications || []);
+        const notifsData = await notifsRes.json();
+        setNotifications(Array.isArray(notifsData) ? notifsData : notifsData.notifications || []);
       }
+      setFetchState('loaded');
     } catch (err) {
       console.error('Failed to fetch actions or notifications:', err);
-    } finally {
-      setIsLoading(false);
+      setFetchState('error');
     }
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && projectId) {
+      setActions([]);
+      setNotifications([]);
+      setFetchState('loading');
       fetchActionsAndNotifications();
-    } else {
-      setIsLoading(true);
+    } else if (!isOpen) {
+      setFetchState('idle');
     }
   }, [isOpen, projectId]);
 
@@ -163,7 +174,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
 
         setNavAnnouncement(`Navigated to task: ${taskTitle}`);
 
-        if (!isLoading && actions.length > 0) {
+        if (fetchState === 'loaded' && actions.length > 0) {
           const timer = setTimeout(() => {
             const headingEl =
               document.getElementById(`task-heading-${effectiveTaskId}`) ||
@@ -179,7 +190,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
           }, 50);
           return () => clearTimeout(timer);
         }
-      } else if (!isLoading && actions.length > 0) {
+      } else if (fetchState === 'loaded') {
         // Missing / orphan task target: do NOT announce false success and do NOT focus unrelated task
         setNavAnnouncement('This task is no longer available.');
         focusedTaskIdRef.current = null;
@@ -188,7 +199,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
       focusedTaskIdRef.current = null;
       setNavAnnouncement('');
     }
-  }, [isOpen, targetTaskId, targetActivityType, actions, isLoading]);
+  }, [isOpen, targetTaskId, targetActivityType, actions, fetchState]);
 
   const handleSyncActions = async () => {
     if (!projectId) return;
@@ -363,6 +374,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
             <span>Production Clearance Action & Notification Center</span>
           </h2>
           <span
+            data-testid="task-count-badge"
             style={{
               fontSize: '0.75rem',
               padding: '2px 8px',
@@ -373,7 +385,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
               fontWeight: 600,
             }}
           >
-            {isLoading || activeDraftActions.length === 0
+            {fetchState === 'loading'
               ? 'Loading tasks…'
               : `${filteredActions.length} of ${pluralize(activeDraftActions.length, 'Task', 'Tasks')}`}
           </span>
@@ -382,7 +394,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
           <button
             className="btn-secondary"
             onClick={handleSyncActions}
-            disabled={isSyncing || isLoading || actions.length === 0}
+            disabled={isSyncing || fetchState === 'loading'}
             style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <RefreshCwIcon size={14} />
@@ -414,12 +426,12 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
         >
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {[
-              { key: 'ALL', label: isLoading || actions.length === 0 ? 'All Actions (…)' : `All Actions (${openCount})` },
-              { key: 'ART_DEPT', label: isLoading || actions.length === 0 ? 'Art Dept (…)' : `Art Dept (${artCount})` },
-              { key: 'LEGAL_COUNSEL', label: isLoading || actions.length === 0 ? 'Legal Counsel (…)' : `Legal Counsel (${legalCount})` },
-              { key: 'LOCATIONS', label: isLoading || actions.length === 0 ? 'Locations (…)' : `Locations (${locCount})` },
-              { key: 'PRODUCTION_MGMT', label: isLoading || actions.length === 0 ? 'Production (…)' : `Production (${prodCount})` },
-              { key: 'NOTIFICATIONS', label: isLoading ? 'Alerts (…)' : `Alerts (${unreadNotifsCount})` },
+              { key: 'ALL', label: fetchState === 'loading' ? 'All Actions (…)' : `All Actions (${openCount})` },
+              { key: 'ART_DEPT', label: fetchState === 'loading' ? 'Art Dept (…)' : `Art Dept (${artCount})` },
+              { key: 'LEGAL_COUNSEL', label: fetchState === 'loading' ? 'Legal Counsel (…)' : `Legal Counsel (${legalCount})` },
+              { key: 'LOCATIONS', label: fetchState === 'loading' ? 'Locations (…)' : `Locations (${locCount})` },
+              { key: 'PRODUCTION_MGMT', label: fetchState === 'loading' ? 'Production (…)' : `Production (${prodCount})` },
+              { key: 'NOTIFICATIONS', label: fetchState === 'loading' ? 'Alerts (…)' : `Alerts (${unreadNotifsCount})` },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -506,8 +518,10 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
           aria-live="polite"
           className="sr-only"
         >
-          {isLoading || (actions.length === 0 && activeTab !== 'NOTIFICATIONS')
+          {fetchState === 'loading'
             ? 'Loading department tasks...'
+            : fetchState === 'error'
+            ? 'Failed to load department tasks'
             : activeTab === 'NOTIFICATIONS'
             ? `Showing ${notifications.length} alerts (${unreadNotifsCount} unread)`
             : `Showing ${filteredActions.length} of ${actions.length} department tasks`}
@@ -524,54 +538,93 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
             gap: '16px',
           }}
         >
-          {isLoading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-              Loading action items...
-            </div>
-          ) : activeTab === 'NOTIFICATIONS' ? (
-            /* Notifications List */
-            notifications.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                No active notifications for this project.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    style={{
-                      padding: '12px 16px',
-                      borderRadius: '8px',
-                      background: n.isRead ? 'var(--bg-card)' : 'rgba(0, 240, 255, 0.05)',
-                      border: '1px solid',
-                      borderColor: n.isRead ? 'var(--border-color)' : 'var(--accent-cyan)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                        {n.headline}
-                      </span>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                        {new Date(n.createdAt).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-                      {n.message}
-                    </p>
+          {(() => {
+            if (fetchState === 'loading') {
+              return (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                  Loading action items...
+                </div>
+              );
+            }
+            if (fetchState === 'error') {
+              return (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <p style={{ margin: 0, color: '#f87171' }}>Failed to load department actions.</p>
+                  <button className="btn-secondary" onClick={() => fetchActionsAndNotifications()} style={{ fontSize: '0.8rem', padding: '6px 14px' }}>
+                    Retry
+                  </button>
+                </div>
+              );
+            }
+            if (activeTab === 'NOTIFICATIONS') {
+              if (notifications.length === 0) {
+                return (
+                  <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                    No active notifications for this project.
                   </div>
-                ))}
-              </div>
-            )
-          ) : (
-            /* Actions Tasks List */
-            filteredActions.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                No department actions match the selected filter.
-              </div>
-            ) : (
+                );
+              }
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        background: n.isRead ? 'var(--bg-card)' : 'rgba(0, 240, 255, 0.05)',
+                        border: '1px solid',
+                        borderColor: n.isRead ? 'var(--border-color)' : 'var(--accent-cyan)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                          {n.headline}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          {new Date(n.createdAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+                        {n.message}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            if (activeDraftActions.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)', fontWeight: 500 }}>
+                    No department tasks have been generated for this production.
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Upload a screenplay script to extract candidate clearance items and generate department action items.
+                  </p>
+                  {onNavigateToUpload && (
+                    <button
+                      className="btn-primary"
+                      onClick={onNavigateToUpload}
+                      style={{ marginTop: '8px', padding: '8px 16px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      Upload Screenplay
+                    </button>
+                  )}
+                </div>
+              );
+            }
+            if (filteredActions.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                  No department actions match the selected filter.
+                </div>
+              );
+            }
+            return (
               <div
                 role="list"
                 aria-label={`Department Tasks List (${filteredActions.length} items)`}
@@ -869,8 +922,8 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
                   </div>
                 ))}
               </div>
-            )
-          )}
+            );
+          })()}
         </div>
 
         {/* Contained Sticky Bulk Action Bar */}

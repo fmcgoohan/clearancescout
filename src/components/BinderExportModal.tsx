@@ -227,11 +227,16 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
   const isFallback = dominant === 'FALLBACK_FIXTURE';
   const isMixed = dominant === 'MIXED';
 
+  const getSanitizedTitle = () => {
+    return (binder.projectSummary?.title || 'Untitled_Project').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  };
+
   const handleDownloadJson = () => {
+    const sanitizedTitle = getSanitizedTitle();
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(binder, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `Clearance_Binder_${binder.projectSummary.title.replace(/\s+/g, '_')}_${binder.id}.json`);
+    downloadAnchor.setAttribute('download', `Clearance_Binder_${sanitizedTitle}_${binder.id}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -242,11 +247,12 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
       const res = await apiFetch(`/api/projects/${binder.projectId}/binder/markdown`);
       if (!res.ok) throw new Error('Failed to fetch markdown');
       const md = await res.text();
+      const sanitizedTitle = getSanitizedTitle();
       const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Clearance_Binder_${binder.projectSummary.title.replace(/\s+/g, '_')}_${binder.id}.md`;
+      a.download = `Clearance_Binder_${sanitizedTitle}_${binder.id}.md`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -266,7 +272,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
     window.print();
   };
 
-  const generatedFilename = `Clearance_Binder_${binder.projectSummary.title.replace(/\s+/g, '_')}_${binder.id}.json`;
+  const generatedFilename = `Clearance_Binder_${getSanitizedTitle()}_${binder.id}.json`;
   const fileSizeKb = (JSON.stringify(binder).length / 1024).toFixed(1);
 
   return (
@@ -347,7 +353,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
               </span>
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
-              Production Company: <strong style={{ color: 'var(--text-main)' }}>{binder.projectSummary.productionCompany}</strong> • Script Version: <strong style={{ color: 'var(--text-main)' }}>{binder.projectSummary.scriptVersion}</strong> • Exported: {new Date(binder.exportedAt).toLocaleString()}
+              Project ID: <strong style={{ color: 'var(--text-main)' }}>{binder.projectId}</strong> • Production Company: <strong style={{ color: 'var(--text-main)' }}>{binder.projectSummary.productionCompany}</strong> • Script Version: <strong style={{ color: 'var(--text-main)' }}>{binder.projectSummary.scriptVersion}</strong> • Exported: {new Date(binder.exportedAt).toLocaleString()}
             </p>
           </div>
           <div className="no-print" style={{ display: 'flex', gap: '8px' }}>

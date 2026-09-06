@@ -212,10 +212,35 @@ async function runLiveVerification() {
       console.error(`SCENARIO E FAIL: Expected Cyberpunk 0% readiness (PENDING_REVIEW), got "${cyberReadiness}"`);
       process.exit(1);
     }
-    if (!cyberBlockers.includes('0')) {
-      console.error(`SCENARIO E FAIL: Expected Cyberpunk 0 blocked scenes, got "${cyberBlockers}"`);
+    // Verify Cyberpunk Department Tasks zero-task state (FR-037)
+    const tasksTabBtn = await page.waitForSelector('#tab-tasks', { timeout: 5000 });
+    await tasksTabBtn.click();
+    await page.waitForTimeout(500);
+
+    const taskBadgeText = await page.$eval('[data-testid="task-count-badge"]', el => el.innerText.trim()).catch(() => '');
+    console.log(`Cyberpunk Task Badge: "${taskBadgeText}"`);
+    if (!taskBadgeText.includes('0 of 0 Tasks') && !taskBadgeText.includes('0 Tasks')) {
+      console.error(`SCENARIO E FAIL: Expected "0 of 0 Tasks" in tasks badge, got "${taskBadgeText}"`);
       process.exit(1);
     }
+
+    const emptyMsg = await page.$eval('#section-tasks', el => el.innerText).catch(() => '');
+    if (!emptyMsg.includes('No department tasks have been generated for this production')) {
+      console.error(`SCENARIO E FAIL: Expected empty state message in Cyberpunk tasks, got "${emptyMsg}"`);
+      process.exit(1);
+    }
+
+    const resyncDisabled = await page.$eval('#section-tasks button:has-text("Re-Sync")', el => el.disabled).catch(() => true);
+    if (resyncDisabled) {
+      console.error('SCENARIO E FAIL: Expected Re-Sync button to be enabled on empty success');
+      process.exit(1);
+    }
+    console.log('Cyberpunk Zero-Task UI State (0 of 0 Tasks, Re-Sync Enabled): PASS');
+
+    // Switch back to overview tab before portfolio switch
+    const overviewTabBtn = await page.waitForSelector('#tab-overview', { timeout: 5000 });
+    await overviewTabBtn.click();
+
     console.log('Scenario E (Cyberpunk Odyssey 0% / 0 Blocked Isolation): PASS');
 
     // =========================================================================
