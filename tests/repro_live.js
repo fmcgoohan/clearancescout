@@ -200,15 +200,15 @@ async function runLiveVerification() {
     const cyberBlockers = await page.$eval('[data-testid="workspace-blocked-scenes"]', el => el.textContent.trim()).catch(() => 'N/A');
     console.log(`Cyberpunk Active Workspace Readiness: ${cyberReadiness} | Blockers: ${cyberBlockers}`);
 
-    if (cyberReadiness !== '100%') {
-      console.error(`SCENARIO E FAIL: Expected Cyberpunk 100% readiness, got "${cyberReadiness}"`);
+    if (cyberReadiness !== '0%') {
+      console.error(`SCENARIO E FAIL: Expected Cyberpunk 0% readiness (PENDING_REVIEW), got "${cyberReadiness}"`);
       process.exit(1);
     }
     if (!cyberBlockers.includes('0')) {
       console.error(`SCENARIO E FAIL: Expected Cyberpunk 0 blocked scenes, got "${cyberBlockers}"`);
       process.exit(1);
     }
-    console.log('Scenario E (Cyberpunk Odyssey 100% / 0 Blocked Isolation): PASS');
+    console.log('Scenario E (Cyberpunk Odyssey 0% / 0 Blocked Isolation): PASS');
 
     // =========================================================================
     // SCENARIO F: Notification Deep-Link & Tombstone Integrity
@@ -634,7 +634,28 @@ async function runLiveVerification() {
       }
     }
     console.log('Mobile Sub-44px Touch Targets Count: ' + smallTargetsCount);
-    console.log("Scenario J (Mobile 375px Header <=64px & Card Layout): PASS");
+
+    // Verify + New button visible text on mobile 375px
+    const mobileNewBtn = await page.waitForSelector('[data-testid="header-new-production-btn"]', { timeout: 5000 });
+    const mobileNewBtnText = await mobileNewBtn.innerText();
+    console.log(`Mobile 375px Header New Button Text: "${mobileNewBtnText.trim()}"`);
+    if (!mobileNewBtnText.includes('+ New')) {
+      console.error(`SCENARIO J FAIL: Expected visible text "+ New" on mobile 375px, got "${mobileNewBtnText}"`);
+      process.exit(1);
+    }
+
+    // Verify Workspace Tab buttons enforce single-line controlled scrolling
+    const tabButtons = await page.$$('[role="tablist"] button[role="tab"]');
+    for (const tab of tabButtons) {
+      const whiteSpace = await tab.evaluate(el => window.getComputedStyle(el).whiteSpace);
+      const flexShrink = await tab.evaluate(el => window.getComputedStyle(el).flexShrink);
+      if (whiteSpace !== 'nowrap' || flexShrink !== '0') {
+        console.error(`SCENARIO J FAIL: Tab button does not enforce single-line scrolling (whiteSpace=${whiteSpace}, flexShrink=${flexShrink})`);
+        process.exit(1);
+      }
+    }
+    console.log(`Mobile 375px Tab Buttons Single-Line Scroll: PASS (${tabButtons.length} tabs verified nowrap/flex-shrink: 0)`);
+    console.log("Scenario J (Mobile 375px Header <=64px & Card Layout & + New Discoverability): PASS");
 
     // =========================================================================
     // SCENARIO K: CONVERGENCE DEFECTS AUDIT (FR-025 – FR-029)

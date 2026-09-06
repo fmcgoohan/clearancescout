@@ -33,6 +33,13 @@ export class DemoAutomationWorkflow {
       throw new Error(`Project ${projectId} not found`);
     }
 
+    // Explicitly update project metadata to The Neon Horizon sample baseline
+    await projectRepo.updateProject(projectId, {
+      title: 'The Neon Horizon',
+      productionCompany: 'Apex Entertainment',
+      scriptVersion: 'v1.0-ShootingDraft',
+    });
+
     const liveCloud = config.executionMode === 'CLOUD_MODE' || project.executionMode === 'CLOUD_MODE';
     const autoEvaluate = options.autoEvaluate !== false;
     const includeSampleRights = liveCloud ? false : options.includeSampleRights !== false;

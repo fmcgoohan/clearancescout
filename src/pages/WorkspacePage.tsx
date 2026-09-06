@@ -598,6 +598,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                   borderRadius: '8px',
                   fontSize: '0.85rem',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
                 Overview
@@ -618,6 +620,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                   borderRadius: '8px',
                   fontSize: '0.85rem',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
                 Screenplay ({pluralize(scenes.length, 'scene', 'scenes')})
@@ -638,6 +642,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                   borderRadius: '8px',
                   fontSize: '0.85rem',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
                 Clearance Items ({entities.length})
@@ -658,6 +664,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                   borderRadius: '8px',
                   fontSize: '0.85rem',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
                 Department Tasks ({openActionsCount > 0 ? `${openActionsCount} Open` : '0 Open'})
@@ -1008,10 +1016,12 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           {scenes.length > 0 && (
             <div className="scene-readiness-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
               {scenes.map((s) => {
+                const isConfirmed = Boolean((s as any).humanConfirmed || (s as any).isReviewed || (s.readinessDetails as any)?.isHumanConfirmed);
+                const isZeroItems = (s.entityCount === 0 || (s as any).totalOccurrences === 0 || (s.occurrences && s.occurrences.length === 0) || s.readinessDetails?.totalOccurrences === 0);
                 const isRed = s.readinessStatus === 'RED';
                 const isWorking = s.readinessStatus === 'WORKING_CLEAR';
-                const isPendingReview = s.readinessStatus === 'PENDING_REVIEW' || (!s.readinessStatus && (!s.entityCount || s.entityCount === 0));
-                const isFinalClear = s.readinessStatus === 'FINAL_CLEAR';
+                const isFinalClear = s.readinessStatus === 'FINAL_CLEAR' && (!isZeroItems || isConfirmed);
+                const isPendingReview = s.readinessStatus === 'PENDING_REVIEW' || (s.readinessStatus === 'FINAL_CLEAR' && isZeroItems && !isConfirmed) || (!s.readinessStatus && isZeroItems);
 
                 const borderColor = isRed
                   ? 'var(--status-action)'

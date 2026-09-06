@@ -22,8 +22,8 @@ export function formatOccurrenceCount(occurrencesCount: number = 0, scenesCount?
 }
 
 export function formatProjectCode(projectId: string | undefined | null, title?: string): string {
-  if (!projectId) return 'PRJ-NEON-HORIZON';
-  if (projectId === 'proj-default' || (title && title.toLowerCase().includes('neon'))) {
+  if (!projectId) return 'PRJ-DEFAULT';
+  if (title && title.toLowerCase().includes('neon')) {
     return 'PRJ-NEON-HORIZON';
   }
   if (projectId === 'proj-cyberpunk' || (title && title.toLowerCase().includes('cyberpunk'))) {

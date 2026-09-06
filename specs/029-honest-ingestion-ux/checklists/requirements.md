@@ -89,3 +89,12 @@
 - [x] In-memory store lifecycle recorded: container uptime separated from lazy project creation timestamp; multi-instance in-memory store uncertainty documented.
 - [x] Shared workspace isolation enforced: mutating QA and evaluation runs prohibited from targeting `proj-default` or `proj-cyberpunk`; must use isolated disposable project IDs (`proj-test-g-<timestamp>`) with isolation assertions and bounded cleanup.
 - [x] Production preservation: no unauthorized live POST demo-load executed against shared production.
+
+### 9. Independent Review Fail-Resolution Gates (FAIL 1 & FAIL 2)
+- [x] FAIL 1: Cyberpunk Odyssey Scene 1 with zero detected items evaluates honestly to `PENDING_REVIEW` with 0% readiness and 0 blocked scenes (never `FINAL_CLEAR` or 100% "Ready for production filming" without human review). Isolation from Neon Horizon preserved.
+- [x] FAIL 2: Unpopulated `proj-default` is semantically labeled as `Default Production Workspace` `[PRJ-DEFAULT]` and does NOT present as the populated baseline `The Neon Horizon` `[PRJ-NEON-HORIZON]` until explicit Load Sample. After explicit Load Sample, exactly 3 scenes, 7 clearance items, and 11 unique department tasks.
+
+### 10. Bounded P2 Usability Gates
+- [x] P2 (Mobile Button Discoverability): Header `+ New Production` button renders a visible label (e.g. `+ New`) and visible affordance on mobile viewports (<=768px / 375px), maintaining >=44px touch targets without horizontal page overflow.
+- [x] P2 (Mobile Tabs Controlled Scroll): Navigation tabs maintain `white-space: nowrap` and `flex-shrink: 0` without compressing or wrapping labels, scrolling smoothly within existing tab container.
+

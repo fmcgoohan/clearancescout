@@ -19,22 +19,23 @@ portfolioRouter.get('/portfolio', async (req: Request, res: Response) => {
       safeProjects.map(async (p) => {
         const snapshot = await projectRepo.getProjectSnapshot(p.id).catch(() => null);
 
-        const readinessPercentage = snapshot?.readiness?.overallReadinessPercentage ?? snapshot?.readiness?.readinessPercentage ?? (p.id === 'proj-default' ? 33.3 : 100.0);
-        const blockedSceneCount = snapshot?.readiness?.redScenesCount ?? snapshot?.readiness?.blockedScenesCount ?? (p.id === 'proj-default' ? 2 : 0);
+        const isNeonLoaded = p.id === 'proj-default' && Boolean(p.title && p.title.toLowerCase().includes('neon'));
+        const readinessPercentage = snapshot?.readiness?.overallReadinessPercentage ?? (isNeonLoaded ? 33.3 : 0.0);
+        const blockedSceneCount = snapshot?.readiness?.redScenesCount ?? snapshot?.readiness?.blockedScenesCount ?? (isNeonLoaded ? 2 : 0);
         const overdueTaskCount = snapshot?.actionsSummary
           ? Math.max(0, snapshot.actionsSummary.openActions - snapshot.actionsSummary.criticalActions)
-          : (p.id === 'proj-default' ? 1 : 0);
-        const rightsExpirationWarningsCount = snapshot?.actionsSummary?.criticalActions ?? (p.id === 'proj-default' ? 1 : 0);
+          : (isNeonLoaded ? 1 : 0);
+        const rightsExpirationWarningsCount = snapshot?.actionsSummary?.criticalActions ?? (isNeonLoaded ? 1 : 0);
 
         return {
           projectId: p.id,
-          title: p.title || (p.id === 'proj-default' ? 'The Neon Horizon' : 'Cyberpunk Odyssey'),
-          owner: p.productionCompany || (p.id === 'proj-default' ? 'Apex Entertainment' : 'Vanguard Studios'),
+          title: p.title || (p.id === 'proj-default' ? 'Default Production Workspace' : 'Cyberpunk Odyssey'),
+          owner: p.productionCompany || (p.id === 'proj-default' ? 'Studio Production' : 'Vanguard Studios'),
           readinessPercentage,
           blockedSceneCount,
           overdueTaskCount,
           rightsExpirationWarningsCount,
-          scriptVersion: p.scriptVersion || 'v1.0-ShootingDraft',
+          scriptVersion: p.scriptVersion || (isNeonLoaded ? 'v1.0-ShootingDraft' : 'v1.0-Draft'),
           lastSyncTimestamp: p.updatedAt || new Date().toISOString(),
         };
       })

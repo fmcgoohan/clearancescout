@@ -116,5 +116,32 @@ tests/
 - Deploy new revision to Cloud Run with 0% production traffic (`clearancescout-00061-lms` remains 100%).
 - Prove Scenario G persistence on canary using isolated disposable project IDs (`proj-test-g-<timestamp>`), with bounded cleanup.
 
+---
 
+## Phase 10: Fail-Resolution & Bounded P2 Implementation Plan
 
+### 1. Cyberpunk Zero-Item Readiness (FAIL 1 / FR-029, FR-032)
+- In `server/workflows/sceneReadinessEngine.ts`, remove the hardcoded `projectId === 'proj-cyberpunk'` bypass so unreviewed zero-item scenes in Cyberpunk Odyssey evaluate honestly to `PENDING_REVIEW` rather than `FINAL_CLEAR`.
+- In `server/repositories/ProjectRepo.ts`, set `scene-cp01` initial readiness status to `PENDING_REVIEW` with `finalClearCount: 0`.
+- In `src/pages/WorkspacePage.tsx`, render neutral review badging and "Pending Review: Human clearance verification required prior to filming" without false "FINAL CLEAR" / "Ready for filming" text.
+- In `tests/repro_local.js` and `tests/repro_live.js`, update Scenario E assertions to verify honest 0% readiness (or non-cleared pending review) with 0 blocked scenes and 0 entity leaks from Neon Horizon.
+
+### 2. Neon Horizon Identity vs. Empty Workspace Labeling (FAIL 2 / FR-036)
+- In `server/repositories/ProjectRepo.ts`, initialize empty `proj-default` with title `'Default Production Workspace'` (`productionCompany: 'Studio Production'`), eliminating premature application of the Neon Horizon label before sample load.
+- In `src/utils/formatters.ts`, update `formatProjectCode` to output `'PRJ-DEFAULT'` when empty and `'PRJ-NEON-HORIZON'` only once title contains `'neon'`.
+- In `server/workflows/demoAutomationWorkflow.ts`, explicitly update project title to `'The Neon Horizon'` upon explicit sample load, populating 3 scenes, 7 items, and 11 unique department tasks.
+- In `tests/repro_local.js` and `tests/repro_live.js`, verify `Default Production Workspace` `[PRJ-DEFAULT]` on container boot, and `The Neon Horizon` `[PRJ-NEON-HORIZON]` only after explicit "Load Sample Production".
+
+### 3. Mobile + New Production Button Discoverability (P2 / FR-034)
+- In `src/index.css`, reorder root `.mobile-only` rules so that media queries properly display `span.mobile-only` as `inline-flex` on viewports <=768px (preventing `.mobile-only { display: none !important; }` from suppressing labels on mobile).
+- Ensure header `+ New Production` / `+ New` button renders a clear visible text label with >=44px touch targets without horizontal overflow.
+
+### 4. Mobile Tabs Controlled Horizontal Scrolling (P2 / FR-034)
+- In `src/pages/WorkspacePage.tsx` and `src/index.css`, enforce `white-space: nowrap !important` and `flex-shrink: 0 !important` on tab buttons within `[role="tablist"]`.
+- Preserve the existing tab container with controlled horizontal scrolling (`overflow-x: auto`), preventing tabs from compressing, wrapping, or stacking vertically.
+
+### 5. Local & Canary Verification Protocol
+- Execute focused unit/contract tests and full local Playwright A–K suite on `localhost:8088`.
+- Commit tested tree to `029-honest-ingestion-ux` and push to origin.
+- Deploy a NEW non-serving Cloud Run canary revision (0% traffic; `clearancescout-00061-lms` remains 100%).
+- Run isolated disposable Scenario G on canary first, followed by canary verification of FAIL 1, FAIL 2, P2s, and preserved PASSes.

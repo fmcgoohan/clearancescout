@@ -111,3 +111,15 @@
 - [x] T047 [Deploy-Canary] Commit approved pass to 029 branch (SHA a1ba4ed), push to origin, and deploy a NEW Cloud Run canary revision clearancescout-00064-lav with 0% production traffic (leaving 00061-lms at 100%)
 - [x] T048 [Verification-Canary] Reconcile canary deployment identity; verify Scenario G on canary using isolated disposable project ID (proj-e425aaf3); verify remaining A–K on canary (ALL PASS); verify View Evidence drawer timing (20.25ms <= 4000ms); STOP for traffic approval
 
+---
+
+## Phase 10: Fail-Resolution & Bounded P2 Implementation
+
+- [x] T049 [FAIL1-Cyberpunk-Readiness] Remove `projectId === 'proj-cyberpunk'` bypass in `server/workflows/sceneReadinessEngine.ts` and set initial readiness of `scene-cp01` in `server/repositories/ProjectRepo.ts` to `PENDING_REVIEW` with 0% readiness (FR-029, FR-032)
+- [x] T050 [FAIL2-Neon-Identity] Initialize empty `proj-default` with title `'Default Production Workspace'` and code `'PRJ-DEFAULT'`, updating title to `'The Neon Horizon'` and code to `'PRJ-NEON-HORIZON'` only upon explicit sample load in `demoAutomationWorkflow.ts` and `src/utils/formatters.ts` (FR-036)
+- [x] T051 [P2-Mobile-New-Button] Fix `.mobile-only` CSS suppression in `src/index.css` so `+ New` button renders a clear visible label with >=44px touch targets on mobile viewports (<=768px / 375px) without horizontal overflow (FR-034)
+- [x] T052 [P2-Mobile-Tabs-Scroll] Enforce `white-space: nowrap !important` and `flex-shrink: 0 !important` on tab buttons in `src/pages/WorkspacePage.tsx` and `src/index.css` to enable smooth controlled horizontal scrolling without label compression or wrapping (FR-034)
+- [x] T053 [Test-Suite-Update] Update Scenario E in `tests/repro_local.js` and `tests/repro_live.js` to assert honest 0% readiness / PENDING_REVIEW / 0 blockers for Cyberpunk, and verify `Default Production Workspace` `[PRJ-DEFAULT]` on initial load before sample load
+- [x] T054 [Verification-Local] Run focused unit tests, local Scenario G on disposable project ID, reload from authoritative snapshot, and full local Playwright A–K suite on localhost:8088
+- [ ] T055 [Deploy-Canary] Commit tested tree to `029-honest-ingestion-ux`, push to origin, and deploy a NEW Cloud Run canary revision with 0% production traffic (leaving `clearancescout-00061-lms` at 100%)
+- [ ] T056 [Verification-Canary] Run isolated disposable Scenario G on canary first, then verify FAIL 1, FAIL 2, both P2s, preserved PASSes, and STOP for traffic approval

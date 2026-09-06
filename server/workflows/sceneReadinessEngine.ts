@@ -31,7 +31,7 @@ export class SceneReadinessEngine {
       // Check if scene has been explicitly verified/cleared by human review
       const isHumanConfirmed = Boolean(
         scene.readinessStatus === 'FINAL_CLEAR' &&
-        (projectId === 'proj-cyberpunk' || (scene as any).humanConfirmed || (scene as any).isReviewed)
+        ((scene as any).humanConfirmed || (scene as any).isReviewed)
       );
 
       const status: SceneReadinessStatus = isHumanConfirmed ? 'FINAL_CLEAR' : 'PENDING_REVIEW';
@@ -277,19 +277,38 @@ export class SceneReadinessEngine {
   async getProjectReadinessSummaryReadOnly(projectId: string): Promise<ProjectReadinessSummary> {
     const scenes = await sceneRepo.getScenesByProject(projectId);
     const assessments: SceneReadinessAssessment[] = scenes.map((s) => {
-      if (s.readinessDetails) return s.readinessDetails;
+      let details = s.readinessDetails;
+      if (details) {
+        // Enforce zero-item rule: unreviewed zero-item scenes cannot be FINAL_CLEAR
+        const isZeroItem = (details.totalOccurrences === 0 || (details.itemsBreakdown && details.itemsBreakdown.length === 0));
+        const isConfirmed = Boolean((s as any).humanConfirmed || (s as any).isReviewed || (details as any).humanConfirmed);
+        if (isZeroItem && !isConfirmed && details.status === 'FINAL_CLEAR') {
+          details = {
+            ...details,
+            status: 'PENDING_REVIEW',
+            finalClearCount: 0,
+            summaryText: `Scene ${s.sceneNumber} (PENDING_REVIEW - Unreviewed Zero Items)`,
+          };
+        }
+        return details;
+      }
+      const isConfirmed = Boolean((s as any).humanConfirmed || (s as any).isReviewed);
+      const effectiveStatus: SceneReadinessStatus = (s.readinessStatus === 'FINAL_CLEAR' && !isConfirmed)
+        ? 'PENDING_REVIEW'
+        : (s.readinessStatus || 'PENDING_REVIEW');
+
       return {
         sceneId: s.id,
         sceneNumber: s.sceneNumber,
         heading: s.heading,
-        status: s.readinessStatus || 'RED',
+        status: effectiveStatus,
         evaluatedAt: s.readinessEvaluatedAt || s.updatedAt || new Date().toISOString(),
-        blockersCount: s.readinessStatus === 'RED' ? 1 : 0,
-        workingClearCount: s.readinessStatus === 'WORKING_CLEAR' ? 1 : 0,
-        finalClearCount: s.readinessStatus === 'FINAL_CLEAR' ? 1 : 0,
+        blockersCount: effectiveStatus === 'RED' ? 1 : 0,
+        workingClearCount: effectiveStatus === 'WORKING_CLEAR' ? 1 : 0,
+        finalClearCount: effectiveStatus === 'FINAL_CLEAR' ? 1 : 0,
         totalOccurrences: 0,
         itemsBreakdown: [],
-        summaryText: `Scene ${s.sceneNumber} (${s.readinessStatus || 'RED'})`,
+        summaryText: `Scene ${s.sceneNumber} (${effectiveStatus})`,
       };
     });
 

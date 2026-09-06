@@ -451,7 +451,25 @@ header .mark span {
   display: inline-flex;
 }
 .mobile-only {
+  display: none;
+}
+
+/* Workspace Tabs: controlled single-line scrolling on mobile */
+[role="tablist"] {
+  display: flex !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+  max-width: 100% !important;
+}
+
+[role="tablist"]::-webkit-scrollbar {
   display: none !important;
+}
+
+[role="tablist"] button[role="tab"] {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 
 /* Sticky Header Accommodation & Scroll Padding */
