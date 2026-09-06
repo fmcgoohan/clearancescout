@@ -7,20 +7,36 @@ import {
 import { actionDispatcher } from '../workflows/actionDispatcher.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 
+import { sceneRepo } from '../repositories/SceneRepo.js';
+
 export const actionRouter = Router();
 
 // GET /projects/:id/actions - List action items for project (with optional department and status filters)
 actionRouter.get('/projects/:id/actions', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = req.params.id;
-    const { department, status, canonicalEntityId, sceneId } = req.query;
+    const { department, status, canonicalEntityId, sceneId, includeSuperseded } = req.query;
 
-    const actions = await actionNotificationRepo.getActionsByProject(projectId, {
+    let actions = await actionNotificationRepo.getActionsByProject(projectId, {
       department: department as DepartmentTarget,
       status: status as ActionStatus,
       canonicalEntityId: canonicalEntityId as string,
       sceneId: sceneId as string,
     });
+
+    if (includeSuperseded !== 'true') {
+      const scenes = await sceneRepo.getScenesByProject(projectId);
+      const activeSceneIds = new Set(scenes.map((s) => s.id));
+      actions = actions.filter((act) => {
+        if (act.resolutionTrigger === 'SCRIPT_REVISION_SUPERSEDED' || act.resolutionReason === 'SCRIPT_REVISION_SUPERSEDED') {
+          return false;
+        }
+        if (scenes.length > 0 && act.sceneId && !activeSceneIds.has(act.sceneId)) {
+          return false;
+        }
+        return true;
+      });
+    }
 
     return res.json(actions);
   } catch (err) {

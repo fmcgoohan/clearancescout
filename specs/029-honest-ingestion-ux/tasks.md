@@ -95,4 +95,19 @@
 - [x] T036 [P2-Production-Cards] Accessible production switcher cards in src/components/ProjectListModal.tsx (native button elements with accessible name=title; aria-selected state; Enter/Space support; visible focus ring; focus active production heading after switch; isolation preserved) (FR-028)
 - [x] T037 [P3-Zero-Item-Scenes] Explicit zero-item scene review & readiness contract in server/workflows/sceneReadinessEngine.ts, src/types/, and binder export (distinguish PENDING_REVIEW / NO_CANDIDATES_DETECTED from human-confirmed FINAL_CLEAR; unreviewed zero-item scenes not shooting ready) (FR-029)
 - [x] T038 [Verification] Run focused unit tests and comprehensive local Playwright suite on localhost:8088 covering 375 layout, Coors 6 across 3, blocker wording, keyboard project cards, and zero-item readiness states
-- [x] T039 [P0-Scenario-G-Ingestion-Persistence] Remediate public Scenario G ingestion persistence defect (VERIFIED CANARY: 100% ALL PASS (A–K) on canary revision clearancescout-00062-cjq at https://canary---clearancescout-n3tcx4jcbq-uc.a.run.app with 0% production traffic; 00061-lms remains 100% serving; OOM root cause resolved by capping timelineEmitter event history, closing SSE response streams, auto-initializing missing project metadata in ProjectRepo, and provisioning 2Gi container memory; Coors Light 6 occurrences across 3 scenes rendered, 0 cleared / 1 insufficient evidence summary, snapshot persistence verified on reload, zero demo substitution) (FR-030)
+- [ ] T039 [P0-Scenario-G-Ingestion-Persistence] Remediate public Scenario G ingestion persistence defect (UNRESOLVED on serving clearancescout-00061-lms at 100% traffic; canary 00062-cjq does not close G; to be proven on NEW canary revision with isolated disposable project) (FR-030)
+
+---
+
+## Phase 9: Corrective Release (Approved Blockers & Tracks)
+
+- [x] T040 [P1-Task-Scoping] Scope Action Center and Department Task queries strictly to active script draft scenes (excluding superseded tasks) and correct pluralize helper formatting in ActionListModal.tsx to prevent duplicated numerals (render "X of Y Tasks") (FR-031)
+- [x] T041 [P1-Zero-Item-Readiness] Implement non-contradictory zero-item scene presentation in WorkspacePage.tsx with explicit neutral PENDING_REVIEW badging and "Pending Review" copy, eliminating false FINAL CLEAR fallthrough (FR-032)
+- [x] T042 [P1-Project-Card-A11y] Reconcile native interactive project card semantics in ProjectListModal.tsx by removing invalid role="option" and using aria-current/aria-pressed attributes (FR-028, FR-033)
+- [x] T043 [P2-Mobile-Ergonomics] Audit and refine 375px mobile layout reachability in Header.tsx and ActionListModal.tsx (header <=64px, touch targets >=44px, zero horizontal overflow) (FR-034)
+- [x] T044 [P2-Project-Identity] Disambiguate identical project titles in ProjectListModal.tsx using unique creation timestamps and project codes without merging or deleting historical records (FR-035)
+- [x] T045 [P0-Option-B-Lifecycle] Verify Option B honest-empty lifecycle in InMemoryStore: no auto-seeding on container boot; explicit "Load Sample Production" or authorized demo-load populates 3 scenes / 7 items / 11 tasks baseline (FR-036)
+- [x] T046 [Verification-Local] Run focused unit tests and complete local Playwright A–K suite on localhost:8088 (real Chromium) with zero regressions
+- [ ] T047 [Deploy-Canary] Commit approved pass to 029 branch, push, and deploy a NEW Cloud Run canary revision with 0% production traffic (leaving 00061-lms at 100%)
+- [ ] T048 [Verification-Canary] Reconcile canary deployment identity; verify Scenario G on canary using isolated disposable project ID (proj-test-g-<timestamp>); verify remaining A–K on canary; STOP for traffic approval
+

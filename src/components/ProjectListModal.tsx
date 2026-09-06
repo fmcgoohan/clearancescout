@@ -430,9 +430,9 @@ export function ProjectListModal({
                       return (
                         <button
                           type="button"
-                          role="option"
-                          aria-selected={isActive}
-                          aria-label={`${proj.title}${isActive ? ' (Active Workspace)' : ''}`}
+                          aria-current={isActive ? 'true' : undefined}
+                          aria-pressed={isActive}
+                          aria-label={`${proj.title}${isActive ? ' (Active Workspace)' : ''}${proj.createdAt ? ` — Created ${new Date(proj.createdAt).toISOString().replace('T', ' ').slice(0, 16)} UTC` : ''}`}
                           key={proj.id}
                           data-project-id={proj.id}
                           data-active-workspace={isActive ? 'true' : 'false'}
@@ -502,10 +502,15 @@ export function ProjectListModal({
                                 </span>
                               )}
                             </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><BuildingIcon size={12} /> {proj.productionCompany}</span>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><FileTextIcon size={12} /> {proj.scriptVersion}</span>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ZapIcon size={12} /> {proj.executionMode}</span>
+                            {proj.createdAt && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'monospace', fontSize: '0.7rem' }}>
+                                [{new Date(proj.createdAt).toISOString().replace('T', ' ').slice(0, 16)} UTC]
+                              </span>
+                            )}
                           </div>
                         </div>
 

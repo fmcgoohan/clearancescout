@@ -15,7 +15,7 @@ export interface Scene {
   timeOfDay: string;
   rawText: string;
   characterActionSummary: string;
-  readinessStatus?: 'RED' | 'WORKING_CLEAR' | 'FINAL_CLEAR';
+  readinessStatus?: 'RED' | 'WORKING_CLEAR' | 'FINAL_CLEAR' | 'PENDING_REVIEW';
   readinessDetails?: {
     blockersCount?: number;
     workingClearCount?: number;
@@ -24,6 +24,8 @@ export interface Scene {
     summaryText?: string;
     blockingRationale?: string;
   };
+  occurrences?: any[];
+  entityCount?: number;
 }
 
 export interface CounselOverrideItem {

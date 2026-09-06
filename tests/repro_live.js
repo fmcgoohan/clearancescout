@@ -666,19 +666,20 @@ async function runLiveVerification() {
     await switchBtn.click();
     await page.waitForSelector('[role="dialog"], [aria-modal="true"]', { timeout: 5000 });
 
-    const cardButton = await page.waitForSelector('button.project-select-card[role="option"]');
+    const cardButton = await page.waitForSelector('button.project-select-card');
     const cardTagName = await cardButton.evaluate(el => el.tagName);
     const cardRole = await cardButton.getAttribute('role');
-    const cardAriaSelected = await cardButton.getAttribute('aria-selected');
-    console.log(`  Project Card Element: <${cardTagName.toLowerCase()}> with role="${cardRole}", aria-selected="${cardAriaSelected}"`);
+    const cardAriaCurrent = await cardButton.getAttribute('aria-current');
+    const cardAriaPressed = await cardButton.getAttribute('aria-pressed');
+    console.log(`  Project Card Element: <${cardTagName.toLowerCase()}> with role="${cardRole}", aria-current="${cardAriaCurrent}", aria-pressed="${cardAriaPressed}"`);
 
-    if (cardTagName !== 'BUTTON' || cardRole !== 'option' || cardAriaSelected === null) {
-      console.error('SCENARIO K FAIL: Project card is not an accessible native button with role="option" and aria-selected!');
+    if (cardTagName !== 'BUTTON' || cardRole === 'option' || (cardAriaCurrent === null && cardAriaPressed === null)) {
+      console.error('SCENARIO K FAIL: Project card must be a native button without invalid role="option" and with aria-current / aria-pressed!');
       process.exit(1);
     }
 
     // Activate via keyboard Enter
-    await page.locator('button.project-select-card[role="option"]').first().focus();
+    await page.locator('button.project-select-card').first().focus();
     await page.keyboard.press('Enter');
     await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(500);

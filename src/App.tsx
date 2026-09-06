@@ -146,6 +146,7 @@ export default function App() {
           health.executionMode === 'DEMO_MODE' ||
           health.executionMode === 'CLOUD_MODE'
         ) {
+          // Server execution mode from health endpoint
           serverMode = health.executionMode;
         }
         if (health.revision) {

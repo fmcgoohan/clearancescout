@@ -46,6 +46,7 @@ export interface ClearanceActionItem {
   isOverdue?: boolean;
   activityHistory?: ActionAuditEvent[];
   resolutionTrigger?: string;
+  resolutionReason?: string;
   resolvedAt?: string;
   createdAt: string;
 }
@@ -301,14 +302,19 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
 
   if (!isOpen && !embedded) return null;
 
-  const filteredActions = actions.filter((act) => {
+  const isSuperseded = (act: ClearanceActionItem) =>
+    act.resolutionTrigger === 'SCRIPT_REVISION_SUPERSEDED' || act.resolutionReason === 'SCRIPT_REVISION_SUPERSEDED';
+
+  const activeDraftActions = actions.filter((act) => !isSuperseded(act));
+
+  const filteredActions = activeDraftActions.filter((act) => {
     if (activeTab !== 'ALL' && act.targetDepartment !== activeTab) return false;
     if (statusFilter === 'OPEN' && act.status === 'RESOLVED') return false;
     if (statusFilter === 'RESOLVED' && act.status !== 'RESOLVED') return false;
     return true;
   });
 
-  const openActions = actions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
+  const openActions = activeDraftActions.filter((a) => a.status === 'OPEN' || a.status === 'IN_PROGRESS');
   const openCount = openActions.length;
   const artCount = openActions.filter((a) => a.targetDepartment === 'ART_DEPT').length;
   const legalCount = openActions.filter((a) => a.targetDepartment === 'LEGAL_COUNSEL').length;
@@ -367,9 +373,9 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
               fontWeight: 600,
             }}
           >
-            {isLoading || actions.length === 0
+            {isLoading || activeDraftActions.length === 0
               ? 'Loading tasks…'
-              : `${filteredActions.length} of ${actions.length} ${pluralize(actions.length, 'Task', 'Tasks')}`}
+              : `${filteredActions.length} of ${pluralize(activeDraftActions.length, 'Task', 'Tasks')}`}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

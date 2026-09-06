@@ -58,6 +58,10 @@ export interface SceneReadinessDistributionItem {
   blockerCount: number;
   workingCount: number;
   totalOccurrences: number;
+  blockersCount?: number;
+  workingClearCount?: number;
+  finalClearCount?: number;
+  blockingRationale?: string;
 }
 
 export interface ProductionDashboardData {
@@ -159,10 +163,10 @@ export class DashboardEngine {
 
     // 4. Department Actions Summary
     const departmentActionsSummary = {
-      ART_DEPT: activeActions.filter((a) => a.targetDepartment === 'ART_DEPT').length,
-      LEGAL_COUNSEL: activeActions.filter((a) => a.targetDepartment === 'LEGAL_COUNSEL').length,
-      LOCATIONS: activeActions.filter((a) => a.targetDepartment === 'LOCATIONS').length,
-      PRODUCTION_MGMT: activeActions.filter((a) => a.targetDepartment === 'PRODUCTION_MGMT' || a.targetDepartment === 'CLEARANCE_TEAM').length,
+      ART_DEPT: allActions.filter((a) => a.targetDepartment === 'ART_DEPT').length,
+      LEGAL_COUNSEL: allActions.filter((a) => a.targetDepartment === 'LEGAL_COUNSEL').length,
+      LOCATIONS: allActions.filter((a) => a.targetDepartment === 'LOCATIONS').length,
+      PRODUCTION_MGMT: allActions.filter((a) => a.targetDepartment === 'PRODUCTION_MGMT' || a.targetDepartment === 'CLEARANCE_TEAM').length,
     };
 
     // 5. Scene Readiness Distribution
@@ -173,10 +177,14 @@ export class DashboardEngine {
       status: s.status,
       blockerCount: s.blockersCount,
       workingCount: s.workingClearCount,
+      blockersCount: s.blockersCount,
+      workingClearCount: s.workingClearCount,
+      finalClearCount: s.finalClearCount,
       totalOccurrences: s.totalOccurrences,
+      blockingRationale: s.blockingRationale,
     }));
 
-    // 6. Recent Activity Timeline
+    // 6. Recent Timeline Activity (last 10 events)
     const rawEvents = timelineEmitter.getEvents(projectId);
     const recentActivity = rawEvents.slice(-10).reverse().map((e, idx) => ({
       id: `act-${idx + 1}`,
@@ -196,7 +204,7 @@ export class DashboardEngine {
       criticalBlockersCount: shootBlockers.length,
       activePlaceholdersCount: activePlaceholders.length,
       rightsExpiringSoonCount: expiringRights.length,
-      pendingActionsCount: activeActions.length,
+      pendingActionsCount: allActions.length,
     };
 
     return {

@@ -898,7 +898,9 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                     ? '6px solid var(--status-action)'
                     : readinessSummary.workingClearScenesCount > 0
                     ? '6px solid var(--status-review)'
-                    : '6px solid var(--status-no-issue)',
+                    : readinessSummary.finalClearScenesCount === readinessSummary.totalScenes && readinessSummary.totalScenes > 0
+                    ? '6px solid var(--status-no-issue)'
+                    : '6px solid rgba(148, 163, 184, 0.5)',
                 borderRadius: '12px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
               }}
@@ -1008,17 +1010,57 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               {scenes.map((s) => {
                 const isRed = s.readinessStatus === 'RED';
                 const isWorking = s.readinessStatus === 'WORKING_CLEAR';
-                const borderColor = isRed ? 'var(--status-action)' : isWorking ? 'var(--status-review)' : 'var(--status-no-issue)';
-                const bgColor = isRed ? 'var(--status-action-bg)' : isWorking ? 'var(--status-review-bg)' : 'var(--status-no-issue-bg)';
-                const textColor = isRed ? 'var(--status-action)' : isWorking ? 'var(--status-review)' : 'var(--status-no-issue)';
-                const borderChip = isRed ? 'var(--status-action-border)' : isWorking ? 'var(--status-review-border)' : 'var(--status-no-issue-border)';
-                const statusLabel = isRed ? 'BLOCKS SHOOTING' : isWorking ? 'WORKING CLEAR' : 'FINAL CLEAR';
+                const isPendingReview = s.readinessStatus === 'PENDING_REVIEW' || (!s.readinessStatus && (!s.entityCount || s.entityCount === 0));
+                const isFinalClear = s.readinessStatus === 'FINAL_CLEAR';
+
+                const borderColor = isRed
+                  ? 'var(--status-action)'
+                  : isWorking
+                  ? 'var(--status-review)'
+                  : isPendingReview
+                  ? 'rgba(148, 163, 184, 0.5)'
+                  : 'var(--status-no-issue)';
+
+                const bgColor = isRed
+                  ? 'var(--status-action-bg)'
+                  : isWorking
+                  ? 'var(--status-review-bg)'
+                  : isPendingReview
+                  ? 'rgba(148, 163, 184, 0.08)'
+                  : 'var(--status-no-issue-bg)';
+
+                const textColor = isRed
+                  ? 'var(--status-action)'
+                  : isWorking
+                  ? 'var(--status-review)'
+                  : isPendingReview
+                  ? 'var(--text-muted)'
+                  : 'var(--status-no-issue)';
+
+                const borderChip = isRed
+                  ? 'var(--status-action-border)'
+                  : isWorking
+                  ? 'var(--status-review-border)'
+                  : isPendingReview
+                  ? 'rgba(148, 163, 184, 0.3)'
+                  : 'var(--status-no-issue-border)';
+
+                const statusLabel = isRed
+                  ? 'BLOCKS SHOOTING'
+                  : isWorking
+                  ? 'WORKING CLEAR'
+                  : isPendingReview
+                  ? 'PENDING REVIEW'
+                  : 'FINAL CLEAR';
+
                 const isExpanded = Boolean(expandedReadiness[s.id]);
 
                 const summaryText = isRed
                   ? 'Shooting Blocker: Action item(s) require legal resolution prior to filming.'
                   : isWorking
                   ? 'Review Recommended: Item(s) pending clearance verification.'
+                  : isPendingReview
+                  ? 'Pending Review: Human clearance verification required prior to filming.'
                   : 'All entities cleared. Ready for production filming.';
 
                 return (

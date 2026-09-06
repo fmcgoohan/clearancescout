@@ -85,5 +85,36 @@ tests/
 | Retaining exact slugline temporal strings | Preserves screenplay author intent and prevents false daylight assumptions | Hardcoded enum forces losing contextual time info |
 | Responsive table-to-card CSS/React layout | Eliminates horizontal scroll/clipping on 375px/390px/420px viewports | Horizontal scroll on tables fails mobile readability |
 | Browser URL query parameter synchronization | Allows deep-linking to specific tabs/tasks that survive refresh | Hash-routing requires router architecture rewrite |
+| Active-draft task scoping | Prevents superseded script tasks from polluting Action Center | Deleting superseded tasks risks data loss on draft revert |
+| Honest empty workspace (Option B) | Eliminates synthetic demo substitution and enforces honest lifecycle (SC-001, FR-030) | Auto-seeding on cold start masks unpopulated state and violates honest ingestion |
+
+---
+
+## Phase 9: Corrective Implementation Plan (Approved Blockers & Tracks)
+
+### 1. Active-Draft Task Scoping & Counter Format (FR-031)
+- Scope Action Center tasks strictly to scenes of the active script draft. Exclude tasks from superseded scene IDs.
+- Correct `ActionListModal.tsx` counter string interpolation to prevent duplicate count numerals (render "X of Y Tasks", not "X of Y Y Tasks").
+
+### 2. Zero-Item Scene Review & Non-Contradictory Readiness Presentation (FR-032)
+- In `WorkspacePage.tsx`, explicitly handle `PENDING_REVIEW` zero-item scenes with neutral review badging and "Pending Review" copy.
+- Prevent fallthrough to green `FINAL CLEAR` / "Ready for production filming" while overall project readiness is 0% or pending review.
+
+### 3. Native Interactive Project Card Semantics (FR-028 / FR-033)
+- In `ProjectListModal.tsx`, strip invalid `role="option"` from native `<button>` elements outside ARIA listboxes.
+- Indicate active workspace selection with valid `aria-current="true"` or `aria-pressed="true"`.
+- Preserve Enter/Space activation, visible focus outline, and restore focus to active production heading upon dismissal.
+
+### 4. Narrow Viewport Usability & Ergonomics (FR-034)
+- Audit 375px layout: ensure header <=64px, navigation tab scrolling isolated, >=44px touch targets, zero document horizontal overflow (`document.scrollWidth <= clientWidth`).
+
+### 5. Project Directory Identity Disambiguation (FR-035)
+- In `ProjectListModal.tsx`, render creation timestamps and project codes to disambiguate identical titles ("Mountain Refuge Live QA") without deleting or merging projects.
+
+### 6. Public Canary Persistence & Option B Lifecycle (FR-030, FR-036)
+- Maintain honest-empty in-memory lifecycle: `proj-default` initializes with 0/0/0; sample baseline (3/7/11) loaded strictly via explicit "Load Sample Production" or authorized `demo-load`.
+- Deploy new revision to Cloud Run with 0% production traffic (`clearancescout-00061-lms` remains 100%).
+- Prove Scenario G persistence on canary using isolated disposable project IDs (`proj-test-g-<timestamp>`), with bounded cleanup.
+
 
 
