@@ -121,3 +121,34 @@
 - [x] Music clearance rationales state exact copy: "A synchronization license is required for distribution. This production’s clearance policy requires the license to be secured before filming proceeds."
 - [x] Dual standard consistently reflected across evaluator rationales, department tasks, and clearance binder exports.
 
+### 15. Execution-Mode Authoritative Representation (Proposal Gate — FR-041)
+- [ ] Option A: Settings Popover and Project Creation dialog replace interactive execution-mode `<select>` with read-only badge/status indicator showing authoritative server mode (e.g. `DEMO_MODE (Authoritative)`).
+- [ ] Explanatory tooltip/copy clearly indicates that execution mode is governed by server configuration and that live `CLOUD_MODE` requires server-side secret mounting.
+- [ ] Client state is prohibited from simulating mode switching, adhering to Architectural Rule 5.
+
+### 16. Zero-Item Multi-State Classification (Proposal Gate — FR-042)
+- [ ] Deterministic five-state scene classification implemented (`ANALYSIS_PENDING`, `ANALYSIS_FAILED`, `NO_CANDIDATES_SURFACED`, `HUMAN_REVIEWED_NO_CONCERN`, `FULLY_CLEARED`).
+- [ ] Scenes with zero detected clearance items evaluate to `PENDING_REVIEW` with 0% readiness, never `FINAL_CLEAR` without recorded human review.
+- [ ] Operator or counsel sign-off mechanism transitions un-flagged scenes from `PENDING_REVIEW` to `FINAL_CLEAR`.
+
+### 17. Task Active-Draft Scope & Deduplication Hygiene (Proposal Gate — FR-043)
+- [ ] Department tasks are scoped to active screenplay draft ID; superseded draft tasks are excluded from active task lists.
+- [ ] UI displays open vs total tasks (e.g. "4 open of 11 unique tasks").
+- [ ] Blanket title-based deduplication is prohibited, preserving distinct tasks for distinct scene occurrences sharing standard titles.
+- [ ] Audit of persisted duplicate records is performed separately from client-side rendering.
+
+### 18. Coors Appearance vs Unresolved Semantics (Proposal Gate — FR-044)
+- [ ] Coors Light baseline (1 canonical entity, 6 appearances across 3 scenes) maintains parity across Registry and Dossier.
+- [ ] Scene 1, 2, and 3 readiness rationales and counters distinguish 1 unresolved blocker from textual occurrence count (1 in Scene 1, 2 in Scene 2, 3 in Scene 3).
+- [ ] Singular/plural grammar enforced in blocker descriptions.
+- [ ] Scene 2 heading retains `EXT. NEIGHBORHOOD CORNER - CONTINUOUS`.
+
+### 19. Project Directory Stable ID Disambiguation & Non-Mutation (Proposal Gate — FR-045)
+- [ ] Projects sharing identical titles in the switcher and directory are disambiguated with stable project ID (`proj-<uuid>`) and creation timestamp.
+- [ ] Production datasets are preserved: zero unauthorized re-seeding, deletion, or overwriting of shared review workspaces.
+
+### 20. Mobile Usability Bounded Ergonomics & Viewport Verification (Proposal Gate — FR-046)
+- [ ] Verification across 320, 375, 390, 420, 768, 1280px viewports measures both `document.documentElement` and `document.body` with zero horizontal overflow without `overflow-x: hidden`.
+- [ ] All interactive elements (header buttons, switcher cards, tabs, filter pills, drawer buttons) provide >=44px touch targets.
+- [ ] Header height <=64px and drawer open latency <=4s monitored and evaluated against agreed performance criteria.
+

@@ -114,4 +114,92 @@ describe("Contract: Pre-Walkthrough Corrections (FR-037 through FR-040)", () => 
       "A synchronization license is required for distribution. This production’s clearance policy requires the license to be secured before filming proceeds."
     );
   });
+
+  describe("Contract: Operating Model Convergence (FR-041 through FR-046)", () => {
+    it("FR-041: /api/health exposes authoritative execution mode and configuration status", async () => {
+      const res = await request(app).get("/api/health");
+      expect(res.status).toBe(200);
+      expect(res.body.executionMode).toBeDefined();
+      expect(typeof res.body.credentials?.geminiConfigured).toBe("boolean");
+      expect(typeof res.body.credentials?.parallelWebConfigured).toBe("boolean");
+    });
+
+    it("FR-042: unreviewed zero-item scenes must evaluate to PENDING_REVIEW with 0% readiness", async () => {
+      // Create a scene with 0 entities
+      const emptySceneProj = await request(app)
+        .post("/api/projects")
+        .send({
+          title: "Zero Item Scene Project",
+          productionCompany: "QA Labs",
+          scriptVersion: "v1.0",
+          executionMode: "TEST_MODE",
+        });
+      expect(emptySceneProj.status).toBe(201);
+      const pid = emptySceneProj.body.id;
+
+      // Add a scene with no mentions
+      await request(app)
+        .post(`/api/projects/${pid}/script`)
+        .send({
+          scriptText: "INT. EMPTY ROOM - DAY\nSilence fills the room. Nothing is here.",
+          format: "PLAINTEXT",
+        });
+
+      const readinessRes = await request(app).get(`/api/projects/${pid}/scenes/readiness`);
+      expect(readinessRes.status).toBe(200);
+      expect(readinessRes.body.totalScenes).toBe(1);
+      expect(readinessRes.body.pendingReviewScenesCount).toBe(1);
+      expect(readinessRes.body.finalClearScenesCount).toBe(0);
+      expect(readinessRes.body.overallReadinessPercentage).toBe(0);
+      expect(readinessRes.body.scenes[0].status).toBe("PENDING_REVIEW");
+    });
+
+    it("FR-044: blocker rationales must use singular grammar and count occurrences accurately", async () => {
+      const coorsProj = await request(app)
+        .post("/api/projects")
+        .send({
+          title: "Grammar Parity Project",
+          productionCompany: "QA Labs",
+          scriptVersion: "v1.0",
+          executionMode: "TEST_MODE",
+        });
+      expect(coorsProj.status).toBe(201);
+      const pid = coorsProj.body.id;
+
+      // Scene with 1 mention of brand
+      await request(app)
+        .post(`/api/projects/${pid}/script`)
+        .send({
+          scriptText: "EXT. NEIGHBORHOOD CORNER - CONTINUOUS\nJohn drinks a Coors Light.",
+          format: "PLAINTEXT",
+        });
+
+      const entitiesRes = await request(app).get(`/api/projects/${pid}/entities`);
+      const entities = Array.isArray(entitiesRes.body) ? entitiesRes.body : entitiesRes.body.entities;
+      const coors = entities.find((e: any) => e.canonicalName.toLowerCase().includes("coors"));
+      expect(coors).toBeDefined();
+
+      const initialReadiness = await request(app).get(`/api/projects/${pid}/scenes/readiness`);
+      const scene1 = initialReadiness.body.scenes[0];
+
+      // Add second occurrence for coors in scene 1
+      const { entityRepo } = await import("../../server/repositories/EntityRepo.js");
+      await entityRepo.createOccurrence(pid, {
+        canonicalEntityId: coors.id,
+        sceneId: scene1.sceneId,
+        sceneNumber: 1,
+        surfaceMention: "Coors Light",
+        clearanceStatus: "ACTION_REQUIRED",
+      });
+
+      // Trigger readiness re-evaluation
+      const { sceneReadinessEngine } = await import("../../server/workflows/sceneReadinessEngine.js");
+      const reevaluated = await sceneReadinessEngine.evaluateSceneReadiness(pid, scene1.sceneId);
+      expect(reevaluated.blockersCount).toBe(1);
+      // Verify singular grammar: "1 clearance blocker prevents..."
+      expect(reevaluated.blockingRationale).toMatch(/1 clearance blocker prevents shooting Scene 1/i);
+      expect(reevaluated.blockingRationale).toContain("appears 2 times");
+    });
+  });
 });
+

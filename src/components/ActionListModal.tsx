@@ -387,6 +387,10 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
           >
             {fetchState === 'loading'
               ? 'Loading tasks…'
+              : activeDraftActions.length === 0
+              ? '0 of 0 Tasks'
+              : statusFilter === 'OPEN'
+              ? `${filteredActions.length} open of ${pluralize(activeDraftActions.length, 'Task', 'Tasks')}`
               : `${filteredActions.length} of ${pluralize(activeDraftActions.length, 'Task', 'Tasks')}`}
           </span>
         </div>

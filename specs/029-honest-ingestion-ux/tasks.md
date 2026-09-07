@@ -136,3 +136,19 @@
 - [x] T062 [Build-Verification] Verify frontend build (`npm run build`) and execute vitest unit suite (`npx vitest run`)
 - [x] T063 [Browser-Validation-Local] Execute targeted Playwright validation on `localhost:8088` (Cyberpunk zero-task state, cold `?tab=tasks`, project switching isolation, Neon Horizon task restoration)
 - [x] T064 [Deploy-Canary] Commit coherent patch to `029-honest-ingestion-ux` (SHA `d539788`), push to origin, build image via Cloud Build `8a326a2c-caa7-411d-9271-4ff3a4aa740c`, deploy NEW Cloud Run canary revision `clearancescout-00067-ley` (0% traffic; `clearancescout-00061-lms` remains 100%), verify acceptance checks on canary (ALL PASS), and STOP for operator review
+
+---
+
+## Phase 12: Operating Model Convergence Implementation Tasks
+
+- [ ] T065 [Execution-Mode-OptionA] In `src/components/SettingsPopover.tsx` and `src/components/ProjectListModal.tsx`, replace the interactive `<select>` with an authoritative read-only badge (`DEMO_MODE (Authoritative)`) with explanatory copy, removing client-side synthetic mode overrides in `src/App.tsx` (FR-041)
+- [ ] T066 [Zero-Item-Classification] Implement the 5-state scene readiness classification in `server/workflows/sceneReadinessEngine.ts` and `src/components/SceneReadinessCard.tsx` (`ANALYSIS_PENDING`, `ANALYSIS_FAILED`, `NO_CANDIDATES_SURFACED` -> `PENDING_REVIEW` 0%, `HUMAN_REVIEWED_NO_CONCERN` -> `FINAL_CLEAR`, `FULLY_CLEARED`) (FR-042)
+- [ ] T067 [Task-Active-Draft-Scope] In `server/repositories/ActionNotificationRepo.ts`, `server/workflows/actionDispatcher.ts`, and `src/components/ActionListModal.tsx`, ensure department tasks are scoped to active draft; display open vs total unique tasks (`"${openCount} open of ${totalCount} Tasks"`); prohibit blanket title-based deduplication (FR-043)
+- [ ] T068 [Coors-Semantics-Parity] In `server/workflows/sceneReadinessEngine.ts`, verify Registry/Dossier parity for Coors Light (1 item, 6 occurrences across 3 scenes); separate textual appearances from unresolved blockers in Scene 1 (1/1), Scene 2 (1/2, heading `CONTINUOUS`), Scene 3 (1/3); enforce singular/plural grammar (FR-044)
+- [ ] T069 [Project-Disambiguation-A11y] In `src/components/ProjectListModal.tsx` and `src/components/PortfolioDashboard.tsx`, render native `<button>` cards with stable project ID (`proj-<uuid>`) and timestamp; ensure post-switch focus shifts to `h1#workspace-production-heading` (FR-033, FR-045)
+- [ ] T070 [Notification-Tombstone-A11y] In `src/components/NotificationDrawer.tsx` and `src/components/ActionListModal.tsx`, verify valid notification (`TASK-101`) scrolls and focuses `h4#task-heading-TASK-101`; orphan notifications render disabled tombstone badges without fallback to `Re-Sync` (FR-027)
+- [ ] T071 [Contract-Unit-Tests] Create or update unit/contract tests for execution mode read-only representation, 5-state zero-item classification, and draft-scoped tasks in `tests/contract/`
+- [ ] T072 [Build-Local-Validation] Verify `npm run build`, execute unit tests (`npx vitest run`), and execute full local Playwright verification (`node tests/repro_local.js`) on port 8088
+- [ ] T073 [Deploy-Canary] Commit tested patch to `029-honest-ingestion-ux`, push to origin, build image, deploy NEW Cloud Run canary (`--no-traffic --tag canary`), and verify canary required checks on canary URL
+- [ ] T074 [Deploy-Production] Upon canary required checks passing, deploy the exact same commit to production with 100% traffic, replacing `clearancescout-00061-lms`. Reconcile revision, SHA, image, creation time, 100% traffic, Settings, and `GET /api/health`
+- [ ] T075 [Verification-Public-A-K] Execute full public Playwright A–K audit on `https://clearancescout-n3tcx4jcbq-uc.a.run.app` with demo token via Settings/localStorage (Scenario G on isolated disposable project ID), record per-section PASS/FAIL, and STOP for independent review

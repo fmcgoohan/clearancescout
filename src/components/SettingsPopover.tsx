@@ -7,7 +7,7 @@ interface SettingsPopoverProps {
   hasTokenConfigured: boolean;
   onOpenTokenModal: () => void;
   executionMode: 'DEMO_MODE' | 'TEST_MODE' | 'CLOUD_MODE';
-  setExecutionMode: (mode: 'DEMO_MODE' | 'TEST_MODE' | 'CLOUD_MODE') => void;
+  setExecutionMode?: (mode: 'DEMO_MODE' | 'TEST_MODE' | 'CLOUD_MODE') => void;
   liveQuota: { remaining: number; limit: number };
   eventsCount: number;
   onOpenTimeline: () => void;
@@ -182,34 +182,28 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
             </button>
           </div>
 
-          {/* Execution Mode Option */}
+          {/* Authoritative Server Execution Mode (FR-041 Option A) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label htmlFor="mode-select" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Execution Mode
-            </label>
-            <select
-              id="mode-select"
-              aria-label="Server execution mode from health endpoint"
-              title="Execution mode reported by GET /api/health"
-              value={executionMode}
-              onChange={(e) => setExecutionMode(e.target.value as any)}
-              style={{
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '6px',
-                color: 'var(--accent-cyan)',
-                padding: '6px 10px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                outline: 'none',
-                width: '100%',
-              }}
-            >
-              <option value="DEMO_MODE" style={{ background: '#1e293b' }}>DEMO_MODE</option>
-              <option value="TEST_MODE" style={{ background: '#1e293b' }}>TEST_MODE</option>
-              <option value="CLOUD_MODE" style={{ background: '#1e293b' }}>CLOUD_MODE</option>
-            </select>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Server Execution Mode</span>
+              <span
+                data-testid="authoritative-execution-mode"
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: 'var(--accent-cyan)',
+                  background: 'rgba(56, 189, 248, 0.15)',
+                  border: '1px solid var(--accent-cyan)',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                }}
+              >
+                {executionMode} (Authoritative)
+              </span>
+            </div>
+            <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.3 }}>
+              Governed by server configuration. Live CLOUD_MODE requires server-side secret provisioning (GEMINI_API_KEY, PARALLEL_WEB_API_KEY).
+            </p>
           </div>
 
           {/* Quota Counter */}

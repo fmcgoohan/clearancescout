@@ -339,28 +339,28 @@ export function ProjectListModal({
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    Execution Mode
-                  </label>
-                  <select
-                    value={executionMode}
-                    onChange={(e) => setExecutionMode(e.target.value as any)}
+                  <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                    Server Execution Mode
+                  </span>
+                  <div
+                    data-testid="project-creation-execution-mode"
                     style={{
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '8px',
                       background: '#121824',
                       border: '1px solid var(--border-color)',
-                      color: 'var(--text-main)',
-                      fontSize: '0.9rem',
+                      color: 'var(--accent-cyan)',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
                       boxSizing: 'border-box',
-                      cursor: 'pointer',
                     }}
                   >
-                    <option value="DEMO_MODE">DEMO_MODE (Offline Benchmark Fixtures)</option>
-                    <option value="TEST_MODE">TEST_MODE (Local Test Mocks)</option>
-                    <option value="CLOUD_MODE">CLOUD_MODE (Live Gemini & Parallel API)</option>
-                  </select>
+                    {executionMode} (Authoritative)
+                  </div>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                    New productions inherit the server's authoritative execution mode.
+                  </p>
                 </div>
               </div>
 

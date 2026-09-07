@@ -184,3 +184,64 @@ tests/
 - Commit the coherent patch to `029-honest-ingestion-ux` and push to origin.
 - Build container image and deploy a NEW Cloud Run canary revision (0% traffic; `clearancescout-00061-lms` remains 100%).
 - Verify acceptance checks on canary and STOP for operator review.
+
+---
+
+## Phase 12: Operating Model Convergence Implementation Plan
+
+### 1. Execution-Mode Authoritative Representation (FR-041 - Option A)
+- In `src/components/SettingsPopover.tsx`, replace the interactive `<select id="mode-select">` with a read-only status badge displaying the authoritative server mode reported by `GET /api/health` (e.g. `DEMO_MODE (Authoritative)`).
+- Include clear informational copy:
+  `Execution mode is governed strictly by server configuration. Live CLOUD_MODE requires server-side secret mounting (GEMINI_API_KEY, PARALLEL_WEB_API_KEY).`
+- In `src/components/ProjectListModal.tsx`, replace the interactive mode dropdown with a read-only runtime label (`Active Server Runtime: DEMO_MODE`).
+- In `src/App.tsx`, eliminate client-side synthetic mode spoofing (`setExecutionMode`); lock execution mode strictly to server health.
+- Audit server config: verify `server/config.ts` and `server/api/healthRoutes.ts` check credential presence without exposing key values.
+
+### 2. Multi-State Zero-Item Scene Classification (FR-042)
+- In `server/workflows/sceneReadinessEngine.ts` and `src/components/SceneReadinessCard.tsx`, implement the deterministic 5-state scene classification:
+  - `ANALYSIS_PENDING`: Ingestion or parsing in progress.
+  - `ANALYSIS_FAILED`: Parser/evaluator error requiring retry.
+  - `NO_CANDIDATES_SURFACED`: Ingestion complete, 0 items surfaced. Evaluates to `PENDING_REVIEW` with 0% readiness; operator copy: *"No clearance items detected. Clearance coordinator sign-off required before filming."*
+  - `HUMAN_REVIEWED_NO_CONCERN`: Explicit operator/counsel review recorded, transitioning scene to `FINAL_CLEAR`.
+  - `FULLY_CLEARED`: All detected items resolved.
+- Enforce strict invariant: zero-item scenes NEVER evaluate to `FINAL_CLEAR` or display "Ready for filming" without explicit human review.
+
+### 3. Task Active-Draft Scope & Deduplication Hygiene (FR-043)
+- In `server/repositories/ActionNotificationRepo.ts` and `server/workflows/actionDispatcher.ts`, scope department tasks to the active screenplay draft version (`scriptVersionId`).
+- In `src/components/ActionListModal.tsx`:
+  - Prohibit blanket title-based deduplication; preserve distinct tasks for distinct scene occurrences sharing standard titles.
+  - Header badge explicitly formats open vs total unique tasks: `"${filteredOpenCount} open of ${totalUniqueTasks} Tasks"` (e.g. `"4 open of 11 Tasks"`).
+  - Persisted duplicate task cleanup is separated from UI presentation into an explicit migration script.
+
+### 4. Coors Semantics Parity & Blocker Formatting (FR-044)
+- Maintain strict parity between Entity Registry and Evidence Dossier for *Coors Light* (1 canonical item, 6 occurrences across 3 scenes).
+- In `server/workflows/sceneReadinessEngine.ts`, separate textual appearance counts from unresolved legal blocker counts in scene rationales:
+  - Scene 1: 1 unresolved blocker, 1 appearance.
+  - Scene 2: 1 unresolved blocker, 2 appearances; slugline retains `EXT. NEIGHBORHOOD CORNER - CONTINUOUS`.
+  - Scene 3: 1 unresolved blocker, 3 appearances.
+- Enforce singular/plural grammatical agreement in blocker rationales (`"1 clearance blocker prevents shooting Scene 2: \"Coors Light\" (INSUFFICIENT_EVIDENCE, appears 2 times)"`).
+
+### 5. Project Accessibility & Switcher Focus (FR-045, FR-033)
+- Ensure all project cards in `ProjectListModal.tsx` and `PortfolioDashboard.tsx` are native `<button>` elements with `aria-current` or `aria-pressed`.
+- On project switch dismissal, programmatically shift focus to `h1#workspace-production-heading` in `WorkspacePage.tsx`.
+- Disambiguate same-title projects in directory and switcher by displaying immutable project ID (`proj-<uuid>`) and creation timestamp.
+- Preserve production datasets: zero deletion, re-seeding, or overwriting of shared review workspaces.
+
+### 6. Notification Deep-Link & Tombstone Integrity (FR-027)
+- Clicking `TASK-101` in notifications scrolls and focuses `h4#task-heading-TASK-101`.
+- Missing tasks render disabled tombstone badges (`aria-disabled="true"`, `data-testid="tombstone-badge"`) and announce *"This task is no longer available."* without falling back to `Re-Sync`.
+
+### 7. Mobile Usability & Full Viewport Verification (FR-046)
+- Maintain bounded layout improvements on 375px viewports (visible `+ New` button, single-row horizontally scrolling navigation tabs).
+- Enforce >=44px touch targets across all interactive controls.
+- Audit viewports 320, 375, 390, 420, 768, 1280px: verify `document.documentElement.scrollWidth <= window.innerWidth` AND `document.body.scrollWidth <= window.innerWidth` with zero `overflow-x: hidden`.
+- Track proposed criteria (header height <=64px, drawer open latency <=4s) as empirical measurements.
+
+### 8. Two-Stage Canary-to-Production Deploy & Verification Protocol
+- Step 1: Run focused unit/contract tests, build frontend (`npm run build`), execute local Playwright suite on port 8088. If failed, STOP.
+- Step 2: Commit coherent patch to `029-honest-ingestion-ux`, push to origin, build container image, deploy to Cloud Run canary (`--no-traffic --tag canary`).
+- Step 3: Reconcile canary identity (SHA, build, revision) and verify acceptance checks on canary URL. If failed, STOP.
+- Step 4: Deploy that same tested commit to production (100% traffic) so serving revision is no longer `00061-lms`.
+- Step 5: Reconcile production serving identity (SHA, build, revision, creation time, 100% traffic, Settings, `/api/health`).
+- Step 6: Execute full public A–K Playwright audit against public URL using demo token via Settings/localStorage (isolated Scenario G on disposable project ID).
+- Step 7: STOP for independent review.
