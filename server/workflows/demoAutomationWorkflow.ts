@@ -35,12 +35,14 @@ export class DemoAutomationWorkflow {
       throw new Error(`Project ${projectId} not found`);
     }
 
-    // Explicitly update project metadata to The Neon Horizon sample baseline
-    await projectRepo.updateProject(projectId, {
-      title: 'The Neon Horizon',
-      productionCompany: 'Apex Entertainment',
-      scriptVersion: 'v1.0-ShootingDraft',
-    });
+    // Explicitly update project metadata to The Neon Horizon sample baseline for default project
+    if (projectId === 'proj-default' || project.title === 'Default Production Workspace') {
+      await projectRepo.updateProject(projectId, {
+        title: 'The Neon Horizon',
+        productionCompany: 'Apex Entertainment',
+        scriptVersion: 'v1.0-ShootingDraft',
+      });
+    }
 
     const liveCloud = config.executionMode === 'CLOUD_MODE' || project.executionMode === 'CLOUD_MODE';
     const autoEvaluate = options.autoEvaluate !== false;
@@ -158,9 +160,24 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           sceneId: scene2.id,
           status: 'NO_ISSUE_SURFACED',
           overrideStatus: 'NO_ISSUE_SURFACED',
+          scope: 'SCENE_SPECIFIC',
           rationale: 'Commercial location filming permit and architectural exterior release executed on file for Scene 2.',
           counselName: 'Sarah Jenkins, Lead Production Counsel',
         });
+
+        const locActions = await actionNotificationRepo.getActionsByProject(projectId, {
+          canonicalEntityId: locationEntity.id,
+        });
+        for (const act of locActions) {
+          if (act.actionType === 'LOCATIONS_PERMIT' || act.title.includes('Location Filming Permit')) {
+            await actionNotificationRepo.updateActionStatus(
+              projectId,
+              act.id,
+              'RESOLVED',
+              'Commercial location filming permit and architectural exterior release executed on file.'
+            );
+          }
+        }
       }
 
       // 6. Re-evaluate Scene Shooting Readiness

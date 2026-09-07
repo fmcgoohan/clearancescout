@@ -306,7 +306,10 @@ export default function App() {
         const listData = await listRes.json();
         if (listData.projects && listData.projects.length > 0) {
           const storedId = localStorage.getItem('clearancescout_active_project_id');
-          const targetProj = (storedId && listData.projects.find((p: any) => p.id === storedId)) || listData.projects[0];
+          const targetProj =
+            (storedId && listData.projects.find((p: any) => p.id === storedId)) ||
+            listData.projects.find((p: any) => p.id === 'proj-default') ||
+            listData.projects[0];
           await loadProjectDetails(targetProj.id);
           return;
         }

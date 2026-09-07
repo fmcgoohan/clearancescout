@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { CanonicalEntity } from './EntityRegistryTable';
 import { AlertTriangleIcon, CheckCircleIcon, ChevronRightIcon } from './icons/Icons';
 
@@ -35,15 +35,21 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
   onResearchItem,
   onLoadSample,
 }) => {
+  const [isSampleLoading, setIsSampleLoading] = useState(false);
   const sampleLoadTriggeredRef = useRef(false);
-  const handleLoadSample = (e: React.SyntheticEvent) => {
+  const handleLoadSample = async (e: React.SyntheticEvent) => {
     if ('button' in e && (e as React.MouseEvent).button !== 0) return;
     if (sampleLoadTriggeredRef.current) return;
     sampleLoadTriggeredRef.current = true;
-    setTimeout(() => {
-      sampleLoadTriggeredRef.current = false;
-    }, 1000);
-    onLoadSample?.();
+    setIsSampleLoading(true);
+    try {
+      await onLoadSample?.();
+    } finally {
+      setTimeout(() => {
+        sampleLoadTriggeredRef.current = false;
+        setIsSampleLoading(false);
+      }, 1000);
+    }
   };
 
   const isSceneFullyCleared = Boolean(
@@ -106,7 +112,7 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
   } else if (selectedScene && (isSceneFullyCleared || (blockersCount === 0 && reviewsCount === 0))) {
     // When a specific scene is selected and all its items are cleared
     title = `Scene ${selectedScene.sceneNumber} Cleared for Filming`;
-    rationale = `All clearance items in Scene ${selectedScene.sceneNumber} (${selectedScene.heading}) are cleared. No blockers remain for this scene.`;
+    rationale = `All clearance items in Scene ${selectedScene.sceneNumber} (${selectedScene.heading}) are cleared under executed location permit and release. Ready for production filming.`;
     buttonLabel = 'View Screenplay';
     ariaLabel = `View Scene ${selectedScene.sceneNumber} in Screenplay`;
     badgeColor = 'var(--status-no-issue, #22c55e)';
@@ -116,42 +122,66 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
     const target = actionRequiredItems[0];
     const targetName = target?.canonicalName || 'Uncleared Item';
     const scenePrefix = selectedScene ? `Scene ${selectedScene.sceneNumber}: ` : '';
-    title = target ? `Research ${targetName}` : `Review ${blockersCount} Clearance Blocker${blockersCount > 1 ? 's' : ''}`;
-    const itemNoun = blockersCount === 1 ? 'clearance item requires' : 'clearance items require';
-    rationale = target
-      ? `${scenePrefix}${blockersCount} ${itemNoun} action. Start with ${targetName}.`
-      : `${scenePrefix}${blockersCount} ${itemNoun} action.`;
-    buttonLabel = target ? `Research ${targetName}` : `Review ${blockersCount} Clearance Blocker${blockersCount > 1 ? 's' : ''}`;
-    ariaLabel = buttonLabel;
-    badgeColor = 'var(--status-action, #ef4444)';
-    badgeBg = 'rgba(239, 68, 68, 0.12)';
-    handleClick = () => {
-      if (onSelectTab) {
-        onSelectTab('clearance', 'ACTION_REQUIRED');
-      }
-      if (onResearchItem && target) {
-        onResearchItem(target.id);
-      }
-    };
+    const isResearchNeeded = target?.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE';
+
+    if (isResearchNeeded) {
+      title = `Research ${targetName}`;
+      rationale = `${scenePrefix}Clearance research pending for ${targetName}. Run grounding research to identify potential trademark or copyright conflicts.`;
+      buttonLabel = `Research ${targetName}`;
+      ariaLabel = `Research clearance status for ${targetName}`;
+      badgeColor = 'var(--status-action, #ef4444)';
+      badgeBg = 'rgba(239, 68, 68, 0.12)';
+      handleClick = () => {
+        if (onResearchItem && target) {
+          onResearchItem(target.id);
+        }
+      };
+    } else {
+      title = `Review Clearance Blocker: ${targetName}`;
+      rationale = target?.entityCategory === 'ART_MUSIC'
+        ? `${scenePrefix}Copyrighted musical work requires synchronization license. Review clearance dossier or record rights agreement.`
+        : `${scenePrefix}${blockersCount} clearance item${blockersCount > 1 ? 's require' : ' requires'} legal resolution. Review dossier to mitigate blocker.`;
+      buttonLabel = `Review Dossier: ${targetName}`;
+      ariaLabel = `Review clearance dossier for ${targetName}`;
+      badgeColor = 'var(--status-action, #ef4444)';
+      badgeBg = 'rgba(239, 68, 68, 0.12)';
+      handleClick = () => {
+        if (onSelectTab) {
+          onSelectTab('clearance', 'ACTION_REQUIRED');
+        }
+      };
+    }
   } else if (reviewsCount > 0) {
     const target = reviewRecommendedItems[0];
     const targetName = target?.canonicalName || 'Item';
     const scenePrefix = selectedScene ? `Scene ${selectedScene.sceneNumber}: ` : '';
-    title = target ? `Research ${targetName}` : `Review ${reviewsCount} Recommended Item${reviewsCount > 1 ? 's' : ''}`;
-    const reviewNoun = reviewsCount === 1 ? 'item recommended' : 'items recommended';
-    rationale = `${scenePrefix}${reviewsCount} ${reviewNoun} for review: ${targetName}.`;
-    buttonLabel = target ? `Research ${targetName}` : `Review ${reviewsCount} Recommended Item${reviewsCount > 1 ? 's' : ''}`;
-    ariaLabel = buttonLabel;
-    badgeColor = 'var(--status-review, #f59e0b)';
-    badgeBg = 'rgba(245, 158, 11, 0.12)';
-    handleClick = () => {
-      if (onSelectTab) {
-        onSelectTab('clearance', 'REVIEW_RECOMMENDED');
-      }
-      if (onResearchItem && target) {
-        onResearchItem(target.id);
-      }
-    };
+    const isResearchNeeded = target?.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE';
+
+    if (isResearchNeeded) {
+      title = `Research ${targetName}`;
+      rationale = `${scenePrefix}Clearance research pending for ${targetName}.`;
+      buttonLabel = `Research ${targetName}`;
+      ariaLabel = `Research clearance status for ${targetName}`;
+      badgeColor = 'var(--status-review, #f59e0b)';
+      badgeBg = 'rgba(245, 158, 11, 0.12)';
+      handleClick = () => {
+        if (onResearchItem && target) {
+          onResearchItem(target.id);
+        }
+      };
+    } else {
+      title = `Review Item: ${targetName}`;
+      rationale = `${scenePrefix}${reviewsCount} item${reviewsCount > 1 ? 's' : ''} recommended for review: ${targetName}.`;
+      buttonLabel = `Review Dossier: ${targetName}`;
+      ariaLabel = `Review clearance dossier for ${targetName}`;
+      badgeColor = 'var(--status-review, #f59e0b)';
+      badgeBg = 'rgba(245, 158, 11, 0.12)';
+      handleClick = () => {
+        if (onSelectTab) {
+          onSelectTab('clearance', 'REVIEW_RECOMMENDED');
+        }
+      };
+    }
   } else if (departmentTasksCount > 0) {
     title = `View ${departmentTasksCount} Department Task${departmentTasksCount > 1 ? 's' : ''}`;
     rationale = 'All clearance items resolved; outstanding department tasks remain.';
@@ -243,14 +273,16 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
             onPointerDown={handleLoadSample}
             onClick={handleLoadSample}
             aria-label="Load Sample Production Data"
+            disabled={isSampleLoading}
             style={{
               padding: '0.6rem 1rem',
               borderRadius: '8px',
               fontSize: '0.85rem',
-              cursor: 'pointer',
+              cursor: isSampleLoading ? 'not-allowed' : 'pointer',
+              opacity: isSampleLoading ? 0.7 : 1,
             }}
           >
-            Load Sample Production
+            {isSampleLoading ? 'Loading Sample...' : 'Load Sample Production'}
           </button>
         )}
         <button

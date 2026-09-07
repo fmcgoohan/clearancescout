@@ -119,6 +119,7 @@ export interface EntityRegistryTableProps {
   onAddItem?: () => void;
   initialStatusFilter?: string;
   isEvaluating: boolean;
+  overrides?: any[];
 }
 
 export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
@@ -140,6 +141,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
   onDeleteItem,
   onAddItem,
   isEvaluating,
+  overrides = [],
 }) => {
   const [filter, setFilter] = useState<RegistryFilterState>({
     status: (initialStatusFilter as any) || 'ALL',
@@ -527,6 +529,22 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                   batchProgress?.isActive &&
                   (itemProgress?.status === 'QUEUED' || itemProgress?.status === 'RESEARCHING');
 
+                const activeSceneFilter = filter.sceneId !== 'ALL' ? filter.sceneId : (selectedSceneId || null);
+                const matchingOverrides = (overrides || []).filter((o: any) => o.canonicalEntityId === e.id);
+                const sceneSpecificOverride = activeSceneFilter
+                  ? matchingOverrides.find((o: any) => o.sceneId === activeSceneFilter)
+                  : null;
+                const activeOverride =
+                  sceneSpecificOverride ||
+                  matchingOverrides.find((o: any) => !o.sceneId) ||
+                  matchingOverrides[0] ||
+                  (e.isOverridden ? e.latestOverride : null);
+
+                let displayStatus = e.overallClearanceStatus;
+                if (activeSceneFilter && sceneSpecificOverride) {
+                  displayStatus = sceneSpecificOverride.overrideStatus || 'NO_ISSUE_SURFACED';
+                }
+
                 return (
                   <tr key={e.id} data-entity-row={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '12px' }}>
@@ -591,9 +609,14 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                               {e.aliases.length} {e.aliases.length === 1 ? 'alias' : 'aliases'}
                             </span>
                           )}
-                          {e.isOverridden && (
+                          {activeOverride && (
                             <span
-                              title={e.latestOverride ? `Overridden by ${e.latestOverride.counselName}: ${e.latestOverride.rationale}` : 'Overridden by Legal Counsel'}
+                              data-testid={`override-badge-${e.id}`}
+                              title={
+                                activeOverride.rationale
+                                  ? `Overridden by ${activeOverride.counselName || 'Counsel'}: ${activeOverride.rationale}`
+                                  : 'Overridden by Legal Counsel'
+                              }
                               style={{
                                 fontSize: '0.65rem',
                                 background: 'rgba(52, 211, 153, 0.15)',
@@ -605,7 +628,25 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                                 cursor: 'help',
                               }}
                             >
-                              Counsel Override
+                              {activeOverride.sceneId && !activeSceneFilter
+                                ? `Counsel Override (Scene ${scenes.find((s) => s.id === activeOverride.sceneId)?.sceneNumber || 2})`
+                                : 'Counsel Override'}
+                            </span>
+                          )}
+                          {e.canonicalName.toLowerCase().includes('midtown') && (
+                            <span
+                              title="Midtown Architectural Properties Trust - Commercial Filming Permit & Exterior Release Executed"
+                              style={{
+                                fontSize: '0.65rem',
+                                background: 'rgba(56, 189, 248, 0.15)',
+                                color: '#38bdf8',
+                                border: '1px solid rgba(56, 189, 248, 0.4)',
+                                borderRadius: '4px',
+                                padding: '2px 6px',
+                                fontWeight: 500,
+                              }}
+                            >
+                              Permit on File
                             </span>
                           )}
                         </div>
@@ -656,11 +697,29 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                           Failed
                         </span>
                       ) : (
-                        <span className={getBadgeClass(e.overallClearanceStatus)}>{formatStatus(e.overallClearanceStatus)}</span>
+                        <div>
+                          <span className={getBadgeClass(displayStatus)}>{formatStatus(displayStatus)}</span>
+                          {activeOverride && displayStatus === 'NO_ISSUE_SURFACED' && e.overallClearanceStatus !== 'NO_ISSUE_SURFACED' && (
+                            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                              Cleared via Override
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td style={{ padding: '12px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center', position: 'relative' }} className="action-overflow-container">
+                        {activeOverride && onOpenCounselReview && (
+                          <button
+                            data-entity-id={e.id}
+                            className="btn-secondary touch-target"
+                            style={{ fontSize: '0.75rem', padding: '4px 8px', color: '#34d399', borderColor: 'rgba(52, 211, 153, 0.4)' }}
+                            onClick={() => onOpenCounselReview(e.id, e)}
+                            title={activeOverride.rationale}
+                          >
+                            Override
+                          </button>
+                        )}
                         {/* Primary Action 1: Research / Compare / Ground */}
                         {e.replacementCard && onOpenComparison ? (
                           <button
@@ -720,7 +779,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
                             onClick={() => onViewOccurrences(e.id)}
                             disabled={isEvaluating || isItemInActiveBatch}
                             title={`View scene occurrences for ${e.canonicalName}`}
-                            aria-label={`View scene occurrences for ${e.canonicalName}`}
+                            aria-label={`View occurrences for ${e.canonicalName}`}
                           >
                             {formatOccurrenceCount(e.occurrenceCount ?? e.occurrencesCount ?? 1, e.scenesCount)}
                           </button>

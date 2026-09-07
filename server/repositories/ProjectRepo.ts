@@ -231,7 +231,11 @@ export class ProjectRepo {
       const p2 = await this.getProject('proj-cyberpunk');
       if (p2 && !projects.some((p) => p.id === p2.id)) projects.push(p2);
     }
-    return projects.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return projects.sort((a, b) => {
+      if (a.id === 'proj-default') return -1;
+      if (b.id === 'proj-default') return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
   }
 
   async getLiveQuota(projectId: string): Promise<ProjectQuotaStatus> {

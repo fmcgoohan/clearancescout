@@ -1245,6 +1245,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             onDeleteItem={handleDeleteItem}
             onAddItem={handleOpenAddModal}
             isEvaluating={isEvaluating}
+            overrides={overrides}
           />
         </section>
       )}
@@ -1378,6 +1379,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             onDeleteItem={handleDeleteItem}
             onAddItem={handleOpenAddModal}
             isEvaluating={isEvaluating}
+            overrides={overrides}
           />
         </section>
       )}
