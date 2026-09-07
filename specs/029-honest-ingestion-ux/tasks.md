@@ -174,8 +174,8 @@
 - [x] T085 [NEW-Task-Attachments-Tailwind-Removal] Restyle `src/components/TaskAttachmentList.tsx` with native design tokens without Tailwind classes; native file upload and remove actions; preserve 10.63kB CSS bundle without Tailwind (FR-052)
 - [x] T086 [NEW-Honest-Landing-Default] Ensure initial landing defaults honestly to `proj-default` (Default Production Workspace) on clean/empty state in `src/App.tsx` and `server/repositories/ProjectRepo.ts` (FR-053)
 - [x] T087 [Verification-Local-Playwright] Execute comprehensive local Playwright verification script confirming all review rejection items pass on `localhost:8088` (Honest landing, first-click project switcher, first-click sample load, notification drawer escape/toggle, task comment composer & attachment list styling, truthful Nocturne CTA, Scene 2 agreement with override badges)
-- [ ] T088 [Deploy-Canary] Commit tested patch to `029-honest-ingestion-ux`, push to origin, submit Cloud Build, deploy NEW Cloud Run canary revision with 0% traffic
-- [ ] T089 [Deploy-Production] Upon canary verification passing, deploy exact same image/commit to production with 100% traffic, replacing `clearancescout-00071-vam`
-- [ ] T090 [Verification-Public-Serving] Verify public serving revision on `https://clearancescout-n3tcx4jcbq-uc.a.run.app` and present comprehensive evidence table
+- [x] T088 [Deploy-Canary] Commit tested patch to `029-honest-ingestion-ux` (SHA `a3beabf`), push to origin, submit Cloud Build `fd922b0b-c213-47b6-b6f1-c8ca15c2bddc`, deploy NEW Cloud Run canary revision `clearancescout-00074-tex` with 0% traffic, and verify canary required checks (ALL PASS)
+- [x] T089 [Deploy-Production] Upon canary verification passing, deploy exact same image/commit to production with 100% traffic, replacing `clearancescout-00071-vam` with `clearancescout-00074-tex` (100% traffic)
+- [x] T090 [Verification-Public-Serving] Verify public serving revision on `https://clearancescout-n3tcx4jcbq-uc.a.run.app` (`clearancescout-00074-tex`) and present comprehensive evidence table across all defect resolutions, leaving VoiceOver, human walkthrough, and freeze exit PENDING
 
 
