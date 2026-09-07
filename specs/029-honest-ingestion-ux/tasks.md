@@ -161,8 +161,8 @@
 - [x] T077 [Defect2-First-Click-Activation] Add onPointerDown and immediate click handling to Project Switcher chip in App.tsx and Load Sample Production button in RecommendedActionCard.tsx to ensure immediate activation on the very first touch/click without merely shifting focus (FR-048)
 - [x] T078 [Defect3-Scene2-Readiness-CTA] Attach sample location permit override specifically to Scene 2 in demoAutomationWorkflow.ts to clear Scene 2 to FINAL CLEAR (0 blockers) while preserving 33.3% readiness and Neon Horizon baseline; update RecommendedActionCard.tsx and WorkspacePage.tsx to align Scene 2 recommendation ("Scene 2 Cleared for Filming", "View Screenplay" CTA, no Nocturne CTA) and scene card summary text (FR-049)
 - [x] T079 [Verification-Local] Verify npm run build (clean 10.63kB CSS without Tailwind) and run automated Playwright verification script confirming all 3 defects are resolved on localhost:8088 (FR-047, FR-048, FR-049)
-- [ ] T080 [Deploy-Canary] Commit tested patch to 029-honest-ingestion-ux, push to origin, build image via Cloud Build, deploy NEW Cloud Run canary revision with 0% production traffic, and verify canary required checks on canary URL
-- [ ] T081 [Deploy-Production] Deploy exact tested image to production with 100% traffic, replacing clearancescout-00068-lug
-- [ ] T082 [Verification-Serving] Verify public serving revision on clearancescout-n3tcx4jcbq-uc.a.run.app and present evidence table covering the 3 defects, leaving VoiceOver and human walkthrough PENDING
+- [x] T080 [Deploy-Canary] Commit tested patch to 029-honest-ingestion-ux (SHA 04a9615), push to origin, build image via Cloud Build 65a4647c-207f-4a9d-9827-4dcb5a910e88, deploy NEW Cloud Run canary revision clearancescout-00071-vam with 0% production traffic, and verify canary required checks on canary URL (ALL PASS)
+- [x] T081 [Deploy-Production] Deploy exact tested image to production with 100% traffic, replacing clearancescout-00068-lug with clearancescout-00071-vam (100% traffic)
+- [x] T082 [Verification-Serving] Verify public serving revision on clearancescout-n3tcx4jcbq-uc.a.run.app (clearancescout-00071-vam) and present evidence table covering the 3 defects, leaving VoiceOver and human walkthrough PENDING
 
 
