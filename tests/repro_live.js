@@ -12,6 +12,7 @@ async function runLiveVerification() {
   const page = await context.newPage();
 
   let coorsScenarioProjectId = null;
+  let testSamplePid = null;
 
   try {
     // 1. Initial Page Load & Set Demo Token
@@ -82,6 +83,8 @@ async function runLiveVerification() {
     ).catch(() => {});
     await page.waitForSelector('[data-testid="primary-recommendation-card"]', { timeout: 8000 });
     await page.waitForTimeout(500);
+    testSamplePid = await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
+    console.log(`  Captured Solaris Dawn Project ID: ${testSamplePid}`);
 
     // Verify newly opened workspace
     const projectHeaderTitle = await page.$eval('[data-testid="workspace-project-title"]', el => el.innerText.trim()).catch(() => 'N/A');
@@ -247,27 +250,13 @@ async function runLiveVerification() {
     // SCENARIO F: Notification Deep-Link & Tombstone Integrity
     // =========================================================================
     console.log('\n--- SCENARIO F: NOTIFICATION DEEP-LINK & TOMBSTONE INTEGRITY ---');
-    // Switch back to Neon Horizon using portfolio
-    const settingsBtnF = await page.waitForSelector('#settings-menu-button', { timeout: 5000 });
-    await settingsBtnF.click();
-    const portfolioBtnF = await page.waitForSelector('[data-testid="portfolio-view-toggle"]', { timeout: 5000 });
-    await portfolioBtnF.click();
-    await page.waitForSelector('[data-portfolio-card="true"]', { timeout: 5000 });
-
-    const neonHorizonCard = await page.waitForSelector('[data-portfolio-card="true"]:has-text("The Neon Horizon")', { timeout: 5000 });
-    await neonHorizonCard.click();
-    await page.waitForTimeout(1500);
-
-    // Ensure sample data is populated on proj-default
-    await page.evaluate(async (token) => {
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['x-demo-token'] = token;
-      await fetch('/api/projects/proj-default/script/demo', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
-      });
-    }, DEMO_TOKEN);
+    // Switch back to Solaris Dawn (populated sample project) using project switcher
+    const switchBtnF = await page.waitForSelector('[data-testid="header-switch-project-btn"], button:has-text("Switch Project")', { timeout: 5000 });
+    await switchBtnF.click();
+    await page.waitForSelector(`button.project-select-card[data-project-id="${testSamplePid}"]`, { timeout: 5000 });
+    await page.click(`button.project-select-card[data-project-id="${testSamplePid}"]`);
+    await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(1000);
 
     // Open notification drawer
     const alertsBtn = await page.waitForSelector('#notification-drawer-button, button:has-text("Alerts")', { timeout: 5000 });
@@ -297,7 +286,7 @@ async function runLiveVerification() {
     await page.waitForTimeout(500);
 
     // Test temporary orphan tombstone
-    const orphanCreate = await page.evaluate(async (token) => {
+    const orphanCreate = await page.evaluate(async ({ pid, token }) => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['x-demo-token'] = token;
       const res = await fetch('/api/notifications', {
@@ -305,7 +294,7 @@ async function runLiveVerification() {
         headers,
         body: JSON.stringify({
           userId: 'LEGAL_COUNSEL',
-          projectId: 'proj-default',
+          projectId: pid,
           triggerType: 'TASK_MENTION',
           title: 'Orphan Notification QA',
           message: 'Target task deleted.',
@@ -313,7 +302,7 @@ async function runLiveVerification() {
         }),
       });
       return { ok: res.ok, data: await res.json() };
-    }, DEMO_TOKEN);
+    }, { pid: testSamplePid, token: DEMO_TOKEN });
 
     const orphanId = orphanCreate.data?.notification?.id;
     const alertsBtn2 = await page.waitForSelector('#notification-drawer-button, button:has-text("Alerts")', { timeout: 5000 });
@@ -545,17 +534,10 @@ async function runLiveVerification() {
     // SCENARIO H: AEROTECH P0 TRUST & STALE TASK PRUNING (FR-013)
     // =========================================================================
     console.log('\n--- SCENARIO H: AEROTECH P0 TRUST & STALE TASK PRUNING AUDIT ---');
-    // Switch to Neon Horizon
-    await page.evaluate(async (token) => {
-      const headers = { "Content-Type": "application/json" };
-      if (token) headers["x-demo-token"] = token;
-      await fetch("/api/projects/proj-default/script/demo", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
-      });
-      localStorage.setItem('clearancescout_active_project_id', 'proj-default');
-    }, DEMO_TOKEN);
+    // Switch to Solaris Dawn (populated sample project)
+    await page.evaluate((pid) => {
+      localStorage.setItem('clearancescout_active_project_id', pid);
+    }, testSamplePid);
     await page.goto(`${LIVE_URL}?tab=clearance`, { waitUntil: "networkidle" });
     await page.waitForTimeout(1000);
 
@@ -569,13 +551,13 @@ async function runLiveVerification() {
     }
 
     // 2. Query Action Center / Tasks to verify ZERO open RETRY_RESEARCH tasks for AeroTech
-    const aeroActions = await page.evaluate(async (token) => {
+    const aeroActions = await page.evaluate(async ({ pid, token }) => {
       const headers = {};
       if (token) headers["x-demo-token"] = token;
-      const res = await fetch("/api/projects/proj-default/actions", { headers });
+      const res = await fetch(`/api/projects/${pid}/actions`, { headers });
       const actions = await res.json();
       return Array.isArray(actions) ? actions : actions.actions || [];
-    }, DEMO_TOKEN);
+    }, { pid: testSamplePid, token: DEMO_TOKEN });
 
     const openAeroRetryTasks = aeroActions.filter(a =>
       a.canonicalName?.includes("AeroTech") &&
@@ -879,6 +861,25 @@ async function runLiveVerification() {
     console.error('Live verification failed with error:', err);
     process.exit(1);
   } finally {
+    // Bounded cleanup of disposable test projects
+    if (coorsScenarioProjectId && coorsScenarioProjectId !== 'proj-default') {
+      try {
+        await fetch(`${LIVE_URL}/api/projects/${coorsScenarioProjectId}`, {
+          method: 'DELETE',
+          headers: { 'x-demo-token': DEMO_TOKEN },
+        });
+        console.log(`Cleaned up disposable Coors test project: ${coorsScenarioProjectId}`);
+      } catch (e) {}
+    }
+    if (testSamplePid && testSamplePid !== 'proj-default') {
+      try {
+        await fetch(`${LIVE_URL}/api/projects/${testSamplePid}`, {
+          method: 'DELETE',
+          headers: { 'x-demo-token': DEMO_TOKEN },
+        });
+        console.log(`Cleaned up disposable sample test project: ${testSamplePid}`);
+      } catch (e) {}
+    }
     await browser.close();
   }
 }
