@@ -4,13 +4,15 @@ Iterate against localhost:8088 (`npm run dev`). Only deploy to Cloud Run once
 tests pass locally. A build+deploy cycle costs ~2.5 minutes and a Cloud Build
 charge; do not use it as an inner loop.
 
-Never poll for build completion. Run the build and deploy as one blocking
-foreground call and read its exit code. Do not wait on `ps | grep "gcloud run
-deploy"`: during `gcloud builds submit && gcloud run deploy` that process does
-not exist yet, so the loop exits immediately. The wait predicate must remain
-valid for the entire wait window.
+Treat Cloud Build, Cloud Run deploy, CI, and long-running tests as asynchronous.
+Do not idle or repeatedly poll them if independent work is available. Continue
+with the next unblocked task in `tasks.md`. Check the background operation at
+reasonable intervals and return to its dependent verification when complete.
 
-If you need status afterward:
+Do not wait on `ps | grep "gcloud run deploy"`: during `gcloud builds submit &&
+gcloud run deploy` that process does not exist yet, so the loop exits
+immediately. The wait predicate must remain valid for the entire wait window.
+When a status check is needed, use authoritative APIs, for example:
 
   gcloud builds list --project clearance-scout-2026 --limit 3
 
