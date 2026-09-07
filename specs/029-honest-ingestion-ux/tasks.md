@@ -153,3 +153,16 @@
 - [x] T074 [Deploy-Production] Upon canary required checks passing, deploy the exact same commit to production with 100% traffic, replacing `clearancescout-00061-lms`. Reconcile revision, SHA, image, creation time, 100% traffic, Settings, and `GET /api/health`
 - [x] T075 [Verification-Public-A-K] Execute full public Playwright A–K audit on `https://clearancescout-n3tcx4jcbq-uc.a.run.app` with demo token via Settings/localStorage (Scenario G on isolated disposable project ID), record per-section PASS/FAIL, and STOP for independent review
 
+---
+
+## Phase 13: Independent Review Defect Corrections (Post-00068 Deploy)
+
+- [x] T076 [Defect1-Tailwind-Removal] Restyle NotificationDrawer.tsx and TaskCommentThread.tsx with native design tokens without Tailwind classes; ensure absolute floating positioning at z-index 1000; Escape closes drawer and restores focus to bell button; bell button toggles open/close; click outside closes drawer (FR-047)
+- [x] T077 [Defect2-First-Click-Activation] Add onPointerDown and immediate click handling to Project Switcher chip in App.tsx and Load Sample Production button in RecommendedActionCard.tsx to ensure immediate activation on the very first touch/click without merely shifting focus (FR-048)
+- [x] T078 [Defect3-Scene2-Readiness-CTA] Attach sample location permit override specifically to Scene 2 in demoAutomationWorkflow.ts to clear Scene 2 to FINAL CLEAR (0 blockers) while preserving 33.3% readiness and Neon Horizon baseline; update RecommendedActionCard.tsx and WorkspacePage.tsx to align Scene 2 recommendation ("Scene 2 Cleared for Filming", "View Screenplay" CTA, no Nocturne CTA) and scene card summary text (FR-049)
+- [x] T079 [Verification-Local] Verify npm run build (clean 10.63kB CSS without Tailwind) and run automated Playwright verification script confirming all 3 defects are resolved on localhost:8088 (FR-047, FR-048, FR-049)
+- [ ] T080 [Deploy-Canary] Commit tested patch to 029-honest-ingestion-ux, push to origin, build image via Cloud Build, deploy NEW Cloud Run canary revision with 0% production traffic, and verify canary required checks on canary URL
+- [ ] T081 [Deploy-Production] Deploy exact tested image to production with 100% traffic, replacing clearancescout-00068-lug
+- [ ] T082 [Verification-Serving] Verify public serving revision on clearancescout-n3tcx4jcbq-uc.a.run.app and present evidence table covering the 3 defects, leaving VoiceOver and human walkthrough PENDING
+
+

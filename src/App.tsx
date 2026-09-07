@@ -736,6 +736,9 @@ export default function App() {
               className="btn-secondary touch-target"
               aria-label="Switch Production Project"
               style={{ fontSize: '0.78rem', padding: '6px 8px', display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '150px', flexShrink: 1 }}
+              onPointerDown={(e) => {
+                if (e.button === 0) setIsProjectModalOpen(true);
+              }}
               onClick={() => setIsProjectModalOpen(true)}
             >
               <span

@@ -11,7 +11,7 @@ import { ProductionDashboardModal } from '../components/ProductionDashboardModal
 import { ScriptUploadModal } from '../components/ScriptUploadModal';
 import { useBatchResearch } from '../hooks/useBatchResearch.js';
 import { apiFetch } from '../utils/apiClient.js';
-import { pluralize, getPlainLanguageSceneReason } from '../utils/formatters.js';
+import { pluralize, getPlainLanguageSceneReason, formatExplanationText } from '../utils/formatters.js';
 import {
   FilmIcon,
   FileTextIcon,
@@ -815,6 +815,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               entities={entities}
               hasScreenplay={scenes.length > 0}
               departmentTasksCount={openActionsCount}
+              selectedScene={scenes.find((s) => s.id === selectedSceneId) || null}
               onSelectTab={(tab, filter) => {
                 setActiveTab(tab);
                 if (filter) setActiveStatusFilter(filter);
@@ -1065,7 +1066,9 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
 
                 const isExpanded = Boolean(expandedReadiness[s.id]);
 
-                const summaryText = isRed
+                const summaryText = s.readinessDetails?.summaryText
+                  ? formatExplanationText(s.readinessDetails.summaryText)
+                  : isRed
                   ? 'Shooting Blocker: Action item(s) require legal resolution prior to filming.'
                   : isWorking
                   ? 'Review Recommended: Item(s) pending clearance verification.'
@@ -1073,19 +1076,34 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                   ? 'Pending Review: Human clearance verification required prior to filming.'
                   : 'All entities cleared. Ready for production filming.';
 
+                const isSelected = selectedSceneId === s.id;
+
                 return (
                   <div
                     key={s.id}
-                    className="glass-panel scene-readiness-card"
+                    className={`glass-panel scene-readiness-card ${isSelected ? 'scene-card-selected' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
+                    aria-label={`Select Scene ${s.sceneNumber} (${statusLabel})`}
+                    onClick={() => setSelectedSceneId(isSelected ? null : s.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedSceneId(isSelected ? null : s.id);
+                      }
+                    }}
                     style={{
                       padding: '14px 16px',
                       borderRadius: '8px',
-                      background: 'var(--bg-card)',
+                      background: isSelected ? 'rgba(56, 189, 248, 0.08)' : 'var(--bg-card)',
                       borderLeft: `6px solid ${borderColor}`,
-                      borderTop: '1px solid var(--border-color)',
-                      borderRight: '1px solid var(--border-color)',
-                      borderBottom: '1px solid var(--border-color)',
-                      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                      borderTop: isSelected ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+                      borderRight: isSelected ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+                      borderBottom: isSelected ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+                      boxShadow: isSelected ? '0 0 14px rgba(56, 189, 248, 0.25)' : 'none',
+                      cursor: 'pointer',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
@@ -1136,10 +1154,14 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                         aria-expanded={isExpanded}
                         aria-controls={`readiness-detail-${s.id}`}
                         aria-label={`Toggle full readiness details for Scene ${s.sceneNumber}`}
-                        onClick={(e) => toggleReadinessCard(s.id, e)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleReadinessCard(s.id, e);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
+                            e.stopPropagation();
                             toggleReadinessCard(s.id, e);
                           }
                         }}
@@ -1152,7 +1174,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                         type="button"
                         className="btn-secondary"
                         aria-label={`Jump to Scene ${s.sceneNumber} in Screenplay`}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setSelectedSceneId(s.id);
                           setActiveTab('screenplay');
                         }}

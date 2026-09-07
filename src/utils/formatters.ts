@@ -151,12 +151,15 @@ export function getPlainLanguageSceneReason(s: any): string {
     return formatExplanationText(s.readinessDetails.summaryText);
   }
   const status = s?.readinessStatus || s?.status;
+  if (status === 'FINAL_CLEAR') {
+    return 'All scene elements and prop occurrences are 100% cleared for production.';
+  }
   if (status === 'RED' || status === 'BLOCKS_SHOOTING' || status === 'ACTION_REQUIRED') {
     if (s?.heading?.includes('SUB-LEVEL') || s?.rawText?.includes('Hazard Placard') || s?.rawText?.includes('Titan')) {
       return 'Titan Industrial Hazard placard artwork needs rights or replacement before shooting.';
     }
-    if (s?.rawText?.includes('Veloce GT')) {
-      return 'Veloce GT vehicle brand mark requires trademark clearance or fictional debadging.';
+    if (s?.rawText?.includes('Midtown Spire') || s?.heading?.includes('MIDTOWN')) {
+      return 'Midtown Spire Tower location clearance or exterior filming release pending.';
     }
     if (s?.rawText?.includes('Elena Vance') || s?.rawText?.includes('keynote')) {
       return 'Archival keynote footage and persona rights require counsel sign-off.';
@@ -164,9 +167,6 @@ export function getPlainLanguageSceneReason(s: any): string {
     return 'Scene contains ungrounded trademarked entities or uncleared artwork blocking shooting.';
   }
   if (status === 'WORKING_CLEAR' || status === 'REVIEW_RECOMMENDED') {
-    if (s?.rawText?.includes('Veloce GT')) {
-      return 'Working clear with temporary approved debadged vehicle placeholder.';
-    }
     return 'Working clear with interim approved placeholder; final rights confirmation pending.';
   }
   return 'All scene elements and prop occurrences are 100% cleared for production.';

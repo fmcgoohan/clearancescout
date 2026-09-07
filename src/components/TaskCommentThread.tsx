@@ -78,45 +78,92 @@ export const TaskCommentThread: React.FC<TaskCommentThreadProps> = ({
   };
 
   return (
-    <div className="space-y-4 border-t pt-4 mt-4" data-testid="comment-thread">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+    <div
+      data-testid="comment-thread"
+      style={{
+        borderTop: '1px solid var(--border-color)',
+        paddingTop: '14px',
+        marginTop: '14px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>
           Activity & Discussion ({comments.length})
-        </h4>
-        <span className="text-xs text-gray-500">Tip: use @LegalCounsel or @SarahJenkins to mention</span>
+        </span>
+        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+          Tip: use @LegalCounsel or @SarahJenkins to mention
+        </span>
       </div>
 
-      <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '2px' }}>
         {comments.length === 0 ? (
-          <p className="text-xs text-gray-500 italic">No comments yet. Start the discussion below.</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>
+            No comments yet. Start the discussion below.
+          </p>
         ) : (
           comments.map((c) => (
-            <div key={c.id} className="p-2.5 rounded bg-gray-50 dark:bg-gray-800 border text-xs space-y-1">
-              <div className="flex items-center justify-between text-gray-500">
-                <span className="font-semibold text-gray-900 dark:text-gray-100">{c.authorName} ({c.authorRole})</span>
+            <div
+              key={c.id}
+              style={{
+                padding: '8px 10px',
+                borderRadius: '6px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--border-color)',
+                fontSize: '0.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '0.68rem' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                  {c.authorName} ({c.authorRole})
+                </span>
                 <span>{new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
-              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{c.content}</p>
+              <p style={{ color: 'var(--text-main)', margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.35 }}>{c.content}</p>
             </div>
           ))
         )}
       </div>
 
-      {error && <div className="text-xs text-red-600 dark:text-red-400">{error}</div>}
+      {error && (
+        <div style={{ fontSize: '0.72rem', color: 'var(--crit, #ef4444)' }}>
+          {error}
+        </div>
+      )}
 
-      <form onSubmit={handlePostComment} className="flex gap-2">
+      <form onSubmit={handlePostComment} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <input
           type="text"
           value={newCommentText}
           onChange={(e) => setNewCommentText(e.target.value)}
           placeholder="Add a comment or @mention..."
-          className="flex-1 px-3 py-1.5 text-xs rounded border focus:ring-1 focus:ring-indigo-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
           aria-label="Add a task comment"
+          style={{
+            flex: 1,
+            padding: '6px 10px',
+            fontSize: '0.75rem',
+            borderRadius: '6px',
+            border: '1px solid var(--border-color)',
+            background: 'rgba(0, 0, 0, 0.3)',
+            color: 'var(--text-main)',
+            outline: 'none',
+          }}
         />
         <button
           type="submit"
           disabled={loading || !newCommentText.trim()}
-          className="px-3 py-1.5 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="btn-primary touch-target"
+          style={{
+            fontSize: '0.75rem',
+            padding: '6px 14px',
+            opacity: loading || !newCommentText.trim() ? 0.5 : 1,
+            cursor: loading || !newCommentText.trim() ? 'not-allowed' : 'pointer',
+          }}
         >
           {loading ? 'Posting...' : 'Comment'}
         </button>

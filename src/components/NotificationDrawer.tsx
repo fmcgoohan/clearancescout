@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserNotification, UserRole } from '../types/collaboration';
 
 interface NotificationDrawerProps {
@@ -20,6 +20,9 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   const [unreadCount, setUnreadCount] = useState(0);
   const [validTaskMap, setValidTaskMap] = useState<Map<string, string>>(new Map());
   const [announcement, setAnnouncement] = useState<string>('');
+
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   const fetchNotificationsAndTasks = async () => {
     try {
@@ -56,6 +59,34 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
     return () => clearInterval(interval);
   }, [currentUserRole, projectId]);
 
+  // Keyboard Escape and Click-Outside Listeners
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        drawerRef.current &&
+        !drawerRef.current.contains(e.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
   const handleMarkRead = async (id: string) => {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -83,9 +114,11 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   };
 
   return (
-    <div className="relative inline-block" data-notification-drawer="true">
+    <div style={{ position: 'relative', display: 'inline-block' }} data-notification-drawer="true">
       <button
+        ref={triggerRef}
         id="notification-drawer-button"
+        className="btn-secondary touch-target"
         onClick={() => {
           setIsOpen(!isOpen);
           if (!isOpen) {
@@ -93,13 +126,30 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             fetchNotificationsAndTasks();
           }
         }}
-        className="relative px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 flex items-center gap-1.5"
         aria-label={`Notifications (${unreadCount} unread)`}
+        aria-haspopup="dialog"
         aria-expanded={isOpen}
+        style={{
+          fontSize: '0.8rem',
+          padding: '6px 10px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          borderColor: isOpen ? 'var(--accent-cyan)' : 'var(--border-color)',
+        }}
       >
         <span>🔔 Alerts</span>
         {unreadCount > 0 && (
-          <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-red-600 text-white">
+          <span
+            style={{
+              padding: '1px 6px',
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              borderRadius: '10px',
+              background: 'var(--crit, #ef4444)',
+              color: '#ffffff',
+            }}
+          >
             {unreadCount}
           </span>
         )}
@@ -117,25 +167,54 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
       {isOpen && (
         <div
+          ref={drawerRef}
           role="dialog"
-          aria-label="Notifications"
-          className="absolute right-0 mt-2 w-80 rounded-lg shadow-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 z-50 p-3 space-y-3"
+          aria-label="In-Product Notifications"
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 'calc(100% + 8px)',
+            width: '340px',
+            maxWidth: 'calc(100vw - 32px)',
+            background: 'var(--bg-panel, #151B23)',
+            border: '1px solid var(--border-color, #242E3A)',
+            borderRadius: '12px',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6)',
+            padding: '14px',
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
         >
-          <div className="flex items-center justify-between border-b pb-2">
-            <h3 className="text-xs font-bold text-gray-900 dark:text-gray-100">In-Product Notifications</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              In-Product Notifications
+            </span>
             {unreadCount > 0 && (
               <button
+                type="button"
                 onClick={handleMarkAllRead}
-                className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent-cyan, #38bdf8)',
+                  fontSize: '0.7rem',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: '2px 4px',
+                }}
               >
                 Mark all read
               </button>
             )}
           </div>
 
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '260px', overflowY: 'auto', paddingRight: '2px' }}>
             {notifications.length === 0 ? (
-              <p className="text-xs text-gray-500 italic p-2">No notifications found.</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', padding: '8px' }}>
+                No notifications found.
+              </p>
             ) : (
               notifications.map((n) => {
                 const taskId = n.targetTaskId || (n as any).taskId || (n as any).actionId || '';
@@ -181,29 +260,73 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                         setIsOpen(false);
                       }
                     }}
-                    className={`w-full text-left p-2 rounded border text-xs transition ${
-                      isLinkDisabled
-                        ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800/60 border-gray-300 dark:border-gray-700'
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      border: `1px solid ${!n.isRead ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+                      background: isLinkDisabled
+                        ? 'rgba(255, 255, 255, 0.02)'
                         : !n.isRead
-                        ? 'cursor-pointer bg-indigo-50/50 dark:bg-indigo-950/30 border-indigo-200'
-                        : 'cursor-pointer bg-gray-50 dark:bg-gray-800'
-                    }`}
+                        ? 'rgba(56, 189, 248, 0.08)'
+                        : 'rgba(255, 255, 255, 0.04)',
+                      opacity: isLinkDisabled ? 0.6 : 1,
+                      cursor: isLinkDisabled ? 'not-allowed' : 'pointer',
+                      fontSize: '0.75rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      transition: 'background 0.15s ease, border-color 0.15s ease',
+                    }}
                   >
-                    <div className="flex items-start justify-between">
-                      <span className="font-semibold text-gray-900 dark:text-gray-100 block truncate">{effectiveTitle}</span>
-                      {!n.isRead && <span className="w-2 h-2 rounded-full bg-indigo-600 shrink-0 mt-1" />}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {effectiveTitle}
+                      </span>
+                      {!n.isRead && (
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-cyan)', flexShrink: 0 }} />
+                      )}
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-[11px] mt-0.5">{effectiveMessage}</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', margin: 0, lineHeight: 1.3 }}>
+                      {effectiveMessage}
+                    </p>
                     {n.targetCommentDeleted ? (
-                      <span className="inline-block mt-1 text-[10px] font-semibold text-red-500 bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded" data-testid="tombstone-badge">
+                      <span
+                        data-testid="tombstone-badge"
+                        style={{
+                          display: 'inline-block',
+                          marginTop: '2px',
+                          fontSize: '0.65rem',
+                          fontWeight: 600,
+                          color: 'var(--crit, #ef4444)',
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          width: 'fit-content',
+                        }}
+                      >
                         Link Disabled: Referenced comment was deleted
                       </span>
                     ) : isTaskMissing ? (
-                      <span className="inline-block mt-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded" data-testid="tombstone-badge">
+                      <span
+                        data-testid="tombstone-badge"
+                        style={{
+                          display: 'inline-block',
+                          marginTop: '2px',
+                          fontSize: '0.65rem',
+                          fontWeight: 600,
+                          color: 'var(--warn, #f59e0b)',
+                          background: 'rgba(245, 158, 11, 0.15)',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          width: 'fit-content',
+                        }}
+                      >
                         Link Disabled: Referenced task not found
                       </span>
                     ) : null}
-                    <span className="text-[10px] text-gray-400 block mt-1">
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                       {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </button>

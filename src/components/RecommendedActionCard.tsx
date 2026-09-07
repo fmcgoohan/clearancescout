@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { CanonicalEntity } from './EntityRegistryTable';
 import { AlertTriangleIcon, CheckCircleIcon, ChevronRightIcon } from './icons/Icons';
 
@@ -6,6 +6,17 @@ export interface RecommendedActionCardProps {
   entities: CanonicalEntity[];
   hasScreenplay?: boolean;
   departmentTasksCount?: number;
+  selectedScene?: {
+    id: string;
+    sceneNumber: number;
+    heading: string;
+    readinessStatus?: string;
+    blockersCount?: number;
+    workingClearCount?: number;
+    finalClearCount?: number;
+    readinessDetails?: any;
+    occurrences?: any[];
+  } | null;
   onSelectTab?: (tab: 'overview' | 'screenplay' | 'clearance' | 'tasks', filter?: string) => void;
   onOpenUploadModal?: () => void;
   onExportBinder?: () => void;
@@ -17,16 +28,52 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
   entities,
   hasScreenplay = true,
   departmentTasksCount = 0,
+  selectedScene = null,
   onSelectTab,
   onOpenUploadModal,
   onExportBinder,
   onResearchItem,
   onLoadSample,
 }) => {
-  const actionRequiredItems = entities.filter(
-    (e) => e.overallClearanceStatus === 'ACTION_REQUIRED' || e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE'
+  const sampleLoadTriggeredRef = useRef(false);
+  const handleLoadSample = (e: React.SyntheticEvent) => {
+    if ('button' in e && (e as React.MouseEvent).button !== 0) return;
+    if (sampleLoadTriggeredRef.current) return;
+    sampleLoadTriggeredRef.current = true;
+    setTimeout(() => {
+      sampleLoadTriggeredRef.current = false;
+    }, 1000);
+    onLoadSample?.();
+  };
+
+  const isSceneFullyCleared = Boolean(
+    selectedScene &&
+      (selectedScene.readinessStatus === 'FINAL_CLEAR' ||
+        selectedScene.readinessDetails?.status === 'FINAL_CLEAR' ||
+        (selectedScene.blockersCount === 0 && (selectedScene.workingClearCount === 0 || selectedScene.readinessStatus === 'FINAL_CLEAR')))
   );
-  const reviewRecommendedItems = entities.filter((e) => e.overallClearanceStatus === 'REVIEW_RECOMMENDED');
+
+  const sceneEntities = selectedScene
+    ? entities.filter((e) => {
+        const matchViaEnt = e.occurrences?.some(
+          (occ: any) => occ.sceneId === selectedScene.id || occ.sceneNumber === selectedScene.sceneNumber
+        );
+        const matchViaScene = (selectedScene as any).occurrences?.some(
+          (occ: any) => occ.canonicalEntityId === e.id
+        );
+        return matchViaEnt || matchViaScene;
+      })
+    : [];
+
+  const effectiveEntities = selectedScene ? sceneEntities : entities;
+  const actionRequiredItems = isSceneFullyCleared
+    ? []
+    : effectiveEntities.filter(
+        (e) => e.overallClearanceStatus === 'ACTION_REQUIRED' || e.overallClearanceStatus === 'INSUFFICIENT_EVIDENCE'
+      );
+  const reviewRecommendedItems = isSceneFullyCleared
+    ? []
+    : effectiveEntities.filter((e) => e.overallClearanceStatus === 'REVIEW_RECOMMENDED');
 
   const blockersCount = actionRequiredItems.length;
   const reviewsCount = reviewRecommendedItems.length;
@@ -56,14 +103,24 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
     badgeColor = 'var(--status-review, #f59e0b)';
     badgeBg = 'rgba(245, 158, 11, 0.12)';
     handleClick = () => onSelectTab?.('screenplay');
+  } else if (selectedScene && (isSceneFullyCleared || (blockersCount === 0 && reviewsCount === 0))) {
+    // When a specific scene is selected and all its items are cleared
+    title = `Scene ${selectedScene.sceneNumber} Cleared for Filming`;
+    rationale = `All clearance items in Scene ${selectedScene.sceneNumber} (${selectedScene.heading}) are cleared. No blockers remain for this scene.`;
+    buttonLabel = 'View Screenplay';
+    ariaLabel = `View Scene ${selectedScene.sceneNumber} in Screenplay`;
+    badgeColor = 'var(--status-no-issue, #22c55e)';
+    badgeBg = 'rgba(34, 197, 94, 0.12)';
+    handleClick = () => onSelectTab?.('screenplay');
   } else if (blockersCount > 0) {
     const target = actionRequiredItems[0];
     const targetName = target?.canonicalName || 'Uncleared Item';
+    const scenePrefix = selectedScene ? `Scene ${selectedScene.sceneNumber}: ` : '';
     title = target ? `Research ${targetName}` : `Review ${blockersCount} Clearance Blocker${blockersCount > 1 ? 's' : ''}`;
     const itemNoun = blockersCount === 1 ? 'clearance item requires' : 'clearance items require';
     rationale = target
-      ? `${blockersCount} ${itemNoun} action. Start with ${targetName}.`
-      : `${blockersCount} ${itemNoun} action.`;
+      ? `${scenePrefix}${blockersCount} ${itemNoun} action. Start with ${targetName}.`
+      : `${scenePrefix}${blockersCount} ${itemNoun} action.`;
     buttonLabel = target ? `Research ${targetName}` : `Review ${blockersCount} Clearance Blocker${blockersCount > 1 ? 's' : ''}`;
     ariaLabel = buttonLabel;
     badgeColor = 'var(--status-action, #ef4444)';
@@ -79,9 +136,10 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
   } else if (reviewsCount > 0) {
     const target = reviewRecommendedItems[0];
     const targetName = target?.canonicalName || 'Item';
+    const scenePrefix = selectedScene ? `Scene ${selectedScene.sceneNumber}: ` : '';
     title = target ? `Research ${targetName}` : `Review ${reviewsCount} Recommended Item${reviewsCount > 1 ? 's' : ''}`;
     const reviewNoun = reviewsCount === 1 ? 'item recommended' : 'items recommended';
-    rationale = `${reviewsCount} ${reviewNoun} for review: ${targetName}.`;
+    rationale = `${scenePrefix}${reviewsCount} ${reviewNoun} for review: ${targetName}.`;
     buttonLabel = target ? `Research ${targetName}` : `Review ${reviewsCount} Recommended Item${reviewsCount > 1 ? 's' : ''}`;
     ariaLabel = buttonLabel;
     badgeColor = 'var(--status-review, #f59e0b)';
@@ -182,7 +240,8 @@ export const RecommendedActionCard: React.FC<RecommendedActionCardProps> = ({
             type="button"
             data-testid="recommendation-load-sample-btn"
             className="btn btn-secondary touch-target"
-            onClick={onLoadSample}
+            onPointerDown={handleLoadSample}
+            onClick={handleLoadSample}
             aria-label="Load Sample Production Data"
             style={{
               padding: '0.6rem 1rem',

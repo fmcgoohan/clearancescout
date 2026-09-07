@@ -9,6 +9,8 @@ import { sceneReadinessEngine } from './sceneReadinessEngine.js';
 import { canonicalRegistryWorkflow } from './canonicalRegistryWorkflow.js';
 import { clearanceEvaluator } from './clearanceEvaluator.js';
 import { actionNotificationRepo } from '../repositories/ActionNotificationRepo.js';
+import { overrideRepo } from '../repositories/OverrideRepo.js';
+import { sceneRepo } from '../repositories/SceneRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { config } from '../config.js';
 
@@ -145,16 +147,18 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         }
       }
 
-      // 6. Attach Sample Location Permit Override (Midtown Spire Tower)
+      // 6. Attach Sample Location Permit Override (Midtown Spire Tower for Scene 2)
       const locationEntity = entities.find(
         (e) => e.canonicalName.toLowerCase().includes('midtown') || e.canonicalName.toLowerCase().includes('spire')
       );
-      if (locationEntity) {
-        const { overrideRepo } = await import('../repositories/OverrideRepo.js');
+      const scene2 = (await sceneRepo.getScenesByProject(projectId)).find((s) => s.sceneNumber === 2);
+      if (locationEntity && scene2) {
         await overrideRepo.createOverride(projectId, {
           canonicalEntityId: locationEntity.id,
+          sceneId: scene2.id,
           status: 'NO_ISSUE_SURFACED',
-          rationale: 'Commercial location filming permit and architectural exterior release executed on file.',
+          overrideStatus: 'NO_ISSUE_SURFACED',
+          rationale: 'Commercial location filming permit and architectural exterior release executed on file for Scene 2.',
           counselName: 'Sarah Jenkins, Lead Production Counsel',
         });
       }

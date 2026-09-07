@@ -411,6 +411,7 @@ export class EntityRepo {
       const isHistorical = !isActive;
       return {
         ...ent,
+        occurrences: entOccurrences,
         occurrencesCount: occCount,
         occurrenceCount: occCount,
         scenesCount,

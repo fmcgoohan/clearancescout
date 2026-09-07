@@ -187,7 +187,9 @@ describe("Contract: Pre-Walkthrough Corrections (FR-037 through FR-040)", () => 
       await entityRepo.createOccurrence(pid, {
         canonicalEntityId: coors.id,
         sceneId: scene1.sceneId,
-        sceneNumber: 1,
+        scriptLineNumber: 1,
+        excerptText: "John drinks a Coors Light.",
+        usageContext: "Hero beverage consumption",
         surfaceMention: "Coors Light",
         clearanceStatus: "ACTION_REQUIRED",
       });
