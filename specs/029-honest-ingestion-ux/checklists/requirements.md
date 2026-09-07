@@ -161,3 +161,9 @@
 - [x] Scene 2 evaluates to FINAL CLEAR ("All scene elements and prop occurrences are 100% cleared for production") via Scene 2 location permit override (FR-049).
 - [x] When Scene 2 is active, primary recommendation card displays "Scene 2 Cleared for Filming" and "View Screenplay" CTA, without suggesting Nocturne of the Wild (FR-049).
 
+### 22. Post-00071 Defect Corrections (FR-050 through FR-053)
+- [x] Scene 2 Agreement: Scene card, detail, items, and tasks agree; Scene 2 Location permit task resolved; Counsel Override and Permit on File badges exposed in EntityRegistryTable; Midtown Spire Tower displays 'Cleared via Override' when Scene 2 active (FR-050).
+- [x] Truthful CTA: Recommended action button truthfully labels completed evaluations as 'Review Dossier: ${targetName}' (e.g. Nocturne of the Wild) routing to the dossier instead of triggering fake research; research is dispatched only when research is actually needed (FR-051).
+- [x] Task Attachments Restyling: TaskAttachmentList restyled with native design tokens without Tailwind classes; native file upload and remove actions; 10.63 kB stylesheet preserved (FR-052).
+- [x] Honest Landing Default: Fresh load prioritizes proj-default (Default Production Workspace) instead of proj-cyberpunk when no project is stored in localStorage (FR-053).
+
