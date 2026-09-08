@@ -113,10 +113,15 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
           role="dialog"
           aria-label="Administrative Settings Menu"
           style={{
-            position: 'absolute',
-            right: 0,
-            top: 'calc(100% + 8px)',
-            width: '280px',
+            position: 'fixed',
+            top: '64px',
+            right: '12px',
+            width: 'min(290px, calc(100vw - 24px))',
+            maxWidth: 'calc(100vw - 24px)',
+            maxHeight: 'calc(100vh - 80px)',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            boxSizing: 'border-box',
             background: 'var(--bg-panel, #1e293b)',
             border: '1px solid var(--border-color, #334155)',
             borderRadius: '12px',

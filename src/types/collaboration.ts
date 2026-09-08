@@ -108,6 +108,8 @@ export interface ProjectPortfolioSummary {
   rightsExpirationWarningsCount: number;
   scriptVersion: string;
   lastSyncTimestamp: string;
+  totalScenes?: number;
+  readinessStatus?: string;
 }
 
 export interface ProjectMember {

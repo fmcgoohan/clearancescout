@@ -254,7 +254,7 @@ export class SceneReadinessEngine {
 
     const overallReadinessPercentage =
       totalScenes === 0
-        ? 100
+        ? 0.0
         : Math.round(((finalClearScenesCount + workingClearScenesCount * 0.5) / totalScenes) * 1000) / 10;
 
     return {
@@ -320,7 +320,7 @@ export class SceneReadinessEngine {
 
     const overallReadinessPercentage =
       totalScenes === 0
-        ? 100
+        ? 0.0
         : Math.round(((finalClearScenesCount + workingClearScenesCount * 0.5) / totalScenes) * 1000) / 10;
 
     return {

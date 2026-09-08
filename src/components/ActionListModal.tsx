@@ -341,6 +341,7 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
         width: '100%',
         maxWidth: embedded ? '100%' : '960px',
         maxHeight: embedded ? 'none' : '90vh',
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: 'var(--bg-secondary)',
@@ -360,29 +361,34 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
       {/* Modal / Panel Header */}
       <div
         style={{
-          padding: '16px 24px',
+          padding: '12px 14px',
           borderBottom: '1px solid var(--border-color)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '8px',
           background: 'var(--bg-card)',
+          boxSizing: 'border-box',
+          width: '100%',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <h2 id="action-modal-title" style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileTextIcon size={20} className="text-cyan-400" />
-            <span>Production Clearance Action & Notification Center</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0, flex: '1 1 auto' }}>
+          <h2 id="action-modal-title" style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.15rem)', fontWeight: 600, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px', wordBreak: 'break-word' }}>
+            <FileTextIcon size={18} className="text-cyan-400" />
+            <span>Action Center</span>
           </h2>
           <span
             data-testid="task-count-badge"
             style={{
-              fontSize: '0.75rem',
+              fontSize: '0.72rem',
               padding: '2px 8px',
               borderRadius: '10px',
               background: openCount > 0 ? 'var(--status-action-bg)' : 'var(--status-no-issue-bg)',
               color: openCount > 0 ? 'var(--status-action)' : 'var(--status-no-issue)',
               border: openCount > 0 ? '1px solid var(--status-action-border)' : '1px solid var(--status-no-issue-border)',
               fontWeight: 600,
+              whiteSpace: 'nowrap',
             }}
           >
             {fetchState === 'loading'
@@ -394,12 +400,12 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
               : `${filteredActions.length} of ${pluralize(activeDraftActions.length, 'Task', 'Tasks')}`}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: 'auto' }}>
           <button
-            className="btn-secondary"
+            className="btn-secondary touch-target"
             onClick={handleSyncActions}
             disabled={isSyncing || fetchState === 'loading'}
-            style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ fontSize: '0.78rem', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
           >
             <RefreshCwIcon size={14} />
             <span>{isSyncing ? 'Syncing...' : 'Re-Sync'}</span>
@@ -408,6 +414,15 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
             <button
               onClick={onClose}
               aria-label="Close action modal"
+              className="btn-secondary touch-target"
+              style={{
+                padding: '6px 10px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
             >
               <XIcon size={18} />
             </button>
@@ -966,7 +981,8 @@ export const ActionListModal: React.FC<ActionListModalProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1400,
-        padding: '20px',
+        padding: '12px 8px',
+        boxSizing: 'border-box',
       }}
     >
       {contentBlock}

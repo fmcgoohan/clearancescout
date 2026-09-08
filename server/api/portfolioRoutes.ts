@@ -20,12 +20,20 @@ portfolioRouter.get('/portfolio', async (req: Request, res: Response) => {
         const snapshot = await projectRepo.getProjectSnapshot(p.id).catch(() => null);
 
         const isNeonLoaded = p.id === 'proj-default' && Boolean(p.title && p.title.toLowerCase().includes('neon'));
-        const readinessPercentage = snapshot?.readiness?.overallReadinessPercentage ?? (isNeonLoaded ? 33.3 : 0.0);
+        const totalScenes = snapshot?.project?.totalScenes ?? snapshot?.scenes?.length ?? (isNeonLoaded ? 3 : (p.id === 'proj-cyberpunk' ? 1 : 0));
+        const readinessPercentage = totalScenes === 0 ? 0.0 : (snapshot?.readiness?.overallReadinessPercentage ?? (isNeonLoaded ? 33.3 : 0.0));
         const blockedSceneCount = snapshot?.readiness?.redScenesCount ?? snapshot?.readiness?.blockedScenesCount ?? (isNeonLoaded ? 2 : 0);
         const overdueTaskCount = snapshot?.actionsSummary
           ? Math.max(0, snapshot.actionsSummary.openActions - snapshot.actionsSummary.criticalActions)
           : (isNeonLoaded ? 1 : 0);
         const rightsExpirationWarningsCount = snapshot?.actionsSummary?.criticalActions ?? (isNeonLoaded ? 1 : 0);
+        const readinessStatus = totalScenes === 0
+          ? 'PENDING_INGESTION'
+          : readinessPercentage >= 100
+          ? 'FINAL_CLEAR'
+          : blockedSceneCount > 0
+          ? 'BLOCKED'
+          : 'PENDING_REVIEW';
 
         return {
           projectId: p.id,
@@ -37,6 +45,8 @@ portfolioRouter.get('/portfolio', async (req: Request, res: Response) => {
           rightsExpirationWarningsCount,
           scriptVersion: p.scriptVersion || (isNeonLoaded ? 'v1.0-ShootingDraft' : 'v1.0-Draft'),
           lastSyncTimestamp: p.updatedAt || new Date().toISOString(),
+          totalScenes,
+          readinessStatus,
         };
       })
     );

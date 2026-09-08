@@ -145,7 +145,6 @@ body {
   background-color: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  overflow-x: hidden;
   line-height: 1.5;
 }
 
@@ -520,6 +519,34 @@ header.app-header {
   }
   .portfolio-container {
     padding: 10px 8px 240px 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  header.app-header {
+    padding: 6px 6px !important;
+    gap: 4px !important;
+  }
+  .app-header-brand {
+    gap: 4px !important;
+  }
+  .app-header-brand button[data-testid="header-switch-project-btn"] {
+    max-width: 105px !important;
+    padding: 4px 6px !important;
+  }
+  .app-header-brand button[data-testid="header-switch-project-btn"] span[data-testid="workspace-project-title"] {
+    max-width: 48px !important;
+  }
+  .app-header-brand button[data-testid="header-new-production-btn"] {
+    padding: 4px 6px !important;
+  }
+  .app-header-actions {
+    gap: 4px !important;
+  }
+  .app-header-actions button,
+  .app-header-actions .touch-target {
+    padding: 4px 6px !important;
+    font-size: 0.72rem !important;
   }
 }
 

@@ -246,6 +246,7 @@ export const EntityRegistryTable: React.FC<EntityRegistryTableProps> = ({
             </h3>
             {onAddItem && (
               <button
+                data-testid="add-item-btn"
                 className="btn-secondary"
                 onClick={onAddItem}
                 style={{

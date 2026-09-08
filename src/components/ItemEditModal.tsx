@@ -204,10 +204,11 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Canonical Name */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+              <label htmlFor="item-canonical-name" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
                 Canonical Item Name *
               </label>
               <input
+                id="item-canonical-name"
                 type="text"
                 className="input-field"
                 placeholder="e.g. Summit Cola, Porsche 911"
@@ -220,10 +221,11 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
 
             {/* Category */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+              <label htmlFor="item-category" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
                 Clearance Category *
               </label>
               <select
+                id="item-category"
                 className="input-field"
                 value={category}
                 onChange={(e) => setCategory(e.target.value as EntityCategory)}
@@ -239,10 +241,11 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
 
             {/* Aliases (Phase 3) */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+              <label htmlFor="item-aliases" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
                 Aliases & Multi-Surface Forms (comma separated)
               </label>
               <input
+                id="item-aliases"
                 type="text"
                 className="input-field"
                 placeholder="e.g. Coke, Coke Zero, Diet Coke"
@@ -259,10 +262,11 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
             {potentialParents.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+                  <label htmlFor="item-parent-entity" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
                     Parent Brand / Entity (Optional)
                   </label>
                   <select
+                    id="item-parent-entity"
                     className="input-field"
                     value={parentEntityId}
                     onChange={(e) => setParentEntityId(e.target.value)}
@@ -277,10 +281,11 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+                  <label htmlFor="item-relationship-type" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
                     Relationship Type
                   </label>
                   <select
+                    id="item-relationship-type"
                     className="input-field"
                     value={relationshipType}
                     onChange={(e) => setRelationshipType(e.target.value as EntityRelationshipType)}
@@ -299,10 +304,11 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
 
             {/* Description */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+              <label htmlFor="item-description" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
                 Description / Context Notes
               </label>
               <textarea
+                id="item-description"
                 className="input-field"
                 placeholder="Details regarding context, depicted packaging, or clearance notes..."
                 value={description}
@@ -315,10 +321,11 @@ export const ItemEditModal: React.FC<ItemEditModalProps> = ({
             {/* Scene placement for new item */}
             {!isEditing && scenes.length > 0 && (
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
+                <label htmlFor="item-scene-placement" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>
                   Assign Initial Scene Placement
                 </label>
                 <select
+                  id="item-scene-placement"
                   className="input-field"
                   value={sceneId}
                   onChange={(e) => setSceneId(e.target.value)}

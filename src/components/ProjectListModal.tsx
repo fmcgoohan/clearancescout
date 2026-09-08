@@ -482,8 +482,26 @@ export function ProjectListModal({
                           className="touch-target project-select-card"
                         >
                           <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
                               <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{proj.title}</h3>
+                              <span
+                                data-project-id-chip="true"
+                                style={{
+                                  fontSize: '0.72rem',
+                                  fontFamily: 'monospace',
+                                  fontWeight: 700,
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  background: 'rgba(56, 189, 248, 0.1)',
+                                  color: 'var(--accent-cyan)',
+                                  border: '1px solid rgba(56, 189, 248, 0.2)',
+                                  whiteSpace: 'nowrap',
+                                  display: 'inline-block',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                [{proj.id}]
+                              </span>
                               <span
                                 style={{
                                   fontSize: '0.7rem',

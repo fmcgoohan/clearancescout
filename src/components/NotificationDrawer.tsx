@@ -171,11 +171,15 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
           role="dialog"
           aria-label="In-Product Notifications"
           style={{
-            position: 'absolute',
-            right: 0,
-            top: 'calc(100% + 8px)',
-            width: '340px',
-            maxWidth: 'calc(100vw - 32px)',
+            position: 'fixed',
+            top: '64px',
+            right: '12px',
+            width: 'min(340px, calc(100vw - 24px))',
+            maxWidth: 'calc(100vw - 24px)',
+            maxHeight: 'calc(100vh - 80px)',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            boxSizing: 'border-box',
             background: 'var(--bg-panel, #151B23)',
             border: '1px solid var(--border-color, #242E3A)',
             borderRadius: '12px',

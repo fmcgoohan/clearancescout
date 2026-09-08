@@ -296,6 +296,8 @@ export default function App() {
       console.error('Error loading project details:', err);
       setInitError(`Error loading project: ${err?.message || 'Network error'}`);
       return false;
+    } finally {
+      setIsSwitchingProject(false);
     }
   };
 

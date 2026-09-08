@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ProjectPortfolioSummary } from '../types/collaboration';
 import { formatProjectCode } from '../utils/formatters';
+import { apiFetch } from '../utils/apiClient';
 
 interface PortfolioDashboardProps {
   demoToken?: string;
@@ -17,9 +18,7 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
   useEffect(() => {
     const fetchPortfolio = async () => {
       try {
-        const headers: Record<string, string> = {};
-        if (demoToken) headers['x-demo-token'] = demoToken;
-        const res = await fetch('/api/portfolio', { headers });
+        const res = await apiFetch('/api/portfolio');
         if (res.ok) {
           const data = await res.json();
           setPortfolio(data.portfolio || []);
@@ -31,7 +30,7 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
       }
     };
     fetchPortfolio();
-  }, []);
+  }, [demoToken]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'ALL' | 'BLOCKED' | 'READY'>('ALL');
@@ -42,11 +41,14 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
     ? Math.round((portfolio.reduce((sum, p) => sum + p.readinessPercentage, 0) / portfolio.length) * 10) / 10
     : 0;
 
+  const isProjectFullyReady = (p: ProjectPortfolioSummary) =>
+    p.readinessPercentage >= 100 && (p.totalScenes === undefined || p.totalScenes > 0);
+
   const filteredPortfolio = portfolio.filter((p) => {
     const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.projectId.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
     if (filterMode === 'BLOCKED') return p.blockedSceneCount > 0 || p.overdueTaskCount > 0;
-    if (filterMode === 'READY') return p.readinessPercentage >= 100;
+    if (filterMode === 'READY') return isProjectFullyReady(p);
     return true;
   });
 
@@ -391,7 +393,7 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
             type="button"
             data-filter-tab="ready"
             onClick={() => setFilterMode('READY')}
-            aria-label={`Fully Ready (${portfolio.filter((p) => p.readinessPercentage >= 100).length})`}
+            aria-label={`Fully Ready (${portfolio.filter(isProjectFullyReady).length})`}
             className="portfolio-filter-tab-btn"
             style={{
               padding: '8px 12px',
@@ -410,7 +412,7 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
             }}
           >
             <span className="tab-label-desktop">Fully Ready</span>
-            <span className="tab-label-mobile">Ready</span> ({portfolio.filter((p) => p.readinessPercentage >= 100).length})
+            <span className="tab-label-mobile">Ready</span> ({portfolio.filter(isProjectFullyReady).length})
           </button>
         </div>
       </div>
@@ -419,7 +421,13 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
       <div className="portfolio-grid">
         {filteredPortfolio.map((p) => {
           const projectCode = formatProjectCode(p.projectId, p.title);
-          const isFullReady = p.readinessPercentage >= 100;
+          const isFullReady = isProjectFullyReady(p);
+          const isEmpty =
+            p.totalScenes === 0 ||
+            (p.readinessPercentage === 0 &&
+              p.blockedSceneCount === 0 &&
+              p.overdueTaskCount === 0 &&
+              (p.title.toLowerCase().includes('default') || p.projectId === 'proj-default'));
           return (
             <div
               key={p.projectId}
@@ -477,22 +485,66 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
                     >
                       [{projectCode}]
                     </span>
+                    <span
+                      data-project-id-badge="true"
+                      style={{
+                        fontSize: '0.7rem',
+                        fontFamily: 'var(--mono)',
+                        color: 'var(--muted)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: 'var(--panel2)',
+                        border: '1px solid var(--border)',
+                        whiteSpace: 'nowrap',
+                        display: 'inline-block',
+                        flexShrink: 0,
+                      }}
+                    >
+                      [{p.projectId}]
+                    </span>
                   </div>
 
                   {/* Readiness Pill */}
                   <span
+                    data-readiness-badge="true"
                     style={{
                       fontSize: '0.75rem',
                       fontWeight: 700,
                       padding: '4px 10px',
                       borderRadius: '16px',
-                      background: isFullReady ? 'var(--ok-bg)' : 'var(--warn-bg)',
-                      color: isFullReady ? 'var(--ok)' : 'var(--warn)',
-                      border: `1px solid ${isFullReady ? 'var(--ok)' : 'var(--warn)'}`,
+                      background: isFullReady
+                        ? 'var(--ok-bg)'
+                        : p.readinessPercentage === 0
+                        ? isEmpty
+                          ? 'rgba(148, 163, 184, 0.12)'
+                          : 'var(--warn-bg)'
+                        : 'var(--warn-bg)',
+                      color: isFullReady
+                        ? 'var(--ok)'
+                        : p.readinessPercentage === 0
+                        ? isEmpty
+                          ? 'var(--muted)'
+                          : 'var(--warn)'
+                        : 'var(--warn)',
+                      border: `1px solid ${
+                        isFullReady
+                          ? 'var(--ok)'
+                          : p.readinessPercentage === 0
+                          ? isEmpty
+                            ? 'rgba(148, 163, 184, 0.3)'
+                            : 'var(--warn)'
+                          : 'var(--warn)'
+                      }`,
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {Math.round(p.readinessPercentage * 10) / 10}% Readiness
+                    {isFullReady
+                      ? `${Math.round(p.readinessPercentage * 10) / 10}% Readiness`
+                      : p.readinessPercentage === 0
+                      ? isEmpty
+                        ? '0% • Pending Ingestion'
+                        : '0% • Pending Review'
+                      : `${Math.round(p.readinessPercentage * 10) / 10}% Readiness`}
                   </span>
                 </div>
 
@@ -532,7 +584,11 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
                   style={{
                     width: `${Math.min(100, Math.max(0, p.readinessPercentage))}%`,
                     height: '100%',
-                    background: isFullReady ? 'var(--ok)' : 'var(--warn)',
+                    background: isFullReady
+                      ? 'var(--ok)'
+                      : p.readinessPercentage === 0
+                      ? 'rgba(148, 163, 184, 0.2)'
+                      : 'var(--warn)',
                     transition: 'width 0.4s ease',
                   }}
                 />

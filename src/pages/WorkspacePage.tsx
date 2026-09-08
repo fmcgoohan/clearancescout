@@ -390,6 +390,52 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     fetchWorkspaceData();
   }, [projectId, refreshTrigger]);
 
+  useEffect(() => {
+    if (!isSwitchingProject && projectId) {
+      const timer = setTimeout(() => {
+        const heading = document.getElementById('workspace-production-heading');
+        if (heading instanceof HTMLElement) {
+          heading.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [projectId, isSwitchingProject]);
+
+  const handleTabKeyDown = (
+    e: React.KeyboardEvent,
+    currentTabKey: 'overview' | 'screenplay' | 'clearance' | 'tasks'
+  ) => {
+    const tabKeys: Array<'overview' | 'screenplay' | 'clearance' | 'tasks'> = [
+      'overview',
+      'screenplay',
+      'clearance',
+      'tasks',
+    ];
+    const idx = tabKeys.indexOf(currentTabKey);
+    let nextTab: 'overview' | 'screenplay' | 'clearance' | 'tasks' | null = null;
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      nextTab = tabKeys[(idx + 1) % tabKeys.length];
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      nextTab = tabKeys[(idx - 1 + tabKeys.length) % tabKeys.length];
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      nextTab = tabKeys[0];
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      nextTab = tabKeys[tabKeys.length - 1];
+    }
+    if (nextTab) {
+      setActiveTab(nextTab);
+      const btn = document.getElementById(`tab-${nextTab}`);
+      if (btn instanceof HTMLElement) {
+        btn.focus();
+      }
+    }
+  };
+
   const handleParseScript = async (textToParse: string, format: 'PLAINTEXT' | 'FOUNTAIN' | 'PDF') => {
     if (!projectId) return;
     setIsUploading(true);
@@ -587,6 +633,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                 id="tab-overview"
                 aria-selected={activeTab === 'overview'}
                 aria-controls="section-overview"
+                tabIndex={activeTab === 'overview' ? 0 : -1}
+                onKeyDown={(e) => handleTabKeyDown(e, 'overview')}
                 className={`btn-secondary touch-target ${activeTab === 'overview' ? 'tab-active' : ''}`}
                 onClick={() => setActiveTab('overview')}
                 style={{
@@ -609,6 +657,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                 id="tab-screenplay"
                 aria-selected={activeTab === 'screenplay'}
                 aria-controls="section-screenplay"
+                tabIndex={activeTab === 'screenplay' ? 0 : -1}
+                onKeyDown={(e) => handleTabKeyDown(e, 'screenplay')}
                 className={`btn-secondary touch-target ${activeTab === 'screenplay' ? 'tab-active' : ''}`}
                 onClick={() => setActiveTab('screenplay')}
                 style={{
@@ -631,6 +681,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                 id="tab-clearance"
                 aria-selected={activeTab === 'clearance'}
                 aria-controls="section-clearance"
+                tabIndex={activeTab === 'clearance' ? 0 : -1}
+                onKeyDown={(e) => handleTabKeyDown(e, 'clearance')}
                 className={`btn-secondary touch-target ${activeTab === 'clearance' ? 'tab-active' : ''}`}
                 onClick={() => setActiveTab('clearance')}
                 style={{
@@ -653,6 +705,8 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
                 id="tab-tasks"
                 aria-selected={activeTab === 'tasks'}
                 aria-controls="section-tasks"
+                tabIndex={activeTab === 'tasks' ? 0 : -1}
+                onKeyDown={(e) => handleTabKeyDown(e, 'tasks')}
                 className={`btn-secondary touch-target ${activeTab === 'tasks' ? 'tab-active' : ''}`}
                 onClick={() => setActiveTab('tasks')}
                 style={{
