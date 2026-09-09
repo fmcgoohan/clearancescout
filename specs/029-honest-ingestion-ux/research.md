@@ -58,3 +58,21 @@ Update `RecommendedActionCard` and workspace summary bars:
 
 ### Rationale
 Prevents false claims of production readiness on unanalyzed projects.
+
+---
+
+## 5. In-Memory DEMO_MODE Instance Identity & Production Project Discovery (P1 Remediation)
+
+### Root Cause Analysis: Disappearing Productions After Reload
+In Cloud Run DEMO_MODE, Firestore operates using in-memory mocks (`MockFirestore` in `server/repositories/ProjectRepo.ts`), which are scoped to individual Cloud Run container instance lifecycles. 
+1. **Fresh Instance Cold Starts**: When a new Cloud Run revision is deployed or a container cold-starts, the in-memory store starts with exactly two baseline projects:
+   - `proj-default`: Default Production Workspace (honest-empty, 0 scenes, 0 clearance items, 0% readiness).
+   - `proj-cyberpunk`: Cyberpunk (1 scene `INT. VIRTUAL LAB - DAY`, 0 clearance items, 0% readiness / Pending Review).
+2. **User-Created / Sample Productions**: Any user-created production (e.g. Mountain Refuge with `proj-<uuid>`) or sample loaded via "Load Sample Production Data" (The Neon Horizon) exists in the container instance's memory. If a hard reload hits a new container instance, or if local storage clears the active project, the client defaults back to `proj-default`.
+3. **Explicit User Intent vs Silent Auto-Seeding**: Per the non-negotiable hackathon rule and architectural principle of honest ingestion, the backend must NOT silently reseed or auto-populate user workspaces upon token reload or page refresh. Instead, the populate path must remain explicit via:
+   - Clicking "Load Sample Production Data" in `proj-default` to load The Neon Horizon.
+   - Or creating a new production via "+ New Production".
+4. **Disambiguation of Same-Name Productions**: When multiple productions share identical titles (such as duplicate "Mountain Refuge" entries created during testing), visual ambiguity caused user confusion. To resolve this deterministically:
+   - Both the Project Switcher modal (`src/components/ProjectListModal.tsx`) and Portfolio Dashboard (`src/components/PortfolioDashboard.tsx`) explicitly render stable project ID chips (`[proj-<uuid>]` alongside `[formatProjectCode]`).
+   - Cards display creation timestamps to provide unmistakable provenance without mutating or reseeding shared datasets.
+
