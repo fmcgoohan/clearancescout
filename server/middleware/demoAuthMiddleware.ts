@@ -20,7 +20,6 @@ export function demoAuthMiddleware(req: Request, res: Response, next: NextFuncti
     req.path === '/health' ||
     req.path.endsWith('/health') ||
     req.path === '/api/health' ||
-    req.path.endsWith('/script/demo') ||
     req.path.includes('/fixtures/')
   ) {
     return next();

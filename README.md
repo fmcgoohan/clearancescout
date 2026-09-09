@@ -16,6 +16,37 @@ ClearanceScout is an enterprise agentic platform designed for studio legal couns
 
 ---
 
+## ⚖️ For Reviewers (2-Minute Walkthrough)
+
+Follow this quick workflow on the live Cloud Run deployment:
+
+1. **Open the app**: Navigate to [https://clearancescout-n3tcx4jcbq-uc.a.run.app](https://clearancescout-n3tcx4jcbq-uc.a.run.app) and enter judge access token `judge-pass-2026`.
+2. **Create your isolated workspace**: Click the project switcher in the header, then click **"+ New Project"** (e.g. *"Judge Evaluation Project"*, Studio: *"Apex Films"*). This guarantees an isolated workspace and research quota.
+3. **Upload a sample two-scene script**: Click **"Upload Screenplay"**, select the **"Paste Text"** tab (or save as `.txt`), and paste the 10-line screenplay below:
+   ```text
+   EXT. DOWNTOWN ROOFTOP - NIGHT
+
+   ELENA stands near the edge of the neon-lit parapet. The city hums below.
+   She reaches into her pocket and pulls out a sleek can of RED BULL.
+
+   ELENA
+   We only have until sunrise.
+
+   INT. TECH LAB - CONTINUOUS
+
+   MARCUS furiously types away at a dual-monitor workstation.
+   A half-eaten pizza sits next to his glowing TERMINAL.
+
+   MARCUS
+   (without looking up)
+   The firewall is down. We're in.
+   ```
+   Click **"Ingest Screenplay"** to parse scenes and entities via Vertex Gemini.
+4. **Live trademark research**: In the Entity Registry table, click **"Research"** on **Red Bull** to watch live Parallel Search API citations appear with real source links.
+5. **Export Binder**: Open **"Export Binder"** in the header, verify preflight readiness, and click **"Generate PDF Binder"** to export the sealed clearance dossier.
+
+---
+
 ## 🌟 Key Capabilities & Complete Feature Architecture
 
 ### 1. Multi-Format Screenplay Ingestion & 5-Category Resolution

@@ -6,11 +6,15 @@ import { entityRepo, ClearanceStatus } from '../repositories/EntityRepo.js';
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { resolveEffectiveClearanceStatus } from '../workflows/effectiveStatusResolver.js';
 import { sceneReadinessEngine } from '../workflows/sceneReadinessEngine.js';
+import {
+  clearanceEvaluateRateLimiter,
+  retryResearchRateLimiter,
+} from '../middleware/rateLimitMiddleware.js';
 
 export const clearanceRouter = Router();
 
 // Evaluate Clearance Risk for Canonical Entities
-clearanceRouter.post('/projects/:id/clearance/evaluate', async (req: Request, res: Response, next: NextFunction) => {
+clearanceRouter.post('/projects/:id/clearance/evaluate', clearanceEvaluateRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = req.params.id;
     const entityIds = req.body.canonicalEntityIds || (req.body.canonicalEntityId ? [req.body.canonicalEntityId] : []);
@@ -80,7 +84,7 @@ clearanceRouter.get('/projects/:id/entities/:entityId/occurrences', async (req: 
 });
 
 // Retry Research for Single Failed or INSUFFICIENT_EVIDENCE Entity
-clearanceRouter.post('/projects/:id/entities/:entityId/retry-research', async (req: Request, res: Response, next: NextFunction) => {
+clearanceRouter.post('/projects/:id/entities/:entityId/retry-research', retryResearchRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id: projectId, entityId } = req.params;
     const result = await clearanceEvaluator.retryEntityResearch(projectId, entityId);

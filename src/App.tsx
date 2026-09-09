@@ -518,8 +518,8 @@ export default function App() {
       } else if (evalRes.status === 401) {
         setAuthError('Unauthorized: A valid Demo Access Token is required to evaluate clearance.');
       } else if (evalRes.status === 429) {
-        const errData = await evalRes.json();
-        setQuotaError(errData.error || 'Live research quota exceeded for this project.');
+        const errData = await evalRes.json().catch(() => ({}));
+        setQuotaError(errData.error || 'Rate limit reached. Please wait a few minutes.');
         if (errData.quota) setLiveQuota(errData.quota);
       }
     } catch (err) {
@@ -608,8 +608,8 @@ export default function App() {
       } else if (res.status === 401) {
         setAuthError('Unauthorized: A valid Demo Access Token is required to evaluate clearance.');
       } else if (res.status === 429) {
-        const errData = await res.json();
-        setQuotaError(errData.error || 'Live research quota exceeded for this project.');
+        const errData = await res.json().catch(() => ({}));
+        setQuotaError(errData.error || 'Rate limit reached. Please wait a few minutes.');
         if (errData.quota) setLiveQuota(errData.quota);
       }
     } catch (err) {
@@ -635,8 +635,8 @@ export default function App() {
       } else if (res.status === 401) {
         setAuthError('Unauthorized: A valid Demo Access Token is required to generate replacements.');
       } else if (res.status === 429) {
-        const errData = await res.json();
-        setQuotaError(errData.error || 'Live research quota exceeded for this project.');
+        const errData = await res.json().catch(() => ({}));
+        setQuotaError(errData.error || 'Rate limit reached. Please wait a few minutes.');
         if (errData.quota) setLiveQuota(errData.quota);
       }
     } catch (err) {
@@ -958,6 +958,7 @@ export default function App() {
             refreshTrigger={refreshTrigger}
             executionMode={executionMode}
             onLoadSample={handleLoadSample}
+            onQuotaError={(err) => setQuotaError(err)}
           />
         ) : (
           <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>

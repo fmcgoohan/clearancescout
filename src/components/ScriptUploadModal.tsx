@@ -403,10 +403,12 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         setErrorCode(code);
         setIsUploading(false);
         setUploadPhase('FAILED');
-        try {
-          await Promise.resolve(onUploadSuccess(data.snapshot || data, { reingestMode, scenesCount: 0, entitiesCount: 0, openActionsCount: 0 }));
-        } catch {
-          /* ignore refresh errors */
+        if (data.snapshot) {
+          try {
+            await Promise.resolve(onUploadSuccess(data.snapshot, { reingestMode, scenesCount: 0, entitiesCount: 0, openActionsCount: 0 }));
+          } catch {
+            /* ignore refresh errors */
+          }
         }
         return;
       }

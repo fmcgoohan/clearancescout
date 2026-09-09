@@ -217,6 +217,11 @@ export function ProjectListModal({
                 ? 'Configure title, format, and execution mode'
                 : 'Select an existing studio production or create a new workspace'}
             </p>
+            {!isCreating && (
+              <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                Create your own production for an isolated workspace and research quota. The Neon Horizon is a shared sample.
+              </p>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             {!isCreating && (

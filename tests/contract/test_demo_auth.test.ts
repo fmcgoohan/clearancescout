@@ -195,7 +195,7 @@ describe('Contract Test: Demo Access Token Protection', () => {
       expect(getRes.body.title).toBe('Cloud Authorized Project');
     });
 
-    it('keeps GET /api/health and POST /api/projects/:id/script/demo public in CLOUD_MODE', async () => {
+    it('keeps GET /api/health public and requires token on POST /api/projects/:id/script/demo in CLOUD_MODE', async () => {
       config.executionMode = 'CLOUD_MODE';
       process.env.EXECUTION_MODE = 'CLOUD_MODE';
       config.demoAccessToken = 'valid-production-secret-999';
@@ -216,12 +216,19 @@ describe('Contract Test: Demo Access Token Protection', () => {
       expect(projRes.status).toBe(201);
       const projectId = projRes.body.id;
 
-      // Demo script load endpoint is public for judges (no token provided) -> reaches handler without 401 Unauthorized
-      const demoRes = await request(app)
+      // Demo script load endpoint now requires authorization in CLOUD_MODE -> 401 without token
+      const unauthDemoRes = await request(app)
         .post(`/api/projects/${projectId}/script/demo`)
         .send({ autoEvaluate: false });
-      expect(demoRes.status).not.toBe(401);
-      expect([200, 502]).toContain(demoRes.status);
+      expect(unauthDemoRes.status).toBe(401);
+
+      // With valid authorization -> reaches handler
+      const authDemoRes = await request(app)
+        .post(`/api/projects/${projectId}/script/demo`)
+        .set('Authorization', 'Bearer valid-production-secret-999')
+        .send({ autoEvaluate: false });
+      expect(authDemoRes.status).not.toBe(401);
+      expect([200, 502]).toContain(authDemoRes.status);
     });
 
     it('T014: authorizes SSE stream /api/projects/:id/timeline/stream with query token parameter in CLOUD_MODE', async () => {

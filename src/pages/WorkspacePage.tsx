@@ -42,6 +42,7 @@ interface WorkspacePageProps {
   refreshTrigger: number;
   executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
   onLoadSample?: (reingestMode?: 'REPLACE' | 'MERGE') => Promise<{ ok: boolean; error?: string; code?: string; data?: any }>;
+  onQuotaError?: (errorMessage: string) => void;
 }
 
 export const WorkspacePage: React.FC<WorkspacePageProps> = ({
@@ -57,6 +58,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   refreshTrigger,
   executionMode = 'DEMO_MODE',
   onLoadSample,
+  onQuotaError,
 }) => {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [entities, setEntities] = useState<CanonicalEntity[]>([]);
@@ -489,9 +491,18 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       });
       if (res.ok) {
         await fetchWorkspaceData();
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        const errMessage = errJson.error || (res.status === 429 ? 'Rate limit reached. Please wait a few minutes.' : `Research retry failed (HTTP ${res.status}).`);
+        if (onQuotaError) {
+          onQuotaError(errMessage);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to retry research on entity:', err);
+      if (onQuotaError) {
+        onQuotaError(err?.message || 'Network error retrying research.');
+      }
     }
   };
 

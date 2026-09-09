@@ -462,7 +462,7 @@ export const BinderExportModal: React.FC<BinderExportModalProps> = ({
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                 {isLive
-                  ? 'All research citations verified via live Google Search & Parallel API.'
+                  ? 'All research citations grounded via live Parallel Search API.'
                   : isFallback
                   ? 'Parallel API unavailable. Evidence verified via deterministic cloud benchmark fallback fixture.'
                   : isMixed

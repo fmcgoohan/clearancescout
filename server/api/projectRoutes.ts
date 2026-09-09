@@ -8,6 +8,11 @@ import { canonicalRegistryWorkflow } from '../workflows/canonicalRegistryWorkflo
 import { demoAutomationWorkflow } from '../workflows/demoAutomationWorkflow.js';
 import { config } from '../config.js';
 import { extractTextFromPdfBuffer } from '../agents/ScriptParserAgent.js';
+import {
+  projectCreateRateLimiter,
+  scriptUploadRateLimiter,
+  demoSeedRateLimiter,
+} from '../middleware/rateLimitMiddleware.js';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -59,7 +64,7 @@ projectRouter.get('/', async (_req: Request, res: Response, next) => {
 });
 
 // Create Project
-projectRouter.post('/', async (req: Request, res: Response, next) => {
+projectRouter.post('/', projectCreateRateLimiter, async (req: Request, res: Response, next) => {
   try {
     const { title, productionCompany, scriptVersion, projectType, executionMode } = req.body;
     if (!title || !productionCompany) {
@@ -385,11 +390,11 @@ projectRouter.post('/:id/script/preview', scriptUploadMiddleware, handleScriptPr
 projectRouter.post('/script/preview', scriptUploadMiddleware, handleScriptPreview);
 
 // Upload & Parse Script Endpoints (Support both /:id/script/upload and /:id/script)
-projectRouter.post('/:id/script/upload', scriptUploadMiddleware, handleScriptUpload);
-projectRouter.post('/:id/script', scriptUploadMiddleware, handleScriptUpload);
+projectRouter.post('/:id/script/upload', scriptUploadRateLimiter, scriptUploadMiddleware, handleScriptUpload);
+projectRouter.post('/:id/script', scriptUploadRateLimiter, scriptUploadMiddleware, handleScriptUpload);
 
 // 1-Click Demo Screenplay Ingestion & Auto-Evaluation (Feature 017)
-projectRouter.post('/:id/script/demo', async (req: Request, res: Response, next) => {
+projectRouter.post('/:id/script/demo', demoSeedRateLimiter, async (req: Request, res: Response, next) => {
   try {
     const projectId = req.params.id;
     const { autoEvaluate, includeSampleRights, includeSamplePlaceholders } = req.body || {};
