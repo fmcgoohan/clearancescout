@@ -162,6 +162,8 @@ Follow this quick workflow on the live Cloud Run deployment:
 
 ## 🏛️ System Architecture
 
+![ClearanceScout architecture](docs/clearancescoutarchitecture.png)
+
 ```mermaid
 graph TD
     Client[Vite / React 18 SPA] -->|REST / SSE| Server[Express 4 Cloud Run Service]
