@@ -1,16 +1,18 @@
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
+import { createGeminiClient } from '../integrations/geminiClient.js';
 
 export class ArtworkTool {
   private ai: GoogleGenAI | null = null;
 
   constructor() {
-    if (config.geminiApiKey) {
-      this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
-    }
+    this.ai = createGeminiClient();
   }
 
   async generateArtworkCard(fictionalBrandName: string, designBrief: string): Promise<string> {
+    if (!this.ai) {
+      this.ai = createGeminiClient();
+    }
     if (config.executionMode === 'CLOUD_MODE' && this.ai) {
       try {
         const response = await this.ai.models.generateImages({

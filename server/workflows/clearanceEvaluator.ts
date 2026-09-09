@@ -9,6 +9,7 @@ import { parallelSearchTool, SearchResult } from '../tools/parallelSearchTool.js
 import { timelineEmitter } from '../events/timelineEmitter.js';
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
+import { createGeminiClient, geminiConfigured } from '../integrations/geminiClient.js';
 
 export interface ResearchRetryResult {
   entity: CanonicalEntityData;
@@ -28,9 +29,7 @@ export class ClearanceEvaluator {
   private groundingCache: Map<string, SearchResult> = new Map();
 
   constructor() {
-    if (config.geminiApiKey) {
-      this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
-    }
+    this.ai = createGeminiClient();
   }
 
   invalidateGroundingCache(projectId: string, canonicalEntityId?: string): void {
@@ -207,7 +206,10 @@ export class ClearanceEvaluator {
     };
 
     let isGeminiFallback = false;
-    if (this.ai && config.geminiApiKey && config.executionMode === 'CLOUD_MODE') {
+    if (!this.ai) {
+      this.ai = createGeminiClient();
+    }
+    if (this.ai && geminiConfigured() && config.executionMode === 'CLOUD_MODE') {
       try {
         const prompt = `You are an expert entertainment clearance supervisor. Analyze this screenplay entity occurrence for clearance risks:
 Entity: ${entity.canonicalName}

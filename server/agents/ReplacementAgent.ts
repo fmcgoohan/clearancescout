@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
+import { createGeminiClient } from '../integrations/geminiClient.js';
 import { ReplacementAttemptRecord } from '../repositories/ReplacementRepo.js';
 
 export interface GeneratedReplacement {
@@ -13,9 +14,7 @@ export class ReplacementAgent {
   private ai: GoogleGenAI | null = null;
 
   constructor() {
-    if (config.geminiApiKey) {
-      this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
-    }
+    this.ai = createGeminiClient();
   }
 
   async generateFictionalBrand(
@@ -25,6 +24,9 @@ export class ReplacementAgent {
     attemptHistory: ReplacementAttemptRecord[] = [],
     attemptNumber: number = 1
   ): Promise<GeneratedReplacement> {
+    if (!this.ai) {
+      this.ai = createGeminiClient();
+    }
     if (config.executionMode !== 'CLOUD_MODE' || !this.ai) {
       return this.generateFallback(originalEntityName, category, eraAesthetic, attemptHistory, attemptNumber);
     }

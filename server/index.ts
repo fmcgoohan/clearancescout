@@ -9,7 +9,7 @@ import { clearanceRouter } from './api/clearanceRoutes.js';
 import { replacementRouter } from './api/replacementRoutes.js';
 import { timelineRouter } from './api/timelineRoutes.js';
 import { binderRouter } from './api/binderRoutes.js';
-import { healthRouter } from './api/healthRoutes.js';
+import { healthRouter, runStartupProbe } from './api/healthRoutes.js';
 import { fixtureRouter } from './api/fixtureRoutes.js';
 import { demoAuthMiddleware } from './middleware/demoAuthMiddleware.js';
 
@@ -100,6 +100,11 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 if (process.env.NODE_ENV !== 'test') {
   const server = app.listen(config.port, () => {
     console.log(`[ClearanceScout Server] Listening on http://localhost:${config.port} (${config.executionMode})`);
+    if (config.executionMode === 'CLOUD_MODE') {
+      runStartupProbe().catch((err) => {
+        console.error('[Startup Probe Exception]:', err);
+      });
+    }
   });
 
   server.on('error', (err: any) => {

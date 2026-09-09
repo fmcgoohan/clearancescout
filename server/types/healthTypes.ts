@@ -14,6 +14,8 @@ export interface HealthStatusResponse {
   revision?: string;
   service?: string;
   credentials: CredentialStatus;
+  geminiBackend?: 'vertex' | 'apikey';
+  geminiProject?: string;
   firestoreConnected?: boolean;
   missingCredentials?: string[];
   error?: string;

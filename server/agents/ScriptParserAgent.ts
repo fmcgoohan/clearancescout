@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
+import { createGeminiClient } from '../integrations/geminiClient.js';
 import { EntityCategory } from '../repositories/EntityRepo.js';
 import zlib from 'zlib';
 import { PDFParse } from 'pdf-parse';
@@ -160,9 +161,7 @@ export class ScriptParserAgent {
   private ai: GoogleGenAI | null = null;
 
   constructor() {
-    if (config.geminiApiKey) {
-      this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
-    }
+    this.ai = createGeminiClient();
   }
 
   /**
@@ -183,12 +182,14 @@ export class ScriptParserAgent {
       return this.parseScriptFallback(normalizedText);
     }
 
-    if (isCloudRuntime && !this.ai && config.geminiApiKey) {
-      this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+    if (isCloudRuntime && !this.ai) {
+      this.ai = createGeminiClient();
     }
 
     if (isCloudRuntime && !this.ai) {
-      const parseErr: any = new Error('Live AI screenplay parser unavailable in CLOUD_MODE: GEMINI_API_KEY is not configured.');
+      const parseErr: any = new Error(
+        'Gemini client not configured: set GOOGLE_CLOUD_PROJECT for Vertex AI or GEMINI_API_KEY for the API-key backend.'
+      );
       parseErr.code = 'PARSING_FAILED';
       parseErr.status = 502;
       throw parseErr;
@@ -319,12 +320,14 @@ export class ScriptParserAgent {
     endSceneNumber: number,
     retryCount = 0
   ): Promise<Array<ParsedEntityOccurrence & { sceneNumber: number }>> {
-    if (!this.ai && config.geminiApiKey) {
-      this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+    if (!this.ai) {
+      this.ai = createGeminiClient();
     }
 
     if (!this.ai) {
-      const err: any = new Error('Gemini AI client not initialized in CLOUD_MODE');
+      const err: any = new Error(
+        'Gemini client not configured: set GOOGLE_CLOUD_PROJECT for Vertex AI or GEMINI_API_KEY for the API-key backend.'
+      );
       err.code = 'PARSING_FAILED';
       err.status = 500;
       throw err;
