@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiClient';
 import { useModalFocus } from '../hooks/useModalFocus';
-import { AlertTriangleIcon, BuildingIcon, FileTextIcon, ZapIcon, PlusIcon, FilmIcon, TvIcon, MegaphoneIcon } from './icons/Icons';
+import { AlertTriangleIcon, BuildingIcon, FileTextIcon, PlusIcon, FilmIcon, TvIcon, MegaphoneIcon } from './icons/Icons';
 
 export interface ProjectListItem {
   id: string;
@@ -524,7 +524,6 @@ export function ProjectListModal({
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><BuildingIcon size={12} /> {proj.productionCompany}</span>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><FileTextIcon size={12} /> {proj.scriptVersion}</span>
-                            <span data-testid="project-execution-mode-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ZapIcon size={12} /> {serverExecutionMode || activeExecutionMode || proj.executionMode}</span>
                             {proj.createdAt && (
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'monospace', fontSize: '0.7rem' }}>
                                 [{new Date(proj.createdAt).toISOString().replace('T', ' ').slice(0, 16)} UTC]
