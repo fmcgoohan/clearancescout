@@ -1,7 +1,12 @@
 {
   "name": "clearancescout",
   "version": "1.0.0",
+  "license": "MIT",
   "description": "Agentic Entertainment Clearance Workspace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fmcgoohan/clearancescout.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "concurrently -n \"SERVER,VITE\" -c \"cyan,magenta\" \"npm run server:demo\" \"vite\"",
