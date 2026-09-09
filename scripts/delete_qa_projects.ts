@@ -1,12 +1,13 @@
 import { Firestore } from '@google-cloud/firestore';
 
 const TARGET_PROJECT_IDS = [
-  'proj-99499543',
-  'proj-48f7d39b',
-  'proj-620bafbb',
-  'proj-e50d899a',
-  'proj-65411430',
-  'proj-c53f275a',
+  'proj-fd981eb9',
+  'proj-e4394392',
+  'proj-b8299787',
+  'proj-e69f8254',
+  'proj-e2bdc62b',
+  'proj-c46735b8',
+  'proj-f9be5f6e',
 ];
 
 const PRESERVE_PROJECT_IDS = ['proj-default', 'proj-cyberpunk'];
