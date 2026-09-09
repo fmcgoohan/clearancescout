@@ -18,6 +18,8 @@ interface ScriptUploadModalProps {
   hasExistingScenes?: boolean;
   initialMode?: 'FILE' | 'PASTE' | 'DEMO';
   executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
+  initialErrorMessage?: string | null;
+  initialErrorCode?: string | null;
 }
 
 export type UploadPhase = 'IDLE' | 'UPLOADING' | 'PARSING' | 'EXTRACTING' | 'RECONCILING' | 'SYNCING' | 'COMPLETE' | 'FAILED';
@@ -32,6 +34,8 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   hasExistingScenes = false,
   initialMode = 'FILE',
   executionMode = 'DEMO_MODE',
+  initialErrorMessage,
+  initialErrorCode,
 }) => {
   const [activeTab, setActiveTab] = useState<'FILE' | 'PASTE' | 'DEMO'>(initialMode);
   const [reingestMode, setReingestMode] = useState<'REPLACE' | 'MERGE'>('REPLACE');
@@ -76,6 +80,22 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialMode);
+      setPreviewData(null);
+      if (initialErrorMessage) {
+        setErrorMessage(initialErrorMessage);
+        setErrorCode(initialErrorCode || 'SEED_FAILED');
+        setUploadPhase('FAILED');
+      } else {
+        setErrorMessage(null);
+        setErrorCode(null);
+        setUploadPhase('IDLE');
+      }
+    }
+  }, [isOpen, initialMode, initialErrorMessage, initialErrorCode]);
 
   // Auto-fetch preview on file or text change
   useEffect(() => {
@@ -164,14 +184,6 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
     }
   }, [isUploading, uploadPhase]);
 
-  useEffect(() => {
-    if (isOpen) {
-      setActiveTab(initialMode);
-      setErrorMessage(null);
-      setErrorCode(null);
-      setPreviewData(null);
-    }
-  }, [isOpen, initialMode]);
 
   const cleanupTimers = () => {
     if (timerIntervalRef.current) {
@@ -391,6 +403,11 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
         setErrorCode(code);
         setIsUploading(false);
         setUploadPhase('FAILED');
+        try {
+          await Promise.resolve(onUploadSuccess(data.snapshot || data, { reingestMode, scenesCount: 0, entitiesCount: 0, openActionsCount: 0 }));
+        } catch {
+          /* ignore refresh errors */
+        }
         return;
       }
 
@@ -700,6 +717,7 @@ export const ScriptUploadModal: React.FC<ScriptUploadModalProps> = ({
             <div
               role="alert"
               aria-live="assertive"
+              data-testid="upload-error-banner"
               style={{
                 padding: '12px 16px',
                 background: 'rgba(239, 68, 68, 0.2)',

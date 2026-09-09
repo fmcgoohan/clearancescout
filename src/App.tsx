@@ -644,6 +644,41 @@ export default function App() {
     }
   };
 
+  const handleLoadSample = async (reingestMode: 'REPLACE' | 'MERGE' = 'REPLACE') => {
+    if (!projectId) return { ok: false, error: 'No active project', code: 'NO_PROJECT' };
+    try {
+      const res = await apiFetch(`/api/projects/${projectId}/script/demo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reingestMode,
+          autoEvaluate: executionMode !== 'CLOUD_MODE',
+          includeSampleRights: true,
+          includeSamplePlaceholders: true,
+        }),
+      });
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = { error: `Server HTTP ${res.status}: ${res.statusText}` };
+      }
+
+      // Call loadProjectDetails regardless so partial writes appear
+      await loadProjectDetails(projectId);
+
+      if (!res.ok) {
+        const errMessage = typeof data.error === 'string' ? data.error : (data.error?.message || data.message || `Seed failed (HTTP ${res.status}).`);
+        const code = data.code || (res.status === 401 ? 'UNAUTHORIZED' : res.status === 429 ? 'RATE_LIMITED' : 'SEED_FAILED');
+        return { ok: false, error: errMessage, code };
+      }
+      return { ok: true, data };
+    } catch (err: any) {
+      await loadProjectDetails(projectId);
+      return { ok: false, error: err?.message || 'Network error loading sample production', code: 'NETWORK_ERROR' };
+    }
+  };
+
   const handleExportBinder = async () => {
     if (!projectId) return;
     if (exportState === 'PREFLIGHT_CHECKING' || exportState === 'PROCESSING') return;
@@ -922,6 +957,7 @@ export default function App() {
             isEvaluating={isEvaluating}
             refreshTrigger={refreshTrigger}
             executionMode={executionMode}
+            onLoadSample={handleLoadSample}
           />
         ) : (
           <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>

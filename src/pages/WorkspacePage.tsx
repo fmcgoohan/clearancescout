@@ -41,6 +41,7 @@ interface WorkspacePageProps {
   isEvaluating: boolean;
   refreshTrigger: number;
   executionMode?: 'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE';
+  onLoadSample?: (reingestMode?: 'REPLACE' | 'MERGE') => Promise<{ ok: boolean; error?: string; code?: string; data?: any }>;
 }
 
 export const WorkspacePage: React.FC<WorkspacePageProps> = ({
@@ -55,6 +56,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   isEvaluating,
   refreshTrigger,
   executionMode = 'DEMO_MODE',
+  onLoadSample,
 }) => {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [entities, setEntities] = useState<CanonicalEntity[]>([]);
@@ -63,6 +65,8 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadModalInitialMode, setUploadModalInitialMode] = useState<'FILE' | 'PASTE' | 'DEMO'>('FILE');
+  const [uploadModalErrorMessage, setUploadModalErrorMessage] = useState<string | null>(null);
+  const [uploadModalErrorCode, setUploadModalErrorCode] = useState<string | null>(null);
   const [scriptFormat, setScriptFormat] = useState<'PLAINTEXT' | 'FOUNTAIN' | 'PDF'>('PLAINTEXT');
 
   // Edit / Add modal state
@@ -828,19 +832,52 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
               onResearchItem={(id) => onEvaluateClearance(id)}
               onLoadSample={async () => {
                 try {
+                  if (onLoadSample) {
+                    const result = await onLoadSample('REPLACE');
+                    await fetchWorkspaceData();
+                    if (onRefreshProjectSummary) {
+                      await onRefreshProjectSummary();
+                    }
+                    if (!result.ok) {
+                      setUploadModalInitialMode('DEMO');
+                      setUploadModalErrorMessage(result.error || 'Seed failed');
+                      setUploadModalErrorCode(result.code || 'SEED_FAILED');
+                      setIsUploadModalOpen(true);
+                    }
+                    return;
+                  }
                   const res = await apiFetch(`/api/projects/${projectId}/script/demo`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ autoEvaluate: true, includeSampleRights: true, includeSamplePlaceholders: true }),
                   });
-                  if (res.ok) {
-                    await fetchWorkspaceData();
-                    if (onRefreshProjectSummary) {
-                      await onRefreshProjectSummary();
-                    }
+                  let data: any = {};
+                  try {
+                    data = await res.json();
+                  } catch {
+                    data = { error: `Server HTTP ${res.status}: ${res.statusText}` };
                   }
-                } catch (err) {
-                  console.error('Error loading sample screenplay:', err);
+                  await fetchWorkspaceData();
+                  if (onRefreshProjectSummary) {
+                    await onRefreshProjectSummary();
+                  }
+                  if (!res.ok) {
+                    const errMessage = typeof data.error === 'string' ? data.error : (data.error?.message || data.message || `Seed failed (HTTP ${res.status}).`);
+                    const code = data.code || (res.status === 401 ? 'UNAUTHORIZED' : res.status === 429 ? 'RATE_LIMITED' : 'SEED_FAILED');
+                    setUploadModalInitialMode('DEMO');
+                    setUploadModalErrorMessage(errMessage);
+                    setUploadModalErrorCode(code);
+                    setIsUploadModalOpen(true);
+                  }
+                } catch (err: any) {
+                  await fetchWorkspaceData();
+                  if (onRefreshProjectSummary) {
+                    await onRefreshProjectSummary();
+                  }
+                  setUploadModalInitialMode('DEMO');
+                  setUploadModalErrorMessage(err?.message || 'Network error loading sample production');
+                  setUploadModalErrorCode('NETWORK_ERROR');
+                  setIsUploadModalOpen(true);
                 }
               }}
             />
@@ -1533,10 +1570,16 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
       <ScriptUploadModal
         projectId={projectId}
         isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
+        onClose={() => {
+          setIsUploadModalOpen(false);
+          setUploadModalErrorMessage(null);
+          setUploadModalErrorCode(null);
+        }}
         hasExistingScenes={scenes.length > 0}
         initialMode={uploadModalInitialMode}
         executionMode={executionMode}
+        initialErrorMessage={uploadModalErrorMessage}
+        initialErrorCode={uploadModalErrorCode}
         onUploadSuccess={async (snapshot, meta) => {
           const scenesCount = Array.isArray(snapshot?.scenes) ? snapshot.scenes.length : (meta?.scenesCount ?? scenes.length);
           const entitiesCount = Array.isArray(snapshot?.entities) ? snapshot.entities.length : (meta?.entitiesCount ?? entities.length);

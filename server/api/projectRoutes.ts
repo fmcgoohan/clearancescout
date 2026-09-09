@@ -429,3 +429,18 @@ projectRouter.get('/:id/scenes', async (req: Request, res: Response, next) => {
     next(err);
   }
 });
+
+// Reset Project Live Quota (Task 3 Remediation)
+projectRouter.post('/:id/quota/reset', async (req: Request, res: Response, next) => {
+  try {
+    const { id } = req.params;
+    const project = await projectRepo.getProject(id);
+    if (!project) {
+      return res.status(404).json({ error: `Project ${id} not found` });
+    }
+    const quota = await projectRepo.resetLiveQuota(id);
+    return res.json({ projectId: id, quota, message: 'Live research quota reset to 0' });
+  } catch (err) {
+    next(err);
+  }
+});

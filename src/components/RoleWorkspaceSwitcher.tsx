@@ -15,9 +15,21 @@ export const RoleWorkspaceSwitcher: React.FC<RoleWorkspaceSwitcherProps> = ({
   selectId = 'role-workspace-select',
 }) => {
   return (
-    <div className="flex items-center gap-1.5 text-xs" data-testid="role-workspace-switcher">
+    <div
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+      data-testid="role-workspace-switcher"
+    >
       {!hideLabel && (
-        <label htmlFor={selectId} style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+        <label
+          htmlFor={selectId}
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
           Workspace Perspective:
         </label>
       )}
@@ -34,6 +46,8 @@ export const RoleWorkspaceSwitcher: React.FC<RoleWorkspaceSwitcherProps> = ({
           fontSize: '0.75rem',
           outline: 'none',
           cursor: 'pointer',
+          minWidth: '200px',
+          whiteSpace: 'nowrap',
         }}
         aria-label="Switch Role Workspace Perspective"
       >

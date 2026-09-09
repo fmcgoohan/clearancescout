@@ -63,6 +63,25 @@ export function ProjectListModal({
   const [scriptVersion, setScriptVersion] = useState('v1.0-Draft');
   const [projectType, setProjectType] = useState<'Movie' | 'TV Show' | 'Commercial'>('Movie');
   const [executionMode, setExecutionMode] = useState<'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE'>('DEMO_MODE');
+  const [serverExecutionMode, setServerExecutionMode] = useState<'TEST_MODE' | 'DEMO_MODE' | 'CLOUD_MODE' | null>(activeExecutionMode || null);
+
+  useEffect(() => {
+    if (activeExecutionMode) {
+      setServerExecutionMode(activeExecutionMode);
+      setExecutionMode(activeExecutionMode);
+    }
+    if (isOpen) {
+      apiFetch('/api/health')
+        .then((res) => res.json())
+        .then((health) => {
+          if (health?.executionMode) {
+            setServerExecutionMode(health.executionMode);
+            setExecutionMode(health.executionMode);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen, activeExecutionMode]);
 
   const fetchProjects = async () => {
     setIsLoading(true);
@@ -505,7 +524,7 @@ export function ProjectListModal({
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><BuildingIcon size={12} /> {proj.productionCompany}</span>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><FileTextIcon size={12} /> {proj.scriptVersion}</span>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ZapIcon size={12} /> {proj.executionMode}</span>
+                            <span data-testid="project-execution-mode-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ZapIcon size={12} /> {serverExecutionMode || activeExecutionMode || proj.executionMode}</span>
                             {proj.createdAt && (
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'monospace', fontSize: '0.7rem' }}>
                                 [{new Date(proj.createdAt).toISOString().replace('T', ' ').slice(0, 16)} UTC]

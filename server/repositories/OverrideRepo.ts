@@ -31,7 +31,13 @@ export class OverrideRepo {
       id,
       projectId,
       timestamp,
-      ...data,
+      canonicalEntityId: data.canonicalEntityId,
+      previousStatus: data.previousStatus || 'ACTION_REQUIRED',
+      overrideStatus: data.overrideStatus || 'NO_ISSUE_SURFACED',
+      rationale: data.rationale?.trim() || '',
+      counselName: data.counselName?.trim() || 'Legal Counsel',
+      counselRole: data.counselRole?.trim() || 'Clearance Counsel',
+      ...(data.sceneId ? { sceneId: data.sceneId } : {}),
     };
 
     const col = await this.getCollection(projectId);
@@ -49,10 +55,17 @@ export class OverrideRepo {
       sceneId: data.sceneId,
       previousStatus: data.previousStatus || 'ACTION_REQUIRED',
       overrideStatus: data.overrideStatus || data.status || 'NO_ISSUE_SURFACED',
-      rationale: data.rationale || '',
-      counselName: data.counselName || 'Legal Counsel',
-      counselRole: data.counselRole,
+      rationale: data.rationale?.trim() || '',
+      counselName: data.counselName?.trim() || 'Legal Counsel',
+      counselRole: data.counselRole?.trim() || 'Clearance Counsel',
     });
+  }
+
+  async create(
+    projectId: string,
+    data: any
+  ): Promise<CounselOverride> {
+    return this.createOverride(projectId, data);
   }
 
   async getOverridesByEntity(projectId: string, canonicalEntityId: string): Promise<CounselOverride[]> {

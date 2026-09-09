@@ -84,21 +84,9 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
     let activeRightsCount = 0;
     let activePlaceholdersCount = 0;
 
-    // 3. Auto-Evaluate Entities in DEMO_MODE
-    if (autoEvaluate) {
       const entities = await entityRepo.getEntitiesByProject(projectId);
-      
-      // Batch evaluate each entity using DEMO_FIXTURE records
-      for (const ent of entities) {
-        try {
-          await clearanceEvaluator.evaluateEntityClearance(projectId, ent.id);
-          evaluationsCount++;
-        } catch (err) {
-          console.warn(`[DemoAutomationWorkflow] Evaluation warning for ${ent.canonicalName}:`, err);
-        }
-      }
 
-      // 4. Attach Sample Rights Agreement (Summit Cola)
+      // 3. Attach Sample Rights Agreement (Summit Cola) BEFORE live evaluations
       if (includeSampleRights) {
         const summitEntity = entities.find(
           (e) => e.canonicalName.toLowerCase().includes('summit') || e.canonicalName.toLowerCase().includes('coca')
@@ -121,11 +109,10 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
             covenants: ['Permitted in foreground hero consumption for principal photography.'],
           });
           activeRightsCount++;
-          await clearanceEvaluator.evaluateEntityClearance(projectId, summitEntity.id);
         }
       }
 
-      // 5. Attach Sample Fictional Placeholder (AeroTech Prism Laptop)
+      // 4. Attach Sample Fictional Placeholder (AeroTech Prism Laptop) BEFORE live evaluations
       if (includeSamplePlaceholders) {
         const laptopEntity = entities.find(
           (e) => e.canonicalName.toLowerCase().includes('aerotech') || e.canonicalName.toLowerCase().includes('laptop')
@@ -149,7 +136,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         }
       }
 
-      // 6. Attach Sample Location Permit Override (Midtown Spire Tower for Scene 2)
+      // 5. Attach Sample Location Permit Override (Midtown Spire Tower for Scene 2) BEFORE live evaluations
       const locationEntity = entities.find(
         (e) => e.canonicalName.toLowerCase().includes('midtown') || e.canonicalName.toLowerCase().includes('spire')
       );
@@ -163,6 +150,7 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
           scope: 'SCENE_SPECIFIC',
           rationale: 'Commercial location filming permit and architectural exterior release executed on file for Scene 2.',
           counselName: 'Sarah Jenkins, Lead Production Counsel',
+          counselRole: 'Clearance Counsel',
         });
 
         const locActions = await actionNotificationRepo.getActionsByProject(projectId, {
@@ -180,8 +168,37 @@ Jordan inputs the security code. The hydraulic lock hisses open.`;
         }
       }
 
-      // 6. Re-evaluate Scene Shooting Readiness
-      const readinessSummary = await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
+      // 6. NOW Auto-Evaluate Entities in DEMO_MODE or CLOUD_MODE (after all Firestore writes have succeeded)
+      if (autoEvaluate) {
+        // Batch evaluate each entity using fixture records / live research
+        for (const ent of entities) {
+          try {
+            await clearanceEvaluator.evaluateEntityClearance(projectId, ent.id);
+            evaluationsCount++;
+          } catch (err) {
+            console.warn(`[DemoAutomationWorkflow] Evaluation warning for ${ent.canonicalName}:`, err);
+          }
+        }
+
+        // Re-resolve location permit task generated during evaluation
+        if (locationEntity) {
+          const locActions = await actionNotificationRepo.getActionsByProject(projectId, {
+            canonicalEntityId: locationEntity.id,
+          });
+          for (const act of locActions) {
+            if (act.actionType === 'LOCATIONS_PERMIT' || act.title.includes('Location Filming Permit')) {
+              await actionNotificationRepo.updateActionStatus(
+                projectId,
+                act.id,
+                'RESOLVED',
+                'Commercial location filming permit and architectural exterior release executed on file.'
+              );
+            }
+          }
+        }
+
+        // Re-evaluate Scene Shooting Readiness
+        const readinessSummary = await sceneReadinessEngine.evaluateAllScenesReadiness(projectId);
 
       timelineEmitter.emit(projectId, 'TOOL_CALL', `Judge-Ready Demo Screenplay Initialized: "The Neon Horizon"`, {
         projectId,

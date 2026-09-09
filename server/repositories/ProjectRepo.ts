@@ -246,6 +246,18 @@ export class ProjectRepo {
     return { limit, used, remaining };
   }
 
+  async resetLiveQuota(projectId: string): Promise<ProjectQuotaStatus> {
+    const docRef = this.db.doc(`projects/${projectId}`);
+    const snap = await docRef.get();
+    if (snap.exists) {
+      const data = snap.data();
+      const limit = data?.liveQuotaLimit !== undefined ? data.liveQuotaLimit : 25;
+      await docRef.update({ liveQuotaUsed: 0, updatedAt: new Date().toISOString() });
+      return { limit, used: 0, remaining: limit };
+    }
+    return { limit: 25, used: 0, remaining: 25 };
+  }
+
   async consumeLiveQuota(projectId: string, count: number = 1): Promise<{ success: boolean; quota: ProjectQuotaStatus }> {
     return await this.db.runTransaction(async (transaction: any) => {
       const docRef = this.db.doc(`projects/${projectId}`);

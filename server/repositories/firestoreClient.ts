@@ -101,7 +101,7 @@ export function getDb(): any {
     if (isCloudMode) {
       try {
         const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT || undefined;
-        dbInstance = new Firestore({ projectId });
+        dbInstance = new Firestore({ projectId, ignoreUndefinedProperties: true });
       } catch (err) {
         console.error('[FirestoreClient Error] Failed to initialize Google Cloud Firestore via ADC:', err);
         throw err;
