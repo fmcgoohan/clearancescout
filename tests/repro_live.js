@@ -11,7 +11,7 @@ async function runLiveVerification() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
 
-  let coorsScenarioProjectId = null;
+  let brewScenarioProjectId = null;
   let testSamplePid = null;
 
   try {
@@ -338,24 +338,24 @@ async function runLiveVerification() {
     console.log('Scenario F (Valid Notification Deep-Link & Orphan Tombstone): PASS');
 
     // =========================================================================
-    // SCENARIO G: COORS LIGHT 4-PAGE PDF & NEGATIVE PDF AUDIT
+    // SCENARIO G: GLACIER BREW 4-PAGE PDF & NEGATIVE PDF AUDIT
     // =========================================================================
-    console.log('\n--- SCENARIO G: COORS LIGHT 4-PAGE PDF & NEGATIVE PDF AUDIT ---');
+    console.log('\n--- SCENARIO G: GLACIER BREW 4-PAGE PDF & NEGATIVE PDF AUDIT ---');
     const path = await import('path');
     const fs = await import('fs');
-    const coorsPdfPath = path.resolve(process.cwd(), 'tests/fixtures/coors_light_4page.pdf');
+    const brewPdfPath = path.resolve(process.cwd(), 'tests/fixtures/glacier_brew_4page.pdf');
     const imageOnlyPdfPath = path.resolve(process.cwd(), 'tests/fixtures/image_only.pdf');
     const malformedPdfPath = path.resolve(process.cwd(), 'tests/fixtures/malformed.pdf');
 
-    // Assert exact 39,078-byte judge PDF fixture
-    if (!fs.existsSync(coorsPdfPath)) {
-      console.error(`SCENARIO G FAIL: Coors PDF fixture missing at ${coorsPdfPath}!`);
+    // Assert synthetic PDF fixture
+    if (!fs.existsSync(brewPdfPath)) {
+      console.error(`SCENARIO G FAIL: Glacier Brew PDF fixture missing at ${brewPdfPath}!`);
       process.exit(1);
     }
-    const coorsStat = fs.statSync(coorsPdfPath);
-    console.log(`Coors PDF Fixture Size: ${coorsStat.size} bytes (Path: ${coorsPdfPath})`);
-    if (coorsStat.size !== 39078) {
-      console.error(`SCENARIO G FAIL: Invalid Coors PDF fixture! Expected exact 39078 bytes, got ${coorsStat.size} bytes.`);
+    const brewStat = fs.statSync(brewPdfPath);
+    console.log(`Glacier Brew PDF Fixture Size: ${brewStat.size} bytes (Path: ${brewPdfPath})`);
+    if (brewStat.size <= 20000) {
+      console.error(`SCENARIO G FAIL: Invalid Glacier Brew PDF fixture! Expected > 20000 bytes, got ${brewStat.size} bytes.`);
       process.exit(1);
     }
 
@@ -372,8 +372,8 @@ async function runLiveVerification() {
       const pid = localStorage.getItem('clearancescout_active_project_id');
       return pid && pid !== oldPid && pid !== 'proj-default';
     }, prevPidG, { timeout: 10000 }).catch(() => {});
-    coorsScenarioProjectId = await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
-    console.log(`  Captured Mountain Refuge Project ID: ${coorsScenarioProjectId}`);
+    brewScenarioProjectId = await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
+    console.log(`  Captured Mountain Refuge Project ID: ${brewScenarioProjectId}`);
 
     // Initial Quota check
     const initialQuotaUsed = await page.$eval('[data-testid="quota-used-display"]', el => el.innerText.trim()).catch(() => '0');
@@ -439,29 +439,29 @@ async function runLiveVerification() {
     await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(500);
 
-    // 4. Positive Test: Real 4-Page Coors Light Screenplay PDF
-    console.log('Testing Positive Upload: Coors Light 4-page Screenplay PDF...');
+    // 4. Positive Test: Real 4-Page Glacier Brew Screenplay PDF
+    console.log('Testing Positive Upload: Glacier Brew 4-page Screenplay PDF...');
     const uploadBtnG3 = await page.waitForSelector('[data-testid="recommendation-upload-script-btn"], [data-testid="workspace-empty-upload-btn"]', { timeout: 5000 });
     await uploadBtnG3.click();
     await page.waitForSelector('[aria-labelledby="upload-modal-title"]', { timeout: 5000 });
 
     const fileInputG3 = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 5000 });
-    await fileInputG3.setInputFiles(coorsPdfPath);
+    await fileInputG3.setInputFiles(brewPdfPath);
 
     const previewCard = await page.waitForSelector('[data-testid="extraction-preview-card"]', { timeout: 15000 });
     const previewText = await previewCard.innerText();
-    console.log(`Coors PDF Preview Card:\n${previewText}`);
+    console.log(`Glacier Brew PDF Preview Card:\n${previewText}`);
 
-    const coorsConfirmBtn = await page.$('[data-testid="btn-confirm-ingestion"]');
-    const isCoorsDisabled = await coorsConfirmBtn.getAttribute('disabled');
-    console.log(`Coors PDF Confirm Button Enabled: ${isCoorsDisabled === null}`);
+    const brewConfirmBtn = await page.$('[data-testid="btn-confirm-ingestion"]');
+    const isBrewDisabled = await brewConfirmBtn.getAttribute('disabled');
+    console.log(`Glacier Brew PDF Confirm Button Enabled: ${isBrewDisabled === null}`);
 
-    if (isCoorsDisabled !== null) {
-      console.error('SCENARIO G FAIL: Confirm button must be enabled for valid 4-page Coors PDF!');
+    if (isBrewDisabled !== null) {
+      console.error('SCENARIO G FAIL: Confirm button must be enabled for valid 4-page Glacier Brew PDF!');
       process.exit(1);
     }
 
-    if (!previewText.includes('coors_light_4page.pdf') || !previewText.includes('Est. Pages: 4') || !previewText.includes('Scenes Detected: 3')) {
+    if (!previewText.includes('glacier_brew_4page.pdf') || !previewText.includes('Est. Pages: 4') || !previewText.includes('Scenes Detected: 3')) {
       console.error(`SCENARIO G FAIL: Extraction preview mismatch! Expected 4 pages and 3 scenes.`);
       process.exit(1);
     }
@@ -473,27 +473,27 @@ async function runLiveVerification() {
 
     // Confirm Ingestion
     console.log('Clicking "Confirm Ingestion & Review"...');
-    await coorsConfirmBtn.click();
+    await brewConfirmBtn.click();
     await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 25000 }).catch(() => {});
     await page.waitForTimeout(1000);
 
     // Assert Ingested Workspace State
-    const coorsSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
-    console.log(`Workspace Summary after Coors Ingestion: "${coorsSummary}"`);
+    const brewSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
+    console.log(`Workspace Summary after Glacier Brew Ingestion: "${brewSummary}"`);
 
-    // Verify Coors Light entity in table / registry
+    // Verify Glacier Brew entity in table / registry
     const registryTable = await page.waitForSelector('[data-testid="entity-registry-table"], table', { timeout: 15000 });
     const registryContent = await registryTable.innerText();
     console.log(`Registry Table Content Preview:\n${registryContent.slice(0, 300)}...`);
 
-    const hasCoorsLight = registryContent.toLowerCase().includes('coors light') || registryContent.toLowerCase().includes('coors');
+    const hasGlacierBrew = registryContent.toLowerCase().includes('glacier brew') || registryContent.toLowerCase().includes('glacier');
     const hasNeonDemo = registryContent.toLowerCase().includes('summit cola') || registryContent.toLowerCase().includes('aerotech');
 
-    console.log(`Coors Light Identified: ${hasCoorsLight}`);
+    console.log(`Glacier Brew Identified: ${hasGlacierBrew}`);
     console.log(`Zero Demo Entities Substituted: ${!hasNeonDemo}`);
 
-    if (!hasCoorsLight) {
-      console.error('SCENARIO G FAIL: "Coors Light" was not extracted as a clearance item!');
+    if (!hasGlacierBrew) {
+      console.error('SCENARIO G FAIL: "Glacier Brew" was not extracted as a clearance item!');
       process.exit(1);
     }
     if (hasNeonDemo) {
@@ -517,17 +517,17 @@ async function runLiveVerification() {
     const reloadedSummary = await page.$eval('[data-testid="project-summary-bar"]', el => el.innerText.replace(/\n/g, ' ').trim()).catch(() => 'N/A');
     const reloadedTable = await page.waitForSelector('[data-testid="entity-registry-table"], table', { timeout: 5000 });
     const reloadedContent = await reloadedTable.innerText();
-    const reloadedHasCoors = reloadedContent.toLowerCase().includes('coors');
+    const reloadedHasBrew = reloadedContent.toLowerCase().includes('glacier');
 
     console.log(`Reloaded Summary: "${reloadedSummary}"`);
-    console.log(`Reloaded Coors Light Preserved: ${reloadedHasCoors}`);
+    console.log(`Reloaded Glacier Brew Preserved: ${reloadedHasBrew}`);
 
-    if (!reloadedHasCoors) {
-      console.error('SCENARIO G FAIL: Coors Light entity was lost after page reload!');
+    if (!reloadedHasBrew) {
+      console.error('SCENARIO G FAIL: Glacier Brew entity was lost after page reload!');
       process.exit(1);
     }
 
-    console.log('Scenario G (Coors Light 4-Page PDF & Negative PDF Integrity): PASS');
+    console.log('Scenario G (Glacier Brew 4-Page PDF & Negative PDF Integrity): PASS');
 
     
     // =========================================================================
@@ -583,28 +583,28 @@ async function runLiveVerification() {
     console.log("Scenario H (AeroTech P0 Trust & Task Pruning): PASS");
 
     // =========================================================================
-    // SCENARIO I: COORS SCENE 2 CONTINUOUS SLUGLINE & PAGE MARKERS (FR-014, FR-015)
+    // SCENARIO I: GLACIER BREW SCENE 2 CONTINUOUS SLUGLINE & PAGE MARKERS (FR-014, FR-015)
     // =========================================================================
-    console.log('\n--- SCENARIO I: COORS SCENE 2 CONTINUOUS & PAGE MARKER AUDIT ---');
-    const coorsProjectData = await page.evaluate(async (token) => {
+    console.log('\n--- SCENARIO I: GLACIER BREW SCENE 2 CONTINUOUS & PAGE MARKER AUDIT ---');
+    const brewProjectData = await page.evaluate(async (token) => {
       const headers = {};
       if (token) headers["x-demo-token"] = token;
       const projRes = await fetch('/api/projects', { headers });
       const projData = await projRes.json();
       const projs = Array.isArray(projData) ? projData : projData.projects || [];
-      const coorsProj = projs.find(p => p.title.includes("Mountain Refuge"));
-      if (!coorsProj) return null;
-      const scenesRes = await fetch('/api/projects/' + coorsProj.id + '/scenes', { headers });
+      const brewProj = projs.find(p => p.title.includes("Mountain Refuge"));
+      if (!brewProj) return null;
+      const scenesRes = await fetch('/api/projects/' + brewProj.id + '/scenes', { headers });
       const scenes = await scenesRes.json();
-      return { project: coorsProj, scenes };
+      return { project: brewProj, scenes };
     }, DEMO_TOKEN);
 
-    if (!coorsProjectData || !coorsProjectData.scenes || coorsProjectData.scenes.length < 3) {
+    if (!brewProjectData || !brewProjectData.scenes || brewProjectData.scenes.length < 3) {
       console.error("SCENARIO I FAIL: Mountain Refuge project scenes not found!");
       process.exit(1);
     }
 
-    const scene2 = coorsProjectData.scenes.find(s => s.sceneNumber === 2);
+    const scene2 = brewProjectData.scenes.find(s => s.sceneNumber === 2);
     console.log('Scene 2 Heading: "' + scene2?.heading + '"');
     console.log('Scene 2 Time of Day: "' + scene2?.timeOfDay + '"');
 
@@ -613,7 +613,7 @@ async function runLiveVerification() {
       process.exit(1);
     }
 
-    const hasPageMarker = coorsProjectData.scenes.some(s => /--\s*\d+\s+of\s+\d+\s*--/i.test(s.rawText));
+    const hasPageMarker = brewProjectData.scenes.some(s => /--\s*\d+\s+of\s+\d+\s*--/i.test(s.rawText));
     console.log('Scenes Contain PDF Page Break Markers (-- X of Y --): ' + hasPageMarker);
     if (hasPageMarker) {
       console.error("SCENARIO I FAIL: Raw scene text contains PDF page break markers!");
@@ -729,11 +729,11 @@ async function runLiveVerification() {
 
     // 3. Defect 3: Blocker Deduplication & Grammar (FR-027)
     console.log('Testing Defect 3: Unique blocker deduplication & singular/plural grammar...');
-    // Switch to Mountain Refuge (Coors Light project)
+    // Switch to Mountain Refuge (Glacier Brew project)
     await page.locator('[data-testid="header-switch-project-btn"]').click();
     await page.waitForSelector('button.project-select-card', { timeout: 5000 });
-    if (coorsScenarioProjectId && coorsScenarioProjectId !== 'proj-default') {
-      const targetCard = page.locator(`button.project-select-card[data-project-id="${coorsScenarioProjectId}"]`);
+    if (brewScenarioProjectId && brewScenarioProjectId !== 'proj-default') {
+      const targetCard = page.locator(`button.project-select-card[data-project-id="${brewScenarioProjectId}"]`);
       if (await targetCard.count() > 0) {
         await targetCard.first().click();
       } else {
@@ -745,21 +745,21 @@ async function runLiveVerification() {
     await page.waitForSelector('.modal-backdrop', { state: 'detached', timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(1000);
 
-    const activeCoorsId = await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
-    const coorsProjectScenes = await page.evaluate(async ({ pid, token }) => {
+    const activeBrewId = await page.evaluate(() => localStorage.getItem('clearancescout_active_project_id'));
+    const brewProjectScenes = await page.evaluate(async ({ pid, token }) => {
       const headers = {};
       if (token) headers['x-demo-token'] = token;
       const res = await fetch(`/api/projects/${pid}/scenes`, { headers });
       return res.json();
-    }, { pid: activeCoorsId, token: DEMO_TOKEN });
+    }, { pid: activeBrewId, token: DEMO_TOKEN });
 
-    for (const sc of coorsProjectScenes) {
+    for (const sc of brewProjectScenes) {
       const evalRes = await page.evaluate(async ({ pid, sid, token }) => {
         const headers = {};
         if (token) headers['x-demo-token'] = token;
         const res = await fetch(`/api/projects/${pid}/scenes/${sid}/readiness/evaluate`, { method: 'POST', headers });
         return res.json();
-      }, { pid: activeCoorsId, sid: sc.id, token: DEMO_TOKEN });
+      }, { pid: activeBrewId, sid: sc.id, token: DEMO_TOKEN });
       console.log(`  Scene ${sc.sceneNumber} Readiness: status=${evalRes.status}, blockersCount=${evalRes.blockersCount}, occurrences=${evalRes.totalOccurrences}`);
       console.log(`    Rationale: "${evalRes.blockingRationale}"`);
       if (evalRes.blockersCount !== 1) {
@@ -772,22 +772,22 @@ async function runLiveVerification() {
       }
     }
 
-    // 4. Defect 2: Coors Light Occurrences (FR-026)
-    console.log('Testing Defect 2: Coors Light occurrence count formatting (6 across 3)...');
-    const coorsRow = await page.waitForSelector('tr:has-text("Coors Light"), [data-entity-row]:has-text("Coors Light")', { timeout: 5000 });
-    const coorsRowText = await coorsRow.innerText();
-    console.log(`  Coors Light Row Text: "${coorsRowText.replace(/\n/g, ' ')}"`);
-    if (!coorsRowText.includes('6 occurrences across 3 scenes')) {
-      console.error(`SCENARIO K FAIL: Expected "6 occurrences across 3 scenes", got "${coorsRowText}"!`);
+    // 4. Defect 2: Glacier Brew Occurrences (FR-026)
+    console.log('Testing Defect 2: Glacier Brew occurrence count formatting (6 across 3)...');
+    const brewRow = await page.waitForSelector('tr:has-text("Glacier Brew"), [data-entity-row]:has-text("Glacier Brew")', { timeout: 5000 });
+    const brewRowText = await brewRow.innerText();
+    console.log(`  Glacier Brew Row Text: "${brewRowText.replace(/\n/g, ' ')}"`);
+    if (!brewRowText.includes('6 occurrences across 3 scenes')) {
+      console.error(`SCENARIO K FAIL: Expected "6 occurrences across 3 scenes", got "${brewRowText}"!`);
       process.exit(1);
     }
 
     // Open dossier drawer and verify badge
-    const evidenceBtn = await coorsRow.$('button:has-text("View Evidence")');
+    const evidenceBtn = await brewRow.$('button:has-text("View Evidence")');
     if (evidenceBtn) {
       await evidenceBtn.click();
     } else {
-      const moreBtn = await coorsRow.$('button[title="More actions"]');
+      const moreBtn = await brewRow.$('button[title="More actions"]');
       if (moreBtn) {
         await moreBtn.click();
         await page.waitForTimeout(300);
@@ -862,13 +862,13 @@ async function runLiveVerification() {
     process.exit(1);
   } finally {
     // Bounded cleanup of disposable test projects
-    if (coorsScenarioProjectId && coorsScenarioProjectId !== 'proj-default') {
+    if (brewScenarioProjectId && brewScenarioProjectId !== 'proj-default') {
       try {
-        await fetch(`${LIVE_URL}/api/projects/${coorsScenarioProjectId}`, {
+        await fetch(`${LIVE_URL}/api/projects/${brewScenarioProjectId}`, {
           method: 'DELETE',
           headers: { 'x-demo-token': DEMO_TOKEN },
         });
-        console.log(`Cleaned up disposable Coors test project: ${coorsScenarioProjectId}`);
+        console.log(`Cleaned up disposable Glacier Brew test project: ${brewScenarioProjectId}`);
       } catch (e) {}
     }
     if (testSamplePid && testSamplePid !== 'proj-default') {

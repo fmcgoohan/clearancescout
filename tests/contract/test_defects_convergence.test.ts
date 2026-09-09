@@ -41,32 +41,32 @@ describe("Convergence Unit Tests (FR-025 - FR-029)", () => {
 
       const ent = await entityRepo.createCanonicalEntity({
         projectId,
-        canonicalName: "Coors Light",
+        canonicalName: "Glacier Brew",
         entityCategory: "BRAND",
         overallClearanceStatus: "ACTION_REQUIRED",
         description: "Alcoholic beverage brand",
       });
 
-      // 3 occurrences of Coors Light in Scene 1
+      // 3 occurrences of Glacier Brew in Scene 1
       await entityRepo.createOccurrence(projectId, {
         canonicalEntityId: ent.id,
         sceneId: scene.id,
         scriptLineNumber: 10,
-        excerptText: "Drinking a Coors Light can.",
+        excerptText: "Drinking a Glacier Brew can.",
         usageContext: "Foreground character drinking",
       });
       await entityRepo.createOccurrence(projectId, {
         canonicalEntityId: ent.id,
         sceneId: scene.id,
         scriptLineNumber: 20,
-        excerptText: "A Coors Light billboard shines overhead.",
+        excerptText: "A Glacier Brew billboard shines overhead.",
         usageContext: "Background billboard",
       });
       await entityRepo.createOccurrence(projectId, {
         canonicalEntityId: ent.id,
         sceneId: scene.id,
         scriptLineNumber: 30,
-        excerptText: "A neon Coors Light sign flickers.",
+        excerptText: "A neon Glacier Brew sign flickers.",
         usageContext: "Neon sign on bar window",
       });
 
@@ -76,7 +76,7 @@ describe("Convergence Unit Tests (FR-025 - FR-029)", () => {
       expect(readiness.blockersCount).toBe(1);
       expect(readiness.totalOccurrences).toBe(3);
       expect(readiness.blockingRationale).toContain("1 clearance blocker prevents shooting Scene 1");
-      expect(readiness.blockingRationale).toContain('"Coors Light" (ACTION_REQUIRED, appears 3 times)');
+      expect(readiness.blockingRationale).toContain('"Glacier Brew" (ACTION_REQUIRED, appears 3 times)');
     });
   });
 

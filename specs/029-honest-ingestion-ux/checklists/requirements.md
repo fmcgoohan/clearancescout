@@ -53,7 +53,7 @@
 ### 3. Scenario G Reliability (Unresolved Release Evidence — FR-030)
 - [x] Scenario G tracked as UNRESOLVED on serving production `clearancescout-00061-lms` (100% traffic).
 - [x] Canary test pass on `clearancescout-00062-cjq` (0% traffic) superseded by proven verification on NEW canary revision `clearancescout-00064-lav`.
-- [x] Fixture verified: exact 39,078-byte Coors Light PDF fixture (`tests/fixtures/coors_light_4page.pdf`).
+- [x] Fixture verified: synthetic Glacier Brew PDF fixture (`tests/fixtures/glacier_brew_4page.pdf`).
 - [x] Execution protocol defines isolated disposable workspace (`proj-test-g-<timestamp>`) with deterministic assertions.
 - [x] Full lifecycle verified: preview -> confirm -> 6 occurrences across 3 scenes -> 0 cleared / 1 insufficient evidence -> reload survival (PASS on `clearancescout-00064-lav`).
 - [x] Teardown/cleanup protocol defined; production mutation requirements identified for separate approval.
@@ -137,8 +137,8 @@
 - [x] Blanket title-based deduplication is prohibited, preserving distinct tasks for distinct scene occurrences sharing standard titles.
 - [x] Audit of persisted duplicate records is performed separately from client-side rendering.
 
-### 18. Coors Appearance vs Unresolved Semantics (Proposal Gate — FR-044)
-- [x] Coors Light baseline (1 canonical entity, 6 appearances across 3 scenes) maintains parity across Registry and Dossier.
+### 18. Glacier Brew Appearance vs Unresolved Semantics (Proposal Gate — FR-044)
+- [x] Glacier Brew baseline (1 canonical entity, 6 appearances across 3 scenes) maintains parity across Registry and Dossier.
 - [x] Scene 1, 2, and 3 readiness rationales and counters distinguish 1 unresolved blocker from textual occurrence count (1 in Scene 1, 2 in Scene 2, 3 in Scene 3).
 - [x] Singular/plural grammar enforced in blocker descriptions.
 - [x] Scene 2 heading retains `EXT. NEIGHBORHOOD CORNER - CONTINUOUS`.

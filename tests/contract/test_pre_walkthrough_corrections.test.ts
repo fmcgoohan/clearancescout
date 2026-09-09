@@ -155,7 +155,7 @@ describe("Contract: Pre-Walkthrough Corrections (FR-037 through FR-040)", () => 
     });
 
     it("FR-044: blocker rationales must use singular grammar and count occurrences accurately", async () => {
-      const coorsProj = await request(app)
+      const brewProj = await request(app)
         .post("/api/projects")
         .send({
           title: "Grammar Parity Project",
@@ -163,34 +163,34 @@ describe("Contract: Pre-Walkthrough Corrections (FR-037 through FR-040)", () => 
           scriptVersion: "v1.0",
           executionMode: "TEST_MODE",
         });
-      expect(coorsProj.status).toBe(201);
-      const pid = coorsProj.body.id;
+      expect(brewProj.status).toBe(201);
+      const pid = brewProj.body.id;
 
       // Scene with 1 mention of brand
       await request(app)
         .post(`/api/projects/${pid}/script`)
         .send({
-          scriptText: "EXT. NEIGHBORHOOD CORNER - CONTINUOUS\nJohn drinks a Coors Light.",
+          scriptText: "EXT. NEIGHBORHOOD CORNER - CONTINUOUS\nJohn drinks a Glacier Brew.",
           format: "PLAINTEXT",
         });
 
       const entitiesRes = await request(app).get(`/api/projects/${pid}/entities`);
       const entities = Array.isArray(entitiesRes.body) ? entitiesRes.body : entitiesRes.body.entities;
-      const coors = entities.find((e: any) => e.canonicalName.toLowerCase().includes("coors"));
-      expect(coors).toBeDefined();
+      const glacierBrew = entities.find((e: any) => e.canonicalName.toLowerCase().includes("glacier"));
+      expect(glacierBrew).toBeDefined();
 
       const initialReadiness = await request(app).get(`/api/projects/${pid}/scenes/readiness`);
       const scene1 = initialReadiness.body.scenes[0];
 
-      // Add second occurrence for coors in scene 1
+      // Add second occurrence for glacierBrew in scene 1
       const { entityRepo } = await import("../../server/repositories/EntityRepo.js");
       await entityRepo.createOccurrence(pid, {
-        canonicalEntityId: coors.id,
+        canonicalEntityId: glacierBrew.id,
         sceneId: scene1.sceneId,
         scriptLineNumber: 1,
-        excerptText: "John drinks a Coors Light.",
+        excerptText: "John drinks a Glacier Brew.",
         usageContext: "Hero beverage consumption",
-        surfaceMention: "Coors Light",
+        surfaceMention: "Glacier Brew",
         clearanceStatus: "ACTION_REQUIRED",
       });
 

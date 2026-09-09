@@ -72,7 +72,7 @@ src/
 │   └── SettingsPopover.tsx       # Houses secondary admin controls, quota, revision provenance
 tests/
 ├── contract/
-│   └── test_coors_pdf_extraction.test.ts # Verify CONTINUOUS timeOfDay & no page markers
+│   └── test_synthetic_pdf_extraction.test.ts # Verify CONTINUOUS timeOfDay & no page markers
 ├── repro_local.js                # Playwright Scenarios A through G + Scenarios H (AeroTech sync), I (IA tabs)
 └── repro_live.js                 # Playwright live test suite mirror
 ```
@@ -213,13 +213,13 @@ tests/
   - Header badge explicitly formats open vs total unique tasks: `"${filteredOpenCount} open of ${totalUniqueTasks} Tasks"` (e.g. `"4 open of 11 Tasks"`).
   - Persisted duplicate task cleanup is separated from UI presentation into an explicit migration script.
 
-### 4. Coors Semantics Parity & Blocker Formatting (FR-044)
-- Maintain strict parity between Entity Registry and Evidence Dossier for *Coors Light* (1 canonical item, 6 occurrences across 3 scenes).
+### 4. Glacier Brew Semantics Parity & Blocker Formatting (FR-044)
+- Maintain strict parity between Entity Registry and Evidence Dossier for *Glacier Brew* (1 canonical item, 6 occurrences across 3 scenes).
 - In `server/workflows/sceneReadinessEngine.ts`, separate textual appearance counts from unresolved legal blocker counts in scene rationales:
-  - Scene 1: 1 unresolved blocker, 1 appearance.
-  - Scene 2: 1 unresolved blocker, 2 appearances; slugline retains `EXT. NEIGHBORHOOD CORNER - CONTINUOUS`.
-  - Scene 3: 1 unresolved blocker, 3 appearances.
-- Enforce singular/plural grammatical agreement in blocker rationales (`"1 clearance blocker prevents shooting Scene 2: \"Coors Light\" (INSUFFICIENT_EVIDENCE, appears 2 times)"`).
+  - Scene 1: 1 unresolved blocker, 3 appearances.
+  - Scene 2: 1 unresolved blocker, 1 appearance; slugline retains `EXT. NEIGHBORHOOD CORNER - CONTINUOUS`.
+  - Scene 3: 1 unresolved blocker, 2 appearances.
+- Enforce singular/plural grammatical agreement in blocker rationales (`"1 clearance blocker prevents shooting Scene 2: \"Glacier Brew\" (INSUFFICIENT_EVIDENCE, appears 1 time)"`).
 
 ### 5. Project Accessibility & Switcher Focus (FR-045, FR-033)
 - Ensure all project cards in `ProjectListModal.tsx` and `PortfolioDashboard.tsx` are native `<button>` elements with `aria-current` or `aria-pressed`.

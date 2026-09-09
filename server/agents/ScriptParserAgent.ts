@@ -472,7 +472,7 @@ ${chunkText}`,
     // 5-category deterministic recognition patterns for demo & test suites
     const candidatePatterns: Array<{ name: string; category: EntityCategory; regex: RegExp }> = [
       // 1. Brands & Trademarks
-      { name: 'Coors Light', category: 'BRAND', regex: /\b(?:Coors Light|Coors)\b/gi },
+      { name: 'Glacier Brew', category: 'BRAND', regex: /\b(?:Glacier Brew|Glacier)\b/gi },
       { name: 'Summit Cola', category: 'BRAND', regex: /\b(?:Summit Cola|Summit Pop|Summit Soda|Summit Energy Drink)\b/gi },
       { name: 'AeroTech Prism Laptop', category: 'BRAND', regex: /\b(?:AeroTech Prism Laptop|AeroTech Prism|AeroTech)\b/gi },
       { name: 'Veloce GT', category: 'BRAND', regex: /\b(?:Veloce GT|Veloce Motors|Veloce)\b/gi },

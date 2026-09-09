@@ -4,8 +4,8 @@
 
 ## Phase 1: Setup & Contract Tests
 
-- [x] T001 [P] Verify Coors Light 39,078-byte judge PDF fixture and extraction in tests/fixtures/CoorsLight_SpecComm_v.1.pdf
-- [x] T002 [P] Contract test for slugline CONTINUOUS preservation and page marker filtering in tests/contract/test_coors_pdf_extraction.test.ts
+- [x] T001 [P] Verify Glacier Brew PDF fixture and extraction in tests/fixtures/glacier_brew_4page.pdf
+- [x] T002 [P] Contract test for slugline CONTINUOUS preservation and page marker filtering in tests/contract/test_synthetic_pdf_extraction.test.ts
 - [x] T003 [P] Contract test for RETRY_RESEARCH task auto-resolution on entity evaluation in tests/contract/test_stale_task_pruning.test.ts
 - [x] T004 [P] Verify Constitution v1.5.0 principles in .specify/memory/constitution.md
 
@@ -24,14 +24,14 @@
 
 **Goal**: Prune stale `RETRY_RESEARCH` tasks when entities evaluate (FR-013), preserve `CONTINUOUS`/`SAME`/`DAWN` in sluglines (FR-014), strip PDF page break markers (FR-015), and clarify occurrence vs unique blocker copy (FR-016).
 
-**Independent Test**: Load Neon Horizon -> evaluate -> verify AeroTech has status Cleared and Action Center has 0 open RETRY_RESEARCH tasks for AeroTech; parse Coors PDF -> verify Scene 2 timeOfDay is CONTINUOUS and no `-- 2 of 4 --` page markers appear.
+**Independent Test**: Load Neon Horizon -> evaluate -> verify AeroTech has status Cleared and Action Center has 0 open RETRY_RESEARCH tasks for AeroTech; parse Glacier Brew PDF -> verify Scene 2 timeOfDay is CONTINUOUS and no `-- 2 of 4 --` page markers appear.
 
 - [x] T009 [US-Correctness] Implement automatic `RETRY_RESEARCH` task resolution in server/workflows/clearanceEvaluator.ts (FR-013)
 - [x] T010 [US-Correctness] Implement high-fidelity slugline timeOfDay parser preserving CONTINUOUS, SAME, DAWN, DUSK in server/agents/ScriptParserAgent.ts (FR-014)
 - [x] T011 [US-Correctness] Implement page break marker stripping (/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gm and lone numbers) in server/agents/ScriptParserAgent.ts (FR-015)
 - [x] T012 [US-Correctness] Update SceneReadinessEngine to group multiple occurrences of the same entity in blocking summaries in server/workflows/sceneReadinessEngine.ts (FR-016)
 - [x] T013 [US-Correctness] Update DemoAutomationWorkflow to ensure demo load triggers task synchronization in server/workflows/demoAutomationWorkflow.ts
-- [x] T014 [US-Correctness] Run vitest on test_coors_pdf_extraction.test.ts to verify Slice 1 correctness
+- [x] T014 [US-Correctness] Run vitest on test_synthetic_pdf_extraction.test.ts to verify Slice 1 correctness
 
 ---
 
@@ -90,12 +90,12 @@
 ## Phase 8: Convergence (Defects 1–5 Remediation)
 
 - [x] T033 [P1-375-Overflow] Fix document 375px overflow at the layout level in src/components/Header.tsx, src/App.tsx, and src/pages/WorkspacePage.tsx (brand identity and primary action visible; secondary actions fold into accessible overflow menu; nav tabs scroll in isolated region; no overflow-x:hidden hack; document.scrollWidth <= clientWidth across 320/375/390/420; 44px targets; focus visible; 200%/400% zoom) (FR-025)
-- [x] T034 [P1-Coors-Occurrences] Reconcile Coors Light occurrences (6 occurrences across 3 scenes for 1 canonical item) in server/agents/ScriptParserAgent.ts, src/components/EntityRegistryTable.tsx, src/components/CitationDrawer.tsx, and binder export (tests: 1/1, many/1, many/many, 0) (FR-026)
+- [x] T034 [P1-Glacier-Brew-Occurrences] Reconcile Glacier Brew occurrences (6 occurrences across 3 scenes for 1 canonical item) in server/agents/ScriptParserAgent.ts, src/components/EntityRegistryTable.tsx, src/components/CitationDrawer.tsx, and binder export (tests: 1/1, many/1, many/many, 0) (FR-026)
 - [x] T035 [P2-Blocker-Deduplication] Canonical entity blocker de-duplication in server/workflows/sceneReadinessEngine.ts and client readiness views (unique unresolved item = 1 blocker; "appears N times" scene copy; zero double-counting; reconciliation tests) (FR-027)
 - [x] T036 [P2-Production-Cards] Accessible production switcher cards in src/components/ProjectListModal.tsx (native button elements with accessible name=title; aria-selected state; Enter/Space support; visible focus ring; focus active production heading after switch; isolation preserved) (FR-028)
 - [x] T037 [P3-Zero-Item-Scenes] Explicit zero-item scene review & readiness contract in server/workflows/sceneReadinessEngine.ts, src/types/, and binder export (distinguish PENDING_REVIEW / NO_CANDIDATES_DETECTED from human-confirmed FINAL_CLEAR; unreviewed zero-item scenes not shooting ready) (FR-029)
-- [x] T038 [Verification] Run focused unit tests and comprehensive local Playwright suite on localhost:8088 covering 375 layout, Coors 6 across 3, blocker wording, keyboard project cards, and zero-item readiness states
-- [x] T039 [P0-Scenario-G-Ingestion-Persistence] Remediate public Scenario G ingestion persistence defect (VERIFIED PASS on canary revision clearancescout-00064-lav using isolated disposable project proj-e425aaf3; Coors Light 1 item / 6 occurrences across 3 scenes persisted and displayed; 0 quota used; zero demo items substituted; survives reload) (FR-030)
+- [x] T038 [Verification] Run focused unit tests and comprehensive local Playwright suite on localhost:8088 covering 375 layout, Glacier Brew 6 across 3, blocker wording, keyboard project cards, and zero-item readiness states
+- [x] T039 [P0-Scenario-G-Ingestion-Persistence] Remediate public Scenario G ingestion persistence defect (VERIFIED PASS on canary revision clearancescout-00064-lav using isolated disposable project proj-e425aaf3; Glacier Brew 1 item / 6 occurrences across 3 scenes persisted and displayed; 0 quota used; zero demo items substituted; survives reload) (FR-030)
 
 ---
 
@@ -144,7 +144,7 @@
 - [x] T065 [Execution-Mode-OptionA] In `src/components/SettingsPopover.tsx` and `src/components/ProjectListModal.tsx`, replace the interactive `<select>` with an authoritative read-only badge (`DEMO_MODE (Authoritative)`) with explanatory copy, removing client-side synthetic mode overrides in `src/App.tsx` (FR-041)
 - [x] T066 [Zero-Item-Classification] Implement the 5-state scene readiness classification in `server/workflows/sceneReadinessEngine.ts` and `src/components/SceneReadinessCard.tsx` (`ANALYSIS_PENDING`, `ANALYSIS_FAILED`, `NO_CANDIDATES_SURFACED` -> `PENDING_REVIEW` 0%, `HUMAN_REVIEWED_NO_CONCERN` -> `FINAL_CLEAR`, `FULLY_CLEARED`) (FR-042)
 - [x] T067 [Task-Active-Draft-Scope] In `server/repositories/ActionNotificationRepo.ts`, `server/workflows/actionDispatcher.ts`, and `src/components/ActionListModal.tsx`, ensure department tasks are scoped to active draft; display open vs total unique tasks (`"${openCount} open of ${totalCount} Tasks"`); prohibit blanket title-based deduplication (FR-043)
-- [x] T068 [Coors-Semantics-Parity] In `server/workflows/sceneReadinessEngine.ts`, verify Registry/Dossier parity for Coors Light (1 item, 6 occurrences across 3 scenes); separate textual appearances from unresolved blockers in Scene 1 (1/1), Scene 2 (1/2, heading `CONTINUOUS`), Scene 3 (1/3); enforce singular/plural grammar (FR-044)
+- [x] T068 [Glacier-Brew-Semantics-Parity] In `server/workflows/sceneReadinessEngine.ts`, verify Registry/Dossier parity for Glacier Brew (1 item, 6 occurrences across 3 scenes); separate textual appearances from unresolved blockers in Scene 1 (1/3), Scene 2 (1/1, heading `CONTINUOUS`), Scene 3 (1/2); enforce singular/plural grammar (FR-044)
 - [x] T069 [Project-Disambiguation-A11y] In `src/components/ProjectListModal.tsx` and `src/components/PortfolioDashboard.tsx`, render native `<button>` cards with stable project ID (`proj-<uuid>`) and timestamp; ensure post-switch focus shifts to `h1#workspace-production-heading` (FR-033, FR-045)
 - [x] T070 [Notification-Tombstone-A11y] In `src/components/NotificationDrawer.tsx` and `src/components/ActionListModal.tsx`, verify valid notification (`TASK-101`) scrolls and focuses `h4#task-heading-TASK-101`; orphan notifications render disabled tombstone badges without fallback to `Re-Sync` (FR-027)
 - [x] T071 [Contract-Unit-Tests] Create or update unit/contract tests for execution mode read-only representation, 5-state zero-item classification, and draft-scoped tasks in `tests/contract/`
