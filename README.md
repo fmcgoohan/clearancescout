@@ -3,7 +3,7 @@
 **Autonomous Script Clearance & Brand Protection Agent for Film, TV, and Streaming Productions**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Runtime](https://img.shields.io/badge/Model-Gemini%203.6%20Flash-4285F4)](https://deepmind.google/technologies/gemini/)
+[![Runtime](https://img.shields.io/badge/Model-Gemini%203.6%20Flash%20(Vertex%20AI)-4285F4)](https://cloud.google.com/vertex-ai)
 [![Grounding](https://img.shields.io/badge/Grounding-Parallel%20Web%20API-06B6D4)](https://parallel.ai)
 [![Deployment](https://img.shields.io/badge/Platform-Google%20Cloud%20Run-34A853)](https://cloud.google.com/run)
 [![Tests](https://img.shields.io/badge/Tests-160%20Passing%20(74%20Suites)-34D399)](tests/)
@@ -163,9 +163,9 @@ graph TD
 ```
 
 ### Division of Labor Invariant
-1. **Gemini 3.6 Flash**: Semantic document understanding, occurrence context extraction, dialogue sentiment, and creative replacement generation.
+1. **Gemini 3.6 Flash on Vertex AI**: Semantic document understanding, occurrence context extraction, dialogue sentiment, and creative replacement generation.
 2. **Deterministic TypeScript**: Computes objective mathematical values (scene readiness status, expiration day deltas, override precedence, attempt counters, and SHA-256 checksums).
-3. **Gemini 3.6 Flash**: Reasons over calculated outputs against legal specifications to issue final validation verdicts.
+3. **Gemini 3.6 Flash on Vertex AI**: Reasons over calculated outputs against legal specifications to issue final validation verdicts.
 
 ---
 
@@ -175,7 +175,7 @@ graph TD
 |:---|:---|:---|
 | **`TEST_MODE`** | Automated CI/CD | Deterministic local fixtures for instant, isolated unit and contract testing (152/152 tests pass). |
 | **`DEMO_MODE`** | Interactive Evaluation | Zero-configuration evaluation using synthetic datasets and bundled demo screenplay ("The Neon Horizon"). |
-| **`CLOUD_MODE`** | Production Runtime | Live Google Gemini 3.6 Flash and Parallel Search APIs. Fails visibly with diagnostics if credentials are missing. |
+| **`CLOUD_MODE`** | Production Runtime | Live Google Gemini 3.6 Flash on Vertex AI and Parallel Search APIs. Fails visibly with diagnostics if credentials/project are missing. |
 
 ---
 
@@ -212,36 +212,53 @@ Open [http://localhost:8080](http://localhost:8080) to access the ClearanceScout
 
 ## 🐳 Google Cloud Run Deployment
 
-**Live service (CLOUD_MODE):** [https://clearance-scout-n3tcx4jcbq-uc.a.run.app](https://clearance-scout-n3tcx4jcbq-uc.a.run.app)
+**Live service (CLOUD_MODE):** [https://clearancescout-n3tcx4jcbq-uc.a.run.app](https://clearancescout-n3tcx4jcbq-uc.a.run.app)
 
-GCP project: `clearance-scout-2026` (ClearanceScout 2026). Service: `clearance-scout` in `us-central1`.
+GCP project: `clearance-scout-2026`. Service: `clearancescout` in `us-central1`.
 
 ClearanceScout is packaged as a single unified container serving both the Express REST/SSE API and compiled static React frontend.
 
-### Build & Run Container Locally
+### 1. Vertex AI IAM Permissions
+The Cloud Run runtime service account requires the `roles/aiplatform.user` role to invoke Gemini 3.6 Flash on Vertex AI without an API key:
+
 ```bash
-docker build -t clearancescout:latest .
-docker run -p 8080:8080 -e EXECUTION_MODE=DEMO_MODE clearancescout:latest
+gcloud projects add-iam-policy-binding clearance-scout-2026 \
+  --member="serviceAccount:clearance-scout-runtime@clearance-scout-2026.iam.gserviceaccount.com" \
+  --role="roles/aiplatform.user" \
+  --condition=None
 ```
 
-### Deploy to Google Cloud Run
+### 2. Deploy to Google Cloud Run (Vertex AI Backend)
 ```bash
-gcloud run deploy clearance-scout \
-  --source . \
+gcloud run deploy clearancescout \
+  --image gcr.io/clearance-scout-2026/clearancescout:<IMAGE_TAG> \
   --project clearance-scout-2026 \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
   --port 8080 \
-  --set-env-vars EXECUTION_MODE=CLOUD_MODE,GOOGLE_CLOUD_PROJECT=clearance-scout-2026 \
-  --set-secrets GEMINI_API_KEY=clearance-gemini-api-key:latest,PARALLEL_WEB_API_KEY=clearance-parallel-api-key:latest,DEMO_ACCESS_TOKEN=clearance-demo-access-token:latest
+  --set-env-vars "EXECUTION_MODE=CLOUD_MODE,GEMINI_BACKEND=vertex,GOOGLE_CLOUD_PROJECT=clearance-scout-2026,GOOGLE_CLOUD_LOCATION=us-central1" \
+  --set-secrets "PARALLEL_WEB_API_KEY=clearance-parallel-api-key:latest,DEMO_ACCESS_TOKEN=clearance-demo-access-token:latest"
 ```
 
 Missing production credentials must fail visibly. Do not silently substitute DEMO fixtures in `CLOUD_MODE`.
 
-### Health & Readiness Check
+### 3. Rollback Instructions (API Key Fallback)
+If Vertex AI needs to be reverted to the API key backend without downtime:
+1. Re-attach the `GEMINI_API_KEY` secret from Secret Manager.
+2. Set environment variable `GEMINI_BACKEND=apikey`.
+
 ```bash
-curl -s https://clearance-scout-n3tcx4jcbq-uc.a.run.app/api/health
+gcloud run services update clearancescout \
+  --region us-central1 \
+  --project clearance-scout-2026 \
+  --update-env-vars "GEMINI_BACKEND=apikey" \
+  --update-secrets "GEMINI_API_KEY=clearance-gemini-api-key:latest"
+```
+
+### 4. Health & Readiness Check
+```bash
+curl -s https://clearancescout-n3tcx4jcbq-uc.a.run.app/api/health
 ```
 
 ---

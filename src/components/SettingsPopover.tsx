@@ -202,7 +202,7 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
               </span>
             </div>
             <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.3 }}>
-              Governed by server configuration. Live CLOUD_MODE requires server-side secret provisioning (GEMINI_API_KEY, PARALLEL_WEB_API_KEY).
+              Governed by server configuration. Live CLOUD_MODE uses Vertex AI (GOOGLE_CLOUD_PROJECT) or GEMINI_API_KEY, and PARALLEL_WEB_API_KEY.
             </p>
           </div>
 
