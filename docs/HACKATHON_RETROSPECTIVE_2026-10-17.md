@@ -287,3 +287,131 @@ The follow-up supports the original recommendation to narrow scope, with a more 
 ### Interpretation of the third-party video reaction
 
 The third-party assessment discussed in the project conversation was based on the videos, not a deep implementation review. It can inform presentation analysis but cannot establish that winners were thin wrappers or that ClearanceScout lost because it was more practical. The targeted source review found substantive work and limitations in all four projects. Private judging reasoning remains unknown.
+
+## Code-quality inspection: maintainability and operational consistency
+
+Reviewed 2026-10-17 at the same commits pinned in the source-code comparison. CurrentCut's snapshot contains post-deadline work; the comparison does not establish deadline quality or judging causation.
+
+### Checks performed
+
+| Check | Observed result | Limit |
+| --- | --- | --- |
+| ClearanceScout locked dependency installation | npm ci completed with lifecycle scripts disabled | Installation is not application validation. |
+| ClearanceScout TypeScript | tsc --noEmit --pretty false exited 0 | Does not prove runtime input validity, persistence, or behavior. |
+| Python static analysis | Ruff F,E9: CurrentCut 5 findings; Consentinel 1; The Boxes 3 | Inspected backend paths only; counts are not comparable quality scores. |
+| Application suites, browsers, paid providers | NOT RUN in this inspection | No new runtime or release PASS is claimed. |
+
+Ruff findings were unused imports, an unused local, and an unnecessary f-string. No undefined-name findings appeared in the selected paths. Ruff exited 1 because findings were present.
+
+Commands and scope:
+- ClearanceScout temporary checkout: npm ci --ignore-scripts --no-audit --no-fund; ./node_modules/.bin/tsc --noEmit --pretty false.
+- Python: uvx ruff check with --select F,E9 --output-format concise against CurrentCut services/agent/app, Consentinel consentinel, and The Boxes src and service directories.
+- No automatic fixes were applied.
+
+The earlier statement that pytest was unavailable describes the first static review. This follow-up added Ruff and the TypeScript compiler, not application test execution. No paid providers or public project data were changed.
+
+### Qualitative comparison
+
+| Area | ClearanceScout | CurrentCut | Consentinel | The Boxes |
+| --- | --- | --- | --- | --- |
+| Responsibilities | Organized backend; oversized UI components | Focused pipeline modules | Strong contracts/shared infrastructure, with complexity | Coherent research core; larger integration files |
+| Types/validation | Strict TypeScript weakened by any and lightly validated requests | Pydantic records and explicit checks | Typed records, validators, storage contracts | Typed core; looser dictionary API inputs |
+| Errors | Uneven across features | Observable provider outcomes and fallbacks | Shared classification, repair, retries, capability policy | Broad catches can discard diagnostic detail |
+| Persistence | Firestore core plus in-memory collaboration stores | Local JSON and process-local locking | Storage abstraction and Firestore adapter | User-scoped Firestore and transactional run ownership |
+| Verification | Broad workflow tests; some labels overstate evidence | Useful final-output regressions | CI, rule tests, adversarial cases | Narrow inspected core suite |
+
+These are reviewer judgments about selected code, not numerical grades or a comprehensive ranking.
+
+### ClearanceScout findings
+
+#### CQ-01: collaboration persistence differs from core persistence
+
+Comments, attachments, and user notifications use process-memory Map stores with seeded records. They do not use the Firestore persistence of core project records. State in these maps is lost with the process and is not automatically shared across instances.
+
+Impact: a workspace can present durable project data alongside transient collaboration records without a clear distinction.
+
+Sources:
+- [Comments](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/repositories/TaskCommentRepo.ts)
+- [Attachments](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/repositories/TaskAttachmentRepo.ts)
+- [Notifications](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/repositories/UserNotificationRepo.ts)
+
+Recommendation: durable, project-scoped repositories behind a common storage contract; test process-restart persistence and instance consistency.
+
+#### CQ-02: signed-upload adapter is simulated
+
+generateSignedUploadUrl constructs a local upload-simulated URL and an expiry field. It does not request a signed URL from Google Cloud Storage.
+
+Impact: the function name and metadata imply a stronger implementation than exists in this snapshot.
+
+Source: [GCS adapter](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/integrations/storage/gcsStorage.ts)
+
+Recommendation: implement and verify the real adapter, or explicitly name and restrict the demo adapter. Do not report an attachment as uploaded merely because its metadata was registered.
+
+#### CQ-03: duplicate mention-notification side effects
+
+TaskCommentRepository.addComment creates a notification for each mention. The comment POST handler loops over the returned mentions and creates another set. UserNotificationRepository generates new IDs without deduplicating these records.
+
+Impact: one comment can generate two notifications per mentioned target.
+
+Sources:
+- [Repository side effect](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/repositories/TaskCommentRepo.ts)
+- [Route side effect](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/api/commentRoutes.ts)
+
+Recommendation: a single application service owns comment creation, audit recording, and notification dispatch. Add a focused test asserting one notification per target and idempotent handling where retries are possible.
+
+#### CQ-04: audit attribution trusts caller-supplied identity
+
+The comment POST handler accepts author identity and role from the request body, with default identities when absent. Shared demo-token authentication does not authenticate those individual fields.
+
+Impact: the audit record reflects supplied identity rather than verified actor attribution. This is a production-readiness limitation, not a demonstrated exploit of the live service.
+
+Source: [Comment endpoint](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/api/commentRoutes.ts)
+
+Recommendation: derive identity and authorized roles from server authentication; validate task/project membership and request schemas. Label demo attribution honestly until then.
+
+#### CQ-05: type safety is bypassed at important boundaries
+
+The datastore is exposed through any, and workspace payloads/callbacks also use any. Strict TypeScript compilation therefore leaves important data-shape contracts unchecked.
+
+Sources:
+- [Datastore implementation](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/repositories/firestoreClient.ts)
+- [Workspace page](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/src/pages/WorkspacePage.tsx)
+
+Recommendation: explicit repository interfaces and API DTOs, plus runtime validation at external boundaries. Keep test-store behavior aligned with real storage semantics.
+
+#### CQ-06: UI responsibilities are concentrated
+
+At the reviewed commit, WorkspacePage.tsx is 1,619 lines, ScriptUploadModal.tsx 1,144, and App.tsx 1,134. Size is a maintenance indicator, not proof of a defect, but these files combine state, synchronization, navigation, and rendering.
+
+Recommendation: extract typed data hooks and focused components by responsibility, preserving observable behavior with targeted tests. Avoid a broad rewrite solely to reduce line counts.
+
+### Winner-specific qualifications
+
+**CurrentCut:** focused domain modules, useful final-deliverable tests, and pinned dependencies are strengths. Storage uses local JSON, process-local locking, and direct write_text calls without an atomic-write protocol. This does not coordinate separate workers or provide durable multi-instance persistence.
+
+Source: [Storage](https://github.com/tanaka-cell/currentcut/blob/11050a776e16bb2aec6d319749d25f728a4bcadf/services/agent/app/storage.py)
+
+**Consentinel:** shared storage contracts, validation, error classification, retries, capability checks, and CI reduce duplicated policy. However, the harness checks elapsed time before synchronous invoke; that budget check alone cannot interrupt a hung operation. Provider timeouts remain necessary. Catching BaseException is broader than ordinary operational errors and can absorb termination-related exceptions. These observations do not establish that all provider calls lack timeouts.
+
+Sources:
+- [Harness](https://github.com/PRACHIT27/Consentinel/blob/566be6591b7709efc126393d9a6ba2f2a0be6679/consentinel/harness/runner.py)
+- [CI](https://github.com/PRACHIT27/Consentinel/blob/566be6591b7709efc126393d9a6ba2f2a0be6679/.github/workflows/ci.yml)
+
+**The Boxes:** authenticated user-scoped storage and transactional run ownership are useful foundations. Some retrieval helpers broadly catch exceptions and return empty values, discarding failure detail. API inputs use dictionaries where validated request models would improve consistency.
+
+Sources:
+- [Persistence and run ownership](https://github.com/rapha18th/agentic-cinema-boxes/blob/3db7f962a6397e7781cd8f519f2db7143598dbdc/service/store.py)
+- [Retrieval](https://github.com/rapha18th/agentic-cinema-boxes/blob/3db7f962a6397e7781cd8f519f2db7143598dbdc/src/boxes/parallel_search.py)
+- [API](https://github.com/rapha18th/agentic-cinema-boxes/blob/3db7f962a6397e7781cd8f519f2db7143598dbdc/service/main.py)
+
+### Recommended code-quality sequence
+
+1. Make collaboration persistence durable and project-scoped.
+2. Complete or clearly restrict simulated storage adapters.
+3. Give side effects one owner; fix duplicate mention notifications.
+4. Validate request bodies and derive audit actors server-side.
+5. Replace any at database/API boundaries with tested contracts.
+6. Separate large UI responsibilities incrementally.
+7. Add CI for type checking and meaningful offline tests, with separately labeled browser and real-provider checks.
+
+Pair these foundations with the research-verification priorities above. Neither feature breadth nor a compiler pass establishes production readiness. The inspection does not support a claim that ClearanceScout was uniformly more production-ready than the winning entries.
