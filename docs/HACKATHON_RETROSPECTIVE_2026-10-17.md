@@ -13,7 +13,7 @@ The main competitive weakness identified in this retrospective is the allocation
 
 This assessment uses the current Devpost submissions, published judging criteria, the public repository README, and the development/QA history supplied in the project conversation.
 
-It does not include private judging feedback, independent execution of the winners' applications, or a review of their embedded demo videos. Current submission pages may have changed since the deadline. Competitor implementation and performance descriptions below are their published claims, not independently reproduced findings.
+It does not include private judging feedback, independent execution of the winners' applications, or a review of their embedded demo videos. Current submission pages may have changed since the deadline. Competitor descriptions in the initial comparison reflect their published claims. The source-code follow-up below adds targeted static observations at pinned commits; runtime performance remains unverified.
 
 Historical ClearanceScout problems must not be read as current defects. In particular, earlier reviews recorded fixture/live-mode confusion, unavailable provider credentials, deployment identity uncertainty, count discrepancies, and interaction regressions. No fresh release verdict is issued here.
 
@@ -181,3 +181,109 @@ These are recommendations, not authorization for implementation, provider spendi
 8. Freeze the release and produce a concise, reproducible demonstration.
 
 The next competitive step is a more convincing core workflow, not a longer feature list.
+
+## Source-code comparison: follow-up review
+
+Reviewed 2026-10-17. This section supersedes the earlier reliance on submission descriptions for the specific implementation observations below.
+
+### Scope and reproducibility
+
+Four public repositories were downloaded and selected provider integrations, orchestration, evidence handling, readiness logic, and tests were read. This was a targeted static review, not a comprehensive audit. Applications and paid providers were not executed. Python pytest was unavailable in the review environment; no automated test PASS is claimed.
+
+| Repository | Reviewed commit | Commit date |
+| --- | --- | --- |
+| [CurrentCut](https://github.com/tanaka-cell/currentcut) | `11050a776e16bb2aec6d319749d25f728a4bcadf` | 2026-10-15 |
+| [Consentinel](https://github.com/PRACHIT27/Consentinel) | `566be6591b7709efc126393d9a6ba2f2a0be6679` | 2026-09-09 |
+| [The Boxes](https://github.com/rapha18th/agentic-cinema-boxes) | `3db7f962a6397e7781cd8f519f2db7143598dbdc` | 2026-09-09 |
+| [ClearanceScout](https://github.com/fmcgoohan/clearancescout) | `2cb583d71c4a207b1ff81ac6634ad617c56bf1d8` | 2026-09-09 |
+
+CurrentCut includes post-deadline changes. These snapshots cannot establish what every judge saw or explain the judging outcome. Repository presence does not prove deployment or runtime success.
+
+### CurrentCut: evidence support and final-deliverable tests
+
+Observed in code:
+- Claim support requires matching entity, attribute, and value, rather than accepting an unrelated page containing the same number.
+- The Parallel client gates external queries and records provider identity, attempts/outcomes, request identifiers, timing, and failures.
+- Caption-sheet tests check that disputed material does not reappear as an apparently unqualified quotation in another spreadsheet row.
+- ADK orchestration is instructed to follow a fixed sequence; a deterministic fallback is available when orchestration fails. This is bounded workflow orchestration, not evidence of unrestricted autonomous editing.
+
+Sources:
+- [Evidence evaluator](https://github.com/tanaka-cell/currentcut/blob/11050a776e16bb2aec6d319749d25f728a4bcadf/services/agent/app/agents/evidence.py)
+- [Parallel client](https://github.com/tanaka-cell/currentcut/blob/11050a776e16bb2aec6d319749d25f728a4bcadf/services/agent/app/clients/parallel_client.py)
+- [Caption chain-of-custody tests](https://github.com/tanaka-cell/currentcut/blob/11050a776e16bb2aec6d319749d25f728a4bcadf/services/agent/tests/test_sheet_chain_of_custody.py)
+- [ADK pipeline](https://github.com/tanaka-cell/currentcut/blob/11050a776e16bb2aec6d319749d25f728a4bcadf/services/agent/app/adk_pipeline.py)
+
+Transferable lesson: verify that an evidence judgment remains correctly qualified in the final artifact a practitioner uses.
+
+### Consentinel: enforceable observation/permission boundaries
+
+Observed in code:
+- A deterministic reconciler checks modality, territory, validity dates, and licensee identity.
+- Unknown territory and other missing information receive explicit treatment.
+- Validators check that extracted quotations occur in source text.
+- The reconciler refuses to store decisive verdicts without a citation.
+
+Qualification: the design document acknowledges that the web app runs agents in-process on Cloud Run rather than invoking the separately deployed Agent Engine runtimes. Deployment of a runtime and its use by the application are separate claims.
+
+Sources:
+- [Reconciler](https://github.com/PRACHIT27/Consentinel/blob/566be6591b7709efc126393d9a6ba2f2a0be6679/consentinel/agents/reconciler.py)
+- [Extraction validators](https://github.com/PRACHIT27/Consentinel/blob/566be6591b7709efc126393d9a6ba2f2a0be6679/consentinel/agents/validators.py)
+- [Runtime placement disclosure](https://github.com/PRACHIT27/Consentinel/blob/566be6591b7709efc126393d9a6ba2f2a0be6679/DESIGN.md)
+
+Transferable lesson: make evidence requirements executable. Deterministic rules still require defensible inputs and explicit policy assumptions.
+
+### The Boxes: iterative research with heuristic completeness
+
+Observed in code:
+- The loop selects thinly covered objectives, proposes additional objectives, retrieves more evidence, and stops according to coverage or round budgets.
+- Its confidence/completeness calculation combines weighted evidence quantity, domain diversity, source quality, and contradiction penalties.
+- Source quality partly relies on domain-name heuristics.
+- The inspected core test file contains five tests. That observation does not establish the total verification effort or broad reliability.
+
+Qualification: the confidence value is a heuristic score, not a calibrated probability that the archive is correct.
+
+Sources:
+- [Research loop](https://github.com/rapha18th/agentic-cinema-boxes/blob/3db7f962a6397e7781cd8f519f2db7143598dbdc/src/boxes/research_loop.py)
+- [Coverage calculation](https://github.com/rapha18th/agentic-cinema-boxes/blob/3db7f962a6397e7781cd8f519f2db7143598dbdc/src/boxes/coverage.py)
+- [Evidence scoring](https://github.com/rapha18th/agentic-cinema-boxes/blob/3db7f962a6397e7781cd8f519f2db7143598dbdc/src/boxes/evidence.py)
+- [Core tests](https://github.com/rapha18th/agentic-cinema-boxes/blob/3db7f962a6397e7781cd8f519f2db7143598dbdc/tests/test_core.py)
+
+Transferable lesson: make follow-up research respond to a specific missing fact, while explaining what any completeness score actually measures.
+
+### ClearanceScout: concrete strengths and gaps
+
+The repository contains substantive workflow infrastructure: project-scoped persistence, canonical entities and occurrences, rights coverage, readiness calculations, tasks, and exports. The principal gap identified in the inspected path is evidence verification inside that infrastructure.
+
+| Finding | Source observation | Implication |
+| --- | --- | --- |
+| Generic grounding | Search uses a trademark-oriented objective for the entity and retains up to three live results; live registration status is UNKNOWN. | Research needs category-appropriate questions and explicit entity/fact verification. |
+| Zero-result citation representation | An empty live result creates a citation-like record pointing to Parallel's search page. | Represent an empty search as an operation outcome, not a supporting source. |
+| Context model does not receive citations | The occurrence-level Gemini prompt includes screenplay context but not retrieved evidence. | This path does not substantiate a claim that Gemini reasons over those citations to produce the assessment. |
+| Brand-specific decisions | The evaluator explicitly branches on Coca-Cola and Porsche names. | Replace individual-name shortcuts with documented, evidence-supported policy and tests. |
+| Unknown status can produce reassuring output | Incidental usage can receive NO_ISSUE_SURFACED with unknown registration status. | Keep evidence uncertainty distinct from production policy and human clearance decisions. |
+| Fixture fallback remains implemented | Live search errors or absent credentials return labeled FALLBACK_FIXTURE data. | This contradicts a blanket no-fixture-fallback claim, although the evaluator generally marks unmitigated cloud fallback INSUFFICIENT_EVIDENCE. |
+| Test title overstates its environment | A test labeled Full End-to-End Live Runtime creates a TEST_MODE project and uses Supertest against Express. | Useful integration coverage does not establish public-browser or real-provider validation. |
+
+Sources:
+- [Parallel search tool](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/tools/parallelSearchTool.ts)
+- [Occurrence evaluator](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/workflows/clearanceEvaluator.ts)
+- [Readiness engine](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/workflows/sceneReadinessEngine.ts)
+- [Datastore selection](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/server/repositories/firestoreClient.ts)
+- [Runtime integrity integration test](https://github.com/fmcgoohan/clearancescout/blob/2cb583d71c4a207b1ff81ac6634ad617c56bf1d8/tests/integration/test_live_runtime_integrity_workflow.test.ts)
+
+These are observations about the pinned source snapshot. They are not new live-production reproductions, a legal assessment of clearance policy, or proof that all evaluation paths behave identically.
+
+### Revised engineering priorities
+
+1. Strengthen one category-specific research path: verify the correct entity and source support for each extracted factual claim.
+2. Separate evidence observations, permission coverage, production policy, and human decisions in both data and presentation.
+3. Represent provider errors and zero results directly, without generating citation records that imply supporting evidence.
+4. Replace brand-name branches with explicit policies and representative tests.
+5. Test the exported packet end to end: source excerpts, occurrence links, qualifications, decisions, and history.
+6. Publish a small annotated benchmark, including false confidence, misses, abstentions, latency, and cost, before expanding the UI.
+
+The follow-up supports the original recommendation to narrow scope, with a more precise diagnosis: ClearanceScout had substantial workflow infrastructure, but deeper verification of evidence would have been a more valuable next investment than further interface breadth.
+
+### Interpretation of the third-party video reaction
+
+The third-party assessment discussed in the project conversation was based on the videos, not a deep implementation review. It can inform presentation analysis but cannot establish that winners were thin wrappers or that ClearanceScout lost because it was more practical. The targeted source review found substantive work and limitations in all four projects. Private judging reasoning remains unknown.
